@@ -1,0 +1,47 @@
+Table Definition Module
+FUT_ARM06 - Customer Payment Summary
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_ARM06^^^^^Customer Payment Summary^Customer Payment Summary^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_ARM06^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Firm ID^^^^^^^N^
+CUSTOMER_NBR^FUT_ARM06^002^C^^3002^dis_customer_nbr^0^^^2^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^Enter Customer Number^^^0^^^^Y^
+LAST_INV_DATE^FUT_ARM06^003^C^^3003^ine_last_inv_date^0^^^3^^N^^^^^FUT_LAST_INV_DAT^Last Invoice Date^Last Invoice Date^Last Invoice Date^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Last Invoice Date^^^^^^^N^
+LAST_PAY_DATE^FUT_ARM06^004^C^^3004^ine_last_pay_date^0^^^4^^N^^^^^FUT_LAST_PAY_DAT^Last Payment Date^Last Payment Date^Last Payment Date^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Last Payment Date^^^^^^^N^
+RESERVED_STR^FUT_ARM06^005^C^^3005^ine_reserved_str^0^^^5^^N^^^^^FUT_RESERVED_STR^Reserved For ADD+ON Use^Reserved For Add+on Use^Reserved For Add+on Use^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Reserved For ADD+ON Use^^^^^^^Y^
+MTD_SALES^FUT_ARM06^006^C^^3006^inn_mtd_sales^0^^^6^^N^^^^^FUT_MTD_SALES^MTD Sales^Mtd Sales^Mtd Sales^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter MTD Sales^^^^^^^Y^
+YTD_SALES^FUT_ARM06^007^C^^3007^inn_ytd_sales^0^^^7^^N^^^^^FUT_YTD_SALES^YTD Sales^Ytd Sales^Ytd Sales^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter YTD Sales^^^^^^^Y^
+PYR_SALES^FUT_ARM06^008^C^^3008^inn_pyr_sales^0^^^8^^N^^^^^FUT_PYR_SALES^Prior YTD Sales^Prior Ytd Sales^Prior Ytd Sales^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Prior YTD Sales^^^^^^^Y^
+MTD_COMM_SALES^FUT_ARM06^009^C^^3009^inn_mtd_comm_sales^0^^^9^^N^^^^^FUT_MTD_COMM_SAL^MTD Commissionable Sales^Mtd Cost^Mtd Cost^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter MTD Cost^^^^^^^Y^
+YTD_COMM_SALES^FUT_ARM06^010^C^^3010^inn_ytd_comm_sales^0^^^10^^N^^^^^FUT_YTD_COMM_SAL^YTD Commissionable Sales^Ytd Cost^Ytd Cost^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter YTD Cost^^^^^^^Y^
+PYR_COMM_SALES^FUT_ARM06^011^C^^3011^inn_pyr_comm_sales^0^^^11^^N^^^^^FUT_PYR_COMM_SAL^Prior year's Commissionable Sales^Prior year's Ytd Cost^Prior year's Ytd Cost^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Prior year's YTD Cost^^^^^^^Y^
+AVG_DAYS^FUT_ARM06^012^C^^3012^inn_avg_days^0^^^12^^N^^^^^FUT_AVG_DAYS^Average Days to Pay^Average Days to Pay^Average Days to Pay^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Average Days to Pay^^^^^^^Y^
+NBR_PAYMENTS^FUT_ARM06^013^C^^3013^inn_nbr_payments^0^^^13^^N^^^^^FUT_NBR_PAYMENTS^Number of Payments^Number of Payments^Number of Payments^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Number of Payments^^^^^^^Y^
+NMTD_SALES^FUT_ARM06^014^C^^3014^inn_nmtd_sales^0^^^14^^N^^^^^FUT_NMTD_SALES^Next MTD Sales^Next Mtd Sales^Next Mtd Sales^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Next MTD Sales^^^^^^^Y^
+NMTD_COMM_SALES^FUT_ARM06^015^C^^3015^inn_nmtd_comm_sales^0^^^15^^N^^^^^FUT_NMTD_COMM_SA^Next MTD Commissionable Sales^Next Mtd Cost^Next Mtd Cost^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Next MTD Cost^^^^^^^Y^
+AVG_DAYS_MTD^FUT_ARM06^016^C^^3016^inn_avg_days_mtd^0^^^16^^N^^^^^FUT_AVG_DAYS_MTD^Average Days to Pay/MTD^Average Days to Pay/Mtd^Average Days to Pay/Mtd^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Average Days to Pay/MTD^^^^^^^Y^
+MTD_NBR_PMTS^FUT_ARM06^017^C^^3017^inn_mtd_nbr_pmts^0^^^17^^N^^^^^FUT_MTD_NBR_PMTS^MTD Number of Payments^Mtd Number of Payments^Mtd Number of Payments^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter MTD Number of Payments^^^^^^^Y^
+AVG_DAYS_YTD^FUT_ARM06^018^C^^3018^inn_avg_days_ytd^0^^^18^^N^^^^^FUT_AVG_DAYS_YTD^Average Days to Pay/YTD^Average Days to Pay/Ytd^Average Days to Pay/Ytd^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Average Days to Pay/YTD^^^^^^^Y^
+YTD_NBR_PMTS^FUT_ARM06^019^C^^3019^inn_ytd_nbr_pmts^0^^^19^^N^^^^^FUT_YTD_NBR_PMTS^YTD Number of Payments^Ytd Number of Payments^Ytd Number of Payments^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter YTD Number of Payments^^^^^^^Y^
+AVG_DTP_PYTD^FUT_ARM06^020^C^^3020^inn_avg_dtp_pytd^0^^^20^^N^^^^^FUT_AVG_DTP_PYTD^Average Days to Pay/Prior YTD^Average Days to Pay/Prior Ytd^Average Days to Pay/Prior Ytd^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Average Days to Pay/Prio^^^^^^^Y^
+PYR_NBR_PY^FUT_ARM06^021^C^^3021^inn_pyr_nbr_py^0^^^21^^N^^^^^FUT_PYR_NBR_PY^Prior YTD Number of Payments^Prior Ytd Number of Payments^Prior Ytd Number of Payments^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Prior YTD Number of Paym^^^^^^^Y^
+AVG_DTP_NMTD^FUT_ARM06^022^C^^3022^inn_avg_dtp_nmtd^0^^^22^^N^^^^^FUT_AVG_DTP_NMTD^Average Days to Pay/Next MTD^Average Days to Pay/Next Mtd^Average Days to Pay/Next Mtd^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Average Days to Pay/Next^^^^^^^Y^
+NMTD_NBR_PAY^FUT_ARM06^023^C^^3023^inn_nmtd_nbr_pay^0^^^23^^N^^^^^FUT_NMTD_NBR_PAY^Next MTD Number of Payments^Next Mtd Number of Payments^Next Mtd Number of Payments^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Next MTD Number of Payme^^^^^^^Y^
+MTD_HIGH_CRD^FUT_ARM06^024^C^^3024^inn_mtd_high_crd^0^^^24^^N^^^^^FUT_MTD_HIGH_CRD^MTD High Credit^Mtd High Credit^Mtd High Credit^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter MTD High Credit^^^^^^^Y^
+YTD_HI_CRED^FUT_ARM06^025^C^^3025^inn_ytd_hi_cred^0^^^25^^N^^^^^FUT_YTD_HI_CRED^YTD High Credit^Ytd High Credit^Ytd High Credit^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter YTD High Credit^^^^^^^Y^
+PYR_HI_CRD^FUT_ARM06^026^C^^3026^inn_pyr_hi_crd^0^^^26^^N^^^^^FUT_PYR_HI_CRD^Prior YTD High Credit^Prior Ytd High Credit^Prior Ytd High Credit^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Prior YTD High Credit^^^^^^^Y^
+NMTD_HIGH_CR^FUT_ARM06^027^C^^3027^inn_nmtd_high_cr^0^^^27^^N^^^^^FUT_NMTD_HIGH_CR^Next MTD High Credit^Next Mtd High Credit^Next Mtd High Credit^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Next MTD High Credit^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_ARM06^PRIMARY^FUT_ARM06.FIRM_ID                       FUT_ARM06.CUSTOMER_NBR                  ^FUT_ARM06.FIRM_ID$+FUT_ARM06.CUSTOMER_NBR$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.CUSTOMER_NBR$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.CUSTOMER_NBR$               
+{KeyDefsEnd}
+{GridCols}
+001FUT_ARM06.FIRM_ID                       ;002FUT_ARM06.CUSTOMER_NBR                  ;003FUT_ARM06.LAST_INV_DATE                 ;004FUT_ARM06.LAST_PAY_DATE                 ;005FUT_ARM06.RESERVED_STR                  ;006FUT_ARM06.MTD_SALES                     ;007FUT_ARM06.YTD_SALES                     ;008FUT_ARM06.PYR_SALES                     ;009FUT_ARM06.MTD_COMM_SALES                ;010FUT_ARM06.YTD_COMM_SALES                ;011FUT_ARM06.PYR_COMM_SALES                ;012FUT_ARM06.AVG_DAYS                      ;013FUT_ARM06.NBR_PAYMENTS                  ;014FUT_ARM06.NMTD_SALES                    ;015FUT_ARM06.NMTD_COMM_SALES               ;016FUT_ARM06.AVG_DAYS_MTD                  ;017FUT_ARM06.MTD_NBR_PMTS                  ;018FUT_ARM06.AVG_DAYS_YTD                  ;019FUT_ARM06.YTD_NBR_PMTS                  ;020FUT_ARM06.AVG_DTP_PYTD                  ;021FUT_ARM06.PYR_NBR_PY                    ;022FUT_ARM06.AVG_DTP_NMTD                  ;023FUT_ARM06.NMTD_NBR_PAY                  ;024FUT_ARM06.MTD_HIGH_CRD                  ;025FUT_ARM06.YTD_HI_CRED                   ;026FUT_ARM06.PYR_HI_CRD                    ;027FUT_ARM06.NMTD_HIGH_CR                  ;
+{GridColsEnd}

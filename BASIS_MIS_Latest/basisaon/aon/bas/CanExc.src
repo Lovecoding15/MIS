@@ -1,0 +1,256 @@
+rem ' edit Canadian Exchange rates
+rem ' program: CanExc
+
+begin
+
+seterr error_handler
+setesc escape_trap
+
+
+call "ec_open::CANADIAN_EXCH"
+
+rem ' create a base window
+	print 'WINDOW'(5,5,70,10,"Historial Exchange Rates")
+	wFin$=fin(0)
+	scrollWin = dec(wFin$(9,2))
+	print 'sb',@(1,0),"Date",@(13,0),"To US $",@(24,0),"To Can $",@(35,0),"Rec Date",@(46,0),"Check No",'sf',
+
+rem ' create the input window
+	print 'WINDOW'(5,16,70,3,"Input New Rates")
+	wFin$=fin(0)
+	inputWin = dec(wFin$(9,2))
+
+rem ' create the prompt window
+	print 'WINDOW'(5,20,70,3,"")
+	wFin$=fin(0)
+	promptWin = dec(wFin$(9,2))
+
+rem ' load the historial rates
+	gosub initialize_scroll_window
+
+rem ' open console on a different channel
+	let screen$=fid(0)
+	altScreen = unt
+	open(altScreen)screen$
+
+rem ' allow pageup, pagedown, f4 or f2 to add new rate
+	gosub print_standard_prompt
+	while 1
+		read record(altScreen,siz=1)in$
+		if in$=$8F$ then break
+		if in$=$A5$ then gosub page_up
+		if in$=$A6$ then gosub page_dn
+		if in$=$82$ then gosub add_new_rate
+	wend
+
+	goto pgm_exit
+
+
+initialize_scroll_window:
+	print 'goto'(scrollWin),
+	print @(0,1),'ce',
+	line=1,maxLine=7,keyFline$="",keyLline$=""
+	found_one = 0
+	key$ = keyl(CANADIAN_EXCH,end=*next); found_one = 1
+	if found_one then
+
+		while 1
+			read record(CANADIAN_EXCH,key=key$,dir=0)CANADIAN_EXCH$
+			if line=1 then keyFline$=key$
+			keyLline$=key$
+			print @(1,line),FNformatDate$(CANADIAN_EXCH.ratedate$),@(12,line),str(CANADIAN_EXCH.to_us_doll:"0.000000"),@(24,line),str(CANADIAN_EXCH.to_cana_doll:"0.000000"),@(35,line),FNformatDate$(CANADIAN_EXCH.receipt_date$),@(46,line),CANADIAN_EXCH.AR_CHECK_NBR$,
+			line = line + 1
+			if line > maxLine then line=maxLine; break
+			key$ = keyp(CANADIAN_EXCH,end=*break)		
+		wend
+	endif
+	print 'goto'(inputWin),
+return
+
+page_dn:
+	print 'goto'(scrollWin),
+	if line >= maxLine then
+		read record(CANADIAN_EXCH,key=keyLline$,dir=0)CANADIAN_EXCH$
+		found_one = 0
+
+		key$=keyp(CANADIAN_EXCH,end=*next); found_one = 1
+		if found_one then			
+			line=1,maxLine=7,keyFline$="",keyLline$=""
+			print @(0,1),'ce',
+			while 1
+				read record(CANADIAN_EXCH,key=key$,dir=0)CANADIAN_EXCH$
+				if line=1 then keyFline$=key$
+				keyLline$=key$
+				print @(1,line),FNformatDate$(CANADIAN_EXCH.ratedate$),@(12,line),str(CANADIAN_EXCH.to_us_doll:"0.000000"),@(24,line),str(CANADIAN_EXCH.to_cana_doll:"0.000000"),@(35,line),FNformatDate$(CANADIAN_EXCH.receipt_date$),@(46,line),CANADIAN_EXCH.AR_CHECK_NBR$,
+				line = line + 1
+				if line > maxLine then line=maxLine; break
+				key$ = keyp(CANADIAN_EXCH,end=*break)		
+			wend
+		endif
+	endif
+	print 'goto'(inputWin),
+return
+
+page_up:
+	print 'goto'(scrollWin),
+	if keyFline$ <> keyLline$ then
+		read record(CANADIAN_EXCH,key=keyFLine$)CANADIAN_EXCH$
+		rem ' read forward in the file to find the new First Line Key
+		count=0;theKey$=keyFLine$
+		while count < maxLine
+			found_one = 0
+			key$=key(CANADIAN_EXCH,end=*next); found_one = 1
+			if found_one = 0 then break
+			read record(CANADIAN_EXCH,key=key$)CANADIAN_EXCH$
+			theKey$=key$
+			count = count + 1
+		wend
+		line=1,maxLine=7,keyFline$="",keyLline$=""
+		print @(0,1),'ce',
+		key$=theKey$
+		while 1
+			read record(CANADIAN_EXCH,key=key$,dir=0)CANADIAN_EXCH$
+			if line=1 then keyFline$=key$
+			keyLline$=key$
+			print @(1,line),FNformatDate$(CANADIAN_EXCH.ratedate$),@(12,line),str(CANADIAN_EXCH.to_us_doll:"0.000000"),@(24,line),str(CANADIAN_EXCH.to_cana_doll:"0.000000"),@(35,line),FNformatDate$(CANADIAN_EXCH.receipt_date$),@(46,line),CANADIAN_EXCH.AR_CHECK_NBR$,
+			line = line + 1
+			if line > maxLine then line=maxLine; break
+			key$ = keyp(CANADIAN_EXCH,end=*break)		
+		wend
+	endif
+	print 'goto'(inputWin),
+return
+
+add_new_rate:
+	gosub clear_prompt
+	cancel = 0; done = 0
+	ratedate$=date(jul(0,0,0):"%Mz/%Dz/%Y")
+	toUS$="",toCAN$=""
+
+
+	while 1
+		while 1
+			in$=""
+			gosub print_entered_data
+			print 'cursor'("on"),
+			input @(27,0),in$
+			print 'cursor'("off"),
+			if in$<>"" then toUS$=in$ 
+			toUS = num(toUS$,err=*continue)	
+			if toUS > 2 then toUS$=""; continue
+			if toUS < 0 then toUS$=""; continue
+			toUs$=str(toUS:"0.000000")
+			break
+		wend
+
+		while 1
+			in$=""
+			gosub print_entered_data
+			print 'cursor'("on"),
+			input @(47,0),in$
+			print 'cursor'("off"),
+			if in$<>"" then toCan$=in$
+			toCAN = num(toCAN$,err=*continue)	
+			if toCAN > 2 then toCAN$=""; continue
+			if toCAN < 0 then toCAN$=""; continue
+			toCAN$=str(toCAN:"0.000000")
+			break
+		wend
+		gosub print_entered_data
+
+		gosub print_data_correct_prompt	
+		while 1
+
+			in$=""
+			print 'cursor'("on"),
+			input (0,siz=1)@(60,0),in$
+			print 'cursor'("off"),
+			if in$ = "C" or in$ = "c" then cancel = 1; break
+			if in$ = "E" or in$ = "e" then break
+			if in$ = "W" or in$ = "w" then
+				dim CANADIAN_EXCH$:fattr(CANADIAN_EXCH$)
+				CANADIAN_EXCH.ratedate$=ratedate$(7,4)+ratedate$(1,2)+ratedate$(4,2)
+				CANADIAN_EXCH.sequence_nbr$="00"
+				CANADIAN_EXCH.to_us_doll = toUS
+				CANADIAN_EXCH.to_cana_doll = toCAN
+				
+				while 1
+					written = 0
+					write record(CANADIAN_EXCH,dom=*next)CANADIAN_EXCH$; written=1
+					if written then break 
+					
+					CANADIAN_EXCH.sequence_nbr$=str(num(CANADIAN_EXCH.sequence_nbr$)+1:"00")
+				wend
+				gosub initialize_scroll_window
+				done = 1
+				break
+			endif
+		wend
+		gosub clear_prompt
+		
+		if cancel or done then break
+	wend
+	gosub clear_input_window
+	gosub print_standard_prompt	
+	print 'goto'(inputWin),
+return
+
+print_input_mask:
+	print @(0,0),'cl','sb',@(1,0), "Date:",@(18,0),"To US $:",@(37,0),"To Can $:",'sf',
+return
+
+print_entered_data:
+	gosub print_input_mask
+	print @(7,0),ratedate$,
+	print @(27,0),toUS$,
+	print @(47,0),toCan$,
+return
+
+print_standard_prompt:
+	print 'goto'(promptWin)
+	print @(2,0),'cl',"Scroll Rates <PgUP> <PgDn>, Exit <F4>, Add New Rate <F2>",
+	print 'goto'(inputWin)
+return
+
+clear_prompt:
+	print 'goto'(promptWin)
+	print @(0,0),'cl',
+	print 'goto'(inputWin)
+return
+
+clear_input_window:
+	print 'goto'(inputWin)
+	print @(0,0),'cl',
+return
+
+print_data_correct_prompt:
+	print 'goto'(promptWin)
+	print @(2,0),'cl',"Cancel (C), Write (W), Edit (E)",
+	print 'goto'(inputWin),
+return
+
+error_handler:
+print "error: ",err
+escape
+
+escape_trap:
+escape
+
+pgm_exit:
+	print (0,err=*next)'drop'(scrollWin),
+	print (0,err=*next)'drop'(inputWin),
+	print (0,err=*next)'drop'(promptWin),
+	run "SYS.AA"
+	
+end
+
+def FNformatDate$(inDate$)
+	rem ' in form yyyymmdd
+	if cvs(inDate$,3) <> "" then
+		outDate=jul(num(inDate$(1,4)),num(inDate$(5,2)),num(inDate$(7,2)))
+		outDate$=date(outDate,"%Mz/%Dz/%Y")
+	else
+		outDate$=""
+	endif
+	return outDate$
+fnend

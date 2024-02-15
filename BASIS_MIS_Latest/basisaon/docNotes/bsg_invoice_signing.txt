@@ -1,0 +1,62 @@
+Notes on Invoice printing/signing/emailing/archiving for BSG
+
+programs:
+
+BSG.10 - invoice emailing BSG
+
+archive_invoice.src - archives signed invoices and report files
+
+retrieve_invoice.src - retrieve an invoice from the archives and email it
+
+sign_invoice.src - get the signature applied to an invoice
+	sign_invoice.src is called from
+		BSG.10, but this function is remmed out
+		job_queue.pgm.src 
+		
+job_queue.pgm - runs from crontab every 5 minutes
+	the last step in job_queue is to call sign_invoice.bbj
+	this will be change to kicking of sign_invoice.bbj in a new session
+	
+>-------------------------------------------------------------------
+
+BSG.10 output 3 files - potentially
+	<invoice#>_original.pdf  - pdf of the invoice where 
+	<invoice#>_ver.pdf - 	empty file output only when customer is German
+				indicates that a verification report is required
+	<invoice#>_email.txt -	file to be emailed, includes references to the attachments
+	
+
+	no change to this program
+	
+>-------------------------------------------------------------------
+
+sign_invoice.bbj 
+	major changes to using the SignamusClient.bbj custom class to sign the invoice
+	
+	will be run in a new session from the command line
+	because SignamusClient.bbj requires a Session Specific Classpath (SSCP called signamus)
+	
+	
+
+>-------------------------------------------------------------------
+
+job_queue.pgm
+
+	instead of calling sign_invoice.bbj it will start a new bbj session:
+		DECLARE BBjConfig config!
+		DECLARE BBjCommandLineObject cmd!
+		config! = BBjAPI().getConfig()
+		rem ' use the sscp signamus
+		cmd! = config!.getCommandLineObject("-tIO -CPsignamus -c/mnt/data/basisaon/config.web sign_invoice.bbj 1> /dev/null 2> /dev/null")
+		x = BBjAPI().newBBjSession(cmd!)
+
+
+>-------------------------------------------------------------------
+
+implementation
+
+SSCP signamus
+
+/mnt/data/basisaon/aon/bas/SignamusClient.bbj
+/mnt/data/basisaon/aon/bas/sign_invoice.bbj
+/mnt/data/basisaon/aon/bas/job_queue.pgm

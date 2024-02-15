@@ -1,0 +1,56 @@
+// Barista Application Framework - Application Synchronization File
+// Proprietary Information. BASIS International Ltd. All rights reserved.
+ACOMP=00000000;BASIS International
+SYS=EXTRAMENU;Extra Menus^Copyright BASIS International Ltd.^All rights reserved.^BASIS Extra Menus for Addon 6.0 and GUI functions.^
+DIR=/mnt/data/aon_prod/apps/extramenu/
+MENU=extramenu
+APROD=XTR;Extra Menus;;;extramenu;/mnt/data/aon_prod/apps/extramenu/prop/;ENU
+STBL=SET EXTRAMENU=/mnt/data/aon_prod/apps/extramenu/data/
+STBL=SET EXTRAMENU_LIB=/mnt/data/aon_prod/apps/extramenu/lib/
+STBL=SET EXTRAMENU_PROG=/mnt/data/aon_prod/apps/extramenu/prog/
+STBL=SET EXTRAMENU_PROP=/mnt/data/aon_prod/apps/extramenu/prop/
+STBL=SET EXT=/mnt/data/bbj/utils/ext/
+STBL=SET DATA_SERVER=
+STBL=SET TEMP=/mnt/data/basisaon/aon/tmp/
+STBL=SET FLEXHOME=/u/docfiles/flexlic/
+STBL=SET CUST_SERVICE=/mnt/data/docfiles/cs/
+STBL=SET AON=/mnt/data/basisaon/aon/
+STBL=SET KEYGEN=/mnt/data/basisaon/aon/bas/
+STBL=SET E_COMM=/mnt/data/ec/
+STBL=SET BBJHOME=/mnt/data/bbj/
+STBL=SET TPM=/mnt/data/basisaon/aon/taos/config.TPM
+PREFIX=/mnt/data/aon_prod/apps/extramenu/prog/
+PREFIX=/mnt/data/basisaon/aon/bas/
+PREFIX=/mnt/data/basisaon/aon/mods/
+PREFIX=/mnt/data/basisaon/aon/ADATA/
+PREFIX=/mnt/data/basisaon/aon/MAS/
+PREFIX=/mnt/data/basisaon/aon/DLR/
+PREFIX=/mnt/data/basisaon/aon/61DD/
+PREFIX=/mnt/data/basisaon/aon/SCN/
+PREFIX=/mnt/data/basisaon/aon/ADM/
+PREFIX=/mnt/data/basisaon/aon/ACT/
+PREFIX=/mnt/data/basisaon/aon/DIS/
+PREFIX=/mnt/data/basisaon/aon/MFG/
+PREFIX=/mnt/data/basisaon/aon/GRW/
+PREFIX=/mnt/data/basisaon/aon/sdsoffice/
+PREFIX=/mnt/data/ec/
+CFG=EXTRAMENU=/mnt/data/aon_prod/apps/extramenu/data/
+LANG=ENU
+DEVICE=alias P2 "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -Psaleslj -oraw' >/dev/null" "Sales Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143
+DEVICE=alias PA "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -P custlj -oraw' >/dev/null" "Customer Service Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+DEVICE=alias PE "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -P englj -oraw' >/dev/null" "Customer Service Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+DEVICE=alias PG "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -P coolj -oraw' >/dev/null" "Peggy's Laser Jet 4" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+DEVICE=alias PH "| ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -P hrlj -oraw' >/dev/null" "HR Laser Jet" cp=1B451B266C304F1B266C36441B266C32411B283130551B266B3253,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1B266C306F326136441B283130551B28737031306831327673623354,bs=1B26612D3143,SERVER
+DEVICE=alias PX $FILE "Output to File" O_CREATE,O_TRUNC,CR,LF=0A,SPCOLS=255,CPCOLS=255,FILE=/u/docfiles/pub/PX.txt,SERVER
+DEVICE=alias T3 syswindow "" invisible
+DEVICE=alias TQ0 syswindow "" invisible, USERID=ADMIN, LEGACYID=+ON
+DEVICE=alias TQ1 syswindow "" invisible, USERID=GPARRA, LEGACYID=GP
+DEVICE=alias TQ2 syswindow "" invisible, USERID=KPETERL, LEGACYID=KP
+DEVICE=alias TQ3 syswindow "" invisible, USERID=KWILLIAM, LEGACYID=+ON
+DEVICE=alias TQ4 syswindow "" invisible, USERID=NSPENCE, LEGACYID=+ON
+DEVICE=alias TQ5 syswindow "" invisible, USERID=PLEWIS, LEGACYID=PL1
+DEVICE=alias TQ6 syswindow "" invisible, USERID=SWAUFLE, LEGACYID=SW
+DEVICE=alias TQ7 syswindow "" invisible, USERID=KKING, LEGACYID=KK
+DEVICE=alias TQ8 syswindow "" invisible, USERID=LGUINEY LEGACYID=LG
+DEVICE=alias TQ9 syswindow "" invisible, USERID=GROBLED LEGACYID=GR
+

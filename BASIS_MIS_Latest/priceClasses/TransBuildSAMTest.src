@@ -1,0 +1,52 @@
+REM /**
+REM  * testSAMRenewPrice.src
+REM  * @author kurte
+REM  *
+REM  */
+
+begin
+
+call "ec_open::SMC01"
+call "ec_open::ARM02_CANADA"
+
+use ::BasisPricingEngine.src::PriceElement
+use ::SerialNumber.src::SerialNumber
+use ::TransactionBuilder.src::TransactionBuilder
+
+declare TransactionBuilder tb!
+declare SerialNumber sn!
+
+tb! = new TransactionBuilder(0)
+
+input "serial number: ",sn$
+if cvs(sn$,4) = "END" then end
+
+sn! = new SerialNumber(sn$)
+
+customer_nbr$ = sn!.getCustomerNbr()
+firm_id$ = sn!.getFirmId()
+canadianTable = 0
+read record(arm02_canada,key=firm_id$+customer_nbr$,dom=*next)arm02_canada$; canadian_table = 1
+tb!.setCanadian(canadian_table)
+
+if sn!.getSAMType() = "SM1" then
+   priceElements! = tb!.calcAnnualSam(sn!)
+else
+   if smc01.contr_type$ = "RN1" then
+      priceElements! = tb!.calcAnnualRental(sn!)
+   else
+      if sn!.getSAMType() = "DV1" then
+         priceElements! = tb!.calcAnnualKitRenew(sn!)
+      fi
+   fi
+fi
+listprice = tb!.sumListPrice(priceElements!)
+discprice = tb!.sumDiscountedPrice(priceElements!)
+
+print "List Price: ",listprice
+print "Discounted Price: ",discprice
+
+end
+
+
+

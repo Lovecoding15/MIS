@@ -1,0 +1,32 @@
+rem ' convert HeimBAS serial numbers to Rental contracts expiring 9/15/2011, 12/15/2011, 3/15/2012, 6/15/2012
+
+begin
+
+call "ec_open::snm01"
+call "ec_open::smc01"
+call "ec_open::snm04"
+
+DECLARE BBjRecordSet ourRecordSet!
+DECLARE BBJRecordData ourRecordData!
+
+database$ = "AddOnData"
+modes$ = "user=basisaon, password=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww"
+
+sql$ = "SELECT t1.serial_nbr, t1.active_flag, t2.contract, t2.contr_type FROM SNM01 t1 "
+sql$ = sql$ + "INNER JOIN SMC01 t2 on t1.contract = t2.contract "
+sql$ = sql$ + "where t1.customer_nbr = '020005' and t1.active_flag = 'Y' and t2.contr_type = 'SM1'"
+
+ourRecordSet! = BBjAPI().createSQLRecordSet(database$,modes$,sql$)
+
+print ourRecordSet!.getRecordCount()
+
+while 1
+	ourRecordData! = ourRecordSet!.getCurrentRecordData(err=*break)
+	
+	count = count + 1
+	
+	print count, " ", ourRecordData!.getFieldValue("serial_nbr")
+	
+wend
+
+end

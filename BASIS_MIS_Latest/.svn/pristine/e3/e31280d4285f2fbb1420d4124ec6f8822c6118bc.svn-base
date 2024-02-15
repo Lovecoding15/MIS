@@ -1,0 +1,30 @@
+0010 REM "ADC - Return Terminal Type (native)"
+0020 REM "Program: ADC.13"
+0030 REM "+----------------------------------------------------------+
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved                      |
+0034 REM "+----------------------------------------------------------+
+0090 SETERR 9900
+0095 ENTER TERM$
+0500 REM " --- Initializations"
+0510 LET TERM$="unknown"
+1000 REM " --- Tbred"
+1010 REM "TERM$=DSD(FID(0),ERR=02000)
+1020 REM "LET TERM$=TERM$(11,8)
+1090 REM "GOTO 9900
+2000 REM " --- BBx, what OS?"
+2010 REM OS$=INFO(0,0)
+2020 IF POS("DOS"=OS$)>0 THEN GOTO 2200
+2030 REM "Assume Unix"
+2100 REM " --- BBx on Unix"
+2110 LET I=0
+2120 LET TERM$=INFO(4,I,ERR=9900)
+2130 IF POS("TERM="=TERM$)<>1 THEN LET I=I+1; GOTO 2120
+2140 LET TERM$=TERM$(6)
+2150 GOTO 9900
+2200 REM " --- BBx on DOS"
+2210 REM "I have no idea"
+9900 REM " --- Exit"
+9990 EXIT 
+9999 END

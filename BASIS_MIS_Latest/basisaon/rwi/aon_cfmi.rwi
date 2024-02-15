@@ -1,0 +1,128 @@
+// <aon_cfmi> Invoice confirmation
+
+style=1;                      
+screen_desc$="INVOICE CONFIRMATION";
+
+enter firm$,device_name$;
+terminal_device$=term();
+if device_name$=terminal_device$ then 
+display/form="MAS_HEAD" screen_desc=screen_desc$ printer="VIDEO" firm_name="";
+else
+display/form="MAS_HEAD" screen_desc=screen_desc$ printer=device_name$ firm_name="";
+
+do_form:
+block
+{ 
+rdt$=date(0);
+fax_sw$="Y";
+prompt for /notitle/nobox/nodrop/len=8/row=5/col=20
+	/prompt="INVOICE DATE "
+	rdt$;
+call/nowindow "(BBX)aondate.bbx",rdt$,in_date$,"P";
+if in_date$="" then goto do_form;
+call/nowindow "(BBX)aondate.bbx",in_date$,rdt$,"U";
+
+prompt for /notitle/nobox/nodrop/len=1/row=7/col=22
+	/prompt="FAX/EMAIL? "
+	fax_sw$;
+fax_sw$=cvs(fax_sw$,7);
+
+#include (LIBRARY)syverinp.h
+}
+if ctl()=6 then exit;
+
+pause/message "PREPARING REPORT";
+
+if style=2 then set display/compress device_name$;
+else set display device_name$;
+
+
+found_order=0;
+first_cust=1;
+first_po=1;
+for each are03 where firm_id=firm$ and are03.invoice_date=in_date$ 
+	and are03.ord_inv_flag="I"
+group by customer_nbr
+group by ar_po_number
+{
+find arm02 using firm$+are03.customer_nbr+"  ";
+//if pos(arm02.cust_type="RSIDSI",3)=0 then continue;
+if arm02.invoice_copy<>"N" then continue;
+found_order=1;
+find arm01 using firm$+are03.customer_nbr;
+if first_of(are03.customer_nbr) then 
+	{
+	h1$=are03.customer_nbr+fill(13)+"I N V O I C E   C O N F I R M A T I O N";
+	h2$="  TO: "+arm01.cust_name+fill(16)+"INVOICE DATE: "+rdt$;
+	h3$="FROM: BASIS INTERNATIONAL";
+	h4$="INVOICE  ORDER   ITEM"+fill(32)+"QTY    PRICE      TOTAL";
+	if first_cust then first_cust=0;
+	else {gosub po_total;gosub cust_total;display/newpage; first_po=1;}
+	fax$=h1$+$0a$+$0a$+h2$+$0a$+$0a$+h3$+$0a$+fill(78,"_")+$0a$+$0a$+h4$+$0a$;
+	}
+if first_of(are03.ar_po_number) then
+	{
+	if first_po=0 then gosub po_total;
+		else first_po=0;
+	po$="YOUR PURCHASE ORDER: "+are03.ar_po_number+"  SHIP METHOD: "+are03.ar_ship_via;
+	fax$=fax$+$0a$+po$+$0a$+$0a$;
+	}
+for each are13 of are03 where line_code="S" or ext_price<>0
+	{
+	d$=are13.item_number+fill(20);
+	d1$="";
+	find/noerror csm03 using firm$+d$(7,3);
+	if available(csm03) then d1$=csm03.port_id(1,4);
+	find/noerror csm04 using firm$+d$(10,3);
+	if available(csm04) then 
+		{d1$=d1$+"/"+csm04.description;
+		p=pos(" "=d1$);if p then d1$=d1$(1,p);}
+	if d1$="" then {find/noerror ivm01 using firm$+d$(1,20);
+		if available(ivm01) then d1$=ivm01.item_desc;}
+	if d1$="" then d1$=cvs(are13.order_memo,3);
+	if cvs(d$,3)="" then d$=cvs(d1$,3)+fill(35);
+		else d$=cvs(d$,3)+" "+cvs(d1$,3)+fill(35);
+	ptot=ptot+are13.ext_price;
+	line$=are03.ar_inv_nbr+" "+order_number+"  "+d$(1,35)+
+	str(are13.qty_ordered:"-###")+str(unit_price:"######.00-")+ 
+	str(ext_price:"######0.00-");
+	if are03.reserved_str_1<>"M " then fax$=fax$+line$+$0a$;
+	}
+
+if are03.reserved_str_1="M " then
+	{ for each are13 of are03 where line_code="M" 
+	  {fax$=fax$+are13.order_memo+$0a$;}
+	}
+}
+
+if found_order then 
+{
+gosub po_total;
+gosub cust_total;
+}
+else pause/message="No Orders to Print";
+
+#include (LIBRARY)syseldev.h
+
+subroutine po_total
+{ 
+u1$=fill(66)+"-----------"; 
+ptot$=fill(57)+"PO TOTAL: "+str(ptot:"#####0.00-");
+fax$=fax$+u1$+$0a$+ptot$+$0a$;
+ctot=ctot+ptot;
+ptot=0;
+}
+subroutine cust_total
+{ 
+ctot$=fill(54)+"DAILY TOTAL: "+str(ctot:"#####0.00-");
+u2$=fill(66)+"===========";
+fax$=fax$+ctot$+$0a$+u2$+$0a$;
+f$=fax$;
+pos0a:p=pos($0a$=f$);if p then
+	{ display/notitle f$(1,p-1); f$=f$(p+1); goto pos0a; }
+if fax_sw$="Y" then call/nowindow "(PROJECT)bas/confirm_fax.bbx",fax$;
+ctot=0;
+}
+
+//
+

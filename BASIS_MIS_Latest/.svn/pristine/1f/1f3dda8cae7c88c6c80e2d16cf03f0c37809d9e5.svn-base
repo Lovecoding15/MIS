@@ -1,0 +1,2293 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2022-06-21
+Last Build Time=18:2:34
+Precision=99
+Program Name=emergencyLicSearch
+Remarks=Yes
+Resource File=emergencyLicSearch.arc
+Show Forms=All
+
+[EOJ]
+close(log, err=*next)
+
+[Init]
+rem ' get object reference
+gosub getObjects
+gosub buildDBUrl
+gosub getBusyIndicatorHTML
+
+pageLoadedActive = 1
+jsEventActive = 0
+
+rem ' set debug true to debug reCaptResults
+debug = 0
+
+rem ' initialize the log
+gosub initTheLog
+gosub openFiles
+
+rem ' set the active window
+cntx = fngb__context("101"); rem ' first panel
+sysgui!.setContext(cntx)
+
+moveForwardBtn!.focus()
+
+rem ' set timer interval and max
+timerInterval = 5
+timerMax = 180
+rem ' (debug) timerMax = 60
+verificationTimer = 1
+verificationTimerSet = 0
+overallTimer = 2
+
+rem ' start the session timer
+overallTimeInSeconds = 3600
+rem ' (debug) overallTimeInSeconds = 300
+bbjapi!.createTimer(overallTimer,overallTimeInSeconds, "timeExpired")
+
+rem ' set the search limit
+searchLimit = 10
+
+rem ' search stack
+searchStack = 1; rem ' bcomm account link
+rem ' search stack 2 = end user search
+rem ' search stack 3 = sam contract search
+rem ' search stack 4 = registration db search (logextract)
+rem ' search stack 5 = host name search
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()))
+
+[Event Win=101 ID=105 Code=B <PUSH_BUTTON> (W101_C105_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+bbjapi!.getThinClient().browse("http://www.basis.cloud/bbj-download")
+
+[Event Win=101 ID=110 Code=B <PUSH_BUTTON> (W101_C110_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+bbjapi!.getThinClient().browse("http://www.basis.cloud/pro5-download")
+
+[Event Win=101 ID=111 Code=B <PUSH_BUTTON> (W101_C111_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+bbjapi!.getThinClient().browse("http://www.basis.cloud/basis-license-manager-download")
+
+[Event Win=101 ID=112 Code=B <PUSH_BUTTON> (W101_C112_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+emergencyLicenseSearchPanel1!.setVisible(0)
+
+rem ' set the active window
+cntx = fngb__context("102"); rem ' second panel
+sysgui!.setContext(cntx)
+
+gosub getInitialReCaptChaHTML
+reCaptcha!.setText(htmlRec$)
+emergencyLicenseSearchPanel2!.setVisible(1)
+
+nextBtn2!.focus()
+
+[Event Win=101 ID=113 Code=B <PUSH_BUTTON> (W101_C113_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+goto exitProgram
+
+[Event Win=102 ID=0 Code=X <WIN_CLOSE> (W102_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+[Event Win=102 ID=107 Code=B <PUSH_BUTTON> (W102_C107_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+emergencyLicenseSearchPanel2!.setVisible(0)
+emergencyLicenseSearchPanel1!.setVisible(1)
+
+rem ' set the active window
+cntx = fngb__context("101"); rem ' frist panel
+sysgui!.setContext(cntx)
+
+moveForwardBtn!.focus()
+
+[Event Win=102 ID=108 Code=B <PUSH_BUTTON> (W102_C108_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+emergencyLicenseSearchPanel2!.setVisible(0)
+emergencyLicenseSearchPanel3!.setVisible(1)
+
+rem ' set the active window
+cntx = fngb__context("103"); rem ' thrid panel
+sysgui!.setContext(cntx)
+
+emailAddress!.focus()
+
+[Event Win=102 ID=109 Code=x118:27 <PAGE_LOADED> (W102_C109_PAGE_LOADED)]
+rem ' Page Loaded
+rem ' gb__event! = cast(BBjPageLoadedEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = cast(BBjHtmlView,gb__event!.getControl())
+rem ' gb__url$ = gb__event!.getUrl()
+
+rem ' page loaded goes once
+if !pageLoadedActive then return
+
+rem ' Clear the initial load callback, then register for native JavaScript events
+rem ' htmlview!.clearCallback(sysgui!.ON_PAGE_LOADED)
+pageLoadedActive = 0
+rem ' htmlview!.setCallback(sysgui!.ON_NATIVE_JAVASCRIPT, "JAVASCRIPT_EVENT")
+jsEventActive = 1
+
+rem ' Inject our custom JavaScript to the top level window so that it's available to all scripts (including the captcha)
+gosub getReCaptChaJS
+reCaptcha!.injectScript(reCaptChaJS$,1)
+
+rem ' Inject the Google JavaScript for the captcha after everything else is in place (this should be done last or it will result in errors)
+js$ = "var s = $doc.createElement('script'); " + $0d0a$
+js$ = js$ + "s.type = 'text/javascript'" + $0d0a$ 
+js$ = js$ + "s.async = true;" + $0d0a$ 
+js$ = js$ + "s.defer = true;"
+js$ = js$ + "s.src = 'https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit'" + $0d0a$
+js$ = js$ + "$doc.body.appendChild(s);"
+reCaptcha!.executeScript(js$)
+
+[Event Win=102 ID=109 Code=x119:27 <EXTENDED> (W102_C109_NATIVE_JAVASCRIPT)]
+rem ' page loaded must go first
+if !jsEventActive then return
+
+    rem ' Get the values from the NativeJavaScriptEvent map
+    map! = cast(BBjNativeJavaScriptEvent, sysgui!.getLastEvent()).getEventMap()
+    if (map!.containsKey("payload")) then
+        payload! = map!.get("payload")
+
+        if (payload!.startsWith("captchaSuccess")) then
+            userValidatedViaCaptcha = 1
+            nextBtn2!.setEnabled(1)
+            RecaptchaResult$ = "reCaptCha Success"
+            gosub writeRecaptchaLog
+            nextBtn2!.focus()
+
+            if (debug) then a=msgbox("Captcha Success", 64, "Debug")
+            return
+        endif
+        
+        if (payload!.startsWith("captchaExpired")) then
+            rem ' log that the captcha has expired and exit
+            RecaptchaResult$ = "reCaptCha Expired "
+            gosub writeRecaptchaLog
+
+            if (debug) then a=msgbox(str(payload!), 64, "Full Debug Information")
+            goto gb__eoj
+            return
+        endif
+
+        if (payload!.startsWith("captchaError")) then
+            rem ' Log the error and exit - the captcha has experienced an error
+            RecaptchaResult$ = "reCaptCha Error " + str(payload!)
+            if len (RecaptchaResult$) > 64 then RecaptchaResult$ = RecaptchaResult$(1,64)
+            gosub writeRecaptchaLog
+            
+            if (debug) then a=msgbox(str(payload!), 64, "Full Debug Information")
+            goto gb__eoj
+            return
+        endif
+           
+        rem ' For debugging purposes
+        if (debug) then a=msgbox("Got Event Map: '" + map!.toString() + "'", 64, "info")
+    endif
+
+return
+
+writeRecaptchaLog:
+
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = RecaptchaResult$
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+    ms$ = RecaptchaResult$ + $0A$ + $0A$
+    ms$ = ms$ + log$ + $0A$
+
+    to$ =  "kw5121151@gmail.com"
+    from$ = "customer-service@basis.cloud"
+    cc$ = ""
+    bcc$ = ""
+    subject$ = "Emergency License Search reCaptCha Result"
+
+    call "sendEmail.src", from$, to$, cc$, bcc$,subject$, ms$, ""
+
+return
+
+[Event Win=102 ID=110 Code=B <PUSH_BUTTON> (W102_C110_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+goto exitProgram
+
+[Event Win=103 ID=0 Code=X <WIN_CLOSE> (W103_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+[Event Win=103 ID=102 Code=f1 <GOT_FOCUS> (W103_C102_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' check the counts for reaching the limit
+if num(log.emailverifiedcnt$) + num(log.hostnamesrchcnt$) >= searchLimit then gosub limitExceeded
+
+[Event Win=103 ID=104 Code=B <PUSH_BUTTON> (W103_C104_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub validateEmailAddress
+
+if !valid then 
+    emailAddress!.focus()
+    return
+fi
+
+emailAddress!.setEnabled(0)
+sendBtn!.setEnabled(0)
+
+rem ' to simplify debugging
+rem ' if emailAddress$ = "williams.kurt@comcast.net" then
+rem '     gosub removeVerificationTimer
+rem '     code$ = "AAAAAA"
+rem '     gosub startTheTimer
+rem '     verificationCode!.setText(code$)
+rem ' else
+
+    gosub sendEmail
+
+rem ' fi
+
+rem ' log it
+seq_num = seq_num + 1
+log.seq_num$ = str(seq_num:"00000")
+log.event$ = "Verification Email Sent"
+log.email$ = emailAddress$
+log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+verificationCodeGroup!.setVisible(1)
+verificationCodelbl!.setVisible(1)
+verificationCode!.setVisible(1)
+timeoutwarninglbl!.setVisible(1)
+confirmBtn!.setEnabled(1)
+confirmBtn!.setVisible(1)
+resendBtn!.setVisible(1)
+
+verificationCode!.focus()
+
+[Event Win=103 ID=109 Code=B <PUSH_BUTTON> (W103_C109_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl(
+
+enteredcode$ = verificationCode!.getText()
+
+if code$ = enteredcode$ then
+    gosub removeVerificationTimer
+    confirmBtn!.setEnabled(0)
+
+    rem ' log it
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = "Email Verified"
+    emailverifiedcnt = emailverifiedcnt + 1
+    log.emailverifiedcnt$ = str(emailverifiedcnt)
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+    rem ' change the visible panel
+    emergencyLicenseSearchPanel3!.setVisible(0)
+    emergencyLicenseSearchPanel4!.setVisible(1)
+
+    rem ' set the active window
+    cntx = fngb__context("104"); rem ' fourth panel
+    sysgui!.setContext(cntx)
+
+    gosub searchTheDB
+
+else
+    emergencyLicenseSearchPanel3!.setVisible(0)
+    msgText$ = "The code you entered does not match the code that was sent in the email."
+    msgExit = 0
+    msgOK = 1
+    msgAction$ = "return"
+    msgSource$ = "emergencyLicenseSearchPanel3-confirm"
+    gosub showMessage
+    
+    rem ' log it
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = "Wrong verification code entered"
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+fi
+
+[Event Win=103 ID=110 Code=B <PUSH_BUTTON> (W103_C110_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub sendEmail
+
+confirmBtn!.setEnabled(1)
+verificationCode!.setText("")
+verificationCode!.focus()
+
+[Event Win=103 ID=111 Code=B <PUSH_BUTTON> (W103_C111_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+goto exitProgram
+
+[Event Win=103 ID=112 Code=B <PUSH_BUTTON> (W103_C112_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub resetEmailVerificationForm
+
+emergencyLicenseSearchPanel3!.setVisible(0)
+emergencyLicenseSearchPanel2!.setVisible(1)
+
+rem ' set the active window
+cntx = fngb__context("102"); rem ' second panel
+sysgui!.setContext(cntx)
+
+nextBtn2!.focus()
+
+[Event Win=103 ID=113 Code=B <PUSH_BUTTON> (W103_C113_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub resetEmailVerificationForm
+
+[Event Win=104 ID=0 Code=X <WIN_CLOSE> (W104_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+[Event Win=104 ID=104 Code=B <PUSH_BUTTON> (W104_C104_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+bbjapi!.getThinClient().browse("https://bbjserver.basis.cloud:8443/apps/b-commerce")
+
+[Event Win=104 ID=105 Code=B <PUSH_BUTTON> (W104_C105_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub resetPanel4ReturnToPanel3
+
+[Event Win=104 ID=106 Code=N3:107 <GRID_DCLICK> (W104_C106_GRID_MOUSE_DOUBLE_CLICK)]
+rem ' Notify Event - Grid - Grid Double Clicked (3)
+
+gb__event! = cast(BBjGridDoubleClickEvent,bbjapi().getSysGui().getLastEvent())
+gb__control! = gb__event!.getControl()
+row = gb__event!.getRow()
+col = gb__event!.getColumn()
+
+rem ' Point clicked: gb__event!.getXLocationInCell(), 
+rem '     gb__event!.getYLocationInCell()
+rem ' Cell boundaries: gb__event!.getCellBounds()
+rem ' Meta keys: gb__event!.isShiftDown(), gb__event!.isControlDown()
+
+gosub sendEmailWithAuthCode
+
+[Event Win=104 ID=109 Code=f1 <GOT_FOCUS> (W104_C109_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' check the counts for reaching the limit
+if num(log.emailverifiedcnt$) + num(log.hostnamesrchcnt$) >= searchLimit then gosub limitExceeded
+
+[Event Win=104 ID=110 Code=B <PUSH_BUTTON> (W104_C110_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+hostnameSearchButtonPush:
+
+altserialNumberGrid!.clearMainGrid()
+altserialNumberGrid!.setSelectedCell(0,0)
+
+rem ' results when searching in the user count range
+if serialCountLimit = 0 then
+    serialCountLimit = 10
+fi
+
+rem ' log it
+seq_num = seq_num + 1
+log.seq_num$ = str(seq_num:"00000")
+log.hostnamesrched$ = cvs(hostname!.getText(), 3)
+if serialCountLimit = 10 then
+    log.event$ = "Hostname Searched with user range with limit of " + str(serialCountLimit)
+    hostnamesrchcnt = hostnamesrchcnt + 1
+    log.hostnamesrchcnt$ = str(hostnamesrchcnt)
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+else
+    log.event$ = "Hostname Searched with exact user match with limit of " + str(serialCountLimit)
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+fi
+log.hostnamesrched$ = ""
+
+gosub searchForHostnameinLogExtract
+
+if recordCount = 0 then
+       
+    emergencyLicenseSearchPanel4!.setVisible(0)
+    
+    msgText$ = "There were no serial numbers linked to the hostname " + hostname$ + "."
+    msgExit = 0
+    msgOK = 1
+    msgAction$ = "return"
+    msgSource$ = "emergencyLicenseSearchPanel4-noRecFound"
+    gosub showMessage
+
+    rem ' log it
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = "No hostname links found"
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+else
+    altserialNumberGrid!.clearMainGrid()
+    altserialNumberGrid!.setNumRows(recordCount)
+    altserialNumberGrid!.setSelectedCell(0,0)
+
+    if snList!.size() > serialCountLimit then
+        emergencyLicenseSearchPanel4!.setVisible(0)
+
+        if serialCountLimit = 10
+            msgText$ = "The hostname search for hostname (" + hostname$ + ") returned more than " + str(serialCountLimit) + " results with a user count within + or - 25% of the user count you entered. " 
+            msgText$ = msgText$ + "We will attempt to narrow the search by searching for the hostname with an exact user count match." 
+            msgExit = 0
+            msgOK = 1
+            msgAction$ = "return"
+            msgSource$ = "emergencyLicenseSearchPanel4-userRangeSearchOverLimit"
+            gosub showMessage
+        
+            rem ' log it
+            seq_num = seq_num + 1
+            log.seq_num$ = str(seq_num:"00000")
+            log.event$ = "Hostname search with user range exceeded limit of " + str(serialCountLimit)
+            log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+            write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+        else
+            msgText$ = "The hostname search for hostname (" + hostname$ + ") returned more than " + str(serialCountLimit) + " results with an exact user count match. " 
+            msgText$ = msgText$ + "We can not return these results. Please attempt a search using a different hostname."
+            msgExit = 0
+            msgOK = 1
+            msgAction$ = "return"
+            msgSource$ = "emergencyLicenseSearchPanel4-userExactSearchOverLimit"
+            gosub showMessage
+        
+            rem ' log it
+            seq_num = seq_num + 1
+            log.seq_num$ = str(seq_num:"00000")
+            log.event$ = "Hostname search with exact user exceeded limit of " + str(serialCountLimit)
+            log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+            write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+        fi
+    else
+
+        altserialNumberGrid!.setCellText(0, 0, snList!)
+        altserialNumberGrid!.setEditable(0)
+        altserialNumberGrid!.setVisible(1)
+
+        statusTxt$ = "Please identify the serial number you are looking for, and then double click on it. "
+        statusTxt$ = statusTxt$ + "You will be given the authorization code. "
+        searchstatus!.setText(statusTxt$)
+        searchStatus!.setVisible(1) 
+
+        rem ' log it
+        seq_num = seq_num + 1
+        log.seq_num$ = str(seq_num:"00000")
+        log.event$ = str(recordCount) + " Hostname links found"
+        log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+        write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+        searchBtn!.setEnabled(0)
+    fi
+fi
+
+[Event Win=104 ID=111 Code=N3:107 <GRID_DCLICK> (W104_C111_GRID_MOUSE_DOUBLE_CLICK)]
+rem ' Notify Event - Grid - Grid Double Clicked (3)
+
+gb__event! = cast(BBjGridDoubleClickEvent,bbjapi().getSysGui().getLastEvent())
+gb__control! = gb__event!.getControl()
+row = gb__event!.getRow()
+col = gb__event!.getColumn()
+
+rem ' Point clicked: gb__event!.getXLocationInCell(), 
+rem '     gb__event!.getYLocationInCell()
+rem ' Cell boundaries: gb__event!.getCellBounds()
+rem ' Meta keys: gb__event!.isShiftDown(), gb__event!.isControlDown()
+
+gosub sendEmailWithAuthCode
+
+[Event Win=104 ID=115 Code=B <PUSH_BUTTON> (W104_C115_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+usersInput$ = numberofusers!.getText()
+
+itsnumeric = 0
+licenseUsers = num(usersInput$,err=*next); itsnumeric = 1
+messageStatic!.setText("")
+messageStatic!.setVisible(0)
+
+if !itsnumeric then
+    messageStatic!.setText("A integer greater than zero must be entered.")
+    messageStatic!.setVisible(1)
+
+    numberofusers!.focus()
+else
+    licenseUsers = int(licenseUsers)
+    if licenseUsers < 0 then
+        messageStatic!.setText("An integer greater zero must be entered.")
+        messageStatic!.setVisible(1)
+
+        numberofusers!.focus()
+    else
+        numberofusers!.setVisible(0)
+        numberofuserslbl!.setVisible(0)
+        continueBtn!.setVisible(0)
+        
+        lowRange = round(licenseUsers * .75, 0)
+        highRange = round(licenseUsers *1.25, 0)
+
+        rem ' log it
+        seq_num = seq_num + 1
+        log.seq_num$ = str(seq_num:"00000")
+        log.event$ = "User Count Entered"
+        log.users$ = str(licenseUsers)
+        log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+        write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+        gosub searchTheDB
+    fi
+fi
+
+[Event Win=104 ID=116 Code=B <PUSH_BUTTON> (W104_C116_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' log it
+seq_num = seq_num + 1
+log.seq_num$ = str(seq_num:"00000")
+log.event$ = "Search continued"
+log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+rem ' increment the search stack
+searchStack = searchStack + 1
+
+searchstatus!.setText("")
+searchStatus!.setVisible(0)
+bcommlbl!.setVisible(0)
+launchBcomm!.setVisible(0)
+bcommAccounts!.removeAllItems()
+bcommAccounts!.setVisible(0)
+
+serialNumberGrid!.clearMainGrid()
+serialNumberGrid!.setSelectedCell(0,0)
+serialNumberGrid!.setVisible(0)
+
+hostnamelbl!.setVisible(0)
+hostname!.setText("")
+hostname!.setVisible(0)
+searchBtn!.setVisible(0)
+
+altserialNumberGrid!.clearMainGrid()
+altserialNumberGrid!.setSelectedCell(0,0)
+altserialNumberGrid!.setVisible(0)
+
+searchContinueBtn!.setVisible(0)
+
+gosub searchTheDB
+
+[Event Win=104 ID=117 Code=B <PUSH_BUTTON> (W104_C117_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+goto exitProgram
+
+[Event Win=105 ID=102 Code=B <PUSH_BUTTON> (W105_C102_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' exit program, cause already logged
+goto gb__eoj
+
+[Event Win=105 ID=103 Code=B <PUSH_BUTTON> (W105_C103_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+if msgAction$ = "return" then
+    messageForm!.setVisible(0)
+
+    if msgSource$ = "emergencyLicenseSearchPanel3" then
+        emergencyLicenseSearchPanel3!.setVisible(1)
+        gosub resetEmailVerificationForm
+        emailAddress!.focus()
+    else 
+        if msgSource$ = "emergencyLicenseSearchPanel3-confirm" then
+            emergencyLicenseSearchPanel3!.setVisible(1)
+            verificationCode!.focus()
+        else
+            if msgSource$ = "emergencyLicenseSearchPanel4-noRecFound" then
+                emergencyLicenseSearchPanel4!.setVisible(1)
+                hostname!.focus()
+            else
+                if msgSource$ = "emergencyLicenseSearchPanel4-userRangeSearchOverLimit" then
+                    emergencyLicenseSearchPanel4!.setVisible(1)                    
+                    serialCountLimit = 15
+                    gosub hostnameSearchButtonPush
+                 else
+                    if msgSource$ = "emergencyLicenseSearchPanel4-userExactSearchOverLimit" then
+                        emergencyLicenseSearchPanel4!.setVisible(1)
+                        serialCountLimit=10
+                        hostname!.focus()
+                    fi
+                fi
+            fi
+        fi
+    fi
+fi
+
+return
+
+
+[Function (buildDBUrl)]
+rem ' -----------------------------------------------------------------
+rem ' buildDBUrl
+rem ' -----------------------------------------------------------------
+
+buildDBUrl:
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+
+DECLARE File file!
+DECLARE FileInputStream fis!
+DECLARE BufferedInputStream bis!
+DECLARE Properties props!
+DECLARE StringBuffer sqlBuilder!
+
+rem ' locate the properties file
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+
+sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+ourDbUrl$ = sqlBuilder!.toString()
+
+return
+
+[Function (checkForPreviousSessions)]
+rem ' -----------------------------------------------------------------
+rem ' checkForPreviousSessions
+rem ' -----------------------------------------------------------------
+
+checkForPreviousSessions:
+
+emailverifiedcnt = 0
+hostnamesrchcnt = 0
+
+rem ' get 24 hour ago sessionChron
+firstSessionChron$ = log.sessionChron$
+theyear = num(firstSessionChron$(1,4))
+themonth = num(firstSessionChron$(5,2))
+theday = num(firstSessionChron$(7,2))
+thejul = jul(theyear, themonth, theday)
+thejul = thejul - 1
+firstSessionChron$(1,8) = date(thejul:"%Y%Mz%Dz")
+
+sql$ = "SELECT * FROM SN_EMER_SRCH_LOG WHERE SESSIONCHRON >= '" + firstSessionChron$ + "' AND IPADDRESS = '" + ipaddress$ + "' "
+sql$ = sql$ + "ORDER BY SESSIONCHRON, TASKID, SEQ_NUM"
+logRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+taskid$ = ""
+
+if logRecordSet!.isEmpty() then
+
+    logRecordSet!.close()
+       
+else
+    logRecordSet!.first()
+
+    while 1
+        logRecordData! = logRecordSet!.getCurrentRecordData()
+        
+        thisTask$ = logRecordData!.getFieldValue("TASKID")
+ 
+        emailverifiedcnt = num(logRecordData!.getFieldValue("EMAILVERIFIEDCNT"))
+        hostnamesrchcnt = num(logRecordData!.getFieldValue("HOSTNAMESRCHCNT"))
+        
+        logRecordSet!.next(err=*break)
+    wend
+    logRecordSet!.close()
+       
+    if emailverifiedcnt + hostnamesrchcnt >= 10 then
+        gosub limitExceeded
+    fi
+
+    log.emailverifiedcnt$ = str(emailverifiedcnt)
+    log.hostnamesrchcnt$ = str(hostnamesrchcnt)
+fi
+
+return
+
+[Function (exitProgram)]
+rem ' -----------------------------------------------------------------
+rem ' exitProgram
+rem ' -----------------------------------------------------------------
+
+exitProgram:
+
+rem ' log it
+seq_num = seq_num + 1
+log.seq_num$ = str(seq_num:"00000")
+log.event$ = "Session terminated."
+log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+goto gb__eoj
+
+return
+
+[Function (fnAddImageControl)]
+rem ' -----------------------------------------------------------------
+rem ' User Defined Function: fnAddImageControl
+rem ' -----------------------------------------------------------------
+
+rem Function called to add an image control to the window
+
+def fnAddImageControl!(x,y,width,height,cntx,image$)
+
+imageManager! = sysgui!.getImageManager()
+image! = imageManager!.loadImageFromFile(image$)
+
+rem ' REM Determine if running in an Applet or Web Start
+rem ' if info(3,6) = "2" or info(3,6) = "3" then
+rem '     REM Running in an Applet or Web Start, load image from client jar
+rem '     image! = imageManager!.loadImageFromClientJar(image$)
+rem ' else
+rem '     REM Running in an Applet or Web Start, load image server
+rem '     image! = imageManager!.loadImageFromFile(image$)
+rem ' endif
+
+window! = sysgui!.getWindow(cntx)
+imageCtrl! = window!.addImageCtrl(window!.getAvailableControlID(),x,y,width,height,image!)
+
+return imageCtrl!
+
+fnend
+
+[Function (generateVerificationCode)]
+rem ' -----------------------------------------------------------------
+rem ' generateVerificationCode
+rem ' -----------------------------------------------------------------
+
+generateVerificationCode:
+
+characters$ = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789"
+start = num(date(0,"%D")) * num(date(0,"%M"))
+interval = round(rnd(0) * len(characters$),0)
+
+code$ = ""
+nextpos = start
+for x = 1 to 6
+    nextpos = nextpos + interval
+    while nextpos > len(characters$)
+        nextpos = nextpos - len(characters$)
+    wend
+    code$ = code$ + characters$(nextpos, 1)
+next x
+
+return
+
+[Function (getBusyIndicatorHTML)]
+rem ' -----------------------------------------------------------------
+rem ' getBusyIndicatorHTML
+rem ' -----------------------------------------------------------------
+
+getBusyIndicatorHTML:
+
+tmpchan = unt
+open(tmpchan)"emergencyLicSearchBusy.txt"
+filelen$ = fin(tmpchan), filelen = dec(filelen$(1,4))
+read record(tmpchan, siz=filelen)busyHtml$
+close(tmpchan)
+
+return
+
+[Function (getInitialReCaptChaHTML)]
+rem ' -----------------------------------------------------------------
+rem ' getInitialReCaptChaHTML
+rem ' -----------------------------------------------------------------
+
+getInitialReCaptChaHTML:
+
+rem ' initial html to render the reCaptCah
+htmlRec$ = "<html>"
+htmlRec$ = htmlRec$ + " <body>"
+htmlRec$ = htmlRec$ + " <center><form id='captchaForm' action='?'>"
+htmlRec$ = htmlRec$ + " <div id='captchaDiv' class='g-recaptcha'></div>"
+htmlRec$ = htmlRec$ + " <div id='myDiv' style='opacity: 0;'>Hidden Div For Sending Info To BBj</div>"
+htmlRec$ = htmlRec$ + " </form></center>"
+htmlRec$ = htmlRec$ + " </body>"
+htmlRec$ = htmlRec$ + "</html>"
+
+return
+
+[Function (getObjects)]
+rem ' -----------------------------------------------------------------
+rem ' getObjects
+rem ' -----------------------------------------------------------------
+
+getObjects:
+
+use java.util.TimeZone
+use java.util.Date
+declare java.util.TimeZone timeZone!
+declare java.util.Date currentDate!
+
+timeZone! = TimeZone.getTimeZone("America/Denver")
+currentDate! = new java.util.Date()
+onDaylight = timeZone!.inDaylightTime(currentDate!)
+if onDaylight then
+    tz$ = "MDT"
+else
+    tz$ = "MST"
+fi
+
+declare BBjAPI bbjapi!
+declare BBjSysGui sysgui!
+declare BBjBuiManager bui!
+
+declare BBjTopLevelWindow emergencyLicenseSearchPanel1!
+declare BBjTopLevelWindow emergencyLicenseSearchPanel2!
+declare BBjTopLevelWindow emergencyLicenseSearchPanel3!
+declare BBjTopLevelWindow emergencyLicenseSearchPanel4!
+declare BBjTopLevelWindow messageForm!
+
+declare BBjBusyIndicator busy!
+
+declare BBjHtmlView reCaptcha!
+
+declare BBjButton moveForwardBtn!
+declare BBjButton nextBtn2!
+
+declare BBjStaticText BASISHoursInstr2!
+declare BBjStaticText BASISHoursInstr3!
+
+declare BBjButton exitBtn1!
+declare BBjButton exitBtn2!
+declare BBjButton exitBtn3!
+declare BBjButton exitBtn4!
+
+declare BBjEditBox emailAddress!
+declare BBjButton sendBtn!
+
+declare BBjGroupBox verificationCodeGroup!
+declare BBjStaticText verificationCodelbl!
+declare BBjStaticText timeoutwarninglbl!
+declare BBjEditBox verificationCode!
+declare BBjButton confirmBtn!
+declare BBjButton resendBtn!
+declare BBjProgressBar timeClock!
+
+declare BBjStaticText searchstatus!
+declare BBjListBox bcommAccounts!
+declare BBjStaticText bcommlbl!
+declare BBjButton launchBcomm!
+declare BBjStandardGrid serialNumberGrid!
+declare BBjStaticText hostnamelbl!
+declare BBjEditBox hostname!
+declare BBjButton searchBtn!
+declare BBjStandardGrid altserialNumberGrid!
+declare BBjEditBox numberofusers!
+declare BBjStaticText numberofuserslbl!
+declare BBjButton continueBtn!
+declare BBjButton searchContinueBtn!
+declare BBjStaticText messageStatic!
+
+declare BBjStaticText messageText!
+declare BBjButton messageExitBtn!
+declare BBjButton messageOKBtn!
+
+bbjapi! = BBjAPI()
+sysgui! = bbjapi!.getSysGui()
+bui! = bbjapi!.getBuiManager()
+
+busy! = bui!.getBusyIndicator()
+
+emergencyLicenseSearchPanel1! = cast(BBjTopLevelWindow, sysgui!.getWindow("emergencyLicenseSearchPanel1"))
+moveForwardBtn! = cast(BBjButton, emergencyLicenseSearchPanel1!.getControl("moveForwardBtn"))
+
+emergencyLicenseSearchPanel2! = cast(BBjTopLevelWindow, sysgui!.getWindow("emergencyLicenseSearchPanel2"))
+nextBtn2! = cast(BBjButton, emergencyLicenseSearchPanel2!.getControl("nextbtn"))
+
+BASISHoursInstr2! = cast(BBjStaticText, emergencyLicenseSearchPanel2!.getControl("BASISHoursInstr2"))
+curText$ = BASISHoursInstr2!.getText()
+curText$ = curText$ + " " + tz$ + "."
+BASISHoursInstr2!.setText(curText$)
+
+BASISHoursInstr3! = cast(BBjStaticText, emergencyLicenseSearchPanel2!.getControl("BASISHoursInstr3"))
+BASISHoursInstr3!.setText("<html>Email: <a href='mailto:support@basis.cloud?subject=Help Finding Serial Number' target='_blank'>support@basis.cloud</a> or <a href='mailto:sales@basis.cloud?subject=Help Finding Serial Number' target='_blank'>sales@basis.cloud</a></html>")
+
+reCaptcha! = cast(BBjHtmlView, emergencyLicenseSearchPanel2!.getControl("reCaptcha"))
+
+emergencyLicenseSearchPanel3! = cast(BBjTopLevelWindow, sysgui!.getWindow("emergencyLicenseSearchPanel3"))
+emailAddress! = cast(BBjEditBox, emergencyLicenseSearchPanel3!.getControl("emailaddress"))
+emailAddress!.setPlaceholder("email@domain.com")
+sendBtn! = cast(BBjButton, emergencyLicenseSearchPanel3!.getControl("sendBtn"))
+verificationCodeGroup! = cast(BBjGroupBox, emergencyLicenseSearchPanel3!.getControl("verificationCodeGroup"))
+verificationCodelbl! = cast(BBjStaticText, emergencyLicenseSearchPanel3!.getControl("verificationCodelbl"))
+timeoutwarninglbl! = cast(BBjStaticText, emergencyLicenseSearchPanel3!.getControl("timeoutwarninglbl"))
+verificationCode! = cast(BBjEditBox, emergencyLicenseSearchPanel3!.getControl("verificationCode"))
+verificationCode!.setPlaceholder("Code")
+confirmBtn! = cast(BBjButton, emergencyLicenseSearchPanel3!.getControl("confirmBtn"))
+resendBtn! = cast(BBjButton, emergencyLicenseSearchPanel3!.getControl("resendbtn"))
+timeClock! = cast(BBjProgressBar, emergencyLicenseSearchPanel3!.getControl("timeClock"))
+
+emergencyLicenseSearchPanel4! = cast(BBjTopLevelWindow, sysgui!.getWindow("emergencyLicenseSearchPanel4"))
+searchstatus! = cast(BBjStaticText, emergencyLicenseSearchPanel4!.getControl("searchStatus"))
+bcommAccounts! = cast(BBjListBox, emergencyLicenseSearchPanel4!.getControl("bcommAccounts"))
+bcommlbl! = cast(BBjStaticText, emergencyLicenseSearchPanel4!.getControl("bcommlbl"))
+launchBcomm! = cast(BBjButton, emergencyLicenseSearchPanel4!.getControl("launchBcomm"))
+serialNumberGrid! = cast(BBjStandardGrid, emergencyLicenseSearchPanel4!.getControl("serialNumberGrid"))
+serialNumberGrid!.setColumnAlignment(0,serialNumberGrid!.GRID_ALIGN_LEFT)
+serialNumberGrid!.setColumnHeaderCellAlignment(0, serialNumberGrid!.GRID_ALIGN_LEFT)
+hostnamelbl! = cast(BBjStaticText, emergencyLicenseSearchPanel4!.getControl("hostnamelbl"))
+hostname! = cast(BBjEditBox, emergencyLicenseSearchPanel4!.getControl("hostname"))
+searchBtn! = cast(BBjButton, emergencyLicenseSearchPanel4!.getControl("searchBtn"))
+altserialNumberGrid! = cast(BBjStandardGrid, emergencyLicenseSearchPanel4!.getControl("altserialNumberGrid"))
+altserialNumberGrid!.setColumnAlignment(0,altserialNumberGrid!.GRID_ALIGN_LEFT)
+numberofusers! = cast(BBjEditBox, emergencyLicenseSearchPanel4!.getControl("numberofusers"))
+numberofuserslbl! = cast(BBjStaticText, emergencyLicenseSearchPanel4!.getControl("numberofuserslbl"))
+continueBtn! = cast(BBjButton, emergencyLicenseSearchPanel4!.getControl("continueBtn"))
+searchContinueBtn! = cast(BBjButton, emergencyLicenseSearchPanel4!.getControl("searchContinueBtn")) 
+messageStatic! = cast(BBjStaticText, emergencyLicenseSearchPanel4!.getControl("messageStatic")) 
+
+exitBtn1! = cast(BBjButton, emergencyLicenseSearchPanel1!.getControl("ExitBtn1"))
+exitBtn2! = cast(BBjButton, emergencyLicenseSearchPanel2!.getControl("ExitBtn2"))
+exitBtn3! = cast(BBjButton, emergencyLicenseSearchPanel3!.getControl("ExitBtn3"))
+exitBtn4! = cast(BBjButton, emergencyLicenseSearchPanel4!.getControl("ExitBtn4"))
+
+messageForm! = cast(BBjTopLevelWindow, sysgui!.getWindow("messageForm"))
+messageText! = cast(BBjStaticText, messageForm!.getControl("messageText"))
+messageExitBtn! = cast(BBjButton, messageForm!.getControl("messageExitBtn"))
+messageOKBtn! = cast(BBjButton, messageForm!.getControl("messageOKBtn"))
+
+rem ' emergencyLicenseSearchPanel1!.setTitleBarVisible(0)
+rem ' emergencyLicenseSearchPanel2!.setTitleBarVisible(0)
+rem ' emergencyLicenseSearchPanel3!.setTitleBarVisible(0)
+rem ' emergencyLicenseSearchPanel4!.setTitleBarVisible(0)
+
+emergencyLicenseSearchPanel1!.setVisible(1)
+
+return
+
+[Function (getReCaptChaJS)]
+rem ' -----------------------------------------------------------------
+rem ' getReCaptChaJS
+rem ' -----------------------------------------------------------------
+
+getReCaptChaJS:
+
+tmpchan = unt
+open(tmpchan)"emergencyLicSearchJavaScript.txt"
+filelen$ = fin(tmpchan), filelen = dec(filelen$(1,4))
+read record(tmpchan, siz=filelen)reCaptChaJS$
+close(tmpchan)
+
+return
+
+[Function (getUserCount)]
+rem ' -----------------------------------------------------------------
+rem ' getUserCount
+rem ' -----------------------------------------------------------------
+
+getUserCount:
+
+rem ' end users, SAM, licenser registration and hostname searchs require a user count target, get a user count before we do these searches
+    statusTxt$ = "Please enter the number of users on your license."
+    searchstatus!.setText(statusTxt$)
+    searchStatus!.setVisible(1)
+    numberofusers!.setVisible(1)
+    numberofuserslbl!.setVisible(1)
+    continueBtn!.setVisible(1)
+    numberofusers!.focus()
+
+return
+
+[Function (initTheLog)]
+rem ' -----------------------------------------------------------------
+rem ' initTheLog
+rem ' -----------------------------------------------------------------
+
+initTheLog:
+
+dim log$:"sessionChron:C(14),taskid:C(8),seq_num:C(5),timestamp:C(19),ipaddress:C(32),event:C(64),email:C(64),emailverifiedcnt:C(2),hostnamesrchcnt:C(2),users:C(5),hostnamesrched:C(40),selected:C(20)"
+log = unt
+open(log)"sn_emer_srch_log.dat"
+
+log.sessionchron$ = date(0,"%Y%Mz%Dz%Hz%mz%sz")
+log.taskid$ = hta(info(3,0))
+
+seq_num = 0
+log.seq_num$ = str(seq_num:"00000")
+
+ipaddress$ = bbjapi().getCurrentSessionInfo().getIPAddress()
+log.ipaddress$ = ipaddress$
+
+gosub checkForPreviousSessions
+
+log.event$ = "Session Initialized"
+log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+
+write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+return
+
+[Function (limitExceeded)]
+rem ' -----------------------------------------------------------------
+rem ' limitExceeded
+rem ' -----------------------------------------------------------------
+
+limitExceeded:
+
+rem ' log it
+seq_num = seq_num + 1
+log.seq_num$ = str(seq_num:"00000")
+log.event$ = "Search limit reached. Session terminated."
+log.emailverifiedcnt$ = str(emailverifiedcnt)
+log.hostnamesrchcnt$ = str(hostnamesrchcnt)
+log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+
+write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+
+msgText$ = "You have reached the limit of the number of searches that can be done in a 24 hour period. The session will terminate." +$0A$
+msgText$ = msgText$ + "For help in locating your serial number and autorization code please contact BASIS. " + $0A$ + $0A$
+msgText$ = msgText$ + "Email: support@basis.cloud or sales@basis.cloud" + $0A$
+msgText$ = msgText$ + "Phone: +1.505.345.5232  Sales: US and Canada 505.938.6120  International +1.505.338.4188"
+msgExit = 1
+msgOK = 0
+msgAction$ = ""
+msgSource$ = ""
+gosub showMessage
+
+return
+
+[Function (openFiles)]
+rem ' -----------------------------------------------------------------
+rem ' openFiles
+rem ' -----------------------------------------------------------------
+
+openFiles:
+
+call "ec_open::ARM01"
+call "ec_open::ARM02"
+call "ec_open::ARM10F"
+call "ec_open::SNM01"
+call "ec_open::SMC01"
+call "ec_open::SN_LIMIT_HOSTID"
+
+return
+
+[Function (removeSearchImage)]
+rem ' -----------------------------------------------------------------
+rem ' removeSearchImage
+rem ' -----------------------------------------------------------------
+
+removeSearchImage:
+
+rem ' if imageCtrl! <> null() then
+rem '     imageCtrl!.destroy()
+rem '     imageCtrl! = null()
+rem ' fi
+
+busy!.setVisible(0)
+
+return
+
+[Function (removeVerificationTimer)]
+rem ' -----------------------------------------------------------------
+rem ' removeVerificationTimer
+rem ' -----------------------------------------------------------------
+
+removeVerificationTimer:
+
+if verificationTimerSet then 
+
+    bbjapi!.removeTimer(verificationTimer,err=*next)
+    timeOutCount = 0
+    timeClock!.setValue(timeOutCount)
+    timeClock!.setVisible(0)
+fi
+
+return
+
+[Function (resetEmailVerificationForm)]
+rem ' -----------------------------------------------------------------
+rem ' resetEmailVerificationForm
+rem ' -----------------------------------------------------------------
+
+resetEmailVerificationForm:
+
+gosub removeVerificationTimer
+
+code$ = ""
+emailAddress$ = ""
+emailAddress!.setText("")
+
+emailAddress!.setEnabled(1)
+sendBtn!.setEnabled(1)
+
+verificationCodeGroup!.setVisible(0)
+verificationCodelbl!.setVisible(0)
+verificationCode!.setVisible(0)
+verificationCode!.setText("")
+timeoutwarninglbl!.setVisible(0)
+confirmBtn!.setEnabled(1)
+confirmBtn!.setVisible(0)
+resendBtn!.setVisible(0)
+
+emailAddress!.focus()
+
+return
+
+[Function (resetPanel4ReturnToPanel3)]
+rem ' -----------------------------------------------------------------
+rem ' resetPanel4ReturnToPanel3
+rem ' -----------------------------------------------------------------
+
+resetPanel4ReturnToPanel3:
+
+searchstatus!.setText("")
+searchStatus!.setVisible(0)
+bcommlbl!.setVisible(0)
+launchBcomm!.setVisible(0)
+bcommAccounts!.removeAllItems()
+bcommAccounts!.setVisible(0)
+
+numberofusers!.setVisible(0)
+numberofusers!.setText("")
+numberofuserslbl!.setVisible(0)
+continueBtn!.setVisible(0)
+
+serialNumberGrid!.clearMainGrid()
+serialNumberGrid!.setSelectedCell(0,0)
+serialNumberGrid!.setVisible(0)
+
+hostnamelbl!.setVisible(0)
+hostname!.setText("")
+hostname!.setVisible(0)
+searchBtn!.setVisible(0)
+
+altserialNumberGrid!.clearMainGrid()
+altserialNumberGrid!.setSelectedCell(0,0)
+altserialNumberGrid!.setVisible(0)
+
+searchContinueBtn!.setVisible(0)
+
+emergencyLicenseSearchPanel4!.setVisible(0)
+emergencyLicenseSearchPanel3!.setVisible(1)
+
+searchStack = 1
+licenseUsers = 0
+lowRange = 0
+highRange = 0
+
+gosub resetEmailVerificationForm
+
+return
+
+[Function (searchForEmailInBcommTable)]
+rem ' -----------------------------------------------------------------
+rem ' searchForEmailInBcommTable
+rem ' -----------------------------------------------------------------
+
+searchForEmailInBcommTable:
+
+rem ' give the user something to look at
+statusTxt$ = "Searching for B-Commerce accounts..."
+searchstatus!.setText(statusTxt$)
+searchStatus!.setVisible(1)
+busyText$ = "Searching B-Commerece"
+gosub showSearchImage
+
+rem ' add delay to let the user see the search image
+wait 3
+
+emailAddress$ = cvs(emailAddress!.getText(), 3)
+
+sql$ = "SELECT * FROM ECM01 WHERE E_MAIL LIKE ('%" + emailAddress$ + "%')"
+ecm01RecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+recordCount = 0
+acctList! = bbjapi!.makeVector()
+
+if ecm01RecordSet!.isEmpty() then
+
+    ecm01RecordSet!.close()
+    rem ' log it
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = "No Bcomm Accounts found"
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+       
+else
+    ecm01RecordSet!.first()
+    
+    while 1
+        ecm01RecordData! = ecm01RecordSet!.getCurrentRecordData()
+        recordCount = recordCount + 1
+        account$ = ecm01RecordData!.getFieldValue("FIRM_ID") + ecm01RecordData!.getFieldValue("CUSTOMER_NBR") + ecm01RecordData!.getFieldValue("USER_CODE")
+        eaddr$ = cvs(ecm01RecordData!.getFieldValue("E_MAIL"), 3)
+
+        acctList!.addItem(account$)
+        
+        ecm01RecordSet!.next(err=*break)
+    wend
+    ecm01RecordSet!.close()
+    
+    rem ' found b-comm links
+    statusTxt$ = "We found your email address assocated with " + str(recordCount) + " B-commerce account(s). "
+    statusTxt$ = statusTxt$ + "Please log into B-commerce using one of these account(s). It is the most "
+    statusTxt$ = statusTxt$ + "direct method to find your serial number and authorization code and to request a license."
+    searchstatus!.setText(statusTxt$)
+    searchStatus!.setVisible(1)
+    bcommlbl!.setVisible(1)
+    launchBcomm!.setVisible(1)
+    for x = 0 to acctList!.size() - 1
+        item$ = cast(BBjString, acctList!.getItem(x))
+        bcommAccounts!.addItem(item$)
+    next x
+    bcommAccounts!.setVisible(1)
+    searchContinueBtn!.setVisible(1)
+
+    rem ' log it
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = str(recordCount) + " Bcomm Acccounts Found"
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+fi
+gosub removeSearchImage
+
+return
+
+[Function (searchForEmailInEnduserTable)]
+rem ' -----------------------------------------------------------------
+rem ' searchForEmailInEnduserTable
+rem ' -----------------------------------------------------------------
+
+searchForEmailInEnduserTable:
+
+rem ' give the user something to look at
+statusTxt$ = "Searching for End User connections..."
+searchstatus!.setText(statusTxt$)
+searchStatus!.setVisible(1)
+busyText$ = "Searching End Users"
+gosub showSearchImage
+
+rem ' add delay to let the user see the search image
+wait 3
+
+emailAddress$ = cvs(emailAddress!.getText(), 3)
+
+sql$ = "SELECT t1.company_name, t2.serial_nbr, t3.product_rev, t3.users FROM SNMEU t1 " 
+sql$ = sql$ + "INNER JOIN SNMEL t2 on t1.end_user_nbr = t2.end_user_nbr "
+sql$ = sql$ + "INNER JOIN SNM01 t3 on t2.serial_nbr = t3.serial_nbr "
+sql$ = sql$ + "where t1.email_address LIKE '%" + emailAddress$ + "%' AND t3.active_flag = 'Y' "
+sql$ = sql$ + "AND t3.users >= " + str(lowRange) + " AND t3.users <= " + str(highRange) + " "
+sql$ = sql$ + "AND t2.serial_nbr NOT LIKE 'OSH%' AND (t2.serial_nbr like 'BBJ%' or t2.serial_nbr like 'BBX%')"
+
+snmeuRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+recordCount = 0
+snList! = bbjapi!.makeVector()
+authCodeList! = bbjapi!.makeVector()
+
+if snmeuRecordSet!.isEmpty() then
+
+    snmeuRecordSet!.close()
+    rem ' log it
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = "No End user serial number links found."
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+       
+else
+    snmeuRecordSet!.first()
+    
+    while 1
+        snmeuRecordData! = snmeuRecordSet!.getCurrentRecordData()
+
+        companyName$ = cvs(snmeuRecordData!.getFieldValue("COMPANY_NAME"),3)
+        serial$ = cvs(snmeuRecordData!.getFieldValue("SERIAL_NBR"),3)
+        users$ = cvs(snmeuRecordData!.getFieldValue("USERS"),3)
+        productRev$ = cvs(snmeuRecordData!.getFieldValue("PRODUCT_REV"),3)
+
+        rem ' look for an authcode
+        sql$ = "SELECT TOP 1 AUTH_CODE FROM SNT01 where serial_nbr = '" + serial$ + "' "
+        sql$ = sql$ + "and auth_code <> '' ORDER BY TRANS_DATE DESC"
+
+        authRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+ 
+        if authRecordSet!.isEmpty() then
+            authRecordSet!.close()
+        else
+            authRecordData! = authRecordSet!.getCurrentRecordData()
+            authcode$ = cvs(authRecordData!.getFieldValue("AUTH_CODE"),3)
+
+            recordCount = recordCount + 1
+            snList!.addItem(companyName$)
+            snList!.addItem(serial$)
+            snList!.addItem(users$)
+            snList!.addItem(productRev$)
+
+            authCodeList!.addItem(authcode$)
+            authRecordSet!.close()
+        fi
+
+        snmeuRecordSet!.next(err=*break)
+    wend
+    snmeuRecordSet!.close()
+
+    if recordCount > 0 then
+        rem ' found enduser links
+        statusTxt$ = "We found your email address linked to " + str(recordCount) + " serial number(s) associated with "
+        statusTxt$ = statusTxt$ + "End User records. "
+        statusTxt$ = statusTxt$ + "Please identify the serial number you are looking for, and then double click on it. "
+        statusTxt$ = statusTxt$ + "You will be given the authorization code. "
+        searchstatus!.setText(statusTxt$)
+        searchStatus!.setVisible(1) 
+        serialNumberGrid!.clearMainGrid()
+        serialNumberGrid!.setNumRows(recordCount)
+        serialNumberGrid!.setSelectedCell(0,0)
+        serialNumberGrid!.setCellText(0, 0, snList!)
+        serialNumberGrid!.setEditable(0)
+        serialNumberGrid!.setVisible(1)
+        searchContinueBtn!.setVisible(1)
+
+        rem ' log it
+        seq_num = seq_num + 1
+        log.seq_num$ = str(seq_num:"00000")
+        log.event$ = str(recordCount) + " End user serial number links found"
+        log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+        write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+    else
+        rem ' log it
+        seq_num = seq_num + 1
+        log.seq_num$ = str(seq_num:"00000")
+        log.event$ = "No End user serial number links found."
+        log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+        write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+    fi
+fi
+
+gosub removeSearchImage
+
+return
+
+[Function (searchForEmailinLogExtract)]
+rem ' -----------------------------------------------------------------
+rem ' searchForEmailinLogExtract
+rem ' -----------------------------------------------------------------
+
+searchForEmailinLogExtract:
+
+rem ' give the user something to look at
+statusTxt$ = "Searching the license registration database..."
+searchstatus!.setText(statusTxt$)
+searchStatus!.setVisible(1)
+busyText$ = "Searching License Registrations"
+gosub showSearchImage
+
+rem ' add delay to let the user see the search image
+wait 3
+
+emailAddress$ = cvs(emailAddress!.getText(), 3)
+
+sql$ = "SELECT DISTINCT serialnum FROM LOGEXTRACT where email "
+sql$ = sql$ + "like '%" + emailAddress$ + "%' AND serialnum NOT LIKE 'OSH%'"
+
+serialNbrRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+recordCount = 0
+snList! = bbjapi!.makeVector()
+authCodeList! = bbjapi!.makeVector()
+
+if serialNbrRecordSet!.isEmpty() then
+
+    serialNbrRecordSet!.close()
+    rem ' log it
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = str(recordCount) + " LogExtract serial number links found"
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+       
+else
+    serialNbrRecordSet!.first()
+    
+    while 1
+        serialNbrRecordData! = serialNbrRecordSet!.getCurrentRecordData()
+        
+        serial$ = cvs(serialNbrRecordData!.getFieldValue("SERIALNUM"),3)
+
+        rem ' look up the user count on the serial number
+        sql$ = "SELECT * FROM SNM01 where serial_nbr = '" + serial$ + "' AND active_flag = 'Y' "
+        sql$ = sql$ + "AND users >= " + str(lowRange) + " AND users <= " + str(highRange) + " "
+        sql$ = sql$ + "AND (serial_nbr like 'BBJ%' or serial_nbr like 'BBX%')"
+
+        snRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+        if snRecordSet!.isEmpty() then
+            snActive = 0
+        else
+            snRecordData! = snRecordSet!.getCurrentRecordData()
+
+            users$ = snRecordData!.getFieldValue("USERS")
+            productRev$ = cvs(snRecordData!.getFieldValue("PRODUCT_REV"),3)
+            snActive = 1
+        fi
+        snRecordSet!.close()
+
+        if snActive = 1 then
+            rem ' look for an authcode and company
+            sql$ = "SELECT top 1 company, authnum FROM LOGEXTRACT "
+            sql$ = sql$ + "where serialnum = '" + serial$ + "' and authnum <> '' order by seq_num desc"
+
+            authRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+            if authRecordSet!.isEmpty() then
+                authRecordSet!.close()
+            else
+                authRecordData! = authRecordSet!.getCurrentRecordData()
+                authcode$ = cvs(authRecordData!.getFieldValue("AUTHNUM"),3)
+                companyName$ = cvs(authRecordData!.getFieldValue("COMPANY"),3)
+                authRecordSet!.close()
+
+                recordCount = recordCount + 1
+                snList!.addItem(companyName$)
+                snList!.addItem(serial$)
+                snList!.addItem(users$)
+                snList!.addItem(productRev$)
+
+                authCodeList!.addItem(authcode$)
+            fi
+        fi
+        
+        serialNbrRecordSet!.next(err=*break)
+    wend
+    serialNbrRecordSet!.close()
+
+    if recordCount >0 then
+        rem ' found LOGEXTRACT data
+        statusTxt$ = "We found your email address linked to " + str(recordCount) + " serial numbers. "
+        statusTxt$ = statusTxt$ + "Please identify the serial number you are looking for, and then double click on it. "
+        statusTxt$ = statusTxt$ + "You will be given the authorization code. "
+        searchstatus!.setText(statusTxt$)
+        searchStatus!.setVisible(1)
+        serialNumberGrid!.clearMainGrid()
+        serialNumberGrid!.setNumRows(recordCount)
+        serialNumberGrid!.setSelectedCell(0,0)                
+        serialNumberGrid!.setCellText(0, 0, snList!)
+        serialNumberGrid!.setEditable(0)
+        serialNumberGrid!.setVisible(1)
+        searchContinueBtn!.setVisible(1)
+
+        rem ' log it
+        seq_num = seq_num + 1
+        log.seq_num$ = str(seq_num:"00000")
+        log.event$ = str(recordCount) + " LogExtract serial number links found"
+        log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+        write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+    else
+        rem ' log it
+        seq_num = seq_num + 1
+        log.seq_num$ = str(seq_num:"00000")
+        log.event$ = "No LogExtract serial number links found"
+        log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+        write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+    fi
+fi
+
+gosub removeSearchImage
+
+return
+
+[Function (searchForEmailinSAMContracts)]
+rem ' -----------------------------------------------------------------
+rem ' searchForEmailinSAMContracts
+rem ' -----------------------------------------------------------------
+
+searchForEmailinSAMContracts:
+
+rem ' give the user something to look at
+statusTxt$ = "Searching for SAM Contract connections..."
+searchstatus!.setText(statusTxt$)
+searchStatus!.setVisible(1)
+busyText$ = "Searching SAM Contracts"
+gosub showSearchImage
+
+rem ' add delay to let the user see the search image
+wait 3
+
+emailAddress$ = cvs(emailAddress!.getText(), 3)
+
+today$ = date(0:"%Y%Mz%Dz%")
+
+sql$ = "SELECT contract FROM SMC01 where e_mail "
+sql$ = sql$ + "like '%" + emailAddress$ + "%' AND SAM_ACTIVE = 'Y' and EXPIRE_ON_DT >= '" + today$ + "'"
+
+contractRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+recordCount = 0
+snList! = bbjapi!.makeVector()
+authCodeList! = bbjapi!.makeVector()
+
+if contractRecordSet!.isEmpty() then
+
+    contractRecordSet!.close()
+    rem ' log it
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = "No SAM contract links found"
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+       
+else
+    contractRecordSet!.first()
+    
+    while 1
+        contractRecordData! = contractRecordSet!.getCurrentRecordData()
+        
+        contract$ = cvs(contractRecordData!.getFieldValue("CONTRACT"),3)
+
+        rem ' look up the serial nbrs on the contract
+        sql$ = "SELECT * FROM SNM01 where contract = '" + contract$ + "' AND active_flag = 'Y' "
+        sql$ = sql$ + "AND users >= " + str(lowRange) + " AND users <= " + str(highRange) + " "
+        sql$ = sql$ + "AND (serial_nbr like 'BBJ%' or serial_nbr like 'BBX%')"
+
+        snRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+        if snRecordSet!.isEmpty() then
+            snRecordSet!.close()
+        else
+            while 1
+                snRecordData! = snRecordSet!.getCurrentRecordData()
+
+                serial$ = cvs(snRecordData!.getFieldValue("SERIAL_NBR"),3)
+                users$ = snRecordData!.getFieldValue("USERS")
+                productRev$ = cvs(snRecordData!.getFieldValue("PRODUCT_REV"),3)
+
+                rem ' look for an authcode and company
+                sql$ = "SELECT top 1 company, authnum FROM LOGEXTRACT "
+                sql$ = sql$ + "where serialnum = '" + serial$ + "' and authnum <> '' order by seq_num desc"
+
+                authRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+                if authRecordSet!.isEmpty() then
+                    authRecordSet!.close()
+                else
+                    authRecordData! = authRecordSet!.getCurrentRecordData()
+                    authcode$ = cvs(authRecordData!.getFieldValue("AUTHNUM"),3)
+                    companyName$ = cvs(authRecordData!.getFieldValue("COMPANY"),3)
+                    authRecordSet!.close()
+
+                    recordCount = recordCount + 1
+                    snList!.addItem(companyName$)
+                    snList!.addItem(serial$)
+                    snList!.addItem(users$)
+                    snList!.addItem(productRev$)
+
+                    authCodeList!.addItem(authcode$)
+                fi
+                snRecordSet!.next(err=*break)
+            wend
+            snRecordSet!.close()
+        fi
+        contractRecordSet!.next(err=*break)
+    wend
+    contractRecordSet!.close()
+
+    if recordCount > 0 then
+        rem ' found SAM Contract data
+        statusTxt$ = "We found your email address linked to " + str(recordCount) + " serial number(s) as the SAM contact. "
+        statusTxt$ = statusTxt$ + "Please identify the serial number you are looking for, and then double click on it. "
+        statusTxt$ = statusTxt$ + "You will be given the authorization code. "
+        searchstatus!.setText(statusTxt$)
+        searchStatus!.setVisible(1)
+        serialNumberGrid!.clearMainGrid()
+        serialNumberGrid!.setNumRows(recordCount)
+        serialNumberGrid!.setSelectedCell(0,0)        
+        serialNumberGrid!.setCellText(0, 0, snList!)
+        serialNumberGrid!.setEditable(0)
+        serialNumberGrid!.setVisible(1)
+        searchContinueBtn!.setVisible(1)
+
+        rem ' log it
+        seq_num = seq_num + 1
+        log.seq_num$ = str(seq_num:"00000")
+        log.event$ = str(recordCount) + " SAM contract links found"
+        log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+        write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+    else
+        rem ' log it
+        seq_num = seq_num + 1
+        log.seq_num$ = str(seq_num:"00000")
+        log.event$ = str(recordCount) + "No SAM contract links found"
+        log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+        write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+
+    fi
+
+fi
+
+gosub removeSearchImage
+
+return
+
+[Function (searchForHostnameinLogExtract)]
+rem ' -----------------------------------------------------------------
+rem ' searchForHostnameinLogExtract
+rem ' -----------------------------------------------------------------
+
+searchForHostnameinLogExtract:
+
+rem ' give the user something to look at
+hldStatusTxt$ = searchstatus!.getText()
+statusTxt$ = "Searching for Hostname connections..."
+searchstatus!.setText(statusTxt$)
+searchStatus!.setVisible(1)
+busyText$ = "Searching Hostnames"
+hostnamelbl!.setVisible(0)
+hostname!.setVisible(0)
+searchBtn!.setVisible(0)
+altserialNumberGrid!.setVisible(0)
+messageStatic!.setVisible(0)
+
+gosub showSearchImage
+
+rem ' add delay to let the user see the search image
+wait 3
+
+hostname$ = cvs(hostname!.getText(), 3)
+
+
+sql$ = "SELECT DISTINCT serialnum FROM LOGEXTRACT where hostname "
+sql$ = sql$ + "=  '" + hostname$ + "' AND serialnum NOT LIKE 'OSH%'"
+
+serialNbrRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+recordCount = 0
+snList! = bbjapi!.makeVector()
+authCodeList! = bbjapi!.makeVector()
+
+if serialNbrRecordSet!.isEmpty() then
+
+    serialNbrRecordSet!.close()
+      
+else
+    serialNbrRecordSet!.first()
+    
+    while 1
+        serialNbrRecordData! = serialNbrRecordSet!.getCurrentRecordData()
+        
+        serial$ = cvs(serialNbrRecordData!.getFieldValue("SERIALNUM"),3)
+
+        if serialCountLimit = 10 then
+            rem ' look up the user count on the serial number using the range
+            sql$ = "SELECT * FROM SNM01 where serial_nbr = '" + serial$ + "' AND active_flag = 'Y' "
+            sql$ = sql$ + "AND users >= " + str(lowRange) + " AND users <= " + str(highRange) + " "
+            sql$ = sql$ + "AND (serial_nbr like 'BBJ%' or serial_nbr like 'BBX%')"
+        else
+            rem ' look up the user count on the serial number using and exact match
+            sql$ = "SELECT * FROM SNM01 where serial_nbr = '" + serial$ + "' AND active_flag = 'Y' "
+            sql$ = sql$ + "AND users = " + str(licenseUsers)
+            sql$ = sql$ + "AND (serial_nbr like 'BBJ%' or serial_nbr like 'BBX%')"
+        fi
+
+        snRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+        if snRecordSet!.isEmpty() then
+            snActive = 0
+        else
+            snRecordData! = snRecordSet!.getCurrentRecordData()
+
+            users$ = snRecordData!.getFieldValue("USERS")
+            productRev$ = cvs(snRecordData!.getFieldValue("PRODUCT_REV"),3)
+            snActive = 1
+        fi
+        snRecordSet!.close()
+
+        if snActive = 1 then
+            rem ' look for an authcode and company
+            sql$ = "SELECT top 1 company, authnum FROM LOGEXTRACT "
+            sql$ = sql$ + "where serialnum = '" + serial$ + "' and authnum <> '' order by seq_num desc"
+
+            authRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+            if authRecordSet!.isEmpty() then
+                authRecordSet!.close()
+            else
+                authRecordData! = authRecordSet!.getCurrentRecordData()
+                authcode$ = cvs(authRecordData!.getFieldValue("AUTHNUM"),3)
+                companyName$ = cvs(authRecordData!.getFieldValue("COMPANY"),3)
+                authRecordSet!.close()
+
+                recordCount = recordCount + 1
+                snList!.addItem(companyName$)
+                snList!.addItem(serial$)
+                snList!.addItem(users$)
+                snList!.addItem(productRev$)
+
+                authCodeList!.addItem(authcode$)
+            fi
+        fi
+        
+        serialNbrRecordSet!.next(err=*break)
+    wend
+    serialNbrRecordSet!.close()
+fi
+
+gosub removeSearchImage
+
+searchstatus!.setText(hldstatusTxt$)
+hostnamelbl!.setVisible(1)
+hostname!.setVisible(1)
+searchBtn!.setVisible(1)
+altserialNumberGrid!.setVisible(1)
+
+
+return
+
+[Function (searchTheDB)]
+rem ' -----------------------------------------------------------------
+rem ' searchTheDB
+rem ' -----------------------------------------------------------------
+
+searchTheDB:
+
+if searchStack = 1 then
+    rem ' is the address linked to a B-comm account
+    gosub searchForEmailInBcommTable
+    if recordCount > 0 then
+        rem ' found B-comm links
+        return
+    else
+        searchStack = 2
+    fi
+fi
+
+if searchStack = 2 then
+    rem ' will begin search for serial numbers, get a user count target
+    if licenseUsers = 0 then
+        gosub getUserCount
+        return
+    fi
+    rem ' is the address linked to an End user
+    gosub searchForEmailInEnduserTable
+    if recordCount > 0 then
+        rem ' found end user links
+        return
+    else
+        searchStack = 3
+    fi
+fi
+
+if searchStack = 3 then
+    rem ' is the address linked to any SAM contracts
+    gosub searchForEmailInSAMContracts
+    if recordCount > 0 then
+        rem ' found SAM contract links
+        return
+    else
+        searchStack = 4
+    fi
+fi
+
+if searchStack = 4 then
+    rem ' is the address linked to any license registrations (logextract)
+    gosub searchForEmailinLogExtract
+    if recordCount > 0 then
+        rem ' found address linked to license registrations (logextract)
+        return
+    else
+        searchStack = 5
+    fi
+fi
+
+if searchStack = 5 then
+    rem ' now we do a search of logextract for a hostname entered by the user
+    statusTxt$ = "We have searched the B-Comm, End User, SAM and License Registation data and have "
+    statusTxt$ = statusTxt$ + "not found your email linked to any serial numbers. "
+    statusTxt$ = statusTxt$ + "The final search is for the "
+    statusTxt$ = statusTxt$ + "hostname of your server. Enter the hostname below and click [Search]."
+    searchstatus!.setText(statusTxt$)
+    searchStatus!.setVisible(1)
+    hostnamelbl!.setVisible(1)
+    hostname!.setVisible(1)
+    hostname!.focus()
+    searchBtn!.setVisible(1)
+    searchBtn!.setEnabled(1)
+    altserialNumberGrid!.clearMainGrid()
+    altserialNumberGrid!.setSelectedCell(0,0)
+    altserialNumberGrid!.setVisible(1)
+    searchContinueBtn!.setVisible(0)
+    messageStatic!.setText("")
+fi
+
+return
+
+[Function (sendEmail)]
+rem ' -----------------------------------------------------------------
+rem ' sendEmail
+rem ' -----------------------------------------------------------------
+
+sendEmail:
+
+        gosub removeVerificationTimer
+
+        gosub generateVerificationCode
+        
+	ms$ = "You are receiving this email because someone entered this email address in the BASIS International Ltd. "
+        ms$ = ms$ + "Emergency License Search form. If it was not you, please disregard and delete this email. "
+        ms$ = ms$ + "If it was you, please enter the 6 character verification code in the form on the web page "
+        ms$ = ms$ + "to continue your Emergency License Search. " + $0A$ + $0A$
+        ms$ = ms$ + "Verification Code: " + code$ + $0A$ + $0A$
+        ms$ = ms$ + "BASIS International Ltd." + $0A$
+        ms$ = ms$ + "+1.505.345.5232"  + $0A$
+        ms$ = ms$ + "+1.505-338-4188 International"  + $0A$
+        ms$ = ms$ + "support@basis.cloud or sales@basis.cloud"  + $0A$
+
+        to$ =  emailAddress$
+        from$ = "customer-service@basis.cloud"
+        cc$ = ""
+        bcc$ = "kw5121151@gmail.com"
+        subject$ = "Emergency License Search Verification Code"
+
+	call "sendEmail.src", from$, to$, cc$, bcc$,subject$, ms$, ""
+
+        rem ' set a timer
+        gosub startTheTimer
+
+return
+
+[Function (sendEmailWithAuthCode)]
+rem ' -----------------------------------------------------------------
+rem ' sendEmailWithAuthCode
+rem ' -----------------------------------------------------------------
+
+sendEmailWithAuthCode:
+
+gb__grid_cell! = cast(BBjGridCell, gb__control!.getCell(row, 0))
+sel_company_name$ = cvs(gb__grid_cell!.getText(),3)
+gb__grid_cell! = cast(BBjGridCell, gb__control!.getCell(row, 1))
+sel_serial_nbr$ = cvs(gb__grid_cell!.getText(),3)
+gb__grid_cell! = cast(BBjGridCell, gb__control!.getCell(row, 2))
+sel_user_count$ = cvs(gb__grid_cell!.getText(),3)
+gb__grid_cell! = cast(BBjGridCell, gb__control!.getCell(row, 3))
+sel_rev$ = cvs(gb__grid_cell!.getText(),3)
+
+rem ' log it
+seq_num = seq_num + 1
+log.seq_num$ = str(seq_num:"00000")
+log.event$ = "Serial Number Selected"
+log.selected$ = sel_serial_nbr$
+log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+log.selected$ = ""
+
+rem ' is this serial number limited to a single hostid
+snkey$ = sel_serial_nbr$ + fill(20), snkey$ = snkey$(1,20)
+hostid_limit = 0
+read record(sn_limit_hostid, key = snkey$, dom = *next)sn_limit_hostid$; hostid_limit = 1
+
+sel_auth_code$ = cast(BBjString, authCodeList!.getItem(row))
+
+ms$ = "After reviewing the results of your Emergency License Search you selected the following serial number: " + $0A$ + $0A$
+if sel_company_name$ <> "" then
+    ms$ = ms$ + "Company Name: " + sel_company_name$ + $0A$
+fi
+ms$ = ms$ + "Serial Number: " + sel_serial_nbr$ + $0A$
+ms$ = ms$ + "Users: " + sel_user_count$  + $0A$ 
+ms$ = ms$ + "Revision: " + sel_rev$ + $0A$ + $0A$
+ms$ = ms$ + "The Authorization Code for this serial number is: "  + $0A$ + $0A$
+ms$ = ms$ + sel_auth_code$ + $0A$ + $0A$
+ms$ = ms$ + "With this information you can use the Admin Utility to request a license file." + $0A$ + $0A$
+ms$ = ms$ + "This email was sent to " + emailAddress$ + $0A$ + $0A$
+ms$ = ms$ + "BASIS International Ltd." + $0A$
+ms$ = ms$ + "+1.505.345.5232"  + $0A$
+ms$ = ms$ + "+1.505-338-4188 International"  + $0A$
+ms$ = ms$ + "support@basis.cloud, customer-service@basis.cloud or sales@basis.cloud"  + $0A$
+if hostid_limit then
+    ms$ = ms$ + $0A$ + "This serial number is limited to a single hostid. For more information about this please contact BASIS at the email addresses or phone numbers above."
+fi
+
+to$ =  emailAddress$
+from$ = "customer-service@basis.cloud"
+cc$ = "customer-service@basis.cloud, support@basis.cloud, sales@basis.cloud"
+rem ' cc$ = ""
+bcc$ = "kw5121151@gmail.com"
+subject$ = "Emergency License Search Results From BASIS International Ltd."
+call "sendEmail.src", from$, to$, cc$, bcc$,subject$, ms$, ""
+
+rem ' internal follow up email
+ms$ = emailAddress$ + " used the Emergency License Search tool and selected the following serial number. " + $0A$ + $0A$
+ms$ = ms$ + "Serial Number: " + sel_serial_nbr$ + $0A$
+ms$ = ms$ + "Users: " + sel_user_count$  + $0A$ 
+ms$ = ms$ + "Revision: " + sel_rev$ + $0A$
+ms$ = ms$ + "Authorization Code: " + sel_auth_code$ + $0A$ + $0A$
+ms$ = ms$ + "This serial number belongs to: "
+
+sel_serial_nbr$ = sel_serial_nbr$ + fill(20), sel_serial_nbr$ = sel_serial_nbr$(1,20)
+found = 0
+read record (snm01, key = sel_serial_nbr$, err = *next)snm01$; found = 1
+if found then
+    got_it = 0
+    read record(arm01, key = snm01.firm_id$ + snm01.customer_nbr$)arm01$; got_it = 1
+    if got_it then
+        ms$ = ms$ + snm01.firm_id$ + snm01.customer_nbr$ + " " + cvs(arm01.cust_name$, 3) + $0A$ + $0A$
+        read record(arm02, key = snm01.firm_id$ + snm01.customer_nbr$ + "  ", err = *next)arm02$
+        sls_psn$ = "Not Found"
+        if cvs(arm02.slspsn_code$,3) <> "" then
+            redim arm10F$
+            read record(arm10F, key = snm01.firm_id$ + "F" + arm02.slspsn_code$, err = *next)arm10F$
+            if cvs(arm10F.slspsn_name$,3) <> "" then
+                sls_psn$ = cvs(arm10F.slspsn_name$,3)
+            fi
+        fi
+    else
+        ms$ = ms$ + "Error reading the customer masterfile." + $0A$ + $0A$
+    fi
+    if cvs(snm01.contract$,3) = "" then
+        ms$ = ms$ + "SAM is not current on this license." + $0A$ + $0A$
+    else
+        got_it = 0
+        read record(smc01, key = snm01.contract$, err = *next)smc01$; got_it = 1
+        if got_it then
+            if smc01.annual_dt$ < date(0:"%Y%Mz%Dz") or smc01.sam_active$ <> "Y" then
+                ms$ = ms$ + "SAM is not current on this license." + $0A$ + $0A$
+            else
+                ms$ = ms$ + "SAM is current on this license. It expires " + smc01.annual_dt$(1,4) + "/" + smc01.annual_dt$(5,2) + "/" + smc01.annual_dt$(7,2) + $0A$ + $0A$
+            fi
+        else
+            ms$ = ms$ + "Error reading the SAM contract record." + $0A$ + $0A$
+        fi
+    fi
+else
+    ms$ = ms$ + "Error reading the Serial Number masterfile." + $0A$ + $0A$
+fi
+ms$ = ms$ + "The salesperson on this account is: " + sls_psn$ + "." + $0A$ + $0A$
+if hostid_limit then ms$ = ms$ + "PLEASE NOTE: This serial number is limited to a single hostid. (" + cvs(sn_limit_hostid.hostid$,3) + ")." + $0A$ + $0A$
+ms$ = ms$ + "The log tracking the user's session is attached in a csv format. You can open it with Excel." + $0A$ + $0A$
+
+rem ' build the session log for export
+logdump$ = stbl("TEMP") + "emer_srch" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + "_" + log.taskid$ + ".csv"
+string logdump$
+logdump = unt
+open(logdump)logdump$
+header$ = chr(34) + "sessionid" + chr(34) + "," +chr(34) + "taskid" + chr(34) + "," +chr(34) + "seq_num" + chr(34) + "," +chr(34) + "timestamp" + chr(34) + "," + chr(34) + "ip address" + chr(34) + "," +chr(34) + "event" + chr(34) + "," +chr(34) + "email" + chr(34) + "," +chr(34) + "email verified cnt" + chr(34) + "," +chr(34) + "hostname srch cnt" + chr(34) + "," +chr(34) + "users" + chr(34) + "," +chr(34) + "hostname srched" + chr(34) + "," +chr(34) + "selected" + chr(34)
+write(logdump)header$
+
+rem ' get 24 hour ago sessionChron
+firstSessionChron$ = log.sessionChron$
+theyear = num(firstSessionChron$(1,4))
+themonth = num(firstSessionChron$(5,2))
+theday = num(firstSessionChron$(7,2))
+thejul = jul(theyear, themonth, theday)
+thejul = thejul - 1
+firstSessionChron$(1,8) = date(thejul:"%Y%Mz%Dz")
+
+sql$ = "SELECT * FROM SN_EMER_SRCH_LOG WHERE SESSIONCHRON >= '" + firstSessionChron$ + "' AND IPADDRESS = '" + log.ipaddress$ + "' "
+sql$ = sql$ + "ORDER BY SESSIONCHRON, TASKID, SEQ_NUM"
+logRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+if logRecordSet!.isEmpty() then
+
+    logRecordSet!.close()
+       
+else
+    logRecordSet!.first()
+
+    while 1
+        logRecordData! = logRecordSet!.getCurrentRecordData()
+        
+        rec$ = chr(34) + logRecordData!.getFieldValue("SESSIONCHRON") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("TASKID") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("SEQ_NUM") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("TIMESTAMP") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("IPADDRESS") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("EVENT") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("EMAIL") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("EMAILVERIFIEDCNT") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("HOSTNAMESRCHCNT") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("USERS") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("HOSTNAMESRCHED") + chr(34) + ","
+        rec$ = rec$ + chr(34) + logRecordData!.getFieldValue("SELECTED") + chr(34) + ","
+        
+        write(logdump)rec$
+        
+        logRecordSet!.next(err=*break)
+    wend
+    logRecordSet!.close()
+fi
+close(logdump)
+
+to$ =  "customer-service@basis.cloud, support@basis.cloud, sales@basis.cloud"
+rem ' to$ = "kurt.e.williams@comcast.net"
+from$ = "customer-service@basis.cloud"
+cc$ = ""
+bcc$ = "kw5121151@gmail.com"
+subject$ = "Emergency License Search used and serial number selected"
+call "sendEmail.src", from$, to$, cc$, bcc$,subject$, ms$, logdump$
+
+erase logdump$, err = *next
+
+rem ' tell the user and then go
+msgText$ = "An email with the Authorization Code for the serial number you selected (" + cvs(sel_serial_nbr$,3) + ") has been sent to " +  emailAddress$ + "."
+if hostid_limit then 
+    msgText$ = msgText$ + " Please note that this serial number is limited to a single hostid. For more information please contact BASIS." + $0A$
+    msgText$ = msgText$ + "Email: support@basis.cloud or sales@basis.cloud" + $0A$
+    msgText$ = msgText$ + "Phone: +1.505.345.5232  Sales: US and Canada 505.938.6120  International +1.505.338.4188"
+fi 
+msgExit = 1
+msgOK = 0
+msgAction$ = ""
+msgSource$ = ""
+
+seq_num = seq_num + 1
+log.seq_num$ = str(seq_num:"00000")
+log.event$ = "Session terminated. User Selected a SN."
+log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+    
+gosub showMessage
+
+return
+
+[Function (showMessage)]
+rem ' -----------------------------------------------------------------
+rem ' showMessage
+rem ' -----------------------------------------------------------------
+
+showMessage:
+
+rem ' msgText$ holds the text of the message
+rem ' msgExit boolean for exit if true program will close when the user responds
+rem ' msgOK boolean for OK response if true program will continue when the user responds
+rem ' msgAction$ is what to do when OK is clicked, used in the Button Push event on the OK button
+rem ' msgSource$ is the form that call the show Message, used in the OK button pushed event
+if msgExit then
+    rem ' program will exit when user responds
+    emergencyLicenseSearchPanel1!.setVisible(0)
+    emergencyLicenseSearchPanel2!.setVisible(0)
+    emergencyLicenseSearchPanel3!.setVisible(0)
+    emergencyLicenseSearchPanel4!.setVisible(0)
+    messageForm!.setVisible(1)
+    messageExitBtn!.setVisible(1)
+    messageOKBtn!.setVisible(0)
+    messageText!.setText(msgText$)
+else
+    rem ' program will contine when the user responds
+    rem ' the caller is responsible for hiding the form
+    messageForm!.setVisible(1)
+    messageExitBtn!.setVisible(0)
+    messageOKBtn!.setVisible(1)
+    messageText!.setText(msgText$)
+    
+fi
+
+return
+
+[Function (showSearchImage)]
+rem ' -----------------------------------------------------------------
+rem ' showSearchImage
+rem ' -----------------------------------------------------------------
+
+showSearchImage:
+
+gosub removeSearchImage
+
+busy!.setHtml(busyHtml$)
+busy!.setText(busyText$)
+busy!.setVisible(1)
+
+rem ' imageCtrl! = fnAddImageControl!(250,115,100,100,cntx,"waitingCircle.gif")
+
+return
+
+[Function (startTheTimer)]
+rem ' -----------------------------------------------------------------
+rem ' startTheTimer
+rem ' -----------------------------------------------------------------
+
+startTheTimer:
+
+rem ' set a timer
+
+bbjapi!.createTimer(verificationTimer, timerInterval, "timeExpired")
+verificationTimerSet = 1
+
+timeText$ = "3:00"
+timeClock!.setText(timeText$)
+timeOutCount = 0
+timeClock!.setVisible(1)
+
+return
+
+[Function (timeExpired)]
+rem ' -----------------------------------------------------------------
+rem ' timeExpired
+rem ' -----------------------------------------------------------------
+
+timeExpired:
+
+if gb__event.y = verificationTimer then
+    timeOutCount = timeOutCount + timerInterval
+
+    if timeOutCount >= timerMax then
+        emergencyLicenseSearchPanel3!.setVisible(0)
+        gosub resetEmailVerificationForm
+        msgText$ = "The time allowed for verification has expired."
+        msgExit = 0
+        msgOK = 1
+        msgAction$ = "return"
+        msgSource$ = "emergencyLicenseSearchPanel3"
+        gosub showMessage
+
+    else
+
+        bbjapi!.removeTimer(verificationTimer)
+        timeClock!.setValue(timeOutCount) 
+        remaining = timerMax - timeOutCount
+        minutes = int(remaining/60)
+        seconds = mod(remaining,60)
+        timeText$ = str(minutes) + ":" + str(seconds:"00")
+        timeClock!.setText(timeText$)
+        timeClock!.setToolTipText(timeText$ + " remaining.")
+        bbjapi!.createTimer(verificationTimer,timerInterval, "timeExpired")
+    fi
+else
+    msgText$ = "You have reached the overall time limit on the use of this tool. The program will terminate." + $0A$
+    msgText$ = msgText$ + "For help in locating your serial number and autorization code please contact BASIS. " + $0A$ + $0A$
+    msgText$ = msgText$ + "Email: support@basis.cloud or sales@basis.cloud" + $0A$
+    msgText$ = msgText$ + "Phone: +1.505.345.5232  Sales: US and Canada 505.938.6120  International +1.505.338.4188"
+    msgExit = 1
+    msgOK = 0
+    msgAction$ = ""
+    msgSource$ = ""
+
+    seq_num = seq_num + 1
+    log.seq_num$ = str(seq_num:"00000")
+    log.event$ = "Overall Session time expired."
+    log.timestamp$ = date(0:"%Y-%Mz-%Dz %Hz:%mz:%sz")
+    write record(log, key = log.sessionchron$ + log.taskid$ + log.seq_num$)log$
+    
+    gosub showMessage
+    
+fi
+
+
+    
+
+return
+
+[Function (validateEmailAddress)]
+rem ' -----------------------------------------------------------------
+rem ' validateEmailAddress
+rem ' -----------------------------------------------------------------
+
+validateEmailAddress:
+
+valid = 1
+
+emailAddress$ = cvs(emailAddress!.getText(),3)
+
+p = pos("@" = emailAddress$)
+if p = 0 then
+    valid = 0
+else
+    domain$ = emailAddress$(p)
+    p = pos("." = domain$)
+    if p = 0 then
+        valid = 0
+    fi
+fi
+
+return
+

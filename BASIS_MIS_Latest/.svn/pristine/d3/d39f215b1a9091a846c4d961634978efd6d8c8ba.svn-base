@@ -1,0 +1,197 @@
+begin
+
+rem --- build the sn_stats02 table
+
+seterr err_trap
+
+rem ' run only on Friday
+day$ = date(0:"%Ds")
+if day$ <> "Fri" then release
+
+rem '  copy the sn_stats.dat to the sn_stats_archive
+
+use java.text.SimpleDateFormat
+use java.util.Date
+use java.util.Locale
+
+declare java.util.Date fileDate!
+declare java.text.SimpleDateFormat format!
+declare BBjString dateString!
+
+sn_stats02% = unt
+open(sn_stats02%)"sn_stats02.dat"
+fileDate! = new java.util.Date(BBjAPI().getFileSystem().getFileInfo(sn_stats02%).getLastModified())
+rem ' format! = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", java.util.Locale.ENGLISH)
+format! = new SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.ENGLISH)
+dateString! = format!.format(fileDate!)
+
+cmd$ = "cp /mnt/data/basisaon/aon/ADATA/sn_stats02.dat /mnt/data/basisaon/aon/ADATA/sn_stats_archive/sn_stats02." + dateString! + ".dat"
+a = scall(cmd$)
+cmd$ = "chmod 444 /mnt/data/basisaon/aon/ADATA/sn_stats_archive/sn_stats02." + dateString! + ".dat"
+a = scall(cmd$)
+close(sn_stats02%)
+
+rem ' INITFILE "sn_stats02.dat"
+call "ec_open::SN_STATS02"
+rem ' sn_stats02 = unt
+rem ' open(sn_stats02)"sn_stats02.dat"
+rem ' dim sn_stats02$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),YEAR:C(4),NEW_SALES:N(10*=10),UPGRADE_SALES:N(10*=10),SAM_SALES:N(10*=10)"
+
+call "ec_open::ART03"; rem ' invoice_date
+call "ec_open::ART13"; rem ' ext price
+call "ec_open::ARt73"; rem ' type of sale
+
+rem ' type of sale codes
+
+rem ' new
+rem ' NEW New Product
+new$ = "NEW"
+
+rem ' upgrade
+rem ' ADD Change Users
+rem ' CON Consolidate users
+rem ' EXC Exchange/Consolidation
+rem ' PLX Platform Exchange
+rem ' RIF Reinstatement Fee
+rem ' RN1 Feature rental
+rem ' RNW Renew Expiring License
+rem ' TRD Trade-In for BBJ
+rem ' U3P Upgrade for 3rd Party Products
+rem ' UG3 Upgrade P3 & earlier to P5
+rem ' UG4 Upgrade P4 to P5
+rem ' UPD Update Revision
+upg$ = "ADD|CON|EXC|PLX|RIF|RN1|RNW|TRD|U3P|UG3|UG4|UPD"
+ 
+rem ' sam
+rem ' SM1 SAM Plan
+rem ' SM2 SAM Plan 2
+sam$ = "SM1|SM2"
+
+rem ' not included
+rem ' XXX Deactivate/Return
+rem ' UNC Revision Update - No Charge
+rem ' TSI Tech Support Incident
+rem ' MDX Media Replacement
+rem ' N3P New 3rd Party Product
+
+rem ' doing the current year
+year$ = date(0:"%Y")
+
+firmId$ = ""
+customer_nbr$ = ""
+new_sales = 0
+upgrade_sales = 0
+sam_sales = 0
+
+while 1
+	read record(art03,end = *break)art03$
+	
+	if art03.customer_nbr$ <> customer_nbr$ then
+		gosub customer_change
+	fi
+	
+	unpdate$ = fnc$(art03.invoice_date$)
+	finaldate$ = date(jul(fnyy_year(fnyear_yy21$(num(unpdate$(5,2)))), num(unpdate$(1,2)), num(unpdate$(3,2))):"%Y%Mz%Dz")
+	thisyear$ = finaldate$(1,4)
+	if thisyear$ < year$ or thisyear$ > year$ then continue
+	
+	rem ' got a line in the year for the current customer
+	read record(art13, key = art03.firm_id$ + "  " +art03.customer_nbr$ + art03.ar_inv_nbr$, dom = *next)art13$
+	while 1
+		read record(art13, end = *break)art13$
+		if pos(art03.firm_id$ + "  " +art03.customer_nbr$ + art03.ar_inv_nbr$ = art13$) <> 1 then break
+		
+		found = 0
+		read record(art73, key = art13.firm_id$ + "  " +art13.customer_nbr$ + art13.ar_inv_nbr$ + art13.line_number$, dom = *next)art73$; found = 1
+		if found then
+			if pos(art73.type_of_sale$ = new$) > 0 then 
+				new_sales = new_sales + art13.ext_price
+			else
+				if pos(art73.type_of_sale$ = upg$) > 0 then
+					upgrade_sales = upgrade_sales + art13.ext_price
+				else
+					if pos(art73.type_of_sale$ = sam$) > 0 then
+						sam_sales = sam_sales + art13.ext_price
+					fi
+				fi
+			fi
+		fi
+	wend
+wend
+
+rem ' catch the last one
+gosub customer_change
+
+rem ' send success email
+rem ' subj$ = "sn_stats02.dat rebuilt"
+rem ' to$ = "kurt.e.williams@comcast.net"
+rem ' from$ = "customer-service@basis.cloud"
+rem ' cc$ = ""
+rem ' bcc$ = ""
+rem ' msg$ = "sn_stats02.dat successfully archived and refreshed for the currnt year, " + str(count) + " records"
+rem ' call "sendEmail.src", from$,to$,cc$, bcc$, subj$, msg$, ""
+
+release		
+		
+customer_change:
+	
+	if customer_nbr$ <> "" then 
+		if new_sales + upgrade_sales + sam_sales <> 0 then
+			dim sn_stats02$:fattr(sn_stats02$)
+			sn_stats02.firm_id$ = firm_id$
+			sn_stats02.customer_nbr$ = customer_nbr$
+			sn_stats02.year$ = year$
+			sn_stats02.new_sales = new_sales
+			sn_stats02.upgrade_sales = upgrade_sales
+			sn_stats02.sam_sales = sam_sales
+			written = 0
+			write record(sn_stats02)sn_stats02$; written = 1
+
+			count = count + 1
+		fi
+	fi
+	
+	customer_nbr$ = art03.customer_nbr$
+	firm_id$ = art03.firm_id$
+	new_sales = 0
+	upgrade_sales = 0
+	sam_sales = 0
+return
+
+rem ' user defined extensions
+rem ' low level unpacking function, one date component done
+DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+rem ' unpack a date into mmddyy format
+DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+DEF FNYY_YEAR(Q1$)
+LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+RETURN Q
+FNEND
+rem ' --- FNYEAR_YY21$ Convert Numeric Year to 21st Century 2-Char Year"
+DEF FNYEAR_YY21$(Q)=FNYY_YY21$(STR(MOD(Q,100):"00"))
+rem ' --- FNYY21_YY$ Un-Convert 21st Century 2-Char Year to 2-Char Year"
+DEF FNYY21_YY$(Q1$)
+LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+rem ' --- FNYY_YY21$ Convert 2-Char Year to 21st Century 2-Char Year"
+DEF FNYY_YY21$(Q1$)
+LET Q3$=" ABCDE56789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+
+err_trap:
+	rem ' send error email
+	seterr release_pgm
+	subj$ = "sn_stats02.dat rebuild error"
+	to$ = "misdev@basis.cloud"
+	from$ = "customer-service@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	msg$ = "sn_stats02.dat rebuild Error " +str(err) + " " + errmes(-1) + " in " + str(tcb(5)) + " of " + pgm(-2)
+	call "sendEmail.src", from$,to$,cc$, bcc$, subj$, msg$, ""
+	
+release_pgm:
+release
+
+end

@@ -1,0 +1,79 @@
+rem ' test emailing
+
+cr$=$0d0a$,lf$=$0a$,rent_txt$=""
+tmpchan=unt
+open(tmpchan)"rent_notice.txt"
+f1$=fin(tmpchan),s=dec(f1$(1,4))
+readrecord(tmpchan,siz=s)rent_txt$
+close(tmpchan)
+
+rem ' parse_rent_txt
+lang$="NL"
+head$="",body$="",sn1=0
+sr$=lang$+":"
+
+while 1
+   rem ' find the french email text
+   p0=pos(sr$=cvs(rent_txt$,4));if p0=0 then break
+   txt$=rent_txt$(p0)
+   
+   rem ' find the beginning and end of the email text
+   p0=pos("{"=txt$);if p0=0 then break
+   txt$=txt$(p0+1),p0=pos("}"=txt$)
+   if p0=0 then break
+   txt$=txt$(1,p0-1)
+
+   rem ' find the subject
+   p0 = pos("Subject:" = txt$)
+   if p0 <> 1 then break
+   p1 = pos(lf$=txt$)
+   if p1 = 0 then break
+   subject$ = txt$(1,p1-1), txt$ = txt$(p1+1)
+   if subject$(len(subject$),1) = $0D$ then subject$ = subject$(1,len(subject$)-1)
+      
+   rem ' find the location to insert the list of serial numbers
+   p0=pos("<sn>"=txt$); if p0=0 then break
+   p1=pos(lf$=txt$(1,p0),-1);if p1=0 then p1=p0-1
+   head$=txt$(1,p1),loc$=txt$(p1+1)
+   sn1=pos("<sn>"=loc$)
+   p0=pos(lf$=loc$)
+   if p0 then body$=loc$(p0+1) else body$=loc$
+   dt1=pos("<date>"=body$)
+   break
+wend
+
+while 1
+  p=pos($0a$=head$),p1=pos($0d$=head$)
+  if p=1 then head$=head$(2);continue
+  if p1=1 then head$=head$(2);continue
+  break
+wend
+if dt1 then body$=body$(1,dt1-1)+date(exp_jul:dt_mask$)+body$(dt1+6)
+
+rem ' call "encodeSubject.src", subject$
+
+sn_line$ = "BBJ000001" + lf$ + "BBJ000002" + lf$
+
+sendto$ = "kurt.e.williams@comcast.net"
+from$ = "customer-service@basis.cloud"
+cc$ = "williams.kurt@comcast.net"
+bcc$ = ""
+
+header$ = ""
+header$ = cr$+cvs(head$,2)
+
+while sn_line$<>""
+   lfpos=pos(lf$=sn_line$)
+   if lfpos=0 then break 
+   serial$=sn_line$(1,lfpos-1)
+   sn_line$=sn_line$(lfpos+1) 
+   header$=header$+serial$+cr$
+wend
+
+header$=header$+body$+cr$
+
+call "sendEmail.src", from$, sendto$, cc$, bcc$, subject$, msg$, ""
+
+end
+
+

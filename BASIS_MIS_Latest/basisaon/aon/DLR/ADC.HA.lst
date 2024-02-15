@@ -1,0 +1,23 @@
+0010 REM "Bridge - Report Heading Subroutine"
+0020 REM "Program: ADC.HA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0040 REM 
+0045 REM "PRINTER    : Printer channel"
+0050 REM "HEADING$[*]: Report heading lines"
+0055 REM "HEADINGS   : Number of HEADING$ lines to print (1 or more)"
+0060 REM "PAGE       : Page number"
+0065 REM "WIDTH      : Width of report line (80 or 132)"
+0070 REM "WHEN$      : Date in packed format"
+0075 REM "CLOCK$     : Time (set automatically on first call)"
+0080 REM "STATUS     : 0=No Error / Otherwise printer error or interrupt"
+0083 REM 
+0085 SETERR 9900
+0090 ENTER PRINTER,HEADING$[ALL],HEADINGS,PAGE,WIDTH,WHEN$,CLOCK$,STATUS
+1000 REM " --- Bridge To ADD+ON Routine"
+1020 CALL "SYC.HA",PRINTER,HEADING$[ALL],HEADINGS,PAGE,WIDTH,WHEN$,CLOCK$,STATUS
+9900 REM "---- Exit"
+9999 END

@@ -1,0 +1,5 @@
+[[FUT_APM01.ADDR_LINE_1.AINP]]
+FUT_APAM01.ADDR_LINE_2="Foo bar"
+
+
+

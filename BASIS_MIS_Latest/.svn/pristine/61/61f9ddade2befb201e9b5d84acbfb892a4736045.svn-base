@@ -1,0 +1,172 @@
+0010 REM BLK.16
+0020 LET TMM01=UNT; OPEN (TMM01)"TMM-01"
+0030 LET TMM05=UNT; OPEN (TMM05)"TMM-05"
+0040 call "templates.pgm::TMM05"
+0050 LET SYS01T=UNT; OPEN (SYS01T)"SYS-01"
+0060 LET TERMINAL$="T"+FID(0); READ (SYS01T,KEY=TERMINAL$)*,F0$
+0070 CLOSE (SYS01T)
+0080 LET AON$=STBL("AON"),INFILE$=AON$+"tmp/"+FID(0)+"BLK10.txt"
+0090 LET INFILECHAN=UNT; OPEN (INFILECHAN,ERR=END_PROGRAM)INFILE$
+0100 LET DSB=0,DSBFILE$=AON$+"tmp/"+FID(0)+"BLK10dsb.txt"
+0110 LET DSBCHAN=UNT; OPEN (DSBCHAN,ERR=TEMPLATES)DSBFILE$; LET DSB=1
+0120 TEMPLATES: 
+0130 LET KEY_TMP$="number:c(10*=44),auth_key:c(13*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),po:c(5*=44),cust:c(6)"
+0140 LET LIC_TMP$="number:c(10*=44),auth_key:c(10*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),flex_feature:c(7*=44),flex_key:c(12*=44),flex_rev_lvl:c(10*=44),flex_host_id:c(10*=44),flex_expiry_date:c(11*=44),flex_checksum:c(2*=44),flex_users:c(10*=44),flex_number:c(10*=44),platform:c(1*=44),po:c(5*=44),cust:c(6)"
+0150 LET HOLD$="",FIRM$=F0$(16,2),BOUNDARY$="--==========_BASIS"
+0155 gosub msg_text
+0160 MAIN_LOOP: 
+0170 READ (INFILECHAN,END=END_OF_FILE)READ_REC$
+0180 IF DSB THEN READ (DSBCHAN)DSB$
+0190 IF CVS(READ_REC$,3)=$$ THEN GOTO MAIN_LOOP
+0200 REM ' Parse activation key or authorization number into k$
+0210 LET K$="",C1=POS(","=READ_REC$)
+0220 IF C1 THEN LET C2=POS(","=READ_REC$(C1+1)); IF C2 THEN LET K$=READ_REC$(C1+1,C2-1)
+0230 LET K_SIZE=LEN(CVS(K$,3)); REM Keys are 13 characters, authorization numbers are 10
+0240 IF K_SIZE=10 THEN DIM REC$:LIC_TMP$; LET FLEX=1 ELSE DIM REC$:KEY_TMP$; LET FLEX=0
+0250 LET REC$=READ_REC$,AUTOLIC=1
+0260 REM 'Don't call BAL.01 (auto lic generator) for reprints from BLK.20
+0270 IF FLEX THEN IF POS("REPRINT"=REC.flex_host_id$) THEN LET REC.flex_host_id$=""; REM autolic=0
+0280 IF HOLD$<>REC.ORDER_NO$ THEN GOSUB SETUP_FILE
+0290 IF HEAD$="-S" THEN GOTO MAIN_LOOP
+0300 IF HEAD$="-Q" THEN GOTO END_OF_FILE
+0310 IF DSB THEN IF DSB$(LEN(CVS(DSB$,2))-5,6)=REC.CUST$ THEN LET DSBINFO$=DSBINFO$+DSB$+$0A$
+0320 IF CHOICE$="E" THEN LET PAGEBREAK$=$0A$+boundary$+$0A$+"Content-Disposition: attachment"+$0A$+"Content-Transfer-Encoding: 7bit"+$0A$+"Content-Type: text/html;"+$0A$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+CVS(REC.NUMBER$,2)+".htm"+$22$+$0A$+$0A$
+0330 GOSUB BUILD_HTML
+0340 IF K_SIZE<>10 THEN GOTO MAIN_LOOP
+0350 IF CHOICE$="F" THEN LET A1$="",A2$=FXPH$ ELSE LET A1$=EMAD$,A2$=""
+0360 IF AUTOLIC THEN CALL "BAL.01",CVS(REC.NUMBER$,3),CVS(REC.AUTH_KEY$,3),A1$,A2$,T$,LICENSE$
+0370 GOTO MAIN_LOOP
+0380 END_OF_FILE: 
+0390 CLOSE (INFILECHAN)
+0395 CLOSE (DSBCHAN,err=*next)
+0400 GOSUB SEND_FILE
+0410 ERASE INFILE$,ERR=*next
+0420 ERASE DSBFILE$,ERR=END_PROGRAM
+0430 GOTO END_PROGRAM
+0440 SETUP_FILE: 
+0450 IF HOLD$<>"" THEN GOSUB SEND_FILE
+0460 LET DSBINFO$="",HOLD$=REC.ORDER_NO$,OUTFILE$=AON$+"tmp/"+REC.ORDER_NO$+".fax"
+0470 IF CHOICE$="E" THEN LET OUTFILE$=AON$+"tmp/"+REC.ORDER_NO$+"email.txt"
+0480 ERASE OUTFILE$,ERR=OPEN_OUTFILE
+0490 OPEN_OUTFILE: STRING OUTFILE$
+0500 LET OUTFILE=UNT; OPEN (OUTFILE)OUTFILE$
+0510 LET PAGEBREAK$=""
+0520 INPUT_WINDOW: 
+0530 GOSUB get_email_address
+0540 PRINT 'WINDOW'(0,8,82,8,""),'CURSOR'("ON"),
+0550 LET HEAD$=FILL(80),T$="",S$=""
+0560 INPUT_STUFF: 
+0570 PRINT 'CS',@(2,0),"ORDER # ",HOLD$,@(1,2),
+0580 IF CHOICE$="E" THEN GOTO INPUT_EMAD
+0590 PRINT "FAX # ",@(7,2),FXPH$,@(1,3),"To:",@(7,3),T$,@(1,4),"Subj:",@(7,4),S$,
+0600 INPUTE 7,2,20,"_",FXPH$
+0610 INPUTE 7,3,40,"_",T$; LET T$=T$+FILL(40),HEAD$(1,40)=T$(1,40),T$=CVS(T$,2)
+0620 GOTO INPUT_SUBJ
+0630 INPUT_EMAD: 
+0640 PRINT @(4,1),"EMAIL ",@(1,2),"To:",@(0,3),EMAD$,@(1,4),"Subj:",@(7,4),S$,
+0650 INPUTE 0,3,80,"_",EMAD$
+0660 INPUT_SUBJ: 
+0670 INPUTE 7,4,40,"_",S$; IF CHOICE$="F" THEN LET HEAD$(41,40)=S$
+0680 PRINT @(2,5),"OK? CR/N/S(skip this)/Q(quit)",; INPUT @(40,5),I$,; LET I$=CVS(I$,4); IF I$="N" THEN GOTO INPUT_STUFF
+0690 PRINT 'POP',
+0695 if I$ = "Q" then goto end_program
+0696 if ctl = 4 then goto end_program
+0700 IF POS(I$="SQ") THEN LET HEAD$="-"+I$; GOTO SETUP_RETURN
+0710 IF CHOICE$="E" THEN IF CVS(EMAD$,3)="" OR POS("@"=EMAD$)=0 THEN GOTO INPUT_WINDOW ELSE GOTO WRITE_HEADER
+0720 LET F$=""; FOR A=1 TO LEN(FXPH$); IF POS(FXPH$(A,1)="0123456789") THEN LET F$=F$+FXPH$(A,1) FI ; NEXT A
+0730 LET FXPH$=F$; IF LEN(FXPH$)<7 THEN GOTO INPUT_WINDOW
+0740 IF FXPH$(1,1)="1" OR FXPH$(1,3)="011" OR LEN(FXPH$)=7 THEN GOTO WRITE_HEADER
+0750 IF LEN(FXPH$)<>10 THEN LET FXPH$="011"+FXPH$
+0760 IF LEN(FXPH$)=10 THEN IF FXPH$(1,3)="525" THEN LET FXPH$="011"+FXPH$ ELSE LET FXPH$="1"+FXPH$
+0770 WRITE_HEADER: 
+0780 LET HEADER$="Mime-Version: 1.0"+$0A$+"Content-Type: multipart/mixed;"+$0A$+" boundary="+$22$+boundary$(3)+$22$+$0A$
+0790 LET HEADER$=HEADER$+"To: "+EMAD$+$0A$+"From: BASIS Customer Service <customer-service@basis.cloud>"+$0A$+"Reply-To: customer-service@basis.cloud"+$0A$+"Cc: customer-service@basis.cloud"+$0A$+"Subject: "+S$+$0A$+boundary$+$0A$+"Content-Type: text/plain;"+$0A$+" charset="+$22$+"us-ascii"+$22$+$0A$+"Content-Transfer-Encoding: 7bit"+$0A$+$0A$
+0800 LET HEADER$=HEADER$+msg_text$+$0a$
+0840 IF CHOICE$="F" THEN LET HEADER$="To: fax@basis.cloud"+$0A$+"From: customer-service@basis.cloud"+$0A$+"Subject: "+FXPH$+"; Order# "+HOLD$+$0A$+$0A$
+0850 WRITE RECORD (OUTFILE)HEADER$
+0860 SETUP_RETURN: RETURN
+0870 SEND_FILE: 
+0875 LET AT$=$0A$+boundary$+"--"+$0A$
+0880 IF CHOICE$="F" THEN GOTO SCALL_SENDMAIL
+0890 IF REC.CUST$="003017" THEN LET CUST_TYPE$="DSI"; REM ' SDSI gets distributor's text file, 12/6/2000
+0900 IF CUST_TYPE$<>"DSI" THEN GOTO SCALL_SENDMAIL
+0910 LET DSBID$=HOLD$(LEN(HOLD$)-4,5)+"dsb.txt"
+
+0911 dsbfileapp$ = stbl("TEMP") + dsbid$
+0912 attachfilelist$ = attachfilelist$ + dsbfileapp$ + "|"
+0913 erase dsbfileapp$, err=*next
+0914 string dsbfileapp$
+0915 dsbfileapp = unt
+0916 open(dsbfileapp)dsbfileapp$
+0917 write record (dsbfileapp)dsbinfo$
+0918 close(dsbfileapp)
+
+0920 LET AT$=$0A$+boundary$+$0A$+"Content-Disposition: attachment"+$0A$+"Content-Transfer-Encoding: 7bit"+$0A$+"Content-Type: text/plain;"+$0A$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+DSBID$+$22$+$0A$+$0A$+DSBINFO$+at$
+0930 SCALL_SENDMAIL: 
+0940 if choice$="E" then WRITE RECORD (OUTFILE,err=*next)AT$
+0950 CLOSE (OUTFILE,err=*next)
+0959 REM ' send mail is no longer used
+0960 REM ' IF HEAD$<>"-S" THEN LET A=SCALL("/usr/lib/send mail -t < "+OUTFILE$)
+0965 if head$ <> "-S" then gosub send_the_email
+0970 ERASE OUTFILE$,ERR=*next
+0980 RETURN
+0990 get_email_address: 
+1000 LET FXPH$="",EMAD$="",CUST_TYPE$="",CNUM$=REC.cust$
+1010 IF Firm$="02" THEN LET CNUM$="0007688"
+1020 READ (TMM01,KNUM=0,KEY=Firm$+CNUM$,DOM=*NEXT)
+1030 LET TMM05_K$="",TMM01_K$=KEY(TMM01,END=end_email_address)
+1040 IF POS(Firm$+CNUM$=TMM01_K$)<>1 THEN GOTO end_email_address
+1050 READ (TMM01,KEY=TMM01_K$)TMM0$
+1060 LET CUST_TYPE$=TMM0$(260,3),TMM05_K$=TMM01_K$
+1070 READ RECORD (TMM05,KEY=TMM05_K$,DOM=end_email_address)tmm05$
+1080 LET EMAD$=CVS(TMM05.email$,3)
+1090 END_email_address: 
+1100 RETURN
+1110 END_PROGRAM: 
+1120 RUN "SYS.AA"
+1130 BUILD_HTML: 
+1150 html$="",toline$="",subjline$=""
+1180 IF CVS(HEAD$(1,40),2)<>"" THEN LET TOLINE$="<b>To: "+HEAD$(1,40)+"</b><br>"
+1190 IF CVS(HEAD$(41,40),2)<>"" THEN LET SUBJLINE$="<b>Subj: "+HEAD$(41,40)+"</b><br>"
+1200 call "BLK.30",firm$,toline$,subjline$,choice$,rec$,flex,html$
+
+1202 savehtml$ = html$
+1203 htmlfile$ = stbl("TEMP") + CVS(REC.NUMBER$,2)+".htm"
+1204 attachfilelist$ = attachfilelist$ + htmlfile$ + "|"
+1205 erase htmlfile$, err=*next
+1206 string htmlfile$
+1207 htmlfile = unt
+1208 open(htmlfile)htmlfile$
+1209 write record (htmlfile)savehtml$
+1210 close(htmlfile)
+
+1212 LET HTML$=PAGEBREAK$+HTML$; WRITE RECORD (OUTFILE)HTML$
+1220 IF CHOICE$="F" THEN LET PAGEBREAK$="<!--"+$0A$+"~~pagebreak~~"+$0A$+"--><br><big><big><big><big>BASIS</big></big></big></big><br>International<br><br>"+$0A$
+1290 RETURN
+1500 msg_text:
+1510 msg_chan=unt
+1520 msg_text$=""
+1530 open(msg_chan)"BLK16.txt"
+1540 f1$=fin(msg_chan),s=dec(f1$(1,4))
+1550 readrecord(msg_chan,siz=s)msg_text$
+1560 close(msg_chan)
+1590 return
+2000 rem ' send email via email.bbj
+2010 send_the_email:
+2020 rem emad$ has the to address
+2030 from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+2040 cc$ = "customer-service@basis.cloud"
+2050 bcc$ = "kw5121151@gmail.com"; rem ' for monitoring
+2060 subj$ = s$
+2070 if pos("BLK.16" = msg_text$) = 0 then msg_text$ = msg_text$ + $0A$ + $0A$ + "BLK.16"
+
+2150 call "sendEmail.src", from$, emad$, cc$, bcc$, subj$, msg_text$, attachfilelist$
+
+2152 while pos("|" = attachfilelist$) <> 0 
+2153	ppos = pos("|" = attachfilelist$)
+2154	attachfile$ = attachfilelist$(1, ppos - 1)
+2155	attachfilelist$ = attachfilelist$(ppos + 1)
+2156	erase attachfile$,err=*next
+2157 wend
+
+2170 return

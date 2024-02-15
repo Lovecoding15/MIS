@@ -1,0 +1,148 @@
+REM 'bc_con.src/bbj
+
+enter arm02,arm10i,ivm01,smc01,snm01,snm02,snlist$,ece11$,type$[all],price[all],nbr_trans
+
+call "templates.pgm::snm01"
+call "templates.pgm::snm02"
+call "templates.pgm::snt01"
+call "templates.pgm::SMC01"
+call "templates.pgm::arm02"
+call "templates.pgm::arm10i"
+
+dim sninfo$:"sn:c(20),product:c(3),platform:c(3),os_level:c(3),product_rev:c(3),license_type:c(3),contract:c(6),date:c(8),std_users:c(5),ent_users:c(5)"
+sninfo_len=len(sninfo$)
+pricemask$="-####0.00"
+usermask$="-0000"
+sn_detail$=""
+ent_users=0,std_users=0,sam_total=0,con_total=0,sam_users=0
+
+templist$=ece11.serial_nbr$+$0a$+snlist$
+firm_id$=ece11.firm_id$,cust_num$=ece11.customer_nbr$
+today$=date(0:"%Y%Mz%Dz")
+
+while pos($0a$=templist$)
+  p=pos($0a$=templist$), sninfo.sn$=templist$(1,p-1), templist$=templist$(p+1)
+  Readrecord(snm01,key=sninfo.sn$,err=*next)snm01$
+  su=0,eu=0
+  dim snm02$:fattr(snm02$)
+  Readrecord(snm02,key=sninfo.sn$,err=*next)snm02$
+  if snm02.serial_nbr$<>sninfo.sn$ then 
+    su=snm01.users
+  else
+    if pos("E"=snm02.lic_property1$)=1 then eu=snm02.users1, su=snm02.users2
+    if pos("S"=snm02.lic_property1$)=1 then su=snm02.users1, eu=snm02.users2
+  fi
+
+  sninfo.product$=snm01.product$
+  sninfo.platform$=snm01.platform$
+  sninfo.os_level$=snm01.os_level$
+  sninfo.product_rev$=snm01.product_rev$
+  sninfo.license_type$=snm01.license_type$
+  sninfo.std_users$=str(su:usermask$)
+  sninfo.ent_users$=str(eu:usermask$)
+  std_users=std_users+su
+  ent_users=ent_users+eu
+  dim smc01$:fattr(smc01$)
+  FIND RECORD (smc01,KEY=snm01.contract$,knum=0,DOM=*next)smc01$
+  sninfo.contract$=snm01.contract$
+  sninfo.date$=smc01.annual_dt$
+  if snm01.sam_active$="N" and sninfo.date$>today$ then sninfo.date$=fill(8)
+  if snm01.sam_active$="N" or smc01.sam_active$="N" or smc01.annual_dt$<today$ then sninfo.contract$=fill(6)
+  sn_detail$=sn_detail$+sninfo$+$0a$
+wend
+
+tmp$=cvs(ece11.lic_property1$+ece11.lic_property2$,3)
+ep$="EF",sp$="SF"
+p=pos("R"=tmp$)
+if p then ep$="ER",sp$="SR"
+rem ece11.lic_property1$=ep$,ece11.users=ent_users
+rem ece11.lic_property2$=sp$,ece11.users2=std_users
+if ece11.users=0 then    
+  rem ece11.lic_property1$=ece11.lic_property2$
+  rem ece11.lic_property1$="  "
+  rem ece11.users=ece11.users2
+  rem ece11.users2=0
+fi
+
+tier_override=std_users+ent_users
+disc_pct=0
+readrecord(arm02,key=firm_id$+cust_num$+"  ")arm02$
+splevel=max(tier_override,arm02.pricing_level)
+FIND (arm10i,KEY=firm_id$+"I"+arm02.disc_code$,ERR=*NEXT)*,disc_pct
+
+dim old_users[2],new_users[2],old_lprop$[2],new_lprop$[2]
+new_item$=ece11.item_number$
+jul_renew=fnjul(ece11.annual_dt$)
+if jul_renew=0 then jul_renew=jul(0,0,0)+365
+
+templist$=sn_detail$
+
+rem 'loop to do transactions
+while pos($0a$=templist$)
+  p=pos($0a$=templist$), sninfo$=templist$(1,p-1), templist$=templist$(p+1)
+  su=fnnum(sninfo.std_users$)
+  eu=fnnum(sninfo.ent_users$)
+  jul_prorate=fnjul(sninfo.date$)
+  if jul_prorate=0 then jul_prorate=jul(0,0,0)
+  sam_flag=0
+  if jul_renew>jul_prorate then sam_flag=1
+  on_sam=(sninfo.contract$<>fill(6))
+  new_users[0]=eu, new_users[1]=su
+  if new_users[0] then new_lprop$[0]=ep$
+  if new_users[1] then new_lprop$[1]=sp$
+  if new_users[0]=0 then
+    new_users[0]=new_users[1]
+    new_users[1]=0
+    new_lprop$[0]=new_lprop$[1]
+    new_lprop$[1]="  "
+  fi
+  old_users[0]=new_users[0]
+  old_users[1]=new_users[1]
+  old_lprop$[0]="  "
+  old_lprop$[1]="  "
+  if sninfo.product$<>"BAS" and on_sam=0 then
+    call "price.pgm",firm_id$,"TRD",new_item$(13,3),old_users[all],new_users[all],old_lprop$[all],new_lprop$[all],sninfo.product_rev$,"SM1",0,disc_pct,splevel,price,samprice
+    con_total=con_total+price
+  fi
+  old_lprop$[0]=new_lprop$[0]
+  old_lprop$[1]=new_lprop$[1]
+  if sam_flag then
+    call "price.pgm",firm_id$,"SM1",new_item$(13,3),old_users[all],new_users[all],old_lprop$[all],new_lprop$[all],"","SM1",0,disc_pct,splevel,price,samprice
+    samfactor=jul_renew-jul_prorate
+    samprice=samprice*samfactor/365
+    sam_total=sam_total+max(samprice,0),sam_users=sam_users+(su+eu)*(samprice>0)
+  fi
+wend
+
+end_pgm:
+
+rem ?con_total
+rem ?sam_total
+nbr_trans=(sam_total<>0)
+dim price[nbr_trans],type$[nbr_trans]
+price[0]=con_total
+type$[r]="CON|"+new_item$
+if sam_total then
+  price[1]=sam_total
+  type$[1]="SM1|BASSAM1"+fill(13)
+fi
+
+exit
+
+rem 'Subroutines, functions
+
+DEF fnnum(tempnum$)
+ RETURN NUM(tempnum$,ERR=badnum)
+ badnum: RETURN 0
+FNEND
+
+DEF fnjul(xdt$)
+ LET xdy=0
+ LET xy=fnNUM(xdt$(1,4))
+ LET xm=fnNUM(xdt$(5,2))
+ LET xd=fnNUM(xdt$(7,2))
+ if xy*xm*xd then xdy=JUL(xy,xm,xd)
+ RETURN xdy
+FNEND
+
+END

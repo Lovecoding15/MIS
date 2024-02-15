@@ -1,0 +1,108 @@
+REM <set_flag.pgm>
+
+seterr pgm_end
+flag1$=cvs(argv(1),7)
+
+aon$=stbl("AON")
+adata$=stbl("DATA_SERVER")+aon$+"ADATA/"
+
+flags_chan=unt
+open (flags_chan)adata$+"flags.dat"
+call aon$+"bas/templates.pgm::flags"
+
+today$=date(0:"%Yd%Mz%Dz")
+now$=date(0:"%Hz%mz%sz")
+
+flags.key1$="02"
+flags.date$=today$
+flags.time$=now$
+flags.flag1$=flag1$
+flags$=field(flags$)
+
+if flag1$<>"STD" then goto set_flag
+
+seterr set_flag
+dsrv$="/<opus,port=2000>"
+ftpdir$=dsrv$+"/home/dynevo"
+listfile$=ftpdir$+"/invoice_list.csv"
+
+success=0
+listsize=0
+listfile=unt
+open(listfile,err=*next)listfile$;success=1
+if success then 
+  f$=fin(listfile)
+  listsize=dec(f$(1,4))
+fi
+
+if listsize then
+  logfile$=STBL("AON")+"ADATA/signed_invoices.log"
+  while 1
+    read(listfile,end=*break)tmp$
+    p=pos(","=tmp$);if p=0 then continue
+    pdf$=cvs(tmp$(1,p-1),3)
+    erase ftpdir$+"/"+pdf$,err=*next
+    a=SCALL("echo "+tmp$+" "+today$+" "+now$+" >> "+logfile$)
+  wend
+fi
+close(listfile,err=*next)
+erase listfile$,err=*next
+
+rem 'move any files from tmp to std
+tmpdir$=ftpdir$+"/tmp"
+tmpfile$=tmpdir$+"/invoice_list.csv"
+stdfile$=ftpdir$+"/invoice_list.csv"
+success=0
+listsize=0
+tmpfile=unt
+open(tmpfile,err=*next)tmpfile$;success=1
+if success then 
+  f$=fin(tmpfile)
+  listsize=dec(f$(1,4))
+fi
+if listsize=0 then close(tmpfile);goto set_flag
+readrecord(tmpfile,siz=listsize)tmplist$
+close(tmpfile)
+listrec$=""
+
+while 1
+  p=pos($0a$=tmplist$)
+  if p=0 then break
+  tmp$=tmplist$(1,p),tmplist$=tmplist$(p+1)
+  p=pos(","=tmp$);if p=0 then continue
+  pdf$=cvs(tmp$(1,p-1),3)
+  success=0
+  inchan=unt
+  open(inchan,err=*next)tmpdir$+"/"+pdf$;success=1 
+  if success then 
+    f$=fin(listfile)
+    s=dec(f$(1,4))
+    if s=0 then continue
+    readrecord(inchan,siz=s)rec$
+    erase ftpdir$+"/"+pdf$,err=*next
+    string ftpdir$+"/"+pdf$
+    outchan=unt
+    open(outchan)ftpdir$+"/"+pdf$
+    print(outchan)rec$,
+    close(inchan)
+    close(outchan)
+    erase tmpdir$+"/"+pdf$
+    listrec$=listrec$+tmp$
+  fi
+wend
+if listrec$="" then goto set_flag
+erase stdfile$,err=*next
+string stdfile$
+stdchan=unt
+open(stdchan)stdfile$
+print(stdchan)listrec$,
+close(stdchan)
+erase tmpfile$
+
+set_flag:
+seterr pgm_end
+writerecord(flags_chan)flags$
+close(flags_chan)
+
+pgm_end:
+release

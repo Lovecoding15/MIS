@@ -1,0 +1,37 @@
+Updatexml log started: 2011-07-12@18:55:37
+Location of new sync XML files: /mnt/data/aon_prod/v1110/extramenu/data/sync
+Location of old sync XML files: /mnt/data/basisaon/extramenu/data/sync
+Sync backup directory: /mnt/data/backup/7_12
+
+COPIED: /mnt/data/backup/7_12/ads_filters~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_appcompany~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_log_settings~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_rolefirms~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_userroles~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_userfirms~[all].xml
+COPIED: /mnt/data/backup/7_12/adt_inqlog~[all].xml
+COPIED: /mnt/data/backup/7_12/adc_country~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_filter_cols~[all].xml
+COPIED: /mnt/data/backup/7_12/adt_issuelog~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_documents~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_sequences~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_doc_group~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_role~[all].xml
+COPIED: /mnt/data/backup/7_12/adc_language~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_doc_setcols~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_userlog~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_user~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_rolealias~[all].xml
+COPIED: /mnt/data/backup/7_12/ddm_drill_defs~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_doc_settings~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_firms~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_selopts~[all].xml
+COPIED: /mnt/data/backup/7_12/adm_email_acct~[all].xml
+COPIED: /mnt/data/backup/7_12/ads_configure~[all].xml
+
+COPIED: /mnt/data/basisaon/extramenu/data/sync/adm_modules~[00000000XTR].xml
+COPIED: /mnt/data/basisaon/extramenu/data/sync/adm_module_dflt~[00000000XTR].xml
+
+
+
+Updatexml log finished: 2011-07-12@18:55:45

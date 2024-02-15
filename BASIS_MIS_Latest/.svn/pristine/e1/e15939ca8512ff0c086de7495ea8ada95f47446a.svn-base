@@ -1,0 +1,193 @@
+rem ' **********************************************************************
+rem ' * zero out available support the day after the the SAM, DVK or RNT
+rem ' * contract expires
+rem ' * runs daily after deactivate_sn_bulk.src
+rem ' **********************************************************************
+
+begin
+seterr error_trap
+setesc error_trap
+
+rem ' **********************************************************************
+rem ' * set email address
+rem ' **********************************************************************
+
+to$ = "customer-service@basis.cloud"
+cc$ = "misdev@basis.cloud"
+from$ = "customer-service@basis.cloud"
+
+rem ' **********************************************************************
+rem ' * set dates
+rem ' **********************************************************************
+
+today = jul(0,0,0)
+expired = today - 1
+expired$ = date(expired:"%Y%Mz%Dz")
+today$ = date(today:"%Y%Mz%Dz")
+
+rem ' **********************************************************************
+rem ' * create, open and prep the message file
+rem ' **********************************************************************
+
+filepath$ = "/tmp/"
+messagefile$ = filepath$ + "zeroedSupport_" + date(0,"%Y%Mz%Dz%Hz%mz%sz") + ".txt"
+erase messagefile$, err=*next
+string messagefile$
+messagefile=unt
+open(messagefile)messagefile$
+
+messagetemp$="FIRM_ID:C(3),CUSTOMER_NBR:C(7),CONTRACT:C(7),SERIAL_NBR:C(10),EXPIRED:C(11),AVAIL_EXPIRE:C(11),AVAIL_SUPPORT:C(11),CUST_NAME:C(31),COMMENT:C(10)"
+dim messageline$:messagetemp$
+
+messageline.firm_id$ = "FM"
+messageline.customer_nbr$ = "CustNb"
+messageline.cust_name$ = "Customer Name"
+messageline.contract$ = "Cntrct"
+messageline.serial_nbr$ = "SerialNumb"
+messageline.expired$ = "Expired---"
+messageline.avail_expire$ = "Avail Exp"
+messageline.avail_support$ = "Sppt Incid"
+messageline.comment$ = "COMMENT"
+
+write (messagefile)messageline$
+
+rem ' **********************************************************************
+rem ' * open other files
+rem ' **********************************************************************
+
+call "ec_open::SNM01"; rem ' serial number table
+call "ec_open::SMC01"; rem ' contract table
+call "ec_open::ARM01"; rem ' customer master file
+
+rem ' **********************************************************************
+rem ' * set the environment
+rem ' **********************************************************************
+
+rem ' position key pointer
+read record(smc01, knum = 2, key = expired$, dom = *next)smc01$
+
+serial_number_count = 0
+
+rem ' **********************************************************************
+rem ' * main loop on the smc01 file
+rem ' **********************************************************************
+
+while 1
+	read record(smc01,end=*break)smc01$
+	
+	if smc01.annual_dt$ > expired$ then break
+	
+	rem ' work the serial numbers
+	read record(snm01, knum = 3, key = smc01.contract$, dom = *next)snm01$
+
+	while 1
+	
+		extract record(snm01, end = *break)snm01$
+		
+		if snm01.contract$ <> smc01.contract$ then break
+		
+		serial_number_count = serial_number_count + 1
+		
+		rem ' get the cust_name$
+		dim arm01$:fattr(arm01$); arm01.cust_name$ = "Not Found"
+		read record(arm01, key = smc01.firm_id$ + smc01.customer_nbr$, dom = *next)arm01$
+		
+		rem ' does avail_expire$ contain a date and is it greater than the expired date?
+		rem ' if so leave it as is
+		if cvs(snm01.avail_expire$,3) <> "" and snm01.active_flag$ = "Y" and snm01.avail_expire$ > expired$ then 
+			comment$ = "Not Zeroed"
+			gosub write_message
+			read record(snm01)snm01$
+			continue
+		fi
+		
+		rem ' zero the avail_support
+		snm01.avail_support = 0
+		
+		snm01$ = field(snm01$)
+		write record(snm01)snm01$
+		
+		comment$ = ""
+		gosub write_message
+		
+	wend
+	
+wend
+
+rem ' add the count line
+
+line$ = "Serial Nbrs Reviewed: " + str(serial_number_count)
+write (messagefile)line$
+
+close(messagefile)
+
+rem ' from$, to$, cc$ set at beginning of the program
+rem ' to$ = "kurt.e.williams@comcast.net"
+rem ' cc$ = ""
+bcc$ = ""
+subject$ = "Support Incidents Zeroed"
+file$ = ""
+
+open(messagefile)messagefile$
+msgtxt$ = ""
+while 1
+	read(messagefile, end = *break)messageline$
+	if cvs(messageline$,3) = "" then continue
+	msgtxt$ = msgtxt$ + messageline$ + $0A$
+wend
+msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+goto pgm_exit
+
+
+write_message:
+
+	dim messsageline$:messagetemp$
+
+	messsageline.firm_id$ = smc01.firm_id$
+	messsageline.customer_nbr$ = smc01.customer_nbr$
+	messsageline.cust_name$ = arm01.cust_name$
+	messsageline.contract$ = smc01.contract$
+	messsageline.serial_nbr$ = snm01.serial_nbr$
+	messsageline.expired$ = smc01.expire_on_dt$(1,4) + "." + smc01.expire_on_dt$(5,2) + "." + smc01.expire_on_dt$(7,2)
+	
+	if cvs(snm01.avail_expire$,3) <> "" and snm01.avail_expire$ > expired$ then
+		messsageline.avail_expire$ = snm01.avail_expire$(1,4) + "." + snm01.avail_expire$(5,2) + "." + snm01.avail_expire$(7,2)
+	else
+		messsageline.avail_expire$ = "----------"
+	fi
+	
+	messsageline.avail_support$ = str(snm01.avail_support:"#0")
+	messsageline.comment$ = comment$
+
+	write (messagefile)messsageline$
+
+return
+
+rem ' **********************************************************************
+rem ' * error trap
+rem ' **********************************************************************
+
+error_trap:
+
+	rem ' from$, to$, cc$ set at beginning of the program
+	to$ = "mis@basis.cloud"
+	rem ' to$ = "kurt.e.williams@comcast.net"
+	cc$ = ""
+	bcc$ = ""
+	subject$ = "Error in zeroSupport.src"
+	file$ = ""
+	msgtxt$ = "An error " + str(err) + " occurred in zeroSupport.src at line number: " + str(tcb(5)) + ". Error message: " + errmes(-1)
+	msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+	goto pgm_exit
+
+
+rem ' **********************************************************************
+rem ' * program exit
+rem ' **********************************************************************
+
+pgm_exit:
+	release
+	

@@ -1,0 +1,38 @@
+Table Definition Module
+FUT_SMC01 - SAM/Developer Contracts
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SMC01^/mnt/data/aon_prod/apps/fileutil/;^BSHO;^^^SAM/Developer Contracts^SAM/Developer Contracts^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+CONTRACT^FUT_SMC01^001^C^^3001^ine_contract^0^^^1^^Y^^^^^FUT_CONTRACT^SAM/Developer Contract^SAM/Developer Contract^SAM/Developer Contract^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^2^^^^^^^^N^
+FIRM_ID^FUT_SMC01^002^C^^3002^ine_firm_id^0^^^2^^N^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+CUSTOMER_NBR^FUT_SMC01^003^C^^3003^dis_customer_nbr^0^^^3^^N^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^^^^0^^^^N^
+CONTR_START^FUT_SMC01^004^C^^3004^ine_contr_start^0^^^4^^N^^^^^FUT_CONTR_START^Starting Date^Starting Date^Starting Date^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^^^^^^^^N^
+ANNUAL_DT^FUT_SMC01^005^C^^3005^ine_annual_dt^0^^^5^^N^^^^^FUT_ANNUAL_DT^Next Annual Date^Next Annual Date^Next Annual Date^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^^^^^^^^N^
+EXPIRE_ON_DT^FUT_SMC01^006^C^^3006^ine_expire_on_dt^0^^^6^^N^^^^^FUT_EXPIRE_ON_DT^Expire On Dt^Expire On Dt^Expire On Dt^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^^^^^^^^N^
+CONTR_TYPE^FUT_SMC01^007^C^^3007^ine_contr_type^0^^^7^^N^^^^^FUT_CONTR_TYPE^Contract Type^Contract Type^Contract Type^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^N^
+SAM_ACTIVE^FUT_SMC01^008^C^^3008^ine_sam_active^0^^^8^^N^^^^^FUT_SAM_ACTIVE^SAM Contract Active^SAM Contract Active^SAM Contract Active^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+E_MAIL^FUT_SMC01^009^C^^3009^ine_e_mail^0^^^9^^N^^^^^FUT_E_MAIL^E-mail^E mail^E mail^C^^E^^^^^^^^^^^^^^^^^^^^^^^80^^^^^^^^^^^0^^^^^^^^N^
+NEW_FLAG^FUT_SMC01^010^C^^3010^ine_new_flag^0^^^10^^N^^^^^FUT_NEW_FLAG^New Flag^New Flag^New Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+INVOICED_FLAG^FUT_SMC01^011^C^^3011^ine_invoiced_flag^0^^^11^^N^^^^^FUT_INVOICED_FLA^Invoiced/Notified Flag^Invoiced/Notified Flag^Invoiced/Notified Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+COMMENT^FUT_SMC01^012^C^^3012^ine_comment^0^^^12^^N^^^^^FUT_COMMENT^Serial Number Comment^Serial Number Comment^Serial Number Comment^C^^E^^^^^^^^^^^^^^^^^^^^^^^60^^^^^^^^^^^0^^^^^^^^N^
+DISB_METHOD^FUT_SMC01^014^C^^3013^ine_disb_method^0^^^14^^N^^^^^FUT_DISB_METHOD^Disbursement Method^Disbursement Method^Disbursement Method^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^0^^^^^^^^N^
+COMMIT_PERC^FUT_SMC01^015^C^^3014^ine_commit_perc^0^^^15^^N^^^^^FUT_COMMIT_PERC^Commit Perc^Commit Perc^Commit Perc^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^2^^^^^^^^N^
+PAY_CYCLES^FUT_SMC01^016^C^^3015^ine_pay_cycles^0^^^16^^N^^^^^FUT_PAY_CYCLES^Pay Cycles^Pay Cycles^Pay Cycles^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^2^^^^^^^^N^
+RENEW_FLAG^FUT_SMC01^017^C^^3016^ine_renew_flag^0^^^17^^N^^^^^FUT_RENEW_FLAG^Renew Flag^Renew Flag^Renew Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+AVAILABLE^FUT_SMC01^018^C^^3017^ine_available^0^^^18^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^53^^^^^^^^^^^0^^^^^^^^N^
+AVAIL^FUT_SMC01^013^C^^3018^ine_avail^0^^^19^^N^^^^^FUT_AVAIL^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SMC01^PRIMARY^FUT_SMC01.CONTRACT                      ^FUT_SMC01.CONTRACT$^RD_REC_DATA.CONTRACT$^RD_REC_DATA.CONTRACT$                   
+{KeyDefsEnd}
+{GridCols}
+001FUT_SMC01.CONTRACT                      ;002FUT_SMC01.FIRM_ID                       ;003FUT_SMC01.CUSTOMER_NBR                  ;004FUT_SMC01.CONTR_START                   ;005FUT_SMC01.ANNUAL_DT                     ;006FUT_SMC01.EXPIRE_ON_DT                  ;007FUT_SMC01.CONTR_TYPE                    ;008FUT_SMC01.SAM_ACTIVE                    ;009FUT_SMC01.E_MAIL                        ;010FUT_SMC01.NEW_FLAG                      ;011FUT_SMC01.INVOICED_FLAG                 ;012FUT_SMC01.COMMENT                       ;014FUT_SMC01.DISB_METHOD                   ;015FUT_SMC01.COMMIT_PERC                   ;016FUT_SMC01.PAY_CYCLES                    ;017FUT_SMC01.RENEW_FLAG                    ;018FUT_SMC01.AVAILABLE                     ;019FUT_SMC01.AVAIL                         ;
+{GridColsEnd}

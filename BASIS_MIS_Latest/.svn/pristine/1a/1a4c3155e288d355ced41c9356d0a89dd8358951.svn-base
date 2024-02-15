@@ -1,0 +1,30 @@
+BEGIN
+call "ec_open::ARM01"
+call "ec_open::ARM02"
+
+txtfile$="custlbl.txt"
+ERASE txtfile$,ERR=*NEXT
+STRING txtfile$
+txt=UNT
+OPEN (txt)txtfile$
+
+ctr=0
+txt1$=FILL(85)
+LET txt2$=FILL(85)
+main_loop: 
+k$=KEY(ARM02,END=end_pgm)
+
+IF k$(1,2)<>"01" THEN GOTO end_pgm
+READ RECORD (ARM02,KEY=k$)ARM02$
+if arm02.cust_type$<>"DSI" and pos(arm02.cust_type$(1,1)="RP")=0 then goto main_loop
+READ RECORD (ARM01,KEY=k$(1,8))ARM01$
+
+txt1$(28*ctr+1,26)=Arm01.cust_name$(1,26)
+txt2$(28*ctr+1,26)=arm01.customer_nbr$+" "+arm02.cust_type$+"     2004"
+print (txt)arm01.customer_nbr$,"  ",arm01.cust_name$
+IF ctr=2 THEN PRINT (txt)$0A$+txt1$+$0A$+txt2$+$0A$+$0A$+$0A$; LET ctr=-1
+ctr=ctr+1
+GOTO main_loop
+
+end_pgm: 
+END

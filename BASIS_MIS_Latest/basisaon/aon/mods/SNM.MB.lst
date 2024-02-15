@@ -1,0 +1,263 @@
+0010 REM "SNM - Serial Number Maintenance (Profile)"
+0020 REM "Program SNM.MB"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * 4/21/99 * WA# 208 * BASIS"
+0040 REM 
+0045 REM " ** BASIS Modified to display SAM Contract Info 
+0070 SETERR 9000
+0080 SETESC 9000
+0090 PRECISION P[1]
+0200 REM " --- IOLIST's"
+0210 SNM01A: IOLIST A0$(1),A1$(1),A2$(1),A3$(1),A4$(1),A[ALL]
+0310 ARM01E: IOLIST X0$,X1$
+0500 REM " --- Initializations"
+0700 REM " --- Background"
+0705 PRINT @(0,6),'CE',
+0720 PRINT 'SF',@(9,6),"Product: ",@(61),"Active?: ",@(8,7),"Platform: ",@(52),"Orig. Sales Date: ",@(8,8),"OS Level: ",@(61),"Port ID: ",
+0730 PRINT @(0,9),"Product Revision: ",@(4,10),"License Type: ",@(6,11),"Media Type: ",
+0735 PRINT @(52,9),"      SAM Active? ",@(52,10),"    Contract Nbr: ",@(52,11),"Next Annual Date: ",@(53,12),"Expiration Date: ",@(51,13),"Support Incidents:",@(52,14)," Support Expires: ",
+0740 PRINT @(1,15),"Purchasing Customer: ",@(2,20),"Comment: ",'SB'
+1300 REM " --- Display record"
+1310 GOSUB 5000
+1320 LET EXTRACTED=0
+1390 ON O0 GOTO 4000,4000,4000
+2000 REM " --- Product ID"
+2030 LET V0$="S",V1$="KCE",V2$=A2$(1,3),V3$="",V4$="",V0=3,V1=18,V2=6,O0=1
+2040 LET V4$="Enter A Valid Product ID ("+V4$+"<F3>=Lookup)"
+2045 GOSUB 7000
+2050 ON V3 GOTO 2060,2060,2000,2055,4000
+2055 CALL "CSC.LK",FILES$[9],V1,V2,V$,V0,30,"Product IDs"
+2060 IF V$="" THEN GOTO 2000
+2070 LET A2$(1,3)=V$
+2080 FIND (CSM01_DEV,KEY=N0$+A2$(1,3),DOM=2000)*,PROD_DESC$
+2085 PRINT @(V1,V2),A2$(1,3),@(22,V2),PROD_DESC$
+2090 GOTO 3900
+2100 REM " --- Platform ID"
+2130 LET V0$="S",V1$="KCE",V2$=A2$(4,3),V3$="",V4$="",V0=3,V1=18,V2=7
+2140 LET V4$="Enter A Valid Platform ID ("+V4$+"<F3>=Lookup)"
+2145 GOSUB 7000
+2150 ON V3 GOTO 2160,2160,2100,2155,4000
+2155 CALL "CSC.LK",FILES$[10],V1,V2,V$,V0,30,"Platform IDs"
+2160 IF V$="" THEN GOTO 2100
+2170 LET A2$(4,3)=V$
+2180 FIND (CSM02_DEV,KEY=N0$+A2$(4,3),DOM=2100)*,PLAT_DESC$
+2185 PRINT @(V1,V2),A2$(4,3),@(22,V2),PLAT_DESC$
+2190 GOTO 3900
+2200 REM " --- OS Level ID"
+2230 LET V0$="S",V1$="KCE",V2$=A2$(7,3),V3$="",V4$="",V0=3,V1=18,V2=8
+2240 LET V4$="Enter A Valid OS Level ("+V4$+"<F3>=Lookup)"
+2245 GOSUB 7000
+2250 ON V3 GOTO 2260,2260,2200,2255,4000
+2255 CALL "CSC.LK",FILES$[11],V1,V2,V$,V0,30,"OS Levels"
+2260 IF V$="" THEN GOTO 2200
+2270 LET A2$(7,3)=V$
+2280 FIND (CSM03_DEV,KEY=N0$+A2$(7,3),DOM=2200)*,OSLVL_DESC$
+2285 PRINT @(V1,V2),A2$(7,3),@(22,V2),OSLVL_DESC$
+2290 GOTO 3900
+2300 REM " --- Product Revision"
+2330 LET V0$="S",V1$="KCE",V2$=A2$(10,3),V3$="",V4$="",V0=3,V1=18,V2=9
+2340 LET V4$="Enter A Valid Product Revision ("+V4$+"<F3>=Lookup)"
+2345 GOSUB 7000
+2350 ON V3 GOTO 2360,2360,2300,2355,4000
+2355 CALL "CSC.LK",FILES$[12],V1,V2,V$,V0,30,"Product Revisions"
+2360 IF V$="" THEN GOTO 2300
+2370 LET A2$(10,3)=V$
+2380 FIND (CSM04_DEV,KEY=N0$+A2$(10,3),DOM=2300)*,PRREV_DESC$
+2385 PRINT @(V1,V2),A2$(10,3),@(22,V2),PRREV_DESC$
+2390 GOTO 3900
+2400 REM " --- License Type"
+2430 LET V0$="S",V1$="KCE",V2$=A2$(13,3),V3$="",V4$="",V0=3,V1=18,V2=10
+2440 LET V4$="Enter A Valid License Type ("+V4$+"<F3>=Lookup)"
+2445 GOSUB 7000
+2450 ON V3 GOTO 2460,2460,2400,2455,4000
+2455 CALL "CSC.LK",FILES$[13],V1,V2,V$,V0,30,"License Types"
+2460 IF V$="" THEN GOTO 2400
+2470 LET A2$(13,3)=V$
+2480 FIND (CSM05_DEV,KEY=N0$+A2$(13,3),DOM=2400)*,LTYPE_DESC$
+2485 PRINT @(V1,V2),A2$(13,3),@(22,V2),LTYPE_DESC$
+2490 GOTO 3900
+2500 REM " --- Media Type"
+2530 LET V0$="S",V1$="KCE",V2$=A2$(16,3),V3$="",V4$="",V0=3,V1=18,V2=11
+2540 LET V4$="Enter A Valid Media Type ("+V4$+"<F3>=Lookup)"
+2545 GOSUB 7000
+2550 ON V3 GOTO 2560,2560,2500,2555,4000
+2555 CALL "CSC.LK",FILES$[14],V1,V2,V$,V0,30,"Media Types"
+2560 IF V$="" THEN GOTO 2500
+2570 LET A2$(16,3)=V$
+2580 FIND (CSM06_DEV,KEY=N0$+A2$(16,3),DOM=2500)*,MEDIA_DESC$
+2585 PRINT @(V1,V2),A2$(16,3),@(22,V2),MEDIA_DESC$
+2590 GOTO 3900
+2600 REM " --- Active?"
+2620 LET V0$="Y",V1$="CE",V2$=A3$(1,1),V3$="",V0=1,V1=70,V2=6
+2630 LET V4$="Is this Serial Number Active?"
+2640 GOSUB 7000
+2680 LET A3$(1,1)=V$
+2682 IF V$="N" then A[2]=0
+2684 PRINT @(70,13),'SB',A[2],'SF',
+2690 GOTO 3900
+2700 REM " --- Original Sales Date"
+2720 LET V0$="D",V1$="CE",V2$=FNB$(A3$(2,3)),V3$="",V0=8,V1=70,V2=7
+2730 LET V4$="Enter the Original Sales Date"
+2740 GOSUB 7000
+2780 LET A3$(2,3)=V$
+2790 GOTO 3900
+2800 REM " --- Port ID"
+2820 LET V0$="S",V1$="CE",V2$=A3$(11,5),V3$="",V0=5,V1=70,V2=8
+2830 LET V4$="Enter the Port ID"
+2840 GOSUB 7000
+2880 LET A3$(11,5)=V$
+2890 GOTO 3900
+2900 REM " --- Purchasing Customer"
+2920 LET V0$="M",V1$="CE",V2$=A3$(5,CUSTLEN),V3$=CUSTMASK$,V0=CUSTLEN,V1=22,V2=15
+2930 LET V4$="Enter the Purchasing Customer (<F3>=Lookup)"
+2940 GOSUB 7000
+2950 ON V3 GOTO 2960,2960,2960,2955,2960
+2955 CALL "SYC.LC",V$
+2960 IF V$="" THEN GOTO 2900
+2970 LET A3$(5,6)=V$,A3$(16,2)=N0$
+2975 FIND (ARM01_DEV,KEY=N0$+A3$(5,6))IOL=ARM01E
+2980 PRINT @(V1,V2),FNF$(A3$(5,CUSTLEN),CUSTMASK$)
+2985 GOSUB DISPLAY_ADDRESS
+2990 GOTO 3900
+3000 REM " --- Comment"
+3020 LET V0$="S",V1$="CE",V2$=A4$,V3$="",V0=60,V1=11,V2=20
+3030 LET V4$="Enter the Comment"
+3040 GOSUB 7000
+3080 LET A4$(1)=V$
+3090 GOTO 3900
+3200 rem " --- Contract"
+3210 LET V0$="S",V1$="CE",V2$=CONTRACT$,V3$="",V0=6,V1=70,V2=10
+3220 LET V4$="Enter the SAM/Developer Contract Number"
+3230 gosub 7000
+3235 IF CVS(V$,1+2)="" AND CVS(CONTRACT$,1+2)="" THEN GOTO 3900
+3240 if num(v$,err=3200)=num(contract$) then goto 3900
+3250 FIND RECORD(SMC01_DEV,KEY=STR(NUM(V$,ERR=3200):"000000"),DOM=3200)smc01$
+
+3251 rem ' A1$(13,3) = License Type
+3252 if A2$(13,3) = "RN1" and smc01.contr_type$ <> "RN1" then xresp = msgbox("The serial number is type RN1. It can only be on an RN1 contract type.",0,"Wrong Contract Type"); GOTO 3200
+3253 if (A2$(13,3) = "KIT" or A2$(13,3) = "NFR") and smc01.contr_type$ <> "DV1" then xresp = msgbox("The serial number is type KIT or NFR. It can only be on an DV1 contract type.",0,"Wrong Contract Type"); GOTO 3200
+
+3255 CONTRACT$=STR(NUM(V$,ERR=3200):"000000")
+3260 A3$(18,6)=CONTRACT$,A3$(24,1)=smc01.sam_active$
+3270 PRINT @(70,10),smc01.CONTRACT$,@(70,11),smc01.ANNUAL_DT$(5,2),"/",smc01.ANNUAL_DT$(7,2),"/",smc01.ANNUAL_DT$(1,4),@(70,12),smc01.EXPIRE_ON_DT$(5,2),"/",smc01.EXPIRE_ON_DT$(7,2),"/",smc01.EXPIRE_ON_DT$(1,4)
+3280 GOTO 3900
+3900 REM " --- Next field"
+3905 IF V3=4 THEN GOTO 3990
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 IF F0$(15,1)>"8" THEN ON I0 GOTO 2000,2100,2200,2300,2400,2500,2600,2700,2800,2900,3200,3000,3990
+3961 ON I0 GOTO 2600,3100,3000,3990
+3990 LET I0=0
+4000 REM " --- Correct?"
+4010 GOSUB 5000
+4020 CALL "SYC.YN",1,"Is The Above Information Correct",2,V$,V3
+4022 IF F0$(15,1)<"8" THEN GOTO 4900
+4030 ON V3 GOTO 4040,4000,4000,4000,4900
+4090 ON POS(V$="YN") GOTO 4000,4100,4200
+4100 REM " --- Write"
+4150 IF EXTRACTED THEN WRITE (SNM01_DEV,KEY=A0$)IOL=SNM01A
+4160 LET EXTRACTED=0
+4190 GOTO 4900
+4200 REM " --- Edit"
+4205 EXTRACT (SNM01_DEV,KEY=A0$)IOL=SNM01A; LET EXTRACTED=1
+4207 GOSUB 5000
+4210 IF F0$(15,1)>"8" THEN GOTO 2000
+4220 GOTO 2600
+4900 REM " --- Run menu overlay"
+4990 RUN "SNM.MA"
+5000 REM " --- Display"
+5005 GOSUB 5100
+5010 PRINT 'sb',@(18,6),A2$(1,3),@(22),PROD_DESC$,@(70),A3$(1,1)
+5020 PRINT @(18,7),A2$(4,3),@(22),PLAT_DESC$,@(70),FNB4$(A3$(2,3))
+5030 PRINT @(18,8),A2$(7,3),@(22),OSLVL_DESC$,@(70),A3$(11,5)
+5040 PRINT @(18,9),A2$(10,3),@(22),PRREV_DESC$
+5050 PRINT @(18,10),A2$(13,3),@(22),LTYPE_DESC$
+5060 PRINT @(18,11),A2$(16,3),@(22),MEDIA_DESC$
+5065 IF CONTRACT$<>"" THEN PRINT @(52,10),smc01.CONTR_TYPE$,@(70,10),smc01.CONTRACT$,@(70,11),smc01.ANNUAL_DT$(5,2),"/",smc01.ANNUAL_DT$(7,2),"/",smc01.ANNUAL_DT$(1,4),@(70,12),smc01.EXPIRE_ON_DT$(5,2),"/",smc01.EXPIRE_ON_DT$(7,2),"/",smc01.EXPIRE_ON_DT$(1,4)
+5067 if pos(smc01.contr_type$(1,2)="SM") then print @(70,9),sam_active$
+5070 x$=a3$(29,2)+" "+a3$(31,2)+" "+a3$(25,4);if cvs(x$,3)<>"" then x$(3,1)="/",x$(6,1)="/"
+5075 PRINT @(70,13),A[2],@(70,14),X$,@(22,15),FNF$(A3$(5,CUSTLEN),CUSTMASK$)
+5077 GOSUB snm02_detail
+5080 GOSUB DISPLAY_ADDRESS
+5085 PRINT @(11,20),A4$
+5090 RETURN 
+5100 REM " --- Get descriptions"
+5110 LET PROD_DESC$=NF$,PLAT_DESC$=NF$,OSLVL_DESC$=NF$
+5120 LET PRREV_DESC$=NF$,LTYPE_DESC$=NF$,MEDIA_DESC$=NF$,CONTRACT$=CVS(A3$(18,6),1+2)
+5122 if contract$<>"" then sam_active$=a3$(24,1)
+5124 if sam_active$=" " then sam_active$="Y"
+5125 DIM X1$(325)
+5127 call "templates.pgm::smc01"
+5130 FIND (CSM01_DEV,KEY=N0$+A2$(1,3),DOM=5131)*,PROD_DESC$
+5140 FIND (CSM02_DEV,KEY=N0$+A2$(4,3),DOM=5141)*,PLAT_DESC$
+5150 FIND (CSM03_DEV,KEY=N0$+A2$(7,3),DOM=5151)*,OSLVL_DESC$
+5160 FIND (CSM04_DEV,KEY=N0$+A2$(10,3),DOM=5161)*,PRREV_DESC$
+5170 FIND (CSM05_DEV,KEY=N0$+A2$(13,3),DOM=5171)*,LTYPE_DESC$
+5180 FIND (CSM06_DEV,KEY=N0$+A2$(16,3),DOM=5181)*,MEDIA_DESC$
+5185 FIND (ARM01_DEV,KEY=N0$+A3$(5,6),DOM=5186)IOL=ARM01E
+5187 IF CONTRACT$<>"" THEN FIND RECORD(SMC01_DEV,KEY=CONTRACT$,DOM=5188)smc01$
+5190 RETURN 
+5200 REM " --- Display Customer Address"
+5205 DISPLAY_ADDRESS: 
+5210 LET WIDTH_IN=24,LINES_IN=3,ZIP_LEN=9,WIDTH_OUT=24,ADDRESS$=X1$(31,WIDTH_IN*LINES_IN+ZIP_LEN)
+5220 CALL "SYC.AA",ADDRESS$,WIDTH_IN,LINES_IN,ZIP_LEN,WIDTH_OUT
+5230 PRINT @(5,16),X1$(1,30),@(5,17),ADDRESS$(1,WIDTH_OUT),@(5,18),ADDRESS$(1+WIDTH_OUT,WIDTH_OUT),@(5,19),ADDRESS$(1+WIDTH_OUT*2,WIDTH_OUT)+" ",FNP$(ADDRESS$(1+WIDTH_OUT*3))
+5240 RETURN 
+5500 snm02_detail:
+5510 prop$=str(snm02.users1:"#####")+" "+snm02.lic_property1$+" "+str(snm02.users2:"#####")+" "+snm02.lic_property2$
+5520 odbc$="",odbc_lbl$="",user_lbl$="",p=pos(snm02.odbc_rw$="RW")
+5530 if p then odbc$="Read Only",odbc_lbl$="ODBC: "
+5540 if p>1 then odbc$="Read/Write"
+5550 if cvs(prop$,3)<>"" then user_lbl$="User Detail: "
+5560 print @(5,12),'sf',user_lbl$,'sb',cvs(prop$,35)
+5570 print @(12,13),'sf',odbc_lbl$,'sb',odbc$
+5590 return
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END
+14500 REM Date with 4 digit year
+14505 DEF FNA4$(Q$,Q2$)=STR(((ASC(Q$)-32)+1900)*POS(" "<>Q2$(2,1)):"0000")
+14510 DEF FNB4$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA4$(Q1$(1),Q1$)

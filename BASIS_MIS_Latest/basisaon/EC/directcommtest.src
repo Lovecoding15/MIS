@@ -1,0 +1,181 @@
+rem ' Program to test Direct Commerce
+rem ' directcommtest
+rem '
+
+begin
+
+chdir "/mnt/data/directcomm/"
+
+setup:
+  action$="",reference$="",serial_nbr$="",product_id$="",rev$="",license_type$="",users=0,port_id$="",alt_cust$="",options$=""
+  dim features$[1:1,1:3],license$[1,3],serial_nbr$[1:1],properties$[1:1,1:2]
+  nbr_features=2,annual_dt$=""
+
+get_parameters:
+
+get_action:
+  print "Enter action code: ",                                           
+  input (0,err=get_action,siz=2)action$:(""=done,"0"=done,"1"=get_reference,"2"=get_reference,"3"=get_reference,"4"=get_reference)
+
+get_reference:
+  print "Enter reference: ",
+  input (0,err=get_reference,siz=11)reference$:(len=1,10)
+
+action_branch:
+  on num(action$)-1 goto do_init,do_add,do_buy,do_reset
+
+do_init:
+  call "basdirect.src::initial_cart",reference$,stat
+  print stat
+  escape
+  goto setup
+
+do_add:
+
+get_serial_nbr:
+  print "Enter number of serial numbers: "
+  input (0,err=get_serial_nbr,siz=3)serial_num$:(len=1,2)
+  serial_nums = num(serial_num$,err=get_serial_nbr)
+  if serial_nums = 0 then
+     goto get_product_id
+  endif
+  dim serial_nbr$[1:serial_nums]
+
+  for nbr = 1 to serial_nums
+     input (0,err=*same,siz=21)@(0),"Enter serial number: ",serial_nbr$[nbr]:(len=9,20)
+  next nbr
+
+get_product_id:
+  print "Enter number of properties: "
+  input (0,err=get_product_id,siz=3)property_num$:(len=1,2)
+  property_nums = num(property_num$,err=get_product_id)
+  if property_nums=0 then 
+     goto get_rev
+  endif
+  dim properties$[1:property_nums,1:2]
+
+  for nbr = 1 to property_nums
+     input (0,err=*same,siz=4)@(0),"Enter property: ",properties$[nbr,1]:(len=3,3)
+     input (0,err=*same,siz=6)@(0),"Enter property users: ",properties$[nbr,2]:(len=1,5)
+  next nbr
+
+get_rev:
+  print "Enter revision level: ",
+  input (0,err=get_rev,siz=6)rev$:(""=get_license_type,len=3,5)
+  if pos("."=rev$)=0 then
+    goto get_rev
+  endif
+
+get_license_type:
+  print "Enter license type: ",
+  input (0,err=get_license_type,siz=4)license_type$:(""=get_users,len=3,3)
+  license_type$=cvs(license_type$,4)
+
+get_users:
+  print "Enter number of users: ",
+  input (0,err=get_users,siz=6)users$:(len=1,5)
+  users=num(users$,err=get_users)
+  if fpt(users) then
+    goto get_users
+  endif
+
+get_port_id:
+  print "Enter port id: ",
+  input (0,err=get_port_id,siz=5)port_id$:(""=get_alt_cust,len=4,4)
+  port_id$=str(num(port_id$,err=get_port_id):"0000")
+
+get_alt_cust:
+  print "Enter alternate customer: ",
+  input (0,err=get_alt_cust,siz=7)alt_cust$:(""=get_features,len=1,6)
+  alt_cust$=str(num(alt_cust$,err=get_alt_cust):"000000")
+
+get_features:
+  print "Enter number of features: ",
+  input (0,err=get_features,siz=3)nbr_feat$:(len=1,2)
+  nbr_features = num(nbr_feat$,err=get_features)
+  if nbr_features=0 then 
+    goto get_sam
+  endif
+  dim features$[1:nbr_features,1:3]  
+
+  for nbr=1 to nbr_features
+    input (0,err=*same,siz=31)@(0),"Enter feature name: ",features$[nbr,1]:(len=1,30)
+    input (0,err=*same,siz=6)@(0),"Enter feature revision: ",features$[nbr,2]:(len=3,5)
+    input (0,err=*same,siz=5)@(0),"Enter feature users: ",features$[nbr,3]:(len=1,5)
+  next nbr
+
+get_sam:
+  print "Enter SAM type: ",
+  input (0,err=get_sam,siz=2)options$:("0"=get_annual_dt,"1"=get_annual_dt,"2"=get_annual_dt)
+  
+get_annual_dt:  
+  if options$="0" then
+     goto get_rental
+  endif
+  print "Enter Annual Date: ",
+  input (0,err=get_annual_dt,siz=9)annual_dt$:(""=do_add_call,len=8,8)
+  goto do_add_call
+
+get_rental:
+  print "Enter Rental Committment: ",
+  input (0,err=get_rental,siz=2)rental_commit$:(len=1,1)
+  if pos(rental_commit$="0123")=0 then
+    goto get_rental
+  endif
+  options$=options$+rental_commit$
+
+get_rw:
+  print "Enter Read/Write flag (0, W, or R): ",
+  input (0,err=get_rw,siz=2)read_write$:(len=1,1)
+  read_write$=cvs(read_write$,4)
+  if pos(read_write$="0WR")=0 then
+    goto get_rw
+  endif
+  options$=options$+read_write$
+
+get_uncounted:
+  print "Enter Uncounted flag (0 or Y): ",
+  input (0,err=get_uncounted,siz=2)uncounted$:(len=1,1)
+  uncounted$=cvs(uncounted$,4)
+  if pos(uncounted$="0Y")=0 then
+    goto get_uncounted
+  endif
+  options$=options$+uncounted$
+
+get_consolidate:
+  print "Enter Consolidate flag (0 or C): ",
+  input (0,err=get_consolidate,siz=2)consolidate$:(len=1,1)
+  consolidate$=cvs(consolidate$,4)
+  if pos(consolidate$="0C")=0 then
+    goto get_consolidate
+  endif
+  options$=options$+consolidate$
+
+do_add_call:
+  call "basdirect.src::add_cart",reference$,serial_nbr$[all],properties$[all],rev$,license_type$,users,port_id$,alt_cust$,features$[all],options$,stat,annual_dt$
+  print stat
+  escape
+  goto setup
+
+do_buy:
+  call "basdirect.src::buy_cart",reference$,nbr_licenses,license$[all],stat
+  print stat
+  print nbr_licenses
+  print license$[all]
+  escape
+  goto setup
+
+do_reset:
+
+get_reset_serial:
+  print "Enter reset serial number: ",
+  input (0,err=get_reset_serial,siz=21)serial_nbr$:(len=9,20)
+
+do_reset_call:
+  call "basdirect.src::reset_license",reference$,serial_nbr$,stat
+  print stat
+  escape
+  goto setup
+
+done:
+  escape             

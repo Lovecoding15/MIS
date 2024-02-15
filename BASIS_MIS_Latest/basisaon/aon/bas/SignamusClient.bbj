@@ -1,0 +1,274 @@
+use java.io.File
+use java.io.FileInputStream
+use java.io.FileOutputStream
+use java.io.IOException
+use java.io.InputStream
+
+use javax.xml.bind.JAXBElement
+
+use org.w3.v2005.v05.xmlmime.Base64Binary
+
+use de.authentidate.ws.ADServiceException
+use de.authentidate.ws.IsafSoapServiceClient
+use de.authentidate.ws.IsafSoapServicePortType
+use de.authentidate.ws.ServiceRequestData
+use de.authentidate.ws.ServiceResponseData
+use de.authentidate.ws.ServiceType
+use de.authentidate.ws.SignVerifyAcknowledgedResponse
+use de.authentidate.ws.StatusResponseData
+
+class public SignamusClient
+    rem ' original pdf filename with full path or no path 
+    rem ' if file is in the current directory <invoice#>_original.pdf
+    field private BBjString pdf$
+    
+    rem ' original pdf filename stripped of any path <invoice#>_original.pdf
+    field private BBjString pdfName$
+    
+    rem ' singned pdf filename with no path
+    field private BBjString signedPdfName$
+    
+    rem ' location of the files
+    field private BBjString directory$
+
+    rem ' invoice number
+    field private BBjString invoiceNbr$
+    
+    rem ' is verification required
+    field private BBjInt verReq%
+    
+    rem ' verification file name
+    field private BBjString verificationPdfName$
+    
+    rem ' error Number is error occurs
+    field private BBjNumber errorNumber
+    
+    rem ' error message if error occurs
+    field private BBjString errorMessage$
+    
+    rem ' line number of the error
+    field private BBjNumber errorLineNumber
+    
+    rem ' run a signing test?
+    field private BBjInt testSigning%
+    
+    method public SignamusClient(BBjString pdf$)
+    	
+    	#pdf$ = pdf$
+        
+        rem ' strip path from the pdf file name
+        
+        #pdfName$ = pdf$
+        location$ = ""
+        while (pos("/"=#pdfName$))
+		location$ = location$ + #pdfName$(1,pos("/"=#pdfName$))
+        	#pdfName$ = #pdfName$(pos("/"=#pdfName$)+1,-1)
+        wend
+	#directory$ = location$
+
+        rem ' extract the invoice number from the pdfName$
+        #invoiceNbr$ = #pdfName$(1,pos("_"=#pdfName$)-1)
+    
+    	rem ' set the name of the signed pdf
+    	#signedPdfName$ = #invoiceNbr$ + ".pdf"
+    	
+        rem ' check for verification stub
+        #verReq% = 0 
+        #verificationPdfName$ = #invoiceNbr$ + "_ver.pdf"
+        testchn = unt
+        open(testchn,err=*next)#directory$ + #verificationPdfName$; #verReq% = 1
+        close(testchn,err=*next)
+        
+        rem ' set testSigning% to false
+        #testSigning% = 0
+        
+        rem ' print "full name of original: ",#pdf$
+	rem ' print "original file: ", #pdfName$
+	rem ' print "signed file name: ", #signedPdfName$
+    	rem ' print "location of files: ", #directory$
+	rem ' print "invoice number: ", #invoiceNbr$
+    	rem ' print "verification required: ", #verReq%
+        rem ' print "verification name: ", #verificationPdfName$
+        
+    methodend
+
+    method public BBjNumber sign()
+    
+    	rem ' sign the invoice
+
+	seterr sign_error
+	setesc sign_error
+	
+    	rem ' set return status to success
+    	status = 0 
+        
+        service! = new IsafSoapServiceClient()
+        
+        if #testSigning% then
+        	rem ' connect to the test server
+        	rem ' https://sig-test.signamus.com/ is no longer valid, discontinued 10/10/15
+        	servicePort! = service!.getIsafSoapServiceHttpPort("https://sig-test.signamus.com/ws/59511-001")
+                print "using test URL"
+        else
+        	rem ' connect to the production
+	        servicePort! = service!.getIsafSoapServiceHttpPort("https://service.signamus.com/ws/59511-001")
+	fi
+	
+        requestData! = new ServiceRequestData()
+        rem ' requestData!.setDocumentName(#pdfName$)
+        requestData!.setDocumentName(#signedPdfName$)
+
+        MAX_PDF_SIZE=1024000
+
+	rem ' get the original pdf file contents
+        ch=unt
+        open(ch,isz=-1)#directory$ + #pdfName$
+        read record(ch,siz=-MAX_PDF_SIZE)bytes$
+        close(ch)
+
+        base64Binary! = new Base64Binary()
+        base64Binary!.setValue(bytes$)
+        requestData!.setDocument(base64Binary!)
+
+
+        if #verReq% then
+	        requestData!.setServiceRequest(ServiceType.SIGNING_AND_VERIFICATION)
+	else
+		rem ' so far have not been able to get the ServiceType.SIGNING to work
+		rem ' requestData!.setServiceRequest(ServiceType.SIGNING)
+		requestData!.setServiceRequest(ServiceType.SIGNING_AND_VERIFICATION)
+	fi
+	
+        signVerifyRequest! = servicePort!.signVerifyRequest(requestData!)
+        correlationID$ = signVerifyRequest!.getCorrelationID()
+        rem ' print "signVerifyRequest returned: " + correlationID$
+
+        status$ = ""
+        while status$<>"READY"
+            statusResponse! = servicePort!.getStatus(correlationID$)
+            status$ = statusResponse!.getStateCode().value()
+            rem ' print "status is " + status$
+            wait 3
+        wend
+
+        serviceResponse! = servicePort!.getResult(correlationID$)
+
+        signedPDFName$ = serviceResponse!.getDocumentName()
+        rem ' print "signedPDFName returned: " + signedPDFName$
+        signedPDFSignatureName! = cast(String, serviceResponse!.getSignatureName().getValue())
+        rem ' print "signedPDFSignatureName returned: " + str(signedPDFSignatureName!)
+        signedPDFReportName! = cast(String, serviceResponse!.getReportName().getValue())
+        rem ' print "signedPDFReportName returned: " + str(signedPDFReportName!)
+
+        outputDocumentFile! = new File(#directory$ + signedPDFName$)
+        base64Binary! = new Base64Binary()
+        base64Binary! = serviceResponse!.getDocument()
+        document! = base64Binary!.getValue()
+        fos! = new FileOutputStream(outputDocumentFile!)
+        fos!.write(document!)
+        fos!.close()
+        rem ' print "signedPDF stored in: " + #directory$ + signedPDFName$
+
+        if signedPDFSignatureName! <> null() then
+            outputDocumentFile! = new File(#directory$ + str(signedPDFSignatureName!))
+            signature! = serviceResponse!.getSignature()
+            base64Binary! = signature!.getValue()
+            fos! = new FileOutputStream(outputDocumentFile!)
+            fos!.write(base64Binary!.getValue())	        
+            fos!.close()
+            rem ' print "signedPDFSignatureName stored in: " + #directory$ + str(signedPDFSignatureName)
+        fi
+
+        if signedPDFReportName! <> null() then
+            outputDocumentFile! = new File(#directory$ + #verificationPdfName$)
+            report! = serviceResponse!.getReport()
+            base64Binary! = report!.getValue()
+            fos! = new FileOutputStream(outputDocumentFile!)
+            fos!.write(base64Binary!.getValue())
+            fos!.close()
+            rem ' print "signedPDFReportName stored in: " + #directory$ + #verificationPdfName$
+        fi
+        
+        methodret status
+        
+        sign_error:
+		#errorNumber=err
+		#errorMessage$ = errmes(-1)
+		#errorLineNumber = tcb(5)
+		status = 1
+        	methodret status
+    methodend
+
+    method public BBjNumber getErrorNumber()
+    	methodret #errorNumber
+    methodend
+    
+    method public BBjString getErrorMessage()
+    	methodret #errorMessage$
+    methodend
+
+    method public BBjNumber getErrorLineNumber()
+    	methodret #errorLineNumber
+    methodend
+    
+    method public BBjString getPdf()
+        rem ' original pdf filename with full path or no path 
+        rem ' if file is in the current directory <invoice#>_original.pdf
+    	methodret #pdf$
+    methodend
+    
+    method public BBjString getPdfName()
+        rem ' original pdf filename stripped of any path <invoice#>_original.pdf
+        methodret #pdfName$
+    methodend
+    
+    method public BBjString getSignedPdfName()
+        rem ' singned pdf filename with no path
+        methodret #signedPdfName$
+    methodend
+    
+    method public BBjString getDirectory()
+        rem ' location of the files
+        methodret #directory$
+    methodend
+    
+    method public BBjString getInvoiceNumber()
+        rem ' invoice number
+        methodret #invoiceNbr$
+    methodend
+    
+    method public BBjInt getVerificationRequired()
+        rem ' is verification required
+        methodret #verReq%
+    methodend
+    
+    method public BBjString getVerificationPdfName()    
+        rem ' verification file name
+        methodret #verificationPdfName$
+    methodend
+
+    method public BBjInt getTestSigning()
+        rem ' is this a test signing
+        methodret #testSigning%
+    methodend
+
+    method public void makeTestSigning()
+        rem ' set test signing
+        #testSigning% = 1
+    methodend
+
+    
+classend
+
+rem ' tests
+rem ' client! = new SignamusClient("BASISTest.pdf")
+
+client! = new SignamusClient("C:/zWork/Basis/SignamusClientChangesTest/0020621_original.pdf")
+client!.makeTestSigning()
+status = client!.sign()
+print "return status: ",status
+if status = 1 then
+	print "error number: ",client!.getErrorNumber()
+	print "error message: ",client!.getErrorMessage()
+	print "error line: ",client!.getErrorLineNumber()
+fi

@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_ROLEFIRMS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<SEC_ROLE_ID>BSGUSER </SEC_ROLE_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

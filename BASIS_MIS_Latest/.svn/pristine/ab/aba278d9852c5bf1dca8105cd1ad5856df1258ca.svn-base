@@ -1,0 +1,57 @@
+The C client side program is given everything as fixed length
+fields, described below.  The field for revision is fixed length 5
+chars, so it should be enough for "10.XX".  My suggestion is to check
+the BBx program that builds the C program input.
+
+/*
+ * The usage is <program name> <setup file name>.  The setup file contains such
+ * things as the server name and port number and the login name and password to
+ * use.
+ *
+ * Information is read from stdin:
+ *   ACTION CODE                 2 char
+ *   If "01" (transaction start):
+ *       reference code          10 char
+ *   If "02" (add to cart):
+ *       reference code          10 char
+ *       serial number count     2 char
+ *       for each serial number:
+ *           serial number       20 char
+ *       property count          2 char
+ *                 for each property:
+ *           property            3 char
+ *           users               5 char
+ *       revision                5 char
+ *       type                    3 char
+ *       users                   5 char
+ *       port id                 4 char
+ *       alternate customer      6 char
+ *       feature count           2 char
+ *       for each feature:
+ *           name                30 char
+ *           revision            5 char
+ *           users               5 char
+ *       option flags            5 char
+ *       annual date             8 char
+ *   If "03" (buy now):
+ *       reference code          10 char
+ *   If "04" (buy now):
+ *       reference code          10 char
+ *       serial number           20 char
+ *
+ * Information is returned via stdout:
+ *   If "01":
+ *       status                  2 char
+ *   If "02":
+ *       status                  2 char
+ *   If "03":
+ *       status                  2 char
+ *       license count           2 char
+ *       for each license:
+ *           serial number       20 char
+ *           auth/key            13 char
+ *           length of filename  5 char
+ *           license filename    n char
+ *   If "04":
+ *       status                  2 char
+ */

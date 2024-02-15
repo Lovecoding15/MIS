@@ -1,0 +1,393 @@
+REM ec_license.bbx - Authorization/activation email/fax
+seterr close_exit
+setesc close_exit
+enter firm$,cust$,order$,sendto1$,sendto2$
+let nfiles=18,c=1
+dim chan[nfiles]
+call "ec_open::ARE83"; let chan[c]=are83,c=c+1
+call "ec_open::ARE73"; let chan[c]=are73,c=c+1
+call "ec_open::ARE13"; let chan[c]=are13,c=c+1
+call "ec_open::ARE03"; let chan[c]=are03,c=c+1
+call "ec_open::ARE04"; let chan[c]=are04,c=c+1
+call "ec_open::ARS10N"; let chan[c]=ars10n,c=c+1
+call "ec_open::SNM01"; let chan[c]=snm01,c=c+1
+call "ec_open::SNM02"; let chan[c]=snm02,c=c+1
+call "ec_open::SNT01"; let chan[c]=snt01,c=c+1
+call "ec_open::SNT03"; let chan[c]=snt03,c=c+1
+call "ec_open::CSM01"; let chan[c]=csm01,c=c+1
+call "ec_open::CSM02"; let chan[c]=csm02,c=c+1
+call "ec_open::CSM03"; let chan[c]=csm03,c=c+1
+call "ec_open::CSM04"; let chan[c]=csm04,c=c+1
+call "ec_open::ARM02"; let chan[c]=arm02,c=c+1
+call "ec_open::IVM01"; let chan[c]=ivm01,c=c+1
+call "ec_open::sn_license"; let chan[c]=sn_license,c=c+1
+call "ec_open::SMC01"; let chan[c]=smc01,c=c+1
+read record (are03,key=firm$+"  "+cust$+order$+"000",dom=close_exit)are03$
+if are03.rel_to_ship$<>"Y" then goto close_exit
+rem 'create invoice, update serial number files
+extracted=0
+extract record (ars10n,key=firm$+"N",tim=5,err=*next)ars10n$;extracted=1
+if extracted=0 then 
+  if err=0 then 
+     wait 1
+     retry
+  else 
+     goto send_license
+  fi
+fi
+if ars10n.next_inv_nbr>9999999 then let ars10n.next_inv_nbr=1000
+let are03.ar_inv_nbr$=str(ars10n.next_inv_nbr:"0000000")
+let ars10n.next_inv_nbr=ars10n.next_inv_nbr+1
+let ars10n$=field(ars10n$)
+write record (ars10n,key=firm$+"N")ars10n$
+let are03.ord_inv_flag$="I",are03.invoice_date$=are03.date_ordered$,are03.ord_prt_flag$="N"
+let are03$=field(are03$)
+write record (are03,key=are03$(1,20))are03$
+remove (are04,key=firm$+"O  "+are03.customer_nbr$+are03.order_number$,err=*next)
+are04.firm_id$=are03.firm_id$
+are04.ord_inv_flag$="I"
+are04.ar_type$="  "
+are04.customer_nbr$=are03.customer_nbr$
+are04.order_number$=are03.order_number$
+are04k$=are04.firm_id$+are04.ord_inv_flag$+are04.ar_type$+are04.customer_nbr$+are04.order_number$
+are04$=field(are04$)
+write record (are04,key=are04k$)are04$
+call "BSN.20",firm$,cust$,order$,snm01,snm02,snt01,snt03,are03,are13,are73,are83,ivm01,csm03,smc01
+
+send_license:
+rem if info(3,2)="thines" then escape
+let counting=1,deact$="",msg_text$="" 
+
+while counting>=0
+let record_count=0
+let prevsn$=""
+let orderkey$=firm$+"  "+cust$+order$
+read (are83,key=orderkey$,dom=*next)
+while 1
+  read record (are83,end=*break)are83$
+  if are83$(1,17)<>orderkey$ then break
+  if are83.action$="D" then let deact$=deact$+are83.serial_nbr$
+  if are83.action$="D" or cvs(are83.auth_code$,2)="" then continue
+  let record_count=record_count+1
+  if counting then continue
+  if prevsn$=are83.serial_nbr$ then let record_count=record_count-1
+  let prevsn$=are83.serial_nbr$
+  if pos(are83.serial_nbr$=deact$)=0 then let snlist$[record_count]=are83$(1,26)
+wend
+if counting then dim snlist$[record_count]
+let counting=counting-1
+wend
+
+let outlist$="",dsblist$="",dsb=0,tmpdir$=stbl("TEMP")
+if record_count=0 then goto close_exit
+no_lic=0
+sn=1
+today$=date(0:"%Mz/%Dz/%Y")
+read record (arm02,key=firm$+cust$+"  ",dom=read_snlist)arm02$
+rem 'SDSI gets text file like distributors
+if arm02.cust_type$="DSI" or pos("01003017"=arm02$)=1 then let dsb=1
+
+read_snlist:
+if sn>record_count then goto forms
+let are83key$=snlist$[sn],sn=sn+1
+read record (are83,key=are83key$,dom=read_snlist)are83$
+dim snm01$:fattr(snm01$)
+read record (snm01,key=are83.serial_nbr$,dom=*next)snm01$
+if snm01.active_flag$="N" then goto read_snlist 
+item$=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$
+users=snm01.users
+
+pk$=are83$(1,20)
+read record (are13,key=pk$)are13$
+read record (are73,key=pk$)are73$
+sltype$=are73.type_of_sale$
+if cvs(item$,3)<>"" and are83.snhist_flag$="Y" then goto itm_ok
+
+users=are73.users+are73.users2
+equals_total_users=(cvs(are73.available1$,4)="T")
+if are73.type_of_sale$<>"ADD" then item$=are13.item_number$;goto itm_ok
+REM 'ARE13 item for add isn't item we need- check for item in a previous line
+dim tmp83$:fattr(are83$)
+read (are13,key=pk$(1,17),dom=*next)
+while 1
+  k13$=key(are13,end=*break)
+  if k13$(1,17)<>pk$(1,17) or k13$>=pk$ then break
+  read record (are13,key=k13$)are13$
+  read (are83,key=k13$,dom=chksn)
+  chksn: 
+  read record (are83,end=*continue)tmp83$
+  if pos(k13$=tmp83$)<>1 then continue
+  if cvs(tmp83.serial_nbr$,3)<>cvs(are83.serial_nbr$,3) or tmp83.action$="D" or cvs(tmp83.auth_code$,3)="" then goto chksn
+  read record (are73,key=k13$)are73$
+  if are73.type_of_sale$<>"ADD" then 
+    item$=are13.item_number$
+    if equals_total_users=0 then users=users+are73.users+are73.users2
+  fi
+wend
+
+itm_ok:
+read record (csm04,key=firm$+item$(10,3))csm04$
+let rv$=cvs(csm04.description$,3),p=pos(" "=rv$); if p=0 then let p=len(rv$)
+let prod_type$=item$(13,3),rev_level$=cvs(rv$(1,p),2),rev_desc$=rv$(p+1)
+read record (csm03,key=firm$+item$(7,3))csm03$; let port$=csm03.port_id$
+if pos(item$(1,3)="P4E DS4") then let port$(5,1)="4"
+let port$=cvs(port$,3),p=pos("."=rev_level$),temp$=rev_level$
+if p then let temp$=rev_level$(1,p-1)+rev_level$(p+1)
+let port_rev$=cvs(port$+"."+temp$,2)
+read (csm01,key=firm$+item$(1,3))*,prddesc$
+read (csm02,key=firm$+item$(4,3))*,pltdesc$
+let print_desc$=cvs(prddesc$,2)
+if csm04.key_or_licen$="L" then 
+  osline$=cvs(rev_desc$,2)+" Port ID "+port_rev$+"  "+cvs(pltdesc$,2) 
+else 
+  osline$=cvs(pltdesc$,2),item$=cvs(item$,2)+" "+port$
+fi
+if sltype$="ADD" then let print_desc$="Add users - S/N "+cvs(are83.serial_nbr$,2)
+if len(print_desc$)>30 then let print_desc$=print_desc$(1,30)
+if len(osline$)>48 then let osline$=osline$(1,48)
+let lictext$="",sn$=cvs(are83.serial_nbr$,3)
+
+if csm04.key_or_licen$="L" then 
+  call "temp_license.pgm",sn$,lictext$
+  if lictext$="" then no_lic=no_lic+1
+fi
+
+let po$=cvs(are03.ar_po_number$,3),po$=fncomma$(po$)
+let lictext$=lictext$+","+cvs(po$,32)+","+are83.customer_nbr$
+let print_desc$=fncomma$(print_desc$)
+let osline$=fncomma$(osline$)
+let outrec$=sn$+","+cvs(are83.auth_code$,2)+","+str(users)+","+are83.order_number$+","+today$+","+cvs(item$,2)+","+cvs(print_desc$,35)+","+cvs(rev_level$,2)+","+cvs(osline$,35)+lictext$
+let outlist$=outlist$+outrec$+$0a$
+if dsb then let dsblist$=dsblist$+outrec$+$0a$
+goto read_snlist
+
+forms:
+let key_tmp$="number:c(10*=44),auth_key:c(13*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),po:c(5*=44),cust:c(6)"
+let lic_tmp$="number:c(10*=44),auth_key:c(10*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),flex_feature:c(7*=44),flex_key:c(12*=44),flex_rev_lvl:c(10*=44),flex_host_id:c(10*=44),flex_expiry_date:c(11*=44),flex_checksum:c(2*=44),flex_users:c(10*=44),flex_number:c(10*=44),platform:c(1*=44),po:c(5*=44),cust:c(6)"
+let sendto$=cvs(sendto1$,3)
+nxt$=cvs(sendto2$,3)
+if no_lic then
+  if pos("@"=nxt$) and pos("@"=sendto$) then sendto$=sendto$+", "+nxt$
+fi
+gosub send_forms
+if no_lic then goto bcomm_orders
+let sendto$=nxt$
+gosub send_forms
+goto close_exit
+
+bcomm_orders:
+bcom$="BEGIN"+$0a$+firm$+$0a$+str(dsb)+$0a$+sendto1$+$0a$+sendto2$+$0a$+outlist$+"END"+$0a$
+outfile$=stbl("AON")+"bcomm_orders.txt"
+outfile=unt
+waited=0
+open(outfile,err=nolock)outfile$
+lock(outfile,err=nolock)
+f$=fin(outfile)
+s=dec(f$(1,4))
+textin$=""
+if s then readrecord(outfile,siz=s)textin$
+print(outfile)bcom$
+close(outfile)
+goto close_exit
+
+nolock:
+if err=12 then 
+  string outfile$,err=close_exit
+  wait 1
+  a=scall("chmod 666 "+outfile$+" 2>/dev/null")
+fi
+if err=0 then
+  wait 1
+  waited=waited+1
+  if waited>30 then goto close_exit
+fi
+retry
+
+close_exit:
+seterr pgm_exit
+for i=1 to nfiles
+  close (chan[i],err=*next)
+next i
+pgm_exit:
+exit
+
+def fncomma$(q1$)
+comma1: let comma_pos=pos(","=q1$)
+if comma_pos then let q1$(comma_pos,1)=" "; goto comma1
+return q1$
+fnend
+
+mail_file:
+rem ' send mail is no logner used
+rem ' let a=scall("/usr/lib/send mail -t < "+outfile$)
+
+from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+
+newcc$ = cc$
+if newcc$(1,4) = "Cc: " then newcc$ = newcc$(5)
+
+rem ' for monitoring
+bcc$ = "kw5121151@gmail.com"
+
+subj$ = "BASIS Order " + rec.order_no$
+
+if pos("ec_license" = msg_text$) = 0 then msg_text$ = msg_text$ + $0A$ + $0A$ + "ec_license"
+
+call "sendEmail.src", from$, sendto$, newcc$, bcc$, subj$, msg_text$, attachfilelist$
+
+while pos("|" = attachfilelist$) <> 0 
+	ppos = pos("|" = attachfilelist$)
+	attachfile$ = attachfilelist$(1, ppos - 1)
+	attachfilelist$ = attachfilelist$(ppos + 1)
+	erase attachfile$,err=*next
+wend
+
+erase outfile$,err=*next
+return 
+
+send_forms:
+if pos("@"=sendto$) then let choice$="E" else let choice$="F"
+if sendto$="" then return
+let hold$="",flist$=outlist$
+while 1
+  let lf=pos($0a$=flist$)
+  if lf<2 then break
+  let in$=flist$(1,lf-1),flist$=flist$(lf+1)
+  if cvs(in$,3)=$$ then continue
+  let k$="",c1=pos(","=in$)
+  if c1 then let c2=pos(","=in$(c1+1)); if c2 then let k$=in$(c1+1,c2-1)
+  let k_size=len(cvs(k$,3))
+  if k_size=10 then 
+    dim rec$:lic_tmp$
+    let flex=1 
+  else 
+    dim rec$:key_tmp$
+    let flex=0
+  fi
+  let rec$=in$
+  if flex then gosub generate_license
+  if no_lic then continue
+  if hold$<>rec.order_no$ then gosub setup
+  if choice$="E" then let pagebreak$=$0a$+"--==========_BASIS"+$0a$+"Content-Disposition: attachment"+$0a$+"Content-Transfer-Encoding: 7bit"+$0a$+"Content-Type: text/html;"+$0a$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+cvs(rec.number$,2)+".htm"+$22$+$0a$+$0a$
+  gosub build_html
+wend
+if no_lic then goto send_forms_end
+
+if dsblist$=$$ or choice$="F" then goto close_outfile
+let dsbid$=hold$(len(hold$)-4,5)+"dsb.txt"
+
+dsbfile$ = stbl("TEMP") + dsbid$
+attachfilelist$ = attachfilelist$ + dsbfile$ + "|"
+erase dsbfile$, err=*next
+string dsbfile$
+dsbfile = unt
+open(dsbfile)dsbfile$
+write record (dsbfile)dsblist$
+close(dsbfile)
+
+let at$=$0a$+"--==========_BASIS"+$0a$+"Content-Disposition: attachment"+$0a$+"Content-Transfer-Encoding: 7bit"+$0a$+"Content-Type: text/plain;"+$0a$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+dsbid$+$22$+$0a$+$0a$+dsblist$
+write record (outfile)at$
+close_outfile: if outfile then close (outfile)
+gosub mail_file
+send_forms_end: 
+return
+
+setup:
+if outfile then close (outfile)
+if hold$<>"" then gosub mail_file
+let hold$=rec.order_no$,outfile$=tmpdir$+rec.order_no$+"lic.txt"
+erase outfile$,err=string_outfile
+string_outfile: string outfile$
+let outfile=unt; open (outfile)outfile$
+if choice$="E" then goto write_header
+let pagebreak$="",f$=""
+for a=1 to len(sendto$); if pos(sendto$(a,1)="0123456789") then let f$=f$+sendto$(a,1) fi ; next a
+if len(f$)<7 then exitto send_forms_end
+if f$(1,1)="1" or f$(1,3)="011" or len(f$)=7 then goto write_header
+if len(f$)<>10 then let f$="011"+f$
+if len(f$)=10 then if f$(1,3)="525" then let f$="011"+f$ else let f$="1"+f$
+write_header:
+let header$="Mime-Version: 1.0"+$0a$+"Content-Type: multipart/mixed;"+$0a$+" boundary="+$22$+"==========_BASIS"+$22$+$0a$
+let cc$="Cc: customer-service@basis.cloud"; if firm$="02" then let cc$=cc$+",eu.sales@basis.cloud"
+let header$=header$+"To: "+sendto$+$0a$+"From: BASIS Customer Service <customer-service@basis.cloud>"+$0a$+"Reply-To: customer-service@basis.cloud"+$0a$+cc$+$0a$+"Subject: BASIS Order "+rec.order_no$+$0a$+"--==========_BASIS"+$0a$+"Content-Type: text/plain;"+$0a$+" charset="+$22$+"us-ascii"+$22$+$0a$+"Content-Transfer-Encoding: 7bit"+$0a$+$0a$
+if msg_text$="" then gosub msg_text
+let header$=header$+msg_text$
+if choice$="F" then let header$="To: fax@basis.cloud"+$0a$+"From: customer-service@basis.cloud"+$0a$+"Subject: "+f$+"; Order# "+hold$+$0a$+$0a$
+write record (outfile)header$
+return
+
+build_html:
+let toline$="<b>To: BASIS Customer</b><br>",subjline$="<b>Subj: BASIS Order "+rec.order_no$+"</b><br>",html$=""
+call "BLK.30",firm$,toline$,subjline$,choice$,rec$,flex,html$
+
+savehtml$ = html$
+htmlfile$ = stbl("TEMP") + cvs(rec.number$,2) + ".htm"
+attachfilelist$ = attachfilelist$ + htmlfile$ + "|"
+erase htmlfile$, err=*next
+string htmlfile$
+htmlfile = unt
+open(htmlfile)htmlfile$
+write record (htmlfile)savehtml$
+close(htmlfile)
+
+let html$=pagebreak$+html$; write record (outfile)html$
+if choice$="F" then let pagebreak$="<!--"+$0a$+"~~pagebreak~~"+$0a$+"--><br><big><big><big><big>BASIS</big></big></big></big><br>International<br><br>"+$0a$
+return
+generate_license:
+let sn$=cvs(rec.number$,3),authnum$=rec.auth_key$,hostid$="",license$=""
+let availsn_license=0
+read record (sn_license,key=sn$,dom=read_sn_license)
+read_sn_license: 
+read record (sn_license,end=end_sn_license)sn_license$
+if pos(sn$=sn_license.serial_num$)<>1 then goto end_sn_license
+let availsn_license=1,hostid$=sn_license.hostid$
+goto read_sn_license
+end_sn_license:
+if hostid$="" then goto generate_license_end
+if pos("@"=sendto$) then let lic_delivery$="email",autoemail$=sendto$,autofax$="" else let lic_delivery$="fax",autofax$=sendto$,autoemail$=""
+gosub autoresponder
+generate_license_end: return
+
+REM '**************************************************************************
+REM ' Licenses will no longer be sent out implicitly as of 8/26/2009
+REM ' user must register their license explicitly through their software.
+REM ' change made by Kurt Williams 8/26/2009
+REM ' the autoresponder sub-routine is bypassed
+REM '**************************************************************************
+
+autoresponder: return
+
+let mailfile$=tmpdir$+sn$+"auto.txt"
+let e_text$="To: license@basis.cloud"+$0a$+"From: customer-service@basis.cloud"+$0a$+"Subject: License"+$0a$+$0a$
+let e_text$=e_text$+"Company          : "+$0a$
+let e_text$=e_text$+"Last Name        : "+$0a$
+let e_text$=e_text$+"First Name       : "+$0a$
+let e_text$=e_text$+"Phone Number     : "+$0a$
+let e_text$=e_text$+"Fax Number       : "+cvs(autofax$,3)+$0a$
+let e_text$=e_text$+"Email Address    : "+cvs(autoemail$,3)+$0a$
+let e_text$=e_text$+"Host Name        : "+$0a$
+let e_text$=e_text$+"Host ID          : "+cvs(hostid$,3)+$0a$
+let e_text$=e_text$+"Serial Number    : "+sn$+$0a$
+let e_text$=e_text$+"License Auth Num : "+authnum$+$0a$
+let e_text$=e_text$+"License Delivery : "+lic_delivery$+$0a$
+let e_text$=e_text$+"AutoResponderForceCheck: false"+$0A$
+erase mailfile$,err=string_mailfile
+string_mailfile:
+string mailfile$
+let mchn=unt
+open (mchn,err=autoresponder_end)mailfile$
+write record (mchn)e_text$
+close (mchn)
+rem ' send mail is no longer use and this subroutine is bypassed
+let a=scall("/usr/lib/send mail -t < "+mailfile$)
+erase mailfile$,err=autoresponder_end
+autoresponder_end: return
+
+msg_text:
+msg_chan=unt
+txtfile$=stbl("DATA_SERVER")+stbl("AON")+"ADATA/BLK16.txt"
+open(msg_chan)txtfile$
+f1$=fin(msg_chan),s=dec(f1$(1,4))
+readrecord(msg_chan,siz=s)msg_text$
+close(msg_chan)
+return

@@ -1,0 +1,197 @@
+REM Program BSN.21
+REM " Backout SN history update when invoice is deleted
+seterr pgm_exit
+setesc pgm_exit
+rem if info(3,2)="thines" then escape
+enter firm$,cust$,order$,snm01,snm02,snt01,snt03,are03,are13,are73,are83,csm03
+REM -firm,cust#,order#,files used (files opened in calling program)
+call "ec_open::inc01"
+shadow=unt
+open (shadow,err=*next)path$+"oem_ar_price.dat"
+promo=unt
+open (promo,err=*next)path$+"promo.dat"
+call "templates.pgm::ARE03"
+call "templates.pgm::ARE13"
+call "templates.pgm::ARE73"
+call "templates.pgm::ARE83"
+call "templates.pgm::SNM01"
+call "templates.pgm::SNM02"
+call "templates.pgm::SNT01"
+call "templates.pgm::SNT03"
+call "templates.pgm::CSM03"
+let are03k$=firm$+"  "+cust$+order$+"000"
+read record (are03,key=are03k$,dom=pgm_exit)are03$
+if are03.ord_inv_flag$<>"I" or cvs(are03.ar_inv_nbr$,2)="" then goto pgm_exit
+let sn_list$=""
+read (are13,key=are03k$(1,17),dom=are13_key)
+
+are13_key: 
+let are13k$=key(are13,end=pgm_exit)
+if are13k$(1,17)<>are03k$(1,17) then goto pgm_exit
+read record (are13,key=are13k$)are13$
+read record (are73,key=are13k$,dom=are13_key)are73$
+
+shadowkey$=are13$(1,10)+are03.ar_inv_nbr$+are13.line_number$
+remove(shadow,key=shadowkey$,err=*next)
+
+read (are83,key=are13k$,dom=are83_key)
+
+are83_key: 
+let are83k$=key(are83,end=are13_key)
+if pos(are13k$=are83k$)<>1 then goto are13_key
+extract record (are83,key=are83k$)are83$
+sn_list$=sn_list$+are83.serial_nbr$+$0a$
+if are83.snhist_flag$<>"Y" then goto write_are83
+let prev_rev$="",prev_contract$=fill(6),prev_sam_active$=" ",item$=fill(15),prev_firm$="",prev_cust$=""
+read (snt01,key=are83.serial_nbr$,dom=snt01_loop)
+snt01_loop:
+let snt01k$=key(snt01,end=action)
+if pos(are83.serial_nbr$=snt01k$)<>1 then goto action
+read record (snt01,key=snt01k$)snt01$
+if snt01.ar_inv_nbr$<>are03.ar_inv_nbr$ then goto not_this_inv_nbr
+let are83.license_cnt=snt01.license_cnt
+remove (snt01,key=snt01k$)
+goto snt01_loop
+not_this_inv_nbr:
+if cvs(snt01.product_rev$,2)<>"" then let prev_rev$=snt01.product_rev$
+if cvs(snt01.contract$,2)<>"" then let prev_contract$=snt01.contract$,prev_sam_active$=snt01.sam_active$
+let item$=snt01.item$,prev_firm$=snt01.firm_id$,prev_cust$=snt01.customer_nbr$
+goto snt01_loop
+action:
+dim snm02$:fattr(snm02$)
+snm02found=0
+snm02bk$="b"+are83.serial_nbr$+fill(20),snm02bk$=snm02bk$(1,20)
+readrecord(snm02,key=snm02bk$,dom=*next)snm02$;snm02found=1
+rem 'backup data from BSN.20
+
+on pos(are83.action$="AMD") goto write_are83,activate,modify,deactivate
+
+activate:
+remove (snm01,key=are83.serial_nbr$,dom=*next)
+remove (snm02,key=are83.serial_nbr$,dom=*next)
+remove (inc01,key=are83.serial_nbr$,err=update_flag)
+goto update_flag
+modify:
+read record (snm01,key=are83.serial_nbr$,dom=update_flag)snm01$
+if snm01.active_flag$="N" then goto update_flag
+if are73.type_of_sale$="ADD" and snm02found then let snm01.users=snm02.users1+snm02.users2
+deduct=1;if are73.type_of_sale$(1,2)="TS" then deduct=are13.qty_ordered
+support_done=0
+if snm02.available$(1,2)<>"  " then snm01.avail_support=num(snm02.available$(1,2),err=*next);support_done=1
+if support_done then 
+  snm01.avail_expire$=snm02.available$(3,8)
+  if snm01.avail_support=0 then remove (inc01,key=snm01.serial_nbr$,err=*next)
+else
+  rem 'Only use these tests if support not set above
+  if are73.type_of_sale$(1,2)="TS" or are13.ext_price>0 then 
+    let snm01.avail_support=max(snm01.avail_support-deduct,0)
+    if snm01.avail_support=0 then let snm01.avail_expire$=fill(8); remove (inc01,key=snm01.serial_nbr$,err=*next)
+  fi
+  if are73.type_of_sale$(1,1)="S" and prev_sam_active$<>"Y" then 
+    let snm01.avail_support=1
+    snm01.avail_expire$=date((jul(0,0,0)+365):"%Y%Mz%Dz")
+    inc01.serial_nbr$=snm01.serial_nbr$
+    inc01$=field(inc01$)
+    write record (inc01,key=snm01.serial_nbr$,err=*next)inc01$
+  fi
+fi
+
+if prev_firm$<>"" and prev_firm$<>snm01.firm_id$ then let snm01.firm_id$=prev_firm$
+if item$(1,3)<>"   " then let snm01.product$=item$(1,3)
+if item$(4,3)<>"   " then let snm01.platform$=item$(4,3)
+if item$(7,3)<>"   " then let snm01.os_level$=item$(7,3)
+if prev_rev$<>"" then let snm01.product_rev$=prev_rev$
+if item$(13,3)<>"   " then let snm01.license_type$=item$(13,3)
+let snm01.contract$=prev_contract$,snm01.sam_active$=prev_sam_active$
+read record (csm03,key=snm01.firm_id$+snm01.os_level$,dom=write_snm01)csm03$
+let snm01.port_id$=csm03.port_id$
+write_snm01: 
+snm01.dealer_str$=fill(dec(FATTR(snm01$,"dealer_str")(10,2)))
+snm01$=field(snm01$)
+write record (snm01,key=snm01.serial_nbr$)snm01$
+
+rem 'reset annual,expire dates on DVK,NFR renewals
+while 1
+  if are73.type_of_sale$<>"RNW" then break
+  call "ec_open::SMC01"
+  readrecord (smc01,key=are83.contract$,dom=*next)smc01$
+  if smc01.contract$<>are83.contract$ or pos("DV"=smc01.contr_type$)=0 then 
+    close(smc01,err=*next)
+    break
+  fi
+  call "ec_open::CSM05"
+  csm05.expire_days=365
+  readrecord(csm05,key=firm$+are13.item_number$(13,3),err=*next)csm05$
+  close(csm05,err=*next)
+  today_jul=jul(0,0,0)
+  an_jul=fnjul(smc01.annual_dt$)-365
+  ex_jul=fnjul(smc01.expire_on_dt$)-csm05.expire_days
+  rem 'test for reasonable dt to avoid backing out more than once RNW trans only 
+  rem 'allowed only when annual is +/- 45 days from now - allow 5 day margin
+  if abs(an_jul-today_jul)>50 then break
+  smc01.annual_dt$=date(an_jul:"%Yl%Mz%Dz")
+  smc01.expire_on_dt$=date(ex_jul:"%Yl%Mz%Dz")
+  smc01$=field(smc01$)
+  writerecord (smc01,key=smc01.contract$)smc01$
+  close(smc01)
+  break
+wend
+
+if snm02found then
+  rem 'check if there is a real snm02 record before replacing it - 
+  rem 'backup snm02 gets written for most sn's whether there is a real one or not
+  read (snm02,key=snm01.serial_nbr$,dom=update_flag)
+  snm02.serial_nbr$=snm01.serial_nbr$
+  fl$=FATTR(snm02$,"available"),fl=DEC(fl$(10,2))
+  snm02.available$=fill(fl)
+  rem 'Test snm02 for useful information by comparing it to a new record
+  dim junk$:fattr(snm02$)
+  junk.serial_nbr$=snm02.serial_nbr$
+  sep=pos($0a$=junk$)
+  rem 'no useful info in snm02 - delete it
+  if sep and pos(junk$(1,sep)=snm02$) then remove(snm02,key=snm02.serial_nbr$,err=update_flag);goto update_flag
+  
+  snm02$=field(snm02$)
+  write record (snm02,key=snm02.serial_nbr$)snm02$
+fi
+goto update_flag
+deactivate:
+read record (snm01,key=are83.serial_nbr$,dom=update_flag)snm01$
+let snm01.active_flag$="Y"
+write record (snm01,key=snm01.serial_nbr$)snm01$
+update_flag: 
+let are83.snhist_flag$="N"
+write_are83: 
+are83$=field(are83$)
+write record (are83,key=are83k$)are83$
+
+promokey$=are03.firm_id$+are03.customer_nbr$+are03.ar_inv_nbr$+are83.serial_nbr$
+remove(promo,key=promokey$,err=*next)
+
+read (snt03,key=are83.serial_nbr$,dom=snt03_loop)
+snt03_loop: 
+read record (snt03,end=are83_key)snt03$
+if snt03.serial_nbr_1$<>are83.serial_nbr$ then goto are83_key
+if snt03.ar_inv_nbr$<>are03.ar_inv_nbr$ then goto snt03_loop
+remove (snt03,key=snt03$(1,25))
+goto snt03_loop
+
+def fnjul(yyyymmdd$)
+  xjul=0,xy=0,xm=0,xd=0
+  xy=NUM(yyyymmdd$(1,4),ERR=*next)
+  xm=NUM(yyyymmdd$(5,2),ERR=*next)
+  xd=NUM(yyyymmdd$(7,2),ERR=*next)
+  if xy*xm*xd then xjul=jul(xy,xm,xd)
+  return xjul
+fnend
+
+pgm_exit:
+p=pos($0a$=sn_list$)
+while p
+  k$="b"+sn_list$(1,p-1)+fill(20),k$=k$(1,20)
+  sn_list$=sn_list$(p+1),p=pos($0a$=sn_list$)
+  remove(snm02,key=k$,dom=*next);rem 'snm02 backup record
+wend
+close (inc01,err=*next)
+close (shadow,err=*next)
+exit

@@ -1,0 +1,12 @@
+0010 REM "ADC - Bridge - Lightbar Display & Select"
+0020 REM "Program: ADC.SA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0210 ENTER MODE,LLIST$[ALL],MORE$[ALL],SELECTION$,PAGE,MAX_ROW,NAME$,HEIGHT,WIDTH,FKEY
+1020 CALL "SYC.SA",MODE,LLIST$[ALL],MORE$[ALL],SELECTION$,PAGE,MAX_ROW,NAME$,HEIGHT,WIDTH,FKEY
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

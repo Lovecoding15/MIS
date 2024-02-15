@@ -1,0 +1,50 @@
+rem ' a callable bbj program to frontend the EndUserLogger
+rem ' to avoid having to add a bunch of code to ec.gbf
+
+SETERR ERR_EXIT
+SETESC ERR_EXIT
+ENTER serialNbr$, endUserNbr$, firmID$, customerNbr$, linkType$
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+USE ::EndUserLogger.src::EndUserLogger
+
+DECLARE File file!
+DECLARE FileInputStream fis!
+DECLARE BufferedInputStream bis!
+DECLARE Properties props!
+DECLARE StringBuffer sqlBuilder!
+DECLARE EndUserLogger logger!
+DECLARE BBjString ourDbUrl!
+
+rem ' get the db url
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+file!= new File(props$)
+fis!=new FileInputStream(file!)
+bis!=new BufferedInputStream(fis!)
+props!=new Properties()
+props!.load(bis!)
+bis!.close()
+fis!.close()
+
+sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+ourDbUrl! = sqlBuilder!.toString()
+
+logger! = new EndUserLogger(ourDbUrl!)
+if linkTyp$="U" then
+    logger!.makeUnlinkEntry(serialNbr$, endUserNbr$, firmID$, customerNbr$)
+else
+    logger!.makeLinkEntry(serialNbr$,endUserNbr$, firmID$, customerNbr$)
+fi
+
+ERR_EXIT:
+    exit

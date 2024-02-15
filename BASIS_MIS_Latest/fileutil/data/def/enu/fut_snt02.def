@@ -1,0 +1,23 @@
+Table Definition Module
+FUT_SNT02 - Server-linked Clients
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SNT02^^^^^Server-linked Clients^Server-linked Clients^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+DATA_SERVER^FUT_SNT02^001^C^^3001^ine_data_server^0^^^1^^Y^^^^^FUT_DATA_SERVER^Data Server Serial #^Data Server Serial Nbr^Data Server Serial #^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Data Server Serial #^^^^^^^N^
+SN_SERV_SEQ^FUT_SNT02^002^C^^3002^ine_sn_serv_seq^0^^^2^^Y^^^^^FUT_SN_SERV_SEQ^Serial Nbr Server-linked Seq^Server linked Seq^Serial Nbr Server linked Seq^C^^E^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^Enter Serial Nbr Server-linked^^^^^^^Y^
+SERIAL_NBR^FUT_SNT02^003^C^^3003^ine_serial_nbr^0^^^3^^N^^^^^FUT_SERIAL_NBR^Serial Number (Basis)^Serial Number^Serial Number (Basis)^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Serial Number (Basis)^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SNT02^PRIMARY^FUT_SNT02.DATA_SERVER                   FUT_SNT02.SN_SERV_SEQ                   ^FUT_SNT02.DATA_SERVER$+FUT_SNT02.SN_SERV_SEQ$^RD_REC_DATA.DATA_SERVER$+RD_REC_DATA.SN_SERV_SEQ$^RD_REC_DATA.DATA_SERVER$                RD_REC_DATA.SN_SERV_SEQ$                
+{KeyDefsEnd}
+{GridCols}
+001FUT_SNT02.DATA_SERVER                   ;002FUT_SNT02.SN_SERV_SEQ                   ;003FUT_SNT02.SERIAL_NBR                    ;
+{GridColsEnd}

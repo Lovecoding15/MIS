@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_MNU_TRANS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>65b873fe-9b73-4590-9652-d5e363868811</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>Payroll MICR Fonts Lookup</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PR </ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>675f7477-fde9-44f6-8de2-aac7b57e3ff0</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>Payroll Daily Entry Default Dates</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PR </ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>86d15bb3-a7cb-4947-92a6-a174d8515c67</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>Payroll Tax and Contribution Update</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PR </ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>9ab0c8bf-9449-4a35-bb56-9bd4bccaea76</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>94x Tax Form Control</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PR </ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>b0710013-7ef6-4f56-9567-5a8d9161561c</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>Addon PR Additional (Hidden)</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PR </ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

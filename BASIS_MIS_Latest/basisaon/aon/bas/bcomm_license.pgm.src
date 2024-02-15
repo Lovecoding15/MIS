@@ -1,0 +1,214 @@
+seterr errmsg
+tmpdir$=stbl("TEMP")
+boundary$="--==========_BASIS"
+msg_text$=""
+
+dim key_rec$:"number:c(10*=44),auth_key:c(13*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),po:c(5*=44),cust:c(6)"
+
+dim lic_rec$:"number:c(10*=44),auth_key:c(10*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),flex_feature:c(7*=44),flex_key:c(12*=44),flex_rev_lvl:c(10*=44),flex_host_id:c(10*=44),flex_expiry_date:c(11*=44),flex_checksum:c(2*=44),flex_users:c(10*=44),flex_number:c(10*=44),platform:c(1*=44),po:c(5*=44),cust:c(6)"
+
+rem 'Get data from file built by ec_license, copy to work file & erase original
+infile$=stbl("AON")+"bcomm_orders.txt"
+infile=unt
+waited=0
+open(infile,err=nolock)infile$
+lock(infile,err=nolock)
+f$=fin(infile)
+s=dec(f$(1,4))
+if s<1 then 
+  close(infile)
+  goto pgm_end
+fi
+readrecord(infile,siz=s)textin$
+close(infile)
+erase infile$,err=*next
+work$=tmpdir$+"bcomm_work.txt"
+erase work$,err=*next
+string work$
+work=unt
+open(work)work$
+print(work)textin$,
+close(work)
+
+REM "Main loop
+while 1 
+  work=unt
+  open(work)work$
+  f$=fin(work)
+  s=dec(f$(1,4))
+  if s<1 then break
+  readrecord(work,siz=s)textin$
+  p1=pos("BEGIN"=textin$)
+  if p1=0 then break
+  p2=pos("END"=textin$)
+  bcom$=textin$(p1,p2+3-p1)+$0a$
+  textin$(p1,p2+3-p1)=" "
+  print(work,ind=0)textin$
+  close(work)
+
+  rem "Process 1 order (1 or more sns)
+  outlist$="",dsblist$="",dsb=0,bcorder$=""
+  dim email$[1]
+  counter=0
+  while len(bcom$)>0
+    p=pos($0a$=bcom$)
+    if p=0 then p=len(bcom$)+1
+    temp$=cvs(bcom$(1,p-1),3)
+    bcom$=bcom$(p+1)
+    if counter=0 and temp$="" then continue 
+    if pos(temp$="BEGIN,END") then continue
+    if counter=0 then firm$=temp$
+    if counter=1 then dsb=num(temp$,err=*continue)
+    if counter=2 or counter=3 then email$[counter-2]=temp$
+    counter=counter+1
+    if counter<5 then continue
+    key_rec$=temp$
+    sn$=key_rec.number$
+    k$=cvs(key_rec.auth_key$,3)
+    bcorder$=key_rec.order_no$
+    rem 'all forms processed in this loop are from the same order
+    c$=","
+    lictext$=""
+    flex=(len(k$)=10) 
+    if flex then call "temp_license.pgm",sn$,lictext$
+    rec$=str(flex)+cvs(sn$,3)+c$+k$+c$+key_rec.users$+c$+bcorder$+c$
+    rec$=rec$+key_rec.order_date$+c$+key_rec.part_num$+c$+key_rec.desc1$+c$
+    rec$=rec$+key_rec.rev_lvl$+c$+key_rec.system$+lictext$+c$+key_rec.po$+c$
+    rec$=rec$+key_rec.cust$
+    outlist$=outlist$+rec$+$0a$
+    dsblist$=dsblist$+rec$(2)+$0a$
+  wend
+  for ii=0 to 1
+    let sendto$=email$[ii]
+    gosub send_forms
+  next ii
+  rem "End of process 1 order
+
+wend
+rem "End of main loop
+
+pgm_end:
+close(work,err=*next)
+erase work$,err=*next
+pgm$=stbl("AON")+"bas/job_queue.pgm"
+run pgm$,err=*next
+release
+
+errmsg:
+  sendto$ = "mis@basis.cloud"
+  sendfrom$ = "customer-service@@basis.cloud"
+  sendcc$ = ""
+  sendbcc$ = ""
+  subject$ = "temp license failed for " + cvs(sn$,3)+" "+bcorder$
+
+  msg$ = msg$ + "Error " + str(err)+ " " + errmes(-1) + " in " + str(tcb(5)) + " of " + pgm(-2)
+  
+  call "sendEmail.src", sendfrom$, sendto$, sendcc$, sendbcc$, subject$, msg$, ""
+
+goto pgm_end
+
+nolock:
+if err=12 then goto pgm_end
+if err=0 then
+  wait 1
+  waited=waited+1 
+  if waited>30 then goto pgm_end
+  retry
+fi
+
+send_forms:
+if sendto$="" then return
+if pos("@"=sendto$) then let choice$="E" else let choice$="F"
+let flist$=outlist$
+gosub msg_text
+gosub setup
+while 1
+  let lf=pos($0a$=flist$)
+  if lf<2 then break
+  let in$=flist$(1,lf-1),flist$=flist$(lf+1)
+  if cvs(in$,3)=$$ then continue
+  let flex=num(in$(1,1),err=*next)
+  in$=in$(2)
+  if flex then 
+    dim rec$:fattr(lic_rec$)
+  else
+    dim rec$:fattr(key_rec$)
+  fi
+  let rec$=in$
+  gosub build_html
+wend
+
+at$=boundary$+"--"+$0a$
+if dsb then 
+  dsbid$=bcorder$(len(bcorder$)-4,5)+"dsb.txt"
+  at$=$0a$+boundary$+$0a$+"Content-Disposition: attachment"+$0a$+"Content-Transfer-Encoding: 7bit"+$0a$+"Content-Type: text/plain;"+$0a$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+dsbid$+$22$+$0a$+$0a$+dsblist$+at$
+fi
+if choice$="E" then write record (outfile)at$
+
+close (outfile,err=*next)
+rem ' send mail is no longer used
+rem ' let a=scall("/usr/lib/sendmail -t < "+outfile$)
+
+	rem ' sendto$ is the to address
+	from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+	rem ' cc$ is the cc address
+	bcc$ = "kw5121151@gmail.com"; rem ' for monitoring
+	subj$ = "BASIS Order "+bcorder$
+	if pos("bcomm_license" = msg_text$) = 0 then msg_text$ = msg_text$ + $0A$ + $0A$ + "bcomm_license"
+		
+	htmlfile$ = stbl("TEMP") + CVS(REC.NUMBER$,2)+".htm"
+	erase htmlfile$, err=*next
+	string htmlfile$
+	htmlfile = unt
+	open(htmlfile)htmlfile$
+	write record (htmlfile)savehtml$
+	close(htmlfile)
+	call "sendEmail.src", from$, sendto$, cc$, bcc$, subj$, msg_text$, htmlfile$
+	erase htmlfile$,err=*next
+
+erase outfile$,err=*next
+return
+
+setup:
+close (outfile,err=*next)
+outfile$=tmpdir$+bcorder$+"lic.txt"
+erase outfile$,err=*next
+string outfile$
+outfile=unt
+open (outfile)outfile$
+let pagebreak$="",f$=""
+if choice$="E" then goto write_header
+for a=1 to len(sendto$)
+ if pos(sendto$(a,1)="0123456789") then let f$=f$+sendto$(a,1) 
+next a
+if f$(1,1)="1" or f$(1,3)="011" or len(f$)=7 then goto write_header
+if len(f$)<>10 then let f$="011"+f$
+if len(f$)=10 then if f$(1,3)="525" then let f$="011"+f$ else let f$="1"+f$
+write_header:
+let header$="Mime-Version: 1.0"+$0a$+"Content-Type: multipart/mixed;"+$0a$+" boundary="+$22$+boundary$(3)+$22$+$0a$
+let cc$="Cc: customer-service@basis.cloud"; if firm$="02" then let cc$=cc$+",eu.sales@basis.cloud"
+let header$=header$+"To: "+sendto$+$0a$+"From: BASIS Customer Service <customer-service@basis.cloud>"+$0a$+"Reply-To: customer-service@basis.cloud"+$0a$+cc$+$0a$+"Subject: BASIS Order "+bcorder$+$0a$+boundary$+$0a$+"Content-Type: text/plain;"+$0a$+" charset="+$22$+"us-ascii"+$22$+$0a$+"Content-Transfer-Encoding: 7bit"+$0a$+$0a$
+let header$=header$+msg_text$+$0a$
+if choice$="F" then let header$="To: fax@basis.cloud"+$0a$+"From: customer-service@basis.cloud"+$0a$+"Subject: "+f$+"; Order# "+bcorder$+$0a$+$0a$
+write record (outfile)header$
+return
+
+build_html:
+if choice$="E" then 
+  pagebreak$=$0a$+boundary$+$0a$+"Content-Disposition: attachment"+$0a$+"Content-Transfer-Encoding: 7bit"+$0a$+"Content-Type: text/html;"+$0a$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+cvs(rec.number$,3)+".htm"+$22$+$0a$+$0a$
+fi
+let toline$="<b>To: BASIS Customer</b><br>",subjline$="<b>Subj: BASIS Order "+bcorder$+"</b><br>",html$=""
+call "BLK.30",firm$,toline$,subjline$,choice$,rec$,flex,html$
+let html$=pagebreak$+html$
+savehtml$ = html$
+write record (outfile)html$
+if choice$="F" then let pagebreak$="<!--"+$0a$+"~~pagebreak~~"+$0a$+"--><br><big><big><big><big>BASIS</big></big></big></big><br>International<br><br>"+$0a$
+return
+
+msg_text:
+msg_chan=unt
+open(msg_chan)"BLK16.txt"
+f1$=fin(msg_chan),s=dec(f1$(1,4))
+readrecord(msg_chan,siz=s)msg_text$
+close(msg_chan)
+return

@@ -1,0 +1,163 @@
+rem  language translator class
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.String
+
+class public LanguageTranslator
+
+    field private BBjString filename!
+    field private Properties langProps!
+
+    method public LanguageTranslator(BBjString filename!)
+
+        DECLARE File file!
+        DECLARE FileInputStream fis!
+        DECLARE BufferedInputStream bis!
+
+        #filename!=filename!
+
+        seterr filePrepErr
+
+        rem ' locate the file
+        props=unt
+        open(props)filename!
+        props$=fid(props), props$=props$(9)
+        close(props)
+
+        file! = new File(props$)
+        fis! = new FileInputStream(file!)
+        bis! = new BufferedInputStream(fis!)
+        #langProps! = new Properties()
+        #langProps!.load(bis!)
+        bis!.close()
+        fis!.close()
+
+        methodret
+
+        filePrepErr:
+            throw "Error preparing the properties file " + props$,err
+
+    methodend
+
+    method public BBjString getPropertyFilename()
+
+        methodret #filename!
+
+    methodend
+
+    method public void translateWindow(BBjWindow theWindow!)
+
+        seterr twError
+
+            DECLARE BBjString transText!
+            DECLARE BBjString wrkText!
+            DECLARE BBjVector controlVector!
+            DECLARE BBjControl thisControl!
+
+            rem ' translate the window header
+            if theWindow!.getText() <> "" then
+                transText!=#langProps!.getProperty(theWindow!.getText())
+                if transText! <> null() and transText! <> "" then
+                    theWindow!.setText(transText!)
+                fi
+            fi
+
+            rem ' translate the controls
+            controlVector! = theWindow!.getAllControls()
+            for item = 0 to controlVector!.size()-1
+
+                thisControl!=cast(BBjControl, controlVector!.getItem(item))
+
+                if thisControl!.getToolTipText() <> "" then
+                    transText!=#langProps!.getProperty(thisControl!.getToolTipText())
+                    if transText! <> null() then
+                        thisControl!.setToolTipText(transText!)
+                    fi
+                fi
+
+
+                if thisControl!.getLongCue() <> "" then
+                    transText!=#langProps!.getProperty(thisControl!.getLongCue())
+                    if transText! <> null() then
+                        thisControl!.setLongCue(transText!)
+                    fi
+                fi
+
+
+                controlType = thisControl!.getControlType()
+                if controlType = BBjControl.PUSHBUTTON_CONTROL OR
+:                  controlType = BBjControl.TEXT_CONTROL OR 
+:                  controlType = BBjControl.MENUBUTTON_CONTROL OR 
+:                  controlType = BBjControl.MENUITEM_CONTROL OR
+:                  controlType = BBjControl.CHECKABLE_MENUITEM_CONTROL OR
+:                  controlType = BBjControl.CHECKBOX_CONTROL OR
+:                   controlType = BBjControl.GROUPBOX_CONTROL OR
+:                   controlType = BBjControl.RADIOBUTTON_CONTROL THEN
+
+                    wrkText! = thisControl!.getText()
+                    if wrkText! <> "" then
+                        transText!=#langProps!.getProperty(wrkText!)
+                        if transText! <> null() then
+                            thisControl!.setText(transText!)
+                        fi
+                    fi
+                fi
+
+
+            next item
+
+            methodret
+
+        twError:
+            throw "Error translating window.",err
+
+    methodend
+
+    method public BBjString getMessage(BBjString key$)
+    
+        seterr gmError
+
+            DECLARE BBjString theText!
+
+            theText! = #langProps!.getProperty(key$)
+            if theText! = null() then theText!=""
+
+            methodret theText!
+        
+        gmError:
+            throw "Error translating message.",err
+    methodend
+
+    method public BBjString getMessage(BBjString key$, BBjVector params!)
+
+        seterr gmErrorTwo
+            DECLARE BBjString theText!
+
+            theText! = #langProps!.getProperty(key$)
+
+            if theText! = null() then
+                theText!=""
+            fi
+
+            if params! <> null() then
+                wrk$=theText!
+                for x = 0 to params!.size()-1
+                    target$ = "{"+str(x)+"}"
+                    while pos(target$=wrk$)
+                        rpos = pos(target$=wrk$)
+                        wrk$ = wrk$(1, rpos-1) + cast(BBjString, params!.get(x)) + wrk$(rpos + len(target$))
+                    wend
+                next x
+                theText!=wrk$
+            fi
+
+            methodret theText!
+
+        gmErrorTwo:
+            throw "Error translating message.", err
+    methodend
+
+classend

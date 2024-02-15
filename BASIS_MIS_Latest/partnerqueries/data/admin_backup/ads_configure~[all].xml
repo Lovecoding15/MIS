@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADS_CONFIGURE</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<CONFIG_ID>+UPDATE_GDOC    </CONFIG_ID>
+		<DESCRIPTION>Update Google Docs</DESCRIPTION>
+		<LOAD_ON_EXEC>Y</LOAD_ON_EXEC>
+		<CONFIG_VALUE>2319DB5BEC88450FD4235DEB5BBA26CA</CONFIG_VALUE>
+		<COMMENTS>Auto updates gdocs when using save button in DocOut[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </COMMENTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<CONFIG_ID>+UPLOAD_GDOC    </CONFIG_ID>
+		<DESCRIPTION>Upload to Gdocs</DESCRIPTION>
+		<LOAD_ON_EXEC>Y</LOAD_ON_EXEC>
+		<CONFIG_VALUE>DAD04FE48A242777EDD89D0AEB1A5BE0</CONFIG_VALUE>
+		<COMMENTS>Uploads to gdocs when saving in DocOut[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </COMMENTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<CONFIG_ID>UPDT_OVERRIDE   </CONFIG_ID>
+		<DESCRIPTION>Addon update override</DESCRIPTION>
+		<LOAD_ON_EXEC>N</LOAD_ON_EXEC>
+		<CONFIG_VALUE>C75653BEC0A513EFA4FF91F65E5DD08D</CONFIG_VALUE>
+		<COMMENTS>Replaces legacy 'SPECIAL' override in Addon.[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </COMMENTS>
+		<USER_MODIFIED>M</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<CONFIG_ID>+EMAIL_USER_ID  </CONFIG_ID>
+		<DESCRIPTION>Email Account User ID</DESCRIPTION>
+		<LOAD_ON_EXEC>Y</LOAD_ON_EXEC>
+		<CONFIG_VALUE>CF2929C82F3FB603E20F4107D2AE6D177FC2038FAB036AB103D29B489FB3CFC2</CONFIG_VALUE>
+		<COMMENTS>User ID for Document Processing Queue configuration.[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </COMMENTS>
+		<USER_MODIFIED>M</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<CONFIG_ID>+EMAIL_PASSWORD </CONFIG_ID>
+		<DESCRIPTION>Email Password</DESCRIPTION>
+		<LOAD_ON_EXEC>Y</LOAD_ON_EXEC>
+		<CONFIG_VALUE>2786E91FEBBC7EA321BCFD0DE6F3C5DE5095E71890FBABF309CBCA99A831343FC71C90457EFD7D0FE4C2FEDFE73F0402</CONFIG_VALUE>
+		<COMMENTS>User password for Document Processing Queue configuration.[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </COMMENTS>
+		<USER_MODIFIED>M</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<CONFIG_ID>+MAIL_HOST      </CONFIG_ID>
+		<DESCRIPTION>SMTP Mail Host</DESCRIPTION>
+		<LOAD_ON_EXEC>Y</LOAD_ON_EXEC>
+		<CONFIG_VALUE>1E8B72C7AACAE427CD0A50315B1CE0A84716932358A88D1D8972172636AF495A9B3A7EA27B49BED1AD8413ABC40689C2</CONFIG_VALUE>
+		<COMMENTS>SMTP mail host for send email without using Outlook.[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </COMMENTS>
+		<USER_MODIFIED>M</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<CONFIG_ID>+REPORT_USER_PWD</CONFIG_ID>
+		<DESCRIPTION>Report User Password</DESCRIPTION>
+		<LOAD_ON_EXEC>N</LOAD_ON_EXEC>
+		<COMMENTS>4vwM_!zzjZdK!r9u[$0a$]Make sure this password is used for the +REPORT_USER_ID user in Enterprise Manager. It is the password for the User ID used to generate Addon reports and dashboard.[$0a$]                                                                                                                                                                                                                                                                                                                                          </COMMENTS>
+		<USER_MODIFIED>M</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

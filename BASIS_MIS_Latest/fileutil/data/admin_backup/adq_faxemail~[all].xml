@@ -1,0 +1,737 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADQ_FAXEMAIL</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<FIRM_ID>02</FIRM_ID>
+		<DOC_PROC_SEQ>0000001234</DOC_PROC_SEQ>
+		<DOC_NO>0000008675</DOC_NO>
+		<DOC_EXT>PDF</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>00</ATTEMPTED>
+		<TRANS_USER_ID>ADMIN           </TRANS_USER_ID>
+		<TRANS_DATE>20170129</TRANS_DATE>
+		<TRANS_TIME>043135</TRANS_TIME>
+		<FAX_NOS>                                                            </FAX_NOS>
+		<FROM_COMPANY>                              </FROM_COMPANY>
+		<FROM_NAME>                              </FROM_NAME>
+		<FAX_TO_ORG>                              </FAX_TO_ORG>
+		<FAX_TO_NAME>                                                            </FAX_TO_NAME>
+		<EMAIL_ACCOUNT>          </EMAIL_ACCOUNT>
+		<EMAIL_FROM>                                                                                </EMAIL_FROM>
+		<EMAIL_REPLYTO>                                                                                </EMAIL_REPLYTO>
+		<EMAIL_TO>swald@basis.com                                                                 </EMAIL_TO>
+		<EMAIL_CC>                                                                                </EMAIL_CC>
+		<EMAIL_BCC>                                                                                </EMAIL_BCC>
+		<SUBJECT>test                                                        </SUBJECT>
+		<MESSAGE>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </MESSAGE>
+		<DOC_PROC_STATUS>I</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Missing: email_from                                         </DOC_PROC_COMMENT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002353</DOC_PROC_SEQ>
+		<DOC_NO>0001055721</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>3 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20220728</TRANS_DATE>
+		<TRANS_TIME>160306</TRANS_TIME>
+		<EMAIL_ACCOUNT>BASIS     </EMAIL_ACCOUNT>
+		<EMAIL_FROM>customer-service@basis.cloud</EMAIL_FROM>
+		<EMAIL_REPLYTO>customer-service@basis.cloud</EMAIL_REPLYTO>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>S</DOC_PROC_STATUS>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002354</DOC_PROC_SEQ>
+		<DOC_NO>0001055736</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>1</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>2 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20220728</TRANS_DATE>
+		<TRANS_TIME>164133</TRANS_TIME>
+		<EMAIL_ACCOUNT>BASIS     </EMAIL_ACCOUNT>
+		<EMAIL_FROM>customer-service@basis.cloud</EMAIL_FROM>
+		<EMAIL_REPLYTO>customer-service@basis.cloud</EMAIL_REPLYTO>
+		<EMAIL_TO>kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>S</DOC_PROC_STATUS>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002367</DOC_PROC_SEQ>
+		<DOC_NO>0001056338</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20220914</TRANS_DATE>
+		<TRANS_TIME>165511</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002368</DOC_PROC_SEQ>
+		<DOC_NO>0001056339</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20220915</TRANS_DATE>
+		<TRANS_TIME>080356</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002373</DOC_PROC_SEQ>
+		<DOC_NO>0001056540</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20220929</TRANS_DATE>
+		<TRANS_TIME>205045</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002374</DOC_PROC_SEQ>
+		<DOC_NO>0001056744</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20221013</TRANS_DATE>
+		<TRANS_TIME>161433</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002376</DOC_PROC_SEQ>
+		<DOC_NO>0001056746</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20221013</TRANS_DATE>
+		<TRANS_TIME>163011</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002375</DOC_PROC_SEQ>
+		<DOC_NO>0001056745</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20221013</TRANS_DATE>
+		<TRANS_TIME>162559</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002377</DOC_PROC_SEQ>
+		<DOC_NO>0001056967</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20221028</TRANS_DATE>
+		<TRANS_TIME>141222</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002378</DOC_PROC_SEQ>
+		<DOC_NO>0001056981</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20221028</TRANS_DATE>
+		<TRANS_TIME>174741</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002379</DOC_PROC_SEQ>
+		<DOC_NO>0001056982</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20221031</TRANS_DATE>
+		<TRANS_TIME>104841</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002380</DOC_PROC_SEQ>
+		<DOC_NO>0001057357</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20221115</TRANS_DATE>
+		<TRANS_TIME>113634</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002381</DOC_PROC_SEQ>
+		<DOC_NO>0001057358</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20221115</TRANS_DATE>
+		<TRANS_TIME>131651</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002382</DOC_PROC_SEQ>
+		<DOC_NO>0001057359</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20221115</TRANS_DATE>
+		<TRANS_TIME>143442</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002383</DOC_PROC_SEQ>
+		<DOC_NO>0001057493</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20221130</TRANS_DATE>
+		<TRANS_TIME>093611</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002384</DOC_PROC_SEQ>
+		<DOC_NO>0001057494</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20221130</TRANS_DATE>
+		<TRANS_TIME>095547</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002385</DOC_PROC_SEQ>
+		<DOC_NO>0001057495</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20221130</TRANS_DATE>
+		<TRANS_TIME>103723</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002386</DOC_PROC_SEQ>
+		<DOC_NO>0001057753</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20221214</TRANS_DATE>
+		<TRANS_TIME>153238</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002387</DOC_PROC_SEQ>
+		<DOC_NO>0001057766</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20221214</TRANS_DATE>
+		<TRANS_TIME>164359</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002388</DOC_PROC_SEQ>
+		<DOC_NO>0001057767</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20221215</TRANS_DATE>
+		<TRANS_TIME>081335</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002389</DOC_PROC_SEQ>
+		<DOC_NO>0001057938</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20221229</TRANS_DATE>
+		<TRANS_TIME>151401</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002390</DOC_PROC_SEQ>
+		<DOC_NO>0001057955</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20221229</TRANS_DATE>
+		<TRANS_TIME>222652</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002391</DOC_PROC_SEQ>
+		<DOC_NO>0001057956</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20221230</TRANS_DATE>
+		<TRANS_TIME>024036</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002392</DOC_PROC_SEQ>
+		<DOC_NO>0001058149</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20230116</TRANS_DATE>
+		<TRANS_TIME>105452</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002393</DOC_PROC_SEQ>
+		<DOC_NO>0001058150</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20230116</TRANS_DATE>
+		<TRANS_TIME>111158</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002394</DOC_PROC_SEQ>
+		<DOC_NO>0001058164</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20230116</TRANS_DATE>
+		<TRANS_TIME>161913</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002396</DOC_PROC_SEQ>
+		<DOC_NO>0001058322</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20230130</TRANS_DATE>
+		<TRANS_TIME>171211</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002397</DOC_PROC_SEQ>
+		<DOC_NO>0001058323</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>NSPENCE         </TRANS_USER_ID>
+		<TRANS_DATE>20230130</TRANS_DATE>
+		<TRANS_TIME>171526</TRANS_TIME>
+		<EMAIL_FROM>nspence@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver NSPENCE has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002398</DOC_PROC_SEQ>
+		<DOC_NO>0001058324</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20230130</TRANS_DATE>
+		<TRANS_TIME>174123</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>Invalid username or password for the mailserver. Details: javax.mail.AuthenticationFailedException: 535-5.7.8 Username and Password not accepted. Learn more at</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>  </FIRM_ID>
+		<DOC_PROC_SEQ>          </DOC_PROC_SEQ>
+		<DOC_NO>          </DOC_NO>
+		<DOC_EXT>   </DOC_EXT>
+		<DOC_PROC_TYPE> </DOC_PROC_TYPE>
+		<DOC_PRIORITY> </DOC_PRIORITY>
+		<MAX_ATTEMPTS>00</MAX_ATTEMPTS>
+		<ATTEMPTED>1 </ATTEMPTED>
+		<TRANS_USER_ID>                </TRANS_USER_ID>
+		<TRANS_DATE>        </TRANS_DATE>
+		<TRANS_TIME>      </TRANS_TIME>
+		<USER_MODIFIED>M</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002371</DOC_PROC_SEQ>
+		<DOC_NO>0001056537</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>3 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20220929</TRANS_DATE>
+		<TRANS_TIME>161154</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>S</DOC_PROC_STATUS>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002395</DOC_PROC_SEQ>
+		<DOC_NO>0001058232</DOC_NO>
+		<DOC_EXT>XLS</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>2 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20230203</TRANS_DATE>
+		<TRANS_TIME>150619</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>kimp@basis.cloud</EMAIL_TO>
+		<SUBJECT>Profit and Loss Statement</SUBJECT>
+		<DOC_PROC_STATUS>X</DOC_PROC_STATUS>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002366</DOC_PROC_SEQ>
+		<DOC_NO>0001056324</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>4 </ATTEMPTED>
+		<TRANS_USER_ID>KPETERL         </TRANS_USER_ID>
+		<TRANS_DATE>20220914</TRANS_DATE>
+		<TRANS_TIME>155434</TRANS_TIME>
+		<EMAIL_FROM>kimp@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>jkarasz@basis.cloud, nspence@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Awaiting Approval</SUBJECT>
+		<MESSAGE>There are Accounts Payable invoices awaiting your approval. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>S</DOC_PROC_STATUS>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<DOC_PROC_SEQ>0000002372</DOC_PROC_SEQ>
+		<DOC_NO>0001056539</DOC_NO>
+		<DOC_EXT>HTM</DOC_EXT>
+		<DOC_PROC_TYPE>E</DOC_PROC_TYPE>
+		<DOC_PRIORITY>3</DOC_PRIORITY>
+		<MAX_ATTEMPTS>5 </MAX_ATTEMPTS>
+		<ATTEMPTED>5 </ATTEMPTED>
+		<TRANS_USER_ID>JKARASZ         </TRANS_USER_ID>
+		<TRANS_DATE>20220929</TRANS_DATE>
+		<TRANS_TIME>165507</TRANS_TIME>
+		<EMAIL_FROM>jkarasz@basis.cloud</EMAIL_FROM>
+		<EMAIL_TO>, kw5121151@gmail.com, , kimp@basis.cloud</EMAIL_TO>
+		<EMAIL_CC>jkarasz@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud, nspence@basis.cloud</EMAIL_CC>
+		<SUBJECT>Invoices Approval Status</SUBJECT>
+		<MESSAGE>Approver JKARASZ has exited the Payment Selection Form. See attachment for details.</MESSAGE>
+		<DOC_PROC_STATUS>F</DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT> : javax.mail.internet.AddressException: Illegal address</DOC_PROC_COMMENT>
+		<USER_MODIFIED>5</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

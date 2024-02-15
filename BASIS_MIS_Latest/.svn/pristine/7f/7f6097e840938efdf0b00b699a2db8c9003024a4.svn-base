@@ -1,0 +1,16 @@
+rem gb_esc.cod - GUIBuilder generated programs: Escape handler
+rem Copyright (C) 1998-2009 BASIS International Ltd.  All rights reserved.
+rem
+rem ***** E S C A P E   H A N D L E R ***********************************
+rem
+gb__esc:
+   
+   rem ' terminate program when ESCAPE detected.
+   goto gb__eoj
+   
+   gb__temp=msgbox("An ESCAPE has been detected.  Do you want to end this "+
+:     "program?",4+32+256,"ESCAPE handler")
+   if gb__temp=7 then
+:     return
+:  else
+:     goto gb__eoj

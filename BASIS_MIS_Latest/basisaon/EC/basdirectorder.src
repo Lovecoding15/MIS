@@ -1,0 +1,3233 @@
+setesc esc_trap; seterr unexpected_err
+
+rem ' Program Name: basdirectorder.src
+rem ' Direct Commerce order/license setup
+rem ' Portions Copyright (C) 1997-2002 BASIS International Ltd.  All rights reserved.
+
+begin
+setesc esc_trap; seterr unexpected_err
+
+rem ' added to prevent an emply ARM10F template if an error happens before the read
+call "templates.pgm::ARM10F"
+arm10f.slspsn_name$="BASIS MIS"
+arm10f.e_mail$="customer-service@basis.cloud"
+
+rem ' defined functions
+def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+
+def fnlength(templ$,field_name$)
+   dim dummy$:templ$
+   length$=fattr(dummy$,field_name$)
+   length=dec(length$(10,2))
+   return length
+fnend
+
+def fnjul(yyyymmdd$)
+  xjul=0,xy=0,xm=0,xd=0
+  xy=NUM(yyyymmdd$(1,4),ERR=*next)
+  xm=NUM(yyyymmdd$(5,2),ERR=*next)
+  xd=NUM(yyyymmdd$(7,2),ERR=*next)
+  if xy*xm*xd then xjul=jul(xy,xm,xd)
+  return xjul
+fnend
+
+def fnaonjul(ymd$)
+  y=1900+asc(ymd$(1))-32,m=asc(ymd$(2))-32,d=asc(ymd$(3))-32
+  IF m<1 OR d<1 THEN LET jd=0 ELSE LET jd=JUL(y,m,d)
+  return jd
+fnend
+
+rem ' -----------------------------------------------------------------
+rem ' Init
+rem ' -----------------------------------------------------------------
+   
+    rem ' argument validataion tracking string
+    lf$="\n"
+    argTrk$="checking number of arguments" + lf$
+
+   args=argc-1
+   if args<3 then
+     goto invalid_arguments
+   endif
+
+   argTrk$ = argTrk$ + "number of arguments valid " + str(args) + lf$
+   argTrk$ = argTrk$ + "checking action" + lf$
+
+   stat=0   
+   action$=str(num(argv(1),err=invalid_arguments):"00")
+   if pos(action$="01020304",2)=0 then
+     goto invalid_arguments
+   endif
+
+   argTrk$ = argTrk$ + "action valid " + action$ + lf$
+   argTrk$ = argTrk$ + "checking firm, customer, user code" + lf$
+
+   rem ' Format of argv(2) is FFCCCCCCUU
+   rem ' FF is a 2-digit Firm ID (usually 01 or 02)
+   rem ' CCCCCC is a 1-6 digit customer number, typically 4 digits
+   rem ' UU is an optional 1- or 2-letter user code
+   temp$=cvs(argv(2,err=invalid_arguments),1+2+4)
+   if len(temp$)<3 or len(temp$)>10 then goto invalid_arguments
+   firm_id$=temp$(1,2),temp$=temp$(3)
+   temp=mask(temp$,"^[0-9]+")
+   if temp<>1 then goto invalid_arguments
+   cust_num$=str(num(temp$(1,tcb(16))):"000000"),temp$=temp$(tcb(16)+1)
+   temp=mask(temp$,"^[A-Z]+$")
+   if len(temp$) and (temp<>1 or len(temp$)>2) and temp$<>"**" then goto invalid_arguments
+   user_code$=pad(temp$,2)
+
+   argTrk$ = argTrk$ + "firm, customer, user code valid " + firm_id$ + cust_num$ + " (" + user_code$ + ")" + lf$
+   argTrk$ = argTrk$ + "getting reference number" + lf$
+
+   reference$=cvs(argv(3,err=invalid_arguments),1+2)
+   if reference$="" then
+     goto invalid_arguments
+   else
+     reference$=reference$ + fill(20),reference$=reference$(1,20)
+   endif
+
+    argTrk$ = argTrk$ + "reference number valid " + reference$ + lf$
+
+   chan$="", quiet_flag=1 
+
+   gosub open_initial_files
+   if stat then
+     goto err_exit
+   endif
+
+   rem ' get customer EC record
+   if cust_num$="007808" and user_code$="**" then
+     extract record (ecm01,key=firm_id$+cust_num$+"  ",tim=3,dom=ecm01_not_found,err=login_locked)ecm01$
+   else
+     argTrk$ = argTrk$ + "attempting ecm01 read with key (" + firm_id$+cust_num$+user_code$ + ")"
+     extract record (ecm01,key=firm_id$+cust_num$+user_code$,tim=3,dom=ecm01_not_found,err=login_locked)ecm01$
+     argTrk$ = argTrk$ + "completed ecm01 read with key (" + firm_id$+cust_num$+user_code$ + ")"
+   fi
+   read (ecm01)
+
+    zero_inv=0
+    rem 'OSH has zero price on invoice - Audev too as of 3/31/06 
+    if firm_id$+cust_num$="01001081" then zero_inv=1
+    if firm_id$+cust_num$="01007808" then zero_inv=1
+
+do_action:
+   on num(action$)-1 goto init_cart,add_cart,buy_now,reset_license
+
+rem ' -----------------------------------------------------------------
+rem ' Initialize Cart Action
+rem ' -----------------------------------------------------------------
+
+init_cart:
+
+   rem ' find and remove each cart/feature/serial number record for the passed reference
+   read(ece11,key=firm_id$+cust_num$+user_code$,dom=*next)
+
+   find_ece11_loop:
+   read record(ece11,end=init_cart_done)ece11$   
+   if ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$<>firm_id$+cust_num$+user_code$ then
+     goto init_cart_done
+   endif
+   if ece11.po_ref_number$<>reference$ then
+     goto find_ece11_loop
+   endif
+   remove(ece11,key=ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$)
+   read(ece12,key=ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$,dom=*next)
+
+   find_ece12_loop:
+   read record(ece12,end=init_ece83)ece12$
+   if ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$<>ece12.firm_id$+ece12.customer_nbr$+ece12.user_code$+ece12.line_number$ then
+     goto init_ece83
+   endif
+   remove(ece12,key=ece12.firm_id$+ece12.customer_nbr$+ece12.user_code$+ece12.line_number$+ece12.feature$)
+   goto find_ece12_loop
+
+   init_ece83:
+   read(ece83,key=ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$,dom=*next)
+
+    find_ece83_loop:
+   read record(ece83,end=find_ece11_loop)ece83$
+   if ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$<>ece83.firm_id$+ece83.customer_nbr$+ece83.user_code$+ece83.line_number$ then
+     goto find_ece11_loop
+   endif
+   remove(ece83,key=ece83.firm_id$+ece83.customer_nbr$+ece83.user_code$+ece83.line_number$+ece83.serial_nbr$)
+   goto find_ece83_loop
+
+   init_cart_done:
+   print str(stat:"00")
+   goto do_exit
+
+   rem ' -----------------------------------------------------------------
+rem ' Add to Cart Action
+rem ' -----------------------------------------------------------------
+
+add_cart:
+
+    argTrk$ = argTrk$ + "checking add to cart number of arguments" + lf$
+
+   rem ' get rest of arguments
+   if args<11 then goto invalid_arguments
+
+    argTrk$ = argTrk$ + "add to cart number of arguments valid" + str(args) + lf$
+
+   gosub open_serial_nbr_files
+   if stat then goto err_exit
+
+   gosub Open_Order_files
+   if stat then goto err_exit
+
+   gosub open_configuration_files
+   if stat then goto err_exit
+
+    argTrk$ = argTrk$ + "checking number of serial numbers" + lf$
+
+   stat=0
+   arg_nbr=4
+   nbr_serials=num(argv(arg_nbr,err=invalid_arguments),err=invalid_arguments), arg_nbr=arg_nbr + 1
+   dim serial_nbr$[nbr_serials](20),item_num$[nbr_serials]
+
+    argTrk$ = argTrk$ + "number of serial numbers valid " + str(nbr_serials) + lf$
+
+   if nbr_serials=0 then
+     goto next_args
+   endif
+
+   bbjsn=0,p5sn=0,ds5sn=0,temp$=""
+
+    argTrk$ = argTrk$ + "checking serial numbers" + lf$
+
+   for nbr=0 to nbr_serials-1
+     serial_nbr$[nbr](1)=argv(arg_nbr,err=invalid_arguments)
+     arg_nbr=arg_nbr + 1
+    
+    argTrk$ = argTrk$ + "serial number retrieved " + serial_nbr$[nbr] + lf$
+
+     if len(cvs(serial_nbr$[nbr],1+2))<>9 then exitto invalid_arguments
+     dim sn$(20)
+     sn$(1)=serial_nbr$[nbr]
+     gosub check_orders
+     if snm01.product$="BAS" then 
+       bbjsn=bbjsn+sn_exist 
+     else 
+       if snm01.product$="DS5" then ds5sn=ds5sn+sn_exist else p5sn=p5sn+sn_exist
+     fi
+     temp$=temp$+snm01.product$
+   next nbr
+
+    argTrk$ = argTrk$ + "serial numbers valid " + lf$
+
+   rem 'Make sure BAS product is first for consolidations
+   if bbjsn and p5sn then
+     p=int(pos("BAS"=temp$)/3)
+     if p then 
+        sn$=serial_nbr$[0]
+        serial_nbr$[0]=serial_nbr$[p]
+        serial_nbr$[p]=sn$
+     fi
+   fi
+
+next_args:
+
+    argTrk$ = argTrk$ + "checking number of properties" + lf$
+
+   propertyTable!=new java.util.Hashtable()
+   nbr_properties=num(argv(arg_nbr,err=invalid_arguments),err=invalid_arguments), arg_nbr=arg_nbr + 1
+   dim properties$[nbr_properties,1]
+
+    argTrk$ = argTrk$ + "number of properties found " + str(nbr_properties) + lf$
+
+   property_users=0, product_id$="",property_level$=""
+   if nbr_properties=0 then
+     goto rev_param
+   endif
+
+    argTrk$ = argTrk$ + "checking max number of properties" + lf$
+
+   if nbr_properties>2 then
+     goto invalid_arguments
+   endif
+
+    argTrk$ = argTrk$ + "number of properties valid " + str(nbr_properties) + lf$
+    argTrk$ = argTrk$ + "checking properties" + lf$
+
+   for nbr=0 to nbr_properties-1
+      properties$[nbr,0]=cvs(argv(arg_nbr,err=invalid_arguments),4)
+      
+      argTrk$ = argTrk$ + "property value " + str(nbr) + ",0 : " + properties$[nbr,0] + lf$
+      
+      if len(cvs(properties$[nbr,0],1+2))<>3 then
+        exitto invalid_arguments
+      endif
+      if nbr and properties$[nbr,0](3,1)<>properties$[nbr-1,0](3,1) then
+        exitto no_product
+      endif
+      arg_nbr=arg_nbr + 1
+      properties$[nbr,1]=str(num(argv(arg_nbr,err=invalid_arguments),err=invalid_arguments):"00000")
+      
+      argTrk$ = argTrk$ + "property value " + str(nbr) + ",1 : " + properties$[nbr,1] + lf$
+      
+      arg_nbr=arg_nbr + 1
+      property_users=property_users + num(properties$[nbr,1])
+   next nbr
+
+    argTrk$ = argTrk$ + "properties valid" + lf$
+
+   product_id$=properties$[0,0]
+   property_level$=product_id$(3,1)
+   if product_id$="000" then
+     product_id$=""
+     property_level$=""
+   endif
+   if nbr_properties>1 and pos(product_id$="BEFBSFBERBSRKEFKSFKERKSR",3)=0 then
+     goto no_product
+   endif
+   if pos(product_id$="BEFBSFBERBSRKEFKSFKERKSR",3) and (nbr_serials=0 or pos(product_id$="BEFBSFBERBSR",3)) then
+     product_id$="BAS"
+   endif
+
+      rev_param:
+
+    argTrk$ = argTrk$ + "getting revision" + lf$
+
+   revision$=cvs(argv(arg_nbr,err=invalid_arguments),1+2+4), arg_nbr=arg_nbr + 1
+
+    argTrk$ = argTrk$ + "revision retrieved " + revision$ +lf$
+
+   if revision$="00000" then
+     revision$=""
+     goto continue_args
+   endif
+
+format_rev:
+   dot_pos=pos("."=revision$)
+   if dot_pos then
+     revision$=revision$(1,dot_pos-1) + revision$(dot_pos+1)
+     goto format_rev
+   endif
+   if len(revision$)<3 then
+     goto invalid_arguments
+   endif
+   revision$=revision$(1,3)
+   if pos(properties$[0,0]="DS5ODBPR5VP5",3) and revision$(1,1)<>"0" then
+     revision$="0" + revision$(1,2)
+     if revision$(3,1)<>"0" or revision$(2,1)>"2" or (properties$[0,0]="ODB" and revision$(2,1)="2") then
+       revision$(3,1)="X"
+     endif
+   endif
+
+continue_args:
+    argTrk$ = argTrk$ + "revision validated " + revision$ +lf$
+    argTrk$ = argTrk$ + "checking license type" + lf$
+
+   license_type$=cvs(argv(arg_nbr,err=invalid_arguments),1+2+4), arg_nbr=arg_nbr + 1
+   if license_type$="000" then
+     license_type$=""
+   endif
+
+    argTrk$ = argTrk$ + "license type validated " + license_type$ +lf$
+    argTrk$ = argTrk$ + "checking users" + lf$
+
+   users=num(argv(arg_nbr,err=invalid_arguments),err=invalid_arguments), arg_nbr=arg_nbr + 1
+   if (nbr_serials=0 and ((users<=0) or (nbr_properties and users<>property_users))) or (nbr_serials and users<0) then 
+      goto invalid_user_count
+   endif
+
+    argTrk$ = argTrk$ + "users validated " + str(users) + lf$
+    argTrk$ = argTrk$ + "checking port_id" + lf$
+
+   port_id$=cvs(argv(arg_nbr,err=invalid_arguments),1+2), arg_nbr=arg_nbr + 1
+   if port_id$="0000" then
+     port_id$=""
+   endif
+
+    argTrk$ = argTrk$ + "port id validated " + port_id$ + lf$
+    argTrk$ = argTrk$ + "checking alt customer " + lf$
+
+   alt_cust$=argv(arg_nbr,err=invalid_arguments), arg_nbr=arg_nbr + 1
+   if alt_cust$="000000" then
+     alt_cust$=""
+   endif
+
+    argTrk$ = argTrk$ + "alt cusotmer validated " + alt_cust$ + lf$
+    argTrk$ = argTrk$ + "checking number of features " + lf$
+
+   featureTable!=new java.util.Hashtable()
+
+   nbr_features=num(argv(arg_nbr,err=invalid_arguments),err=invalid_arguments)
+   arg_nbr=arg_nbr + 1
+    
+    argTrk$ = argTrk$ + "number of features " + str(nbr_features) + lf$
+
+   if nbr_features=0 then
+     goto get_options
+   endif
+
+    argTrk$ = argTrk$ + "getting features " + lf$
+
+   dim features$[nbr_features-1,3]
+   for nbr=0 to nbr_features-1
+      features$[nbr,0]=cvs(argv(arg_nbr,err=invalid_arguments),1+2+4)
+      features$[nbr,1]=cvs(argv(arg_nbr+1,err=invalid_arguments),1+2)
+      features$[nbr,2]=argv(arg_nbr+2,err=invalid_arguments)
+      features$[nbr,3]=" "
+      ub=pos("-UB"=cvs(features$[nbr,0],7))
+      if ub then features$[nbr,0](ub,3)="   ",features$[nbr,3]="Y"
+      arg_nbr=arg_nbr + 3
+  
+    argTrk$ = argTrk$ + "retrieved feature " + features$[nbr,0] + " (REV: " + features$[nbr,1] + ") (USERS: " + features$[nbr,2] + ")" + lf$
+
+ next nbr
+
+    argTrk$ = argTrk$ + "all features retrieved" + lf$
+
+get_options:
+
+    argTrk$ = argTrk$ + "getting options " + lf$
+
+  option_flags$="", sam_flag=0, rental_commit=0, odbc_rw_flag$="", uncounted_flag$="", consolidate=0, virtual$=""
+  option_flags$=cvs(argv(arg_nbr,err=*next),1+2+4), arg_nbr=arg_nbr+1
+  if option_flags$<>"" then sam_flag=num(option_flags$(1,1),err=invalid_arguments)
+  if len(option_flags$)>1 then rental_commit=num(option_flags$(2,1),err=invalid_arguments)
+  if sam_flag<0 or sam_flag>2 then goto invalid_arguments
+  if sam_flag>1 then sam_flag=1;rem 'no more SM2
+  if rental_commit<0 or rental_commit>3 then goto invalid_arguments
+  if rental_commit and sam_flag then goto invalid_arguments
+
+    argTrk$ = argTrk$ + "options valid " + option_flags$ + lf$
+
+  if len(option_flags$)>2 then odbc_rw_flag$=cvs(option_flags$(3,1),4)
+  if len(option_flags$)>3 then uncounted_flag$=cvs(option_flags$(4,1),4)
+  rem if len(option_flags$)>4 then consolidate=pos("C"=cvs(option_flags$(5,1),4))
+  rem ' virtual license flag will be in byte 5 of the options
+  if len(option_flags$) > 4 then
+  	if option_flags$(5,1) = "V" then 
+  		virtual$="VIR"
+  	fi
+  fi
+  if consolidate=0 and bbjsn>1 or (bbjsn and p5sn) then consolidate=1
+  if consolidate and nbr_serials<2 then goto multi_serials_required
+
+  if odbc_rw_flag$="0" then odbc_rw_flag$=""
+  if uncounted_flag$="0" then uncounted_flag$=""
+
+get_annual:
+  new_annual_dt$=""
+  if cust_num$<>"008130" then new_annual_dt$=cvs(argv(arg_nbr,err=*next),1+2)
+
+  gosub open_customer_files
+  if stat then goto err_exit
+
+   if nbr_features then
+    gosub validate_features
+    if nbr_features=0 then
+      goto invalid_feature
+    endif
+  endif
+
+init_add:
+  serial_nbr=0,trade=0,first=0
+  gosub set_new_info
+
+   check_old_serial:
+  if (serial_nbr and nbr_serials=0) or (nbr_serials and serial_nbr+1>nbr_serials) then goto add_cart_done
+
+     gosub restore_new_info
+
+     dim orig_item$(20)
+  orig_port$="", contract$="", license_only$="N", curr_features=0
+  orig_nbr_properties=0
+  if cvs(serial_nbr$[serial_nbr],1+2)="" then goto continue_check
+
+  dim sn$(20)
+  sn$(1)=serial_nbr$[serial_nbr]
+  gosub check_orders
+  if sn_exist=0 and order_exist=0 then goto no_serial_nbr
+  if snm01.license_type$="D60" then goto no_license_type
+  orig_item$(1)=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$
+  item_num$[serial_nbr]=orig_item$
+
+  if consolidate then
+    ece11_key$=ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$
+    if order_exist then
+      if first then gosub remove_from_cart
+      goto cannot_consolidate
+    endif
+    if first then goto setup_cart
+  endif
+
+         if users=0 then users=snm01.users
+
+  if sn2_exist=0 and order_exist=0 then goto set_orig_port
+
+  if product_id$="" then 
+    if propertyTable!.size() then
+      property_users$=propertyTable!.get("000")
+      propertyTable!.put(snm01.product$(1,1)+snm02.lic_property1$,property_users$)
+      propertyTable!.remove("000")
+    endif
+  endif
+
+  gosub chk_properties
+  if stat then goto no_product
+
+  if odbc_rw_flag$="" then odbc_rw_flag$=cvs(snm02.odbc_rw$,2)
+
+set_orig_port:
+
+  if product_id$="" then product_id$=snm01.product$
+  orig_port$=snm01.port_id$(1,4)
+
+orig_rev:
+  if pos(product_id$="DS5ODBPR5VP5",3) and revision$<>"" and revision$(1,1)<>"0" then
+    revision$="0"+revision$(1,2)
+    if revision$(3,1)<>"0" or revision$(2,1)>"2" or (product_id$="ODB" and revision$(2,1)="2") then revision$(3,1)="X"
+  endif
+  if revision$="" then revision$=snm01.product_rev$
+  if license_type$="" then license_type$=snm01.license_type$
+  if port_id$="" or port_id$=orig_port$ then
+    port_id$=orig_port$
+    platform$=snm01.platform$
+    os_level$=snm01.os_level$
+  else
+    dim platform$(3), os_level$(3)
+  endif 
+  contract$=cvs(snm01.contract$,1+2)
+  if contract$="" then
+    if rental_commit then
+      goto invalid_rental
+    else
+      goto set_new_item
+    endif
+  endif
+
+  gosub chk_sam_contract
+  if stat=14 then goto no_license_type
+
+  if rental_commit=0 and license_type$="RN1" then gosub get_committment
+
+  if rental_commit then
+    if old_annual_dt$>smc01.expire_on_dt$ then
+      goto license_expired
+    else
+      if smc01.contr_type$<>"RN1" then goto invalid_rental
+    endif  
+  endif
+
+set_new_item:
+  dim new_item_code$(20)
+  new_item_code$(1)=product_id$+platform$+os_level$+revision$+license_type$
+
+   continue_check:
+  if license_type$<>"RN1" and rental_commit then rental_commit=0
+
+  if sam_flag and new_annual_dt$<>"" and (new_annual_dt$<old_annual_dt$ or new_annual_dt$<=date(0:"%Yl%Mz%Dz")) then goto invalid_sam_date
+
+  gosub get_curr_features
+  if stat then goto invalid_users
+
+  if nbr_serials=0 or orig_item$<>new_item_code$ or snm01.users<>users or property_change or uncounted_flag$<>"" then goto check_config
+
+  if nbr_features+curr_features=0 or feat_change=0 then
+    if consolidate=0 then license_only$="Y"
+  endif
+
+     if sam_flag>0 and (contract$="" or old_annual_dt$<>new_annual_dt$) then license_only$="S"
+
+check_config:
+  if odbc_rw_flag$="" then
+    if license_type$="ROO" then
+      odbc_rw_flag$="R"
+    else
+      odbc_rw_flag$="W"
+    endif
+  endif
+
+check_product_id:
+  find record (csm01,key=firm_id$+product_id$,dom=no_product)csm01$
+  if csm01.online_flag$="N" and pos(product_id$="KEFKSFBAS",3)=0 then goto no_product
+  if csm01.ctr_required$="R" and sam_flag=0 and rental_commit=0 and product_id$(1,1)="B" and pos(license_type$="D60KITNFR",3)=0 then
+    if contract$="" or (contract$<>"" and snm01.sam_active$="N") then
+      goto sam_required
+    endif
+  endif
+  if cvs(orig_item$(1,3),1+2)="" or product_id$=orig_item$(1,3) then goto check_license_type
+
+  exch=0
+  if consolidate and pos(cust_num$="007808,001081")=0 then consolidate=0,exch=1
+  read (csm13d,key=firm_id$+"D"+orig_item$(1,3),dom=*next)
+exc_check:
+  read record(csm13d,end=no_product)csm13d$
+  if csm13d.product$<>orig_item$(1,3) then goto no_product
+  if csm13d.new_product$<>product_id$ then goto exc_check
+  if exch and csm13d.type_of_sale$<>"EXC" then goto exc_check
+  if consolidate and csm13d.type_of_sale$<>"CON" then goto exc_check
+  if (trade and csm13d.type_of_sale$<>"TRD") or (trade=0 and first and csm13d.type_of_sale$="TRD") then goto no_product
+  if (trade and csm13d.type_of_sale$="TRD") or (consolidate and csm13d.type_of_sale$="CON") then goto setup_cart
+  if pos(csm13d.type_of_sale$="TRD,EXC") then trade=1
+
+check_license_type:
+  find record (csm05,key=firm_id$+license_type$,dom=no_license_type)csm05$
+  rem ' removed D60 from the license type list to prevent the creation of new D60 licenses kew 3/6/15
+  if csm05.active_flag$="N" or (csm05.online_flag$="N" and pos(license_type$="RN1KITNFR",3)=0) then goto no_license_type
+  if pos(license_type$="D60KITRN1NFR",3) then sam_flag=0
+
+  expires$=csm05.expires$
+  if cvs(orig_item$(13,3),1+2)="" then goto check_revision
+
+  if orig_item$(13,3)<>license_type$ and (pos(orig_item$(13,3)="D60KITRN1NFR",3) or pos(license_type$="D60KITRN1NFR",3)) then goto no_license_type   
+
+check_revision:
+  find record (csm04,key=firm_id$+"CUR")csm04$
+  curr_rev$=cvs(csm04.description$,3)
+  find record (csm04,key=firm_id$+"NXT",dom=*next)csm04$
+  if pos(firm_id$+"NXT"=csm04$)=1 then nxt_rev$=cvs(csm04.description$,3)
+  if revision$<>"" and revision$=orig_item$(10,3) then goto check_port
+  licensed_rev=0,cur_licensed_rev=0
+
+  find record (csm04,key=firm_id$+revision$,dom=no_revision)csm04$
+  licensed_rev=pos("L"=csm04.key_or_licen$)
+  find record (csm04,key=firm_id$+orig_item$(10,3),dom=check_port)csm04$
+  cur_licensed_rev=pos("L"=csm04.key_or_licen$)
+
+check_port:
+  if port_id$<>"" and port_id$=orig_port$ then goto validate_revision
+
+  extract (csm03,key=firm_id$+port_id$,knum=1,dom=*next)
+
+get_next_port:
+  read record (csm03,end=no_port)csm03$
+  if csm03.port_id$(1,4)<>port_id$ then goto no_port
+  os_level$=csm03.os_level$
+
+get_platform:
+   read (csm13b,key=firm_id$+"B",dom=*next)
+
+match_os_level:
+  read record(csm13b,end=no_platform)csm13b$
+  if csm13b.os_level$<>os_level$ then goto match_os_level
+  platform$=csm13b.platform$
+
+validate_revision:
+  if pos(product_id$="PR5DS5VP5ODB",3) then
+    byte=1
+  else
+    byte=0
+  endif
+  rev_list$=""
+  if revision$<>"" and revision$=orig_item$(10,3) and os_level$=orig_item$(7,3) and sam_flag=0 then
+    goto check_inventory
+  endif
+  if cvs(orig_item$(10,3),1+2)="" then goto val_rev
+  if orig_item$(10+byte,1)="A" or orig_item$(10+byte,1)="L" then
+    orig_item$(10+byte,1)=str(pos(orig_item$(10+byte,1)="AL"))   
+  endif
+  hold_revision$=revision$
+  if revision$(1+byte,1)="A" or revision$(1+byte,1)="L" then
+    hold_revision$(1+byte,1)=str(pos(revision$(1+byte,1)="AL"))
+  endif
+
+  rem ' with the move to product rev 10X we can no longer compare simply on the one byte - kew 1/5/2010
+  rem ' if (product_id$=orig_item$(1,3) or trade=0) and (num(hold_revision$(1+byte,1))<num(orig_item$(10+byte,1)) or licensed_rev<cur_licensed_rev) then
+  rem '   goto no_revision
+  rem ' endif
+  rem ' code revised below must now set the length and not assume it is 1  
+  
+  if byte = 1 then
+  	rem ' older product types that have revs like this 010 020 etc.
+  	holdlen = 1
+  	origlen = 1
+  else
+  	rem ' byte = 0 new product types the have revs like this 9XX, 10X etc.
+	if pos(hold_revision$(2,1)="0123456789") <> 0 then
+		holdlen = 2
+	else
+		holdlen = 1
+	endif
+  	if pos(orig_item$(11,1)="0123456789") <> 0 then
+  		origlen = 2
+  	else
+  		origlen = 1
+  	endif
+  endif
+  if (product_id$=orig_item$(1,3) or trade=0) and (num(hold_revision$(1+byte,holdlen))<num(orig_item$(10+byte,origlen)) or licensed_rev<cur_licensed_rev) then
+    goto no_revision
+  endif
+
+val_rev:
+  read (csm13c,key=firm_id$+"C"+os_level$,dom=*next)
+
+rev_loop:
+  read record(csm13c,end=rev_loop_end)csm13c$
+  if csm13c.os_level$<>os_level$ then goto rev_loop_end
+  rev_list$=rev_list$ + csm13c.product_rev$
+  goto rev_loop
+
+rev_loop_end:
+  if pos("CUR"=rev_list$,3) then rev_list$=rev_list$+nxt_rev$
+  if rev_list$="" then goto no_revision
+  if pos(revision$=rev_list$,3)=0 and revision$<>orig_item$(10,3) and revision$<>curr_rev$ then
+    goto no_revision
+  endif
+  if license_only$="S" and revision$<>curr_rev$ then license_only$="N"
+
+check_inventory:
+  dim new_item_code$(20), inventory_item$(20)
+  new_item_code$(1)=product_id$+platform$+os_level$+revision$+license_type$
+  inventory_item$(1)=product_id$+platform$+os_level$ 
+  if product_id$="BAS" then
+    inventory_item$(10,3)="CUR"
+  else
+    inventory_item$(10,3)=revision$
+  endif
+  if expires$="Y" and product_id$="BAS" then
+    inventory_item$(13,3)="EXP"
+  else
+    inventory_item$(13,3)=license_type$
+  endif
+  find record (ivm01,key=firm_id$+inventory_item$,dom=no_new_item)ivm01$
+
+setup_cart:
+  if first and (trade or consolidate) then goto do_multi_ece83
+  if trade and (p5sn=0 or bbjsn) then goto no_product
+
+  line_number=0
+  read (ece11,key=firm_id$+cust_num$+user_code$,dom=ece11_loop)
+ece11_loop:
+  read record (ece11,end=ece11_endloop)ece11$
+  if ece11.firm_id$<>firm_id$ or ece11.customer_nbr$<>cust_num$ or ece11.user_code$<>user_code$ then goto ece11_endloop
+  if cvs(serial_nbr$[serial_nbr],3)<>"" and cvs(serial_nbr$[serial_nbr],3)=cvs(ece11.serial_nbr$,3) then
+    line_number=num(ece11.line_number$) - 1
+    goto ece11_endloop
+  endif
+  line_number=num(ece11.line_number$)
+  goto ece11_loop
+
+ece11_endloop:
+  line_number=line_number + 1
+  if line_number>9999 then goto cart_full
+
+  dim ece11$:fattr(ece11$)
+  ece11.firm_id$=firm_id$
+  ece11.customer_nbr$=cust_num$
+  ece11.user_code$=user_code$
+  ece11.line_number$=str(line_number:"0000")
+  ece11.po_ref_number$=reference$
+  ece11.serial_nbr$=serial_nbr$[serial_nbr]
+  ece11.item_number$=new_item_code$
+  ece11.qty=1
+  ece11.users=users
+  sam_types$="NS"
+  ece11.sam_coverage$=sam_types$(sam_flag+1,1)
+  ece11.license_only$=license_only$
+  ece11.annual_dt$=new_annual_dt$
+  ece11.rental_commit$=str(rental_commit)
+  ece11.odbc_rw$=odbc_rw_flag$
+  ece11.uncounted_flag$=uncounted_flag$
+  ece11.available$=fill(fnlength(fattr(ece11$),"available"))
+  if consolidate and nbr_serials>1 then ece11.modify_flag$="C"
+  if trade and nbr_serials then ece11.modify_flag$="T"
+  if renew and nbr_serials=1 and sn_exist then 
+    ece11.annual_dt$=date(renew+csm01.ctr_duration:"%Y%Mz%Dz")
+    ece11.modify_flag$="R"
+  fi
+  ece11.order_nbr$=order_nbr$
+
+  rem ' if virtual 
+  if virtual$ <> "" then
+  	ece11.available$ = virtual$
+  fi
+  
+  nbr=propertyTable!.size()
+  if nbr=0 or pos(product_id$="PR5DS5VP5ODB",3) then goto write_cart_rec
+
+  p!=propertyTable!.keys()
+  property_key$=p!.nextElement()
+  if property_key$="000" then goto write_cart_rec
+  property_users$=propertyTable!.get(property_key$)
+  ece11.lic_property1$=property_key$(2,2)
+  ece11.users=num(property_users$)
+  if p!.hasMoreElements()=0 then goto write_cart_rec
+  property_key$=p!.nextElement()
+  property_users$=propertyTable!.get(property_key$)
+  ece11.lic_property2$=property_key$(2,2)
+  ece11.users2=num(property_users$)
+
+write_cart_rec:   
+  ece11$=field(ece11$)
+  write record (ece11)ece11$
+  first=1
+  if nbr_features+curr_features=0 then goto do_multi_ece83
+
+ece12_loop:
+  dim ece12$:fattr(ece12$)
+  ece12.firm_id$=firm_id$
+  ece12.customer_nbr$=cust_num$
+  ece12.user_code$=user_code$
+  ece12.line_number$=ece11.line_number$
+  ece12.available$=fill(fnlength(fattr(ece12$),"available"))
+
+    e!=featureTable!.keys()
+
+  while (e!.hasMoreElements())
+    feature_key$=e!.nextElement()
+    feat_line$=featureTable!.get(feature_key$)
+    p0=pos(";"=feat_line$)
+    if p0 then feat_rev$=feat_line$(1,p0-1),feat_line$=feat_line$(p0+1)
+    p0=pos(";"=feat_line$)
+    if p0 then 
+      feat_users=num(feat_line$(1,p0-1)),feat_line$=feat_line$(p0+1)
+    else
+      feat_users=num(feat_line$(1)),feat_line$=" "
+    fi  
+    feat_ub$=feat_line$
+    ece12.feature$=feature_key$
+    ece12.feature_rev$=feat_rev$
+    ece12.users=feat_users
+    ece12.user_based$=feat_ub$
+    ece12$=field(ece12$)
+    write record (ece12)ece12$
+  wend
+
+do_multi_ece83:
+  if trade or (consolidate and serial_nbr) then
+    dim ece83$:fattr(ece83$)
+    ece83.firm_id$=firm_id$
+    ece83.customer_nbr$=cust_num$
+    ece83.user_code$=user_code$
+    ece83.line_number$=ece11.line_number$
+    ece83.serial_nbr$=serial_nbr$[serial_nbr]
+    ece83$=field(ece83$)
+    write record(ece83)ece83$
+  endif
+
+  serial_nbr=serial_nbr + 1
+  goto check_old_serial
+
+  add_cart_done:
+  if consolidate then gosub check_con_serials
+  print str(stat:"00")
+  goto do_exit
+
+rem ' -----------------------------------------------------------------
+rem ' Buy Now Action
+rem ' -----------------------------------------------------------------
+
+buy_now:
+  rem ' Checkout - Buy Now
+  stat=0
+  rem ' buy now block for Audev - kew - 11/25/2008 by request for laurence
+  rem ' removed block - thines 12/16/2008 - request by laurence
+  rem ' buy now always enabled for sales account (thru buy_now.bbj from GuiAddon)
+  if firm_id$+cust_num$="01007808" then
+    rem 'remove rem on next line to block Audev and leave sales account enabled
+    rem if user_code$<>"**" then goto cart_full
+    if user_code$="**" then user_code$="  " 
+  endif
+  gosub open_serial_nbr_files
+  if stat then goto err_exit
+
+  featureTable!=new java.util.Hashtable()
+  snTable!=new java.util.Hashtable()
+
+  gosub open_order_files
+  if stat then goto err_exit
+
+  gosub open_configuration_files
+  if stat then goto err_exit
+
+  gosub do_license_only
+  if check_cart=0 then
+    if license_only=0
+       goto empty_cart
+    else
+       goto process_licenses
+    endif
+  endif
+
+  gosub open_customer_files
+  if stat then goto err_exit
+
+     gosub get_ar_info
+  if stat then goto err_exit
+
+  if cvs(order_nbr$,1+2)="" then
+    gosub get_order_number
+    if stat then goto err_exit
+  endif
+  
+  process_cart=0
+  gosub create_order
+  if process_cart=0 then goto empty_cart
+
+  gosub send_mail
+
+process_licenses:
+
+  flex$=stbl("FLEXHOME")
+  gosub do_licenses
+
+  print str(stat:"00"),
+
+  sn_nbr=snTable!.size()
+  print str(sn_nbr:"00"),
+  if sn_nbr=0 then goto buy_now_done
+
+  line_list$=ssort(line_list$,4)
+
+send_serial_info:
+   if line_list$="" then
+     goto buy_now_done
+   endif
+   nbr_key$=line_list$(1,4)
+   line_list$=line_list$(5)
+   sn_line$=snTable!.get(nbr_key$)
+   comma_pos=pos(","=sn_line$)
+   sn$=sn_line$(1,comma_pos-1), sn_line$=sn_line$(comma_pos+1)
+   comma_pos=POS(","=sn_line$)
+   auth$=sn_line$(1,comma_pos-1), sn_line$=sn_line$(comma_pos+1)
+   comma_pos=POS(","=sn_line$)
+   file_len$=sn_line$(1,comma_pos-1), sn_line$=sn_line$(comma_pos+1)
+   lic_filename$=sn_line$
+   print sn$,
+   print auth$,
+   print file_len$,
+   if num(file_len$) then
+     print lic_filename$,
+   endif
+   goto send_serial_info
+
+      buy_now_done:
+   snTable!.clear()
+   goto do_exit
+
+rem ' -----------------------------------------------------------------
+rem ' Reset License Counter
+rem ' -----------------------------------------------------------------
+
+reset_license:
+   rem ' get rest of arguments
+   stat=0
+   if args<4 then
+     goto invalid_arguments
+   endif
+
+   serial_nbr$=cvs(argv(4,err=no_serial_nbr),1+2), serial_nbr$=serial_nbr$ + fill(20), serial_nbr$=serial_nbr$(1,20)
+   sn$=serial_nbr$
+   
+      gosub open_order_files
+   if stat then goto err_exit
+
+   gosub open_customer_files
+   if stat then goto err_exit
+
+   gosub get_ar_info
+   if stat then goto err_exit
+
+   gosub open_serial_nbr_files
+   if stat then goto err_exit
+
+   sn_exist=0
+   find record(snm01,tim=5,key=serial_nbr$,dom=*next)snm01$;sn_exist=1
+   if snm01.firm_id$+snm01.customer_nbr$<>firm_id$+cust_num$ and sn_exist then
+     goto no_serial_nbr
+   endif
+
+   if snm01.dist_reset>=allowed_reset and sn_exist then
+     goto exceeded_reset
+   endif
+
+   sn$=serial_nbr$
+   gosub license_status
+   if license_status<1 then
+     if license_status=-1 and sn_exist=0 then
+       goto no_serial_nbr
+     else
+       goto could_not_reset
+     endif
+   endif
+
+   if license_status_channel=are83 then
+     extract record(license_status_channel,tim=5,key=license_status_key$,err=exceeded_reset)are83$
+     are83.license_cnt=0
+     are83$=field(are83$)
+     write record(license_status_channel,key=license_status_key$)are83$
+   else
+     extract record(license_status_channel,tim=5,key=license_status_key$,err=exceeded_reset)snt01$
+     snt01.license_cnt=0
+     snt01$=field(snt01$)
+     write record(license_status_channel,key=license_status_key$)snt01$
+   endif
+
+   if sn_exist=0 then
+     goto do_license_log
+   endif
+   extract record(snm01,tim=5,key=snm01.serial_nbr$,err=exceeded_reset)snm01$
+   snm01.dist_reset=snm01.dist_reset + 1
+   snm01$=field(snm01$)
+   write record(snm01)snm01$
+
+do_license_log:
+   license_reset.serial_nbr$=serial_nbr$
+   license_reset.reset_date$=date(0:"%Y%Mz%Dz")
+   license_reset.reset_time$=date(0:"%Hz%mz%sz")
+   license_reset.reset_by$=firm_id$+cust_num$
+   license_reset.reset_to$="0"
+   license_reset.available$=fill(fnlength(fattr(license_reset$),"available"))
+   license_reset$=field(license_reset$)
+   write record(license_reset,key=license_reset.serial_nbr$+license_reset.reset_date$+license_reset.reset_time$)license_reset$
+
+   rem " send email to sales rep and customer service
+   errmsg$="Couldn't find mailcall"
+   call "mailcall.bbj",err=mail_failed,1,mailcall$,""
+   rem ' with the new amazon mail we can only send email from validated domains, besides we should not be sending from a customer address
+   rem ' mailcall.from$=cvs(arm01.cust_name$,3) + " <" + cvs(ecm01.e_mail$,2) + ">"
+   mailcall.from$="customer-service@basis.cloud"
+   mailcall.to$=cvs(arm10f.slspsn_name$,3) + " <" + cvs(arm10f.e_mail$,3) + ">"
+   mailcall.subject$=cust_num$ + ", " + cvs(serial_nbr$,2) + " license reset"
+   mailcall.attach$=""
+   mailcall.cc$="BASIS Customer Service <customer-service@basis.cloud>"
+
+   mailcall.msgtxt$=license_reset.reset_date$(5,2) +     "/" + license_reset.reset_date$(7,2) +     "/" + license_reset.reset_date$(1,4) +     "  " + license_reset.reset_time$(1,2) +     ":" + license_reset.reset_time$(3,2) + "\n" +     cvs(snm01.serial_nbr$,3) + " license status was reset by " +     cvs(arm01.cust_name$,3) +     ".\nThis is reset #" +     str(snm01.dist_reset) +     " for this serial number."
+
+   call "mailcall.bbj",err=mail_failed,0,mailcall$,errmsg$
+   goto reset_end
+
+mail_failed:
+
+reset_end:
+   print str(stat:"00")
+   goto do_exit
+
+rem ' -----------------------------------------------------------------
+rem ' EOJ
+rem ' -----------------------------------------------------------------
+
+err_exit:
+  print str(stat:"00")
+  seterr send_err
+  
+  rem ' to$="customer-service@basis.cloud"
+  to$ = ""
+  if cvs(arm10f.e_mail$,3) <> "" then 
+  	to$=cvs(arm10f.slspsn_name$,3) + " <" + cvs(arm10f.e_mail$,3) + ">"
+  else
+      if cust_num$="001081" then to$ = stbl("+SALES")
+      if cust_num$="007808" then t0$ = "nspence@basis.cloud"
+  endif
+  
+  send_err:
+  seterr do_exit
+  call "mailcall.bbj",err=*next,1,mailcall$,""
+  mailcall.from$="customer-service@basis.cloud"
+  mailcall.subject$="DirectComm error " 
+  mailcall.attach$=""
+  mailcall.to$="BASIS Customer Service <customer-service@basis.cloud>,"+to$
+  mailcall.cc$="mis@basis.cloud"
+  act$="Unknown"
+  if action$="01" then act$="Init cart"
+  if action$="02" then act$="Add to cart"
+  if action$="03" then act$="Buy now"
+  if action$="04" then act$="Reset license"
+  errtext$="Error Status code: "+str(stat:"00")+"\n"
+  rem Brian
+  rem if stat = 15 then errtext$ = errtext$ + "Invalid revision level: If the revision level submitted with the order is formatted correctly then the problem is generally that the order contains a revision level that is less than the revision level recorded for the serial number in the BASIS database.\n"
+  rem 
+
+  switch stat
+    case 0
+        errtext$ = errtext$ + "Successful.\n"
+        break
+    case 1
+        errtext$ = errtext$ + "Invalid argument passed to basdirect.bbx or BASIS Server.\n"
+        break
+    case 2
+        errtext$ = errtext$ + "Could not reset counter - exceeded reset limit.\n"
+        break
+    case 3
+        errtext$ = errtext$ + "Could not erase temporary file for data transfer to directcomm/directcomm.exe.\n"
+        break
+    case 4
+        errtext$ = errtext$ + "Could not create temporary file for data transfer to directcomm/directcomm.exe.\n"
+        break
+    case 5
+        errtext$ = errtext$ + "Could not read or receive data from directcomm/directcomm.exe.\n"
+        break
+    case 6
+        errtext$ = errtext$ + "Failed to log transaction on BASIS Server.\n"
+        break
+    case 7
+        errtext$ = errtext$ + "Invalid product ID (property) or property set combination.\n"
+        break
+    case 8
+        errtext$ = errtext$ + "Shopping cart is full.\n"
+        break
+    case 9
+        errtext$ = errtext$ + "Invalid serial number - doesn't exist, not active, or not owner.\n"
+        break
+    case 10
+        errtext$ = errtext$ + "Could not write or pass data to directcomm/directcomm.exe.\n"
+        break
+    case 11
+        errtext$ = errtext$ + "Undefined client feature.\n"
+        break
+    case 12
+        errtext$ = errtext$ + "Client feature users or BASIS license property set users exceed BASIS users.\n"
+        break
+    case 13
+        errtext$ = errtext$ + "Login to BASIS Server failed.\n"
+        break
+    case 14
+        errtext$ = errtext$ + "Invalid license type.\n"
+        break
+    case 15
+        errtext$ = errtext$ + "Invalid revision level - If the revision level submitted with the order is formatted correctly then the problem is generally that the order contains a revision level that is less than the revision level recorded for the serial number in the BASIS database..\n"
+        break
+    case 16
+        errtext$ = errtext$ + "Invalid port ID.\n"
+        break
+    case 17
+        errtext$ = errtext$ + "Could not match platform.\n"
+        break
+    case 18
+        errtext$ = errtext$ + "Could not match inventory item.\n"
+        break
+    case 19
+        errtext$ = errtext$ + "License or activation key process failed.\n"
+        break
+    case 20
+        errtext$ = errtext$ + "Failed to process buy action - no items in cart for submitted reference.\n"
+        break
+    case 21
+        errtext$ = errtext$ + "Could not access data on BASIS Server.\n"
+        break
+    case 22
+        errtext$ = errtext$ + "SAM purchase required on a permanent BASIS enterprise and/or standard edition license.\n"
+        break
+    case 23
+        errtext$ = errtext$ + "Multiple rental licenses are required for consolidation.\n"
+        break
+    case 24
+        errtext$ = errtext$ + "New SAM annual date is less than either the old annual or today’s date.\n"
+        break
+    case 25
+        errtext$ = errtext$ + "Could not reset counter - license counter is 0.\n"
+        break
+    case 26
+        errtext$ = errtext$ + "Invalid user count request - either 0 for new or &lt;0 for existing.\n"
+        break
+    case 27
+        errtext$ = errtext$ + "The rental/developer kit license has expired.\n"
+        break
+    case 28
+        errtext$ = errtext$ + "Cannot change an existing permanent license to a rental.\n"
+        break
+    case 29
+        errtext$ = errtext$ + "Cannot consolidate - license(s) either in order status or not rental type.\n"
+        break
+    case 30
+    case default
+        errtext$ = errtext$ + "This is an unexpected error and is 30+bbx error number - contact BASIS.\n"
+        break
+  swend
+
+  if cvs(errLine$,3) <> "" then errtext$=errtext$+errLine$+"\n"
+  errtext$=errtext$+"Action: "+act$+"\n"
+  errtext$=errtext$+"Customer: "+firm_id$+cust_num$+user_code$+"\n"
+  if cvs(reference$,3)<>"" then errtext$=errtext$+"PO: "+reference$+"\n"
+  if cvs(sn$,3)<>"" then errtext$=errtext$+"Last serial number: "+sn$+"\n"
+  if action$="03" and mailtext$<>"" then errtext$=errtext$+"Confirmation message so far:"+"\n"+mailtext$
+  if argTrk$<>"" then errtext$=errtext$+"\nArgument Tracking\n"+argTrk$
+  mailcall.msgtxt$=errtext$
+  call "mailcall.bbj",err=*next,0,mailcall$,errmsg$
+
+do_exit:
+   gosub close_files
+release
+
+rem ***** E R R O R   H A N D L E R ************************************
+
+unexpected_err:
+   stat=30 + err
+   errLine$="Error on line: " + str(tcb(5))
+   if stat>99 then stat=99
+   goto err_exit
+
+rem ***** E S C A P E   H A N D L E R ***********************************
+
+esc_trap:
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Common Errors
+rem ' -----------------------------------------------------------------
+
+invalid_arguments:
+   stat=1; rem ' Invalid arguments - not passed, not number, or empty
+   goto err_exit
+
+exceeded_reset:
+   stat=2; rem ' Could not reset counter - exceeded reset limit
+   goto err_exit
+
+no_product:
+   stat=7; rem ' Invalid product ID or not sold online
+   goto err_exit
+
+cart_full:
+   stat=8; rem ' shopping cart is full
+   goto err_exit
+
+ no_serial_nbr:
+   stat=9; rem ' Invalid serial number - doesn't exist, not active, or not owner
+   goto err_exit
+
+invalid_feature:
+   stat=11; rem ' Undefined Vendor feature
+   goto err_exit
+
+invalid_users:
+   stat=12; rem ' feature users exceed Basis users
+   goto err_exit
+
+ecm01_not_found:
+   stat=13; rem ' EC customer not found
+   goto err_exit
+
+login_locked:
+   stat=13; rem ' Logged into EC web
+   goto err_exit
+
+no_license_type:
+   stat=14; rem ' Invalid license type, not active, or not sold online
+   goto err_exit
+
+no_revision:
+   stat=15; rem ' Invalid revision
+   goto err_exit
+
+no_port:
+   stat=16; rem ' Invalid port id
+   goto err_exit
+
+no_platform:
+   stat=17; rem ' Can't match platform
+   goto err_exit
+
+no_new_item:
+   stat=18; rem ' No valid inventory item
+   goto err_exit
+
+license_error:
+   stat=19; rem ' No temporary license
+   goto err_exit
+
+empty_cart:
+   stat=20; rem ' Empty cart or no entries for submitted reference
+   goto err_exit
+
+file_access:
+   stat=21; rem ' Failed to open files in ec_open
+return
+
+sam_required:
+   stat=22; rem ' SAM purchase required on a permanent BASIS enterprise and/or standard edition license
+   goto err_exit
+
+multi_serials_required:
+   stat=23; rem ' Multiple serial numbers of same type are required for consolidation
+   goto err_exit
+
+invalid_sam_date:
+   stat=24; rem ' New SAM annual date is less than either the old annual or todays date
+   goto err_exit
+
+could_not_reset:
+   stat=25; rem ' License has not been registered - license count=0
+   goto err_exit
+
+invalid_user_count:
+   stat=26; rem ' New serial number with <= 0 user count or existing with < 0
+   goto err_exit
+
+license_expired:
+   stat=27; rem ' The Rental/Devloper kit has expired
+   goto err_exit
+
+invalid_rental:
+   stat=28; rem ' Cannot change an existing permanent license to a rental
+   goto err_exit
+
+cannot_consolidate:
+   stat=29; rem ' Cannot consolidate - serial number(s) in order status
+   goto err_exit
+
+  rem ' -----------------------------------------------------------------
+rem ' Subroutines
+rem ' -----------------------------------------------------------------
+
+rem ' -----------------------------------------------------------------
+rem ' Save Orginal Passed Information 
+rem '   used by add when multiple serial numbers passed
+rem ' -----------------------------------------------------------------
+
+set_new_info:
+
+hold_product_id$=product_id$
+hold_revision$=revision$
+hold_license_type$=license_type$
+hold_port_id$=port_id$
+hold_users=users
+hold_annual$=new_annual_dt$
+hold_odbc$=odbc_rw_flag$
+hold_uncounted$=uncounted_flag$
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Restore Orginal Passed Information 
+rem '   used by add when multiple serial numbers passed
+rem ' -----------------------------------------------------------------
+
+restore_new_info:
+
+product_id$=hold_product_id$
+revision$=hold_revision$
+license_type$=hold_license_type$
+port_id$=hold_port_id$
+users=hold_users
+new_annual_dt$=hold_annual$
+odbc_rw_flag$=hold_odbc$
+uncounted_flag$=hold_uncounted$
+
+propertyTable!.clear()
+
+if nbr_properties=0 then goto restore_features
+
+for nbr=0 to nbr_properties-1
+  property_key$=properties$[nbr,0]
+  property_users$=properties$[nbr,1]
+  propertyTable!.put(property_key$,property_users$)
+next nbr
+
+restore_features:
+featureTable!.clear()
+
+if nbr_features=0 then goto restore_done
+
+   for nbr=0 to nbr_features-1
+   feat_key$=cvs(features$[nbr,0],3)
+   feat_line$=features$[nbr,1]+";"+features$[nbr,2]+";"+features$[nbr,3]
+   featureTable!.put(feat_key$,feat_line$)
+NEXT nbr
+
+  restore_done:
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Check if features passed are defined for customer 
+rem ' -----------------------------------------------------------------
+
+validate_features:
+   nbr=0
+
+   val_feat_loop:
+   if nbr=nbr_features then goto val_feat_done
+
+   dim feature_key$(38)
+   feature_key$(1)=firm_id$ + cust_num$ + features$[nbr,0]
+   find (arm40,key=feature_key$,dom=no_feature)
+   nbr=nbr + 1
+   goto val_feat_loop
+
+no_feature:
+   nbr_features=0
+
+   val_feat_done:
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Check existence of orders
+rem ' -----------------------------------------------------------------
+
+check_orders:
+sn_exist=0, order_exist=0, sn2_exist=0, order_nbr$=""
+dim snm01$:fattr(snm01$), snm02$:fattr(snm02$)
+find record(snm01,key=sn$,dom=*next)snm01$;sn_exist=1
+if sn_exist then
+  if snm01.active_flag$="N" or snm01.firm_id$+snm01.customer_nbr$<>firm_id$+cust_num$ then
+    sn_exist=0
+    goto done_check_orders
+  endif
+endif
+if sn_exist then 
+  find record(snm02,key=sn$,dom=*endif)snm02$
+  sn2_exist=1
+endif
+
+read(are83,key=firm_id$+"  "+cust_num$,dom=*next)
+
+chk_order_serial_nbr:
+read record(are83,end=done_check_orders)are83$
+
+if firm_id$+"  "+cust_num$<>are83.firm_id$+"  "+are83.customer_nbr$ then goto done_check_orders
+
+if sn$<>are83.serial_nbr$ or are83.snhist_flag$="Y" then goto chk_order_serial_nbr
+find record(are13,key=are83$(1,20),dom=chk_order_serial_nbr)are13$
+find record(are73,key=are83$(1,20),dom=chk_order_serial_nbr)are73$
+
+order_exist=1, order_nbr$=are13.order_number$
+if pos(are73.type_of_sale$(1,2)="SMAD",2) then
+  snm01.contract$=are83.contract$
+  snm01.sam_active$=are83.sam_active$
+  goto done_check_orders
+endif
+
+snm01.product$=are13.item_number$(1,3)
+snm01.platform$=are13.item_number$(4,3)
+snm01.os_level$=are13.item_number$(7,3)
+snm01.product_rev$=are13.item_number$(10,3)
+snm01.license_type$=are13.item_number$(13,3)
+dim csm03$:fattr(csm03$)
+read record(csm03,key=firm_id$+snm01.os_level$,dom=*next)csm03$
+snm01.port_id$=csm03.port_id$
+snm01.serial_nbr$=are83.serial_nbr$
+
+if sn_exist then goto done_check_orders
+
+snm01.contract$=are83.contract$
+snm01.sam_active$=are83.sam_active$
+snm01.users=are73.users + are73.users2
+if cvs(are73.lic_property1$,1+2)<>"" then
+  snm02.lic_property1$=are73.lic_property1$
+  snm02.users1=are73.users
+endif
+if cvs(are73.lic_property2$,1+2)<>"" then
+  snm02.lic_property2$=are73.lic_property2$
+  snm02.users2=are73.users2
+endif
+snm02.odbc_rw$=are73.odbc_rw$
+
+  done_check_orders:
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Get Current User Features
+rem ' -----------------------------------------------------------------
+
+get_curr_features:
+
+  feat_change=0, curr_features=0, hold_features=0
+  read(are83,key=firm_id$+"  "+cust_num$,dom=*next)
+
+chk_order_features:
+  read record(are83,end=chk_snt04)are83$
+  if are83.firm_id$+"  "+are83.customer_nbr$<>firm_id$+"  "+cust_num$ then goto chk_snt04
+
+  if are83.serial_nbr$<>serial_nbr$[serial_nbr] then goto chk_order_features
+
+  are93key$=are83.firm_id$+"  "+are83.customer_nbr$+are83.order_number$+are83.line_number$+are83.license_seq$+are83.sequence_nbr$
+  read(are93,key=are93key$,dom=*next)
+
+are93_features:
+  read record(are93,end=chk_order_features)are93$
+  if are93key$<>are93.firm_id$+"  "+are93.customer_nbr$+are93.order_number$+are93.line_number$+are93.license_seq$+are93.sequence_nbr$ then goto chk_order_features
+
+  curr_features=curr_features + 1
+  result =featureTable!.containsKey(cvs(are93.feature$,1+2))
+  if result then
+    feat_line$=featureTable!.get(cvs(are93.feature$,1+2))
+    p0=pos(";"=feat_line$)
+    if p0 then feat_rev$=feat_line$(1,p0-1),feat_line$=feat_line$(p0+1)
+    p0=pos(";"=feat_line$)
+    if p0 then 
+      feat_users=num(feat_line$(1,p0-1)),feat_line$=feat_line$(p0+1)
+    else
+      feat_users=num(feat_line$(1)),feat_line$=" "
+    fi  
+    feat_ub$=feat_line$
+  else
+    feat_rev$=cvs(are93.feature_rev$,1+2), feat_users=are93.users
+    feat_ub$=are93.user_based$
+    feat_line$=feat_rev$+";"+str(feat_users)+";"+feat_ub$
+    featureTable!.put(CVS(are93.feature$,3),feat_line$)
+  endif
+
+  if cvs(are93.feature_rev$,1+2)<>feat_rev$ or are93.users<>feat_users or are93.user_based$<>feat_ub$ then feat_change=1
+
+  goto are93_features
+
+chk_snt04:
+  if curr_features then
+    hold_features=curr_features
+    curr_features=0
+  endif
+  read(snt04,key=serial_nbr$[serial_nbr],dom=*next)
+
+curr_feat_loop:
+  read record(snt04,end=curr_feat_done)snt04$
+  if snt04.serial_nbr$<>serial_nbr$[serial_nbr] then goto curr_feat_done
+
+  curr_features=curr_features + 1
+  result=featureTable!.containsKey(cvs(snt04.feature$,3))
+  if result then
+    feat_line$=featureTable!.get(cvs(snt04.feature$,3))
+    p0=pos(";"=feat_line$)
+    if p0 then feat_rev$=feat_line$(1,p0-1),feat_line$=feat_line$(p0+1)
+    p0=pos(";"=feat_line$)
+    if p0 then 
+      feat_users=num(feat_line$(1,p0-1)),feat_line$=feat_line$(p0+1)
+    else
+      feat_users=num(feat_line$(1)),feat_line$=" "
+    fi  
+    feat_ub$=feat_line$
+  else
+    feat_rev$=cvs(snt04.feature_rev$,1+2), feat_users=snt04.users
+    feat_ub$=snt04.user_based$
+    feat_line$=feat_rev$+";"+str(feat_users)+";"+feat_ub$
+    featureTable!.put(CVS(snt04.feature$,3),feat_line$)
+  endif
+
+     if cvs(snt04.feature_rev$,1+2)<>feat_rev$ or snt04.users<>feat_users or snt04.user_based$<>feat_ub$ then feat_change=1
+
+  goto curr_feat_loop
+
+curr_feat_done:
+  if hold_features then curr_features=hold_features
+  if feat_change=0 and featureTable!.size()>curr_features then feat_change=1
+return
+
+rem ' Check that sn's are ok to consolidate
+check_con_serials:
+ctr=0
+
+while ctr<nbr_serials
+  prd$=item_num$[ctr](1,3)
+  typ$=item_num$[ctr](13,3)
+  p2=pos(prd$="BASPR5VP5ODB",3)
+  if ctr=0 then p1=p2
+  if p2=0 or p1<>1 then stat=29;break
+  t2=pos(typ$="RN1STDRDORTMROO",3)
+  if ctr=0 then t1=t2
+  if t2=0 or (t1=1 and t2<>1) then stat=29;break
+  ctr=ctr + 1
+wend
+
+ece11_key$=ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$
+if stat then gosub remove_from_cart
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Check Current Properties
+rem ' -----------------------------------------------------------------
+
+chk_properties:
+
+  property_change=0, total_property_users=0, orig_nbr_properties=0
+
+  if cvs(snm02.lic_property1$,1+2)="" then goto chk_property2
+
+  if property_level$<>"" and cvs(snm02.lic_property1$,1+2)<>"" and snm02.lic_property1$(2,1)<>property_level$ then
+    property_change=1
+    goto chk_property2
+  endif
+
+  result=propertyTable!.containsKey(snm01.product$(1,1)+snm02.lic_property1$)
+  if result then
+    property_users$=propertyTable!.get(snm01.product$(1,1)+snm02.lic_property1$)
+    property_users=num(property_users$)
+  else
+    property_users=snm02.users1, property_users$=str(property_users)
+    orig_nbr_properties=orig_nbr_properties + 1
+    propertyTable!.put(snm01.product$(1,1)+snm02.lic_property1$,property_users$)
+  endif
+
+  if property_users>users then
+    stat=1
+    goto chk_property_done
+  endif
+
+  if snm02.users1<>property_users then property_change=1
+
+   chk_property2:
+
+   if cvs(snm02.lic_property2$,1+2)="" then goto chk_property_done
+
+   if property_level$<>"" and cvs(snm02.lic_property2$,1+2)<>"" and snm02.lic_property2$(2,1)<>property_level$ then
+     property_change=1
+     goto chk_property_done
+   endif
+
+   result=propertyTable!.containsKey(snm01.product$(1,1)+snm02.lic_property2$)
+   if result then
+     property_users$=propertyTable!.get(snm01.product$(1,1)+snm02.lic_property2$)
+     property_users=num(property_users$)
+   else
+     property_users=snm02.users2, property_users$=str(property_users)
+     orig_nbr_properties=orig_nbr_properties + 1
+     propertyTable!.put(snm01.product$(1,1)+snm02.lic_property2$,property_users$)
+   endif
+
+   if property_users>users then
+     stat=1
+     goto chk_property_done
+   endif
+
+   if snm02.users2<>property_users then property_change=1
+
+   chk_property_done:
+
+   if property_change=0 then goto no_property_change
+
+   propKeys!=propertyTable!.keys()
+
+   while (propKeys!.hasMoreElements())
+      property_key$=propKeys!.nextElement()
+      property_users$=propertyTable!.get(property_key$)
+      total_property_users=total_property_users + num(property_users$)
+   wend
+
+   if total_property_users<>users then stat=1
+
+no_property_change:
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Get Rental Committment
+rem ' -----------------------------------------------------------------
+
+get_committment:
+  rental_commit=1
+  find record(arm02,key=firm_id$+cust_num$+"  ",dom=no_commit)arm02$
+
+  if arm02.rental_perc1$=smc01.commit_perc$ then
+    rental_commit=1
+  else
+    if arm02.rental_perc2$=smc01.commit_perc$ then
+      rental_commit=2
+    else
+      if arm02.rental_perc3$=smc01.commit_perc$ then rental_commit=3
+    endif
+  endif
+
+no_commit:
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Check for License Only
+rem ' -----------------------------------------------------------------
+
+do_license_only:
+dim license_log$:"serial_nbr:c(20),tran_dt_time:c(14),last_tran_date:c(3)"
+rem license_log=unt
+rem open(license_log,err=cannot_log)"license_only.log"
+rem goto cont_lic_only
+
+cannot_log:
+license_log=0
+
+cont_lic_only:
+license_only=0, sn_nbr=0, check_cart=0, line_list$="", order_nbr$=""
+tran_dt_time$=date(0:"%Yl%Mz%Dz%Hz%mz%sz")
+read (ece11,key=firm_id$+cust_num$+user_code$,dom=*next)
+
+line_loop:
+read record(ece11,end=license_only_done)ece11$
+if ece11.firm_id$<>firm_id$ or ece11.customer_nbr$<>cust_num$ or ece11.user_code$<>user_code$ then goto license_only_done
+
+if cvs(reference$,3)<>cvs(ece11.po_ref_number$,3) then goto line_loop
+
+rem ' if requested set virtual flag if license exists 
+if cvs(ece11.available$,3) = "VIR" and cvs(ece11.serial_nbr$,3) <> "" then gosub set_virtual_flag
+
+order_nbr$=ece11.order_nbr$
+if pos(ece11.license_only$="NS") then
+  check_cart=1
+  if ece11.license_only$="N" then goto line_loop
+endif
+
+dim sn$(20)
+sn$(1)=ece11.serial_nbr$   
+gosub check_orders
+
+get_auth_key:
+enterprise_users=0, properties$=""
+if sn2_exist then
+  properties$=cvs(snm02.lic_property1$,2) + cvs(snm02.lic_property2$,2) 
+  if cvs(snm02.lic_property1$(1,1),4)="E" then enterprise_users=snm02.users1
+  if cvs(snm02.lic_property2$(1,1),4)="E" then enterprise_users=snm02.users2
+fi
+
+gosub get_last_trans
+if lic_key$="" then goto line_loop
+
+if ece11.uncounted_flag$<>fixed$ and len(cvs(lic_key$,3))=10 then
+  rem 'nc_update
+  nc_item$=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$+$0a$
+  nc_type$="UNC"+ece11.uncounted_flag$+$0a$
+  call "nc_update.bbj",sn$+$0a$,nc_item$,nc_type$,"","",msg$
+  if pos(sn$=msg$)=1 then gosub get_last_trans
+fi
+
+license_only=1
+
+sn_key$=ece11.line_number$
+sn_line$=sn$+","+lic_key$+","+ece11.item_number$+","+snm01.port_id$+","+properties$+","+str(snm01.users:"00000")+","+str(enterprise_users)
+snTable!.put(sn_key$,sn_line$)
+line_list$=line_list$ + sn_key$
+
+license_log.serial_nbr$=sn$
+license_log.tran_dt_time$=tran_dt_time$
+license_log$=field(license_log$)
+if license_log then write record(license_log)license_log$
+
+if ece11.license_only$="S" then goto line_loop
+
+ece11_key$=ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$
+gosub remove_from_cart
+goto line_loop
+
+license_only_done:
+if license_log then close(license_log) 
+
+return
+
+get_last_trans:
+lic_key$=""
+fixed$=" "
+if properties$="" then properties$=ece11.item_number$(1,3)
+extract(snt01,key=sn$,dom=*next)
+
+trans_loop:
+read record(snt01,end=check_lic_key)snt01$
+if snt01.serial_nbr$<>sn$ then goto check_lic_key
+if cvs(snt01.auth_code$,1+2)="" then goto trans_loop
+lic_key$=snt01.auth_code$
+if snt01.fixed_float$="X" then fixed$="Y" else fixed$=" "
+license_log.last_tran_date$=snt01.trans_date$
+goto trans_loop
+
+check_lic_key:
+if lic_key$="" then
+  if cvs(order_nbr$,1+2)<>"" and cvs(are83.auth_code$,1+2)<>"" and sn_exist=0 then lic_key$=are83.auth_code$
+endif
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Remove Line from Cart
+rem ' ece11_key$ must be set before calling this routine
+rem ' -----------------------------------------------------------------
+
+remove_from_cart:
+
+   remove (ece11,key=ece11_key$,dom=*next); rem ' remove from shopping cart
+
+   read (ece12,key=ece11_key$,dom=*next)
+
+remove_features:
+   ece12_key$=key (ece12,end=remove_trade_rec)
+   read (ece12)
+   if pos(ece11_key$=ece12_key$)<>1 then goto remove_trade_rec
+   remove (ece12,key=ece12_key$)
+   goto remove_features
+
+remove_trade_rec:
+   read (ece83,key=ece11_key$,dom=*next)
+
+trade_recs:
+   ece83_key$=key (ece83,end=remove_done)
+   read (ece83)
+   if pos(ece11_key$=ece83_key$)<>1 then goto remove_done
+   remove (ece83,key=ece83_key$)
+   goto trade_recs
+
+remove_done:
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Create Order
+rem ' Order_Number$ must be set before calling this routine
+rem ' -----------------------------------------------------------------
+
+create_order:
+
+  mailtext$=""
+  if cvs(order_nbr$,1+2)<>"" then
+    order_number$=order_nbr$
+    mailtext$="Updated "
+  endif
+
+  mailtext$=mailtext$ + "Order Number: " + order_number$ + "\n"
+  mailtext$=mailtext$ + "Customer Number: " + firm_id$ + "-" + cust_num$ +              " (" + cvs(arm01.cust_name$,3) + ")\n"
+  mailtext$=mailtext$ + "Reference: " + reference$ + "\n"
+  mailtext$=mailtext$ + "\n"
+
+  tax=0, taxable=0, total=0
+
+rem ' ARE03 - order header
+
+  are03.firm_id$=firm_id$
+  are03.ar_type$="  "
+  are03.customer_nbr$=cust_num$
+  are03.order_number$=order_number$
+  are03.sequence_000$="000"
+  are03.invoice_type$="S"
+  are03.ord_inv_flag$="O"
+  are03.backord_flag$=" "
+  are03.invoice_date$=fndate$(jul(0,0,0))
+  are03.ar_ship_date$=fndate$(jul(0,0,0)+1)
+  are03.ar_ship_via$=fill(fnlength(fattr(are03$),"ar_ship_via"))
+  are03.ar_inv_nbr$=fill(fnlength(fattr(are03$),"ar_inv_nbr"))
+  are03.ar_po_number$=reference$(1,10)
+  are03.slspsn_code$=arm02.slspsn_code$
+  are03.terms_code$=arm02.terms_code$
+  if cust_num$="007808" then are03.terms_code$="06"
+  are03.rel_to_ship$="Y"
+  are03.reserved_str_2$=fill(fnlength(fattr(are03$),"reserved_str_2"))
+  are03.disc_code$=arm02.disc_code$
+  are03.dist_code$=arm02.dist_code$
+  are03.ord_prt_flag$="N"
+  are03.ord_lock$="Y"; rem ' lock until all related records are updated
+  are03.message_code$=arm02.message_code$
+  are03.territory$=arm02.territory$
+  are03.list_prc_cde$="  "
+  are03.date_ordered$=fndate$(jul(0,0,0))
+  are03.tax_code$=arm02.tax_code$
+  are03.pricing_code$=arm02.pricing_code$
+  are03.ar_job_nbr$=fill(fnlength(fattr(are03$),"ar_job_nbr"))
+  are03.ord_taken_by$=">>>"
+  are03.cash_sale$="N"
+  are03.reprint_flag$=" "
+  are03.ord_cred_flg$=" "; rem ' R=Release, C=Credit Hold
+  are03.shipto_nbr$=fill(fnlength(fattr(are03$),"shipto_nbr"))
+  are03.tax_amount=tax
+  are03.freight_amt=0
+  are03.discount_amt=0
+  are03.comm_percent=0
+  are03.taxable_amt=taxable
+  are03.comm_amt=0
+  are03.total_sales=total
+  are03.total_cost=0
+
+  are03_key$=are03.firm_id$+are03.ar_type$+are03.customer_nbr$+are03.order_number$+are03.sequence_000$
+  are03$=field(are03$)
+
+  write record (are03,key=are03_key$)are03$
+
+rem ' ARE04 - pick ticket
+
+  are04.firm_id$=are03.firm_id$
+  are04.ord_inv_flag$=are03.ord_inv_flag$
+  are04.ar_type$=are03.ar_type$
+  are04.customer_nbr$=are03.customer_nbr$
+  are04.order_number$=are03.order_number$
+
+  are04_key$=are04.firm_id$+are04.ord_inv_flag$+are04.ar_type$+are04.customer_nbr$+are04.order_number$
+  are04$=field(are04$)
+
+  write record (are04,key=are04_key$)are04$
+
+rem ' ARE43=open orders
+
+  are43.firm_id$=are03.firm_id$
+  are43.ar_type$=are03.ar_type$
+  are43.customer_nbr$=are03.customer_nbr$
+  are43.order_number$=are03.order_number$
+
+  are43_key$=are43.firm_id$+are43.ar_type$+are43.order_number$+are43.customer_nbr$
+  are43$=field(are43$)
+
+  write record (are43,key=are43_key$)are43$
+
+rem ' Now loop through the detail lines from the shopping cart
+
+  dim detail$:"Line:c(4),Item:c(31),Users:c(6),Price:c(11),Qty:c(5),Ext:c(13)"
+  detail.Item$="Description"
+  detail.Users$=" Users"
+  detail.Price$="     Price"
+  detail.Qty$=" Qty"
+  detail.Ext$="  Extension"
+  mailtext$=mailtext$ + cvs(detail$,2)+"\n\n"
+
+  line_number=0, subtotal=0, taxable_amt=0, oem_total=0
+
+  read (ece11,key=firm_id$+cust_num$+user_code$,dom=order_ece11_loop)
+
+order_ece11_loop:
+  ece11_key$=key(ece11,end=order_ece11_endloop)
+  read record (ece11,key=ece11_key$)ece11$
+
+  if ece11.firm_id$<>firm_id$ or ece11.customer_nbr$<>cust_num$ or ece11.user_code$<>user_code$ then goto order_ece11_endloop
+
+  if cvs(reference$,3)<>cvs(ece11.po_ref_number$,3) then goto order_ece11_loop
+
+rem ' Stop generating the order if we're about to run out of line numbers
+  if line_number+30>999 then goto order_ece11_endloop
+
+  rem ' if requested set virtual flag if license exists 
+  if cvs(ece11.available$,3) = "VIR" and cvs(ece11.serial_nbr$,3) <> "" then gosub set_virtual_flag
+
+  featureTable!.clear()
+  nbr=0
+  read (ece12,key=ece11_key$,dom=order_ece12_loop)
+  
+order_ece12_loop:
+  read record(ece12,end=do_price)ece12$
+
+  if ece12.firm_id$+ece12.customer_nbr$+ece12.user_code$+ece12.line_number$<>ece11_key$ then goto do_price
+
+  feature$=cvs(ece12.feature$,1+3)+","+cvs(ece12.feature_rev$,1+3)+","+str(ece12.users)+","+ece12.user_based$
+  feature_key$=STR(nbr:"00")
+  featureTable!.put(feature_key$,feature$)
+  nbr=nbr + 1
+  goto order_ece12_loop
+
+do_price:
+  nbr_feature=featureTable!.size()
+  dim type$[0:1],price[0:1],oem_price[0:1]; rem ' dummies, dimensioned in price program
+  dim sn$(20)
+  sn$(1)=ece11.serial_nbr$, properties$=""
+  new_annual_dt$=cvs(ece11.annual_dt$,1+2)
+  new_property1$=cvs(ece11.lic_property1$,1+2), new_property2$=cvs(ece11.lic_property2$,1+2)
+  properties$=new_property1$ + new_property2$
+  enterprise_users=0
+  if cvs(ece11.lic_property1$(1,1),4)="E" then enterprise_users=ece11.users
+  if cvs(ece11.lic_property2$(1,1),4)="E" then enterprise_users=ece11.users2
+  contract$="", original_item$=""
+  orig_users=0, orig_users2=0
+  orig_property1$="", orig_property2$=""
+  sam_flag=pos(ece11.sam_coverage$="S")
+  consolidate=pos(ece11.modify_flag$="C")
+  renew=pos(ece11.modify_flag$="R")
+  trade=pos(ece11.modify_flag$="T")
+  sam_active$="", old_annual_dt$=""
+  rental_commit=pos(ece11.rental_commit$="123")
+  digits=2
+
+  rem ' need contract required flag and duration
+  prod_type$=ece11.item_number$(1,3)
+  read record(csm01,key=firm_id$+prod_type$)csm01$
+  sam_required$=csm01.ctr_required$, duration=csm01.ctr_duration
+  if sam_required$="R" and sam_flag then sam_flag=1
+
+     if (sam_flag or rental_commit or pos(ece11.item_number$(13,3)="KITNFR",3)) and old_annual_dt$="" then old_annual_dt$=date(0:"%Yl%Mz%Dz")
+
+  if sam_flag and new_annual_dt$="" then new_annual_dt$=str(num(old_annual_dt$(1,4))+1:"0000")+old_annual_dt$(5,4)
+  if rental_commit and rental_billing=0 then rental_billing=365
+  if (rental_commit or pos(ece11.item_number$(13,3)="KITNFR",3)) and new_annual_dt$="" then new_annual_dt$=date(jul(0,0,0)+rental_billing:"%Yl%Mz%Dz")
+
+  switch rental_commit
+    case 0
+       rental_perc=100
+       break
+    case 1
+       rental_perc=rental_perc1
+       break
+    case 2
+       rental_perc=rental_perc2
+       break
+     case 3
+        rental_perc=rental_perc3
+        break
+    case default
+       rental_perc=100
+       break
+  swend
+
+  precision digits+3
+  price=0, old_price=0, new_price=0, rental_perc=rental_perc / 100
+  oem_price=0
+
+  if cvs(sn$,3)="" then goto no_sn
+
+  gosub check_orders
+  if sn_exist then   
+    dim original_item$(20)
+    original_item$(1)=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$
+    orig_users=snm01.users
+    tmp_list$=""
+    gosub get_ece83_recs
+    snlist$=tmp_list$
+  endif
+  contract$=cvs(snm01.contract$,1+2)
+  sam_active$=snm01.sam_active$
+
+  if sn2_exist=0 then goto no_sn
+  orig_users=snm02.users1 + consolidate_users
+  orig_users2=snm02.users2 + consolidate_users1
+  orig_property1$=cvs(snm02.lic_property1$,1+2), orig_property2$=cvs(snm02.lic_property2$,1+2)
+
+no_sn:
+  if contract$<>"" then
+    gosub chk_sam_contract
+    if pos(smc01.contr_type$="RN1DV1,3") then
+      new_annual_dt$=smc01.annual_dt$
+      if smc01.contr_type$="RN1" then
+        rental_perc=num(smc01.commit_perc$) / 100
+        if rental_perc=0 then rental_perc=1
+        rental_billing=num(smc01.disb_method$)
+        rental_commit=1
+      endif
+    endif
+  endif
+
+  old_contract$=contract$
+  if (sam_flag and new_annual_dt$<>old_annual_dt$) or pos(ece11.item_number$(13,3)="KITNFR") or rental_commit then
+    gosub get_sam_contract
+    if pos(smc01.contr_type$="DV1RN1,3") then new_annual_dt$=smc01.annual_dt$
+  endif
+
+  precision digits
+
+  if original_item$=ece11.item_number$ and (nbr_feature or ece11.uncounted_flag$<>" ") and old_contract$=contract$ then
+    if new_property1$=orig_property1$ and new_property2$=orig_property2$ then
+      if ece11.users=orig_users and ece11.users2=orig_users2 and consolidate=0 then
+      	if new_annual_dt$ = old_annual_dt$ then
+           type$[0]="UNC " + ece11.item_number$, price[0]=0, nbr_trans=0
+           goto skip_price
+        endif
+      endif
+    endif
+  endif
+
+  gosub calc_price
+
+skip_price:
+  rem ' Skip this shopping cart line if we can't calculate a price
+  if pos("**"=comments$)=1 or type$[0]="" then goto order_ece11_loop
+
+  subtotal=subtotal + price + old_price + new_price
+  oem_total=oem_total + oem_price
+
+  rem ' can be many detail lines for each ECE11 record
+  last_line=nbr_trans
+
+  for line=0 to last_line
+    rem ' CSM07 - Retrieve Type Of Sale record - skip this cart line if not found
+    read record (csm07,key=firm_id$+type$[line](1,3),dom=*continue)csm07$
+    if no_rif and pos("RIF"=type$[line]) then continue
+
+    line_number=line_number + 5
+    line_number$=str(line_number:"000")
+
+    csm05.firm_id$=firm_id$
+    csm05.license_type$=ece11.item_number$(13,3)
+    csm05.expires$="N"
+    find record (csm05,key=csm05.firm_id$+csm05.license_type$,dom=*next)csm05$
+
+    item$=type$[line](5)
+    if type$[line](1,3)="ADD" or type$[line](1,1)="S" then goto get_inv_desc
+
+    if item$(1,3)="BAS" then item$(10,3)="CUR"
+    if csm05.expires$="Y" and item$(1,3)="BAS" then item$(13,3)="EXP"
+
+get_inv_desc:
+    rem ' IVM01 - skip this cart line if not found
+    read record (ivm01,key=firm_id$+item$,dom=*continue)ivm01$
+
+    process_cart=process_cart + 1
+
+    if type$[line](1,3)="ADD" then
+      users=(ece11.users+ece11.users2)-(orig_users+orig_users2), sam_users=users
+    else
+      users=ece11.users+ece11.users2, sam_users=users
+    endif
+
+    if line<last_line then if type$[line+1](1,3)="ADD" then users=orig_users+orig_users2, sam_users=users
+
+    if type$[line](1,1)="S" and contract$<>"" and line>0 and sam_active$<>"N" and old_annual_dt$=new_annual_dt$ and sn_exist then
+      if type$[line-1](1,3)="ADD" then
+        users=(ece11.users+ece11.users2)-(orig_users+orig_users2)
+        sam_users=users
+      endif
+    endif
+
+    detail$=line_number$+" "+csm07.description$ 
+    mailtext$=mailtext$ + cvs(detail$,2)+"\n"
+
+    detail$="    "+ivm01.item_desc$
+    mailtext$=mailtext$ + cvs(detail$,2)+"\n"
+
+    dim detail$:fattr(detail$)
+    detail.Item$=type$[line](5)
+    detail.Users$=str(users:"####0-")
+    if zero_inv
+      detail.price$=cvs(str(oem_price[line]/ece11.qty:"#######.00-"),64)
+      detail.Ext$=cvs(str(oem_price[line]:"########.00-"),64)
+    else
+      detail.Price$=cvs(str(price[line]/ece11.qty:"#######.00-"),64)
+      detail.Ext$=cvs(str(price[line]:"########.00-"),64)
+    endif
+    detail.Qty$=str(ece11.qty:"###0-")
+    mailtext$=mailtext$ + cvs(detail$,2)+"\n"
+
+    if !(zero_inv) then goto are13_detail
+
+    dim oem_ar_price$:fattr(oem_ar_price$)
+    oem_ar_price.firm_id$=firm_id$
+    oem_ar_price.ar_type$=are03.ar_type$
+    oem_ar_price.customer_nbr$=cust_num$
+    rem oem_ar_price.ar_inv_nbr$=invoice_nbr$
+    oem_ar_price.ar_inv_nbr$=are03.order_number$
+    oem_ar_price.line_number$=line_number$
+    oem_ar_price.inv_date$=date(0:"%Yl%Mz%Dz")
+    oem_ar_price.type_of_sale$=type$[line](1,3)
+    oem_ar_price.item_number$=type$[line](5)
+    oem_ar_price.ar_po_number$=are03.ar_po_number$
+    oem_ar_price.order_number$=are03.order_number$
+    oem_ar_price.available$=fill(fnlength(fattr(oem_ar_price$),"available"))
+    oem_ar_price.ext_price=oem_price[line]
+    oem_ar_price$=field(oem_ar_price$)
+    write record (oem_ar_price)oem_ar_price$
+
+      are13_detail:
+    rem ' ARE13 - Order Line Detail
+    are13.firm_id$=are03.firm_id$
+    are13.ar_type$=are03.ar_type$
+    are13.customer_nbr$=are03.customer_nbr$
+    are13.order_number$=are03.order_number$
+    are13.line_number$=line_number$
+    are13.line_code$="S"
+    are13.man_price$="N"
+    are13.product_type$=ivm01.product_type$
+    are13.pull_assmble$="P"
+    are13.warehouse_id$=ivs01.warehouse_id$
+    are13.item_number$=type$[line](5)
+    are13.order_memo$=fill(fnlength(fattr(are13$),"order_memo"))
+    are13.est_shp_date$=fndate$(jul(0,0,0)+1)
+    are13.commit_flag$="Y"
+    are13.pick_flag$=" "
+    are13.reserved_str_2$=fill(fnlength(fattr(are13$),"reserved_str_2"))
+    are13.unit_cost=0
+    are13.unit_price=price[line]/ece11.qty
+    are13.qty_ordered=ece11.qty
+    are13.qty_backord=0
+    are13.qty_shipped=ece11.qty
+    are13.std_list_prc=0
+    are13.ext_price=price[line]
+
+    if arm10e.taxable_flag$="Y" and ivm01.taxable_flag$="Y" then
+      are13.taxable_amt=price[line]
+    else
+      are13.taxable_amt=0
+    endif
+
+    taxable_amt=taxable_amt + are13.taxable_amt
+
+    are13.disc_percent=0
+    are13.comm_percent=0
+    are13.comm_amt=0
+    are13.spl_comm_pct=0
+    are13.disc_cust=0
+
+    are13_key$=are13.firm_id$+are13.ar_type$+are13.customer_nbr$+are13.order_number$+are13.line_number$
+    are13$=field(are13$)
+
+    write record (are13,key=are13_key$)are13$
+
+    rem ' ARE07=open order lines (items)
+    are07.firm_id$=are13.firm_id$
+    are07.warehouse_id$=are13.warehouse_id$
+    are07.item_number$=are13.item_number$
+    are07.ar_type$=are13.ar_type$
+    are07.order_number$=are13.order_number$
+    are07.line_number$=are13.line_number$
+    are07.customer_nbr$=are13.customer_nbr$
+
+    are07_key$=are07.firm_id$+are07.warehouse_id$+are07.item_number$+are07.ar_type$+are07.order_number$+are07.line_number$+are07.customer_nbr$
+    are07$=field(are07$)
+
+    write record (are07,key=are07_key$)are07$
+
+    rem ' ARE73 - order config record
+    are73.firm_id$=are13.firm_id$
+    are73.ar_type$=are13.ar_type$
+    are73.customer_nbr$=are13.customer_nbr$
+    are73.order_number$=are13.order_number$
+    are73.line_number$=are13.line_number$
+    if cvs(ece11.available$,3)="VIR" then
+    	are73.media_type$="VIR"
+    else
+    	are73.media_type$="N/A"
+    fi
+    are73.type_of_sale$=type$[line](1,3); rem ' NEW,ADD,UPD,UNC,UG4,PLX,SM1,SM2
+    are73.odbc_rw$=ece11.odbc_rw$
+    are73.available1$="T"; rem "total users on ADD
+
+    rem ' fixed or floating license: X=fixed/F=float
+    csm03.firm_id$=firm_id$
+    csm03.os_level$=ece11.item_number$(7,3)
+    csm03.fixed_lic_flag$="Y"
+    read record (csm03,key=csm03.firm_id$+csm03.os_level$,dom=*next)csm03$
+    if csm03.fixed_lic_flag$="Y" and ece11.users+ece11.users2=1 and nbr_feature=0 and ece11.uncounted_flag$="Y" then
+      are73.fixed_float$="X" 
+    else
+      are73.fixed_float$="F"
+    endif
+    if ece11.uncounted_flag$<>"Y" and are73.fixed_float$="X" then ece11.uncounted_flag$="Y"
+
+    are73.lic_property1$=ece11.lic_property1$
+    are73.lic_property2$=ece11.lic_property2$
+    are73.exp_type$=are13.item_number$(13,3)
+    are73.exp_days_dt$=fill(fnlength(fattr(are73$),"exp_days_dt"))
+    are73.cur_rev$=fill(fnlength(fattr(are73$),"cur_rev"))
+    are73.available2$=fill(fnlength(fattr(are73$),"available2"))
+    are73.dealer_str$=fill(fnlength(fattr(are73$),"dealer_str"))
+    are73.media_qty=0
+    are73.num_1=0
+    are73.users=ece11.users
+    are73.users2=ece11.users2
+
+    if type$[line](1,1)="S" or sam_required$="R" or rental_commit or pos(are73.exp_type$="KITNFR",3) then are73.contract$=contract$
+
+set_ar73_key:
+    are73_key$=are73.firm_id$+are73.ar_type$+are73.customer_nbr$+are73.order_number$+are73.line_number$
+    are73$=field(are73$)
+
+    write record (are73,key=are73_key$)are73$
+
+    rem ' ARE83 - license activity record(s)
+
+    license_seq=001; rem ' always 001
+    license_seq$=str(license_seq:"000")
+    sequence_nbr=000; rem ' increment for each activity
+
+    rem ' ===================================
+    rem ' Allow for qty>1 Direct Commerce this will always be 1
+    rem ' ===================================
+
+          for item_count=1 to are13.qty_ordered
+      if csm07.modify_snum$="N" or pos(sn$=tmp_list$) then goto create_order_create_snum
+
+      rem ' item_count should never be >1 if modifying (unless it's sam for BBj)
+      rem ' modify_snum
+      affected_users=ece11.users + ece11.users2
+
+      if type$[line](1,1)="S" then goto skip_ec_an
+
+      call "ec_an",firm_id$,ece11.item_number$,sn$,order_number$,affected_users,lic_key$,lic_count,ece11.uncounted_flag$
+
+      sn_nbr$=ece11.line_number$, sn_exist1=0
+      if line_list$<>"" then
+        temp_key$=line_list$(len(line_list$)-3,4)
+        temp_line$=snTable!.get(temp_key$)
+        if pos(sn$=temp_line$) then
+           sn_nbr$=temp_key$
+           sn_exist1=1
+        endif
+      endif
+
+      sn_key$=sn_nbr$
+      if properties$="" then properties$=ece11.item_number$(1,3)
+      sn_line$=sn$ + "," + lic_key$ + "," + ece11.item_number$ + "," + csm03.port_id$ + "," + properties$ + "," + str(affected_users:"00000") + "," + str(enterprise_users)
+      snTable!.put(sn_key$,sn_line$)
+      if sn_exist1=0 then line_list$=line_list$ + sn_key$
+
+skip_ec_an:
+      sequence_nbr=sequence_nbr + 1
+      sequence_nbr$=str(sequence_nbr:"000")
+      are83.action$="M"
+      if type$[line](1,1)="S" then
+        are83.auth_code$=""
+        are83.license_cnt=0
+      else  
+        are83.auth_code$=lic_key$
+        are83.license_cnt=lic_count
+      endif
+
+      are83.contract$=contract$
+      are83.sam_active$=sam_active$
+
+               gosub write_are83
+
+      if type$[line](1,1)<>"S" and rental_commit=0 then goto write_features
+
+      if rental_commit then
+        mailtext$=mailtext$(1,len(mailtext$)-2) + "    Rental thru   "
+      else
+        mailtext$=mailtext$(1,len(mailtext$)-2) + "    SAM Annual   "
+      endif
+      if cust_num$="007808" then
+        thru_jul=fnjul(smc01.annual_dt$)
+        thru_dt$=date(thru_jul:"%Yl%Mz%Dz")
+      else
+        thru_dt$=smc01.annual_dt$
+      endif
+      mailtext$=mailtext$ + thru_dt$(5,2) + "/" + thru_dt$(7,2) + "/" + thru_dt$(1,4) + "\n"
+
+write_features:
+      if nbr_feature and type$[line](1,1)<>"S" then gosub write_are93
+
+create_order_create_snum:
+      if csm07.create_snum$="N" then goto create_order_retire_snum
+
+      rem ' create_snum
+      affected_users=ece11.users + ece11.users2
+
+      if cvs(sn$,1+2)<>"" and sn_exist=0 and cvs(order_nbr$,1+2)<>"" then goto skip_create_sn
+
+      call "ec_sn",firm_id$,ece11.item_number$,sn$,arm02.product_prefix$
+
+skip_create_sn:
+      call "ec_an",firm_id$,ece11.item_number$,sn$,order_number$,affected_users,lic_key$,lic_count,ece11.uncounted_flag$
+
+      sn_key$=ece11.line_number$
+      if properties$="" then properties$=ece11.item_number$(1,3)
+
+      sn_line$=sn$ + "," + lic_key$ + "," + ece11.item_number$ + "," + csm03.port_id$ + "," + properties$ + "," + str(affected_users:"00000") + "," + str(enterprise_users)
+      snTable!.put(sn_key$,sn_line$)
+      line_list$=line_list$ + sn_key$
+
+      sequence_nbr=sequence_nbr + 1
+      sequence_nbr$=str(sequence_nbr:"000")
+
+      are83.action$="A"
+      are83.auth_code$=lic_key$
+      are83.license_cnt=lic_count
+      if contract$<>"" then are83.contract$=contract$, are83.sam_active$=sam_active$ 
+      gosub write_are83
+
+      if rental_commit then
+        if cust_num$="007808" then
+           thru_jul=fnjul(smc01.annual_dt$)
+           thru_dt$=date(thru_jul:"%Yl%Mz%Dz")
+        else
+           thru_dt$=smc01.annual_dt$
+        endif
+        mailtext$=mailtext$(1,len(mailtext$)-2) + "    Rental thru   "+ thru_dt$(5,2) + "/" + thru_dt$(7,2) + "/" + thru_dt$(1,4) + "\n"
+      endif
+
+      if nbr_feature then gosub write_are93
+
+create_order_retire_snum:
+      if csm07.retire_snum$="N" then goto create_order_done_detail
+
+      hold_sn$=sn$
+      if tmp_list$="" then tmp_list$=tmp_list$ + sn$ + $0a$
+      rem ' retire_snum
+retire_snum_loop:
+      if tmp_list$="" then goto retire_done
+      p=pos($0a$=tmp_list$)
+      sn$=tmp_list$(1,p-1), tmp_list$=tmp_list$(p+1)
+
+      sequence_nbr=sequence_nbr + 1
+      sequence_nbr$=str(sequence_nbr:"000")
+
+      are83.action$="D"
+      are83.auth_code$=""
+      are83.license_cnt=0
+
+      gosub write_are83
+      goto retire_snum_loop
+
+retire_done:
+      sn$=hold_sn$
+
+create_order_done_detail:
+     rem ' Allow for qty>1 in the shopping cart
+   next item_count
+
+  rem ' ====================================
+  rem ' The shopping cart record might generate many transactions (e.g. UPD + ADD + SAM)
+  rem ' ====================================
+  next line
+
+  gosub remove_from_cart
+  goto order_ece11_loop
+
+order_ece11_endloop:
+
+  dim detail$:fattr(detail$)
+  detail.Item$="Subtotal"
+  if zero_inv then
+    detail.ext$=cvs(str(oem_total:"########.00-"),64)
+  else
+    detail.Ext$=cvs(str(subtotal:"########.00-"),64)
+  endif
+  mailtext$=mailtext$ + cvs(detail$,2)+"\n"
+
+  if taxable_amt then tax=taxable_amt * arm10b.tax_rate / 100
+
+  if tax then
+    detail.Item$="Tax"
+    detail.Ext$=cvs(str(tax:"########.00-"),64)
+    mailtext$=mailtext$ + cvs(detail$,2)+"\n"
+  endif
+
+  total=subtotal + tax
+  detail.Item$="Total"
+  if zero_inv then
+    detail.ext$=cvs(str(oem_total+tax:"########.00-"),64)
+  else
+    detail.Ext$=cvs(str(total:"########.00-"),64)
+  endif
+  mailtext$=mailtext$ + cvs(detail$,2)+"\n"
+
+rem "update subtotal, tax, etc. here
+  are03.tax_amount=tax
+  are03.taxable_amt=taxable_amt
+  are03.total_sales=total
+  are03.ord_lock$="N"; rem ' unlock the order header
+  are03$=field(are03$)
+  write record (are03,key=are03_key$)are03$
+
+RETURN
+
+rem ' -----------------------------------------------------------------
+rem ' Calculate Price
+rem ' -----------------------------------------------------------------
+
+calc_price:
+
+ price=0
+ nbr_trans=0
+
+ dim original_users[2], orig_property$[2], new_users[2], new_property$[2]
+ original_users[0]=orig_users, original_users[1]=orig_users2
+ orig_property$[0]=orig_property1$, orig_property$[1]=orig_property2$
+ new_users[0]=ece11.users, new_users[1]=ece11.users2
+ new_property$[0]=new_property1$, new_property$[1]=new_property2$
+ if renew then
+   for nbr=0 to 1
+     orig_property$[nbr]=new_property$[nbr] 
+     original_users[nbr]=new_users[nbr] 
+   next nbr
+   original_item$=ece11.item_number$
+ fi
+
+ precision digits+3
+
+ if sam_flag or rental_commit or ece11.item_number$(13,3)="NFR" then
+   new_annual_jul=fnjul(new_annual_dt$)
+   old_annual_jul=fnjul(old_annual_dt$)
+   today_jul=jul(0,0,0)
+   if cust_num$="007808" and rental_commit then
+     gosub audev_sam_factor
+   else
+     sam_factor=new_annual_jul-old_annual_jul
+     if sam_factor>0 and sam_factor<>365 and rental_commit=0 then sam_factor=sam_factor-1
+   endif
+ endif
+
+ precision digits
+
+ if sam_flag then
+   if old_annual_dt$=new_annual_dt$ and sn_exist then
+     new_contract$=contract$
+   else
+     new_contract$=""
+   endif
+ endif
+
+if sam_flag=0 then sam_flag=renew
+
+disc_pct=0,partner_disc=0,discount_code$=arm02.disc_code$
+Readrecord (arm10i,KEY=firm_id$+"I"+discount_code$,ERR=*NEXT)arm10i$
+disc_pct=arm10i.disc_percent
+if pos("P"=arm02.cust_type$)=1 then
+  FIND (arm10i,KEY=firm_id$+"I"+str(disc_pct+5:"00"),ERR=*endif)arm10i$
+  rem partner_disc=5
+fi
+if rental_commit and cust_num$="007808" then disc_pct=0
+
+no_rif=(zero_inv<>0);rem no RIF for zero_inv custs
+
+if trade then goto trade_price
+
+xtra$="EN"+str(rental_commit)+str(consolidate)+$0a$+str(disc_pct)+$0a$+"0"+$0a$+"0"+$0a$+"0"+str(no_rif)+$0a$ 
+call "ec_price",firm_id$,cust_num$,ece11.qty,original_item$,original_users[all],orig_property$[all],ece11.item_number$,new_users[all],new_property$[all],type$[all],price[all],comments$,arm02,arm10i,csm01,csm02,csm03,csm04,csm05,csm07,csm10,csm13,ivm01,smc01,sam_flag,sam_factor,new_contract$,nbr_trans,xtra$
+
+rem 'check for valid price/transaction
+if pos("**"=comments$)=1 then return
+
+dim smc01a$:fattr(smc01$)
+FIND RECORD (smc01,KEY=contract$,DOM=*next)smc01a$
+days_expired=0
+IF POS("SM"=smc01a.contr_type$) then xday=JUL(0,0,0)-fnjul(smc01a.annual_dt$)
+
+xtra_sam=0,xtra_up=0,xhi=99999
+if xday>0 then
+  xtra_sam=xhi
+  xtra_up=xhi
+  xloop=0
+  rem 'calculate buyback twice if users changed, use lower amount
+  while xloop<2
+  dim xtype$[2],xprice[2],xu[2],cu[2]
+  if xloop=0 then cu[]=original_users[] else cu[]=new_users[]
+  xtra$="EN00"+$0a$+"0"+$0a$+"0"+$0a$+"0"+$0a$+"0"+$0a$
+  CALL "ec_price",firm_id$,cust_num$,ece11.qty,"",xu[all],xtype$[all],original_item$,cu[all],orig_property$[all],xtype$[ALL],xprice[ALL],xcomments$,arm02,arm10i,csm01,csm02,csm03,csm04,csm05,csm07,csm10,csm13,ivm01,smc01,sam_flag,xday,"",xnbr_trans,xtra$
+  rem 'calc SAM on extra days, find max update charge
+  for tmp=0 to xnbr_trans
+    if pos("SM"=xtype$[tmp]) then xtra_sam=min(xprice[tmp],xtra_sam)
+    if pos("NEW"=xtype$[tmp]) then xtra_up=min(xprice[tmp],xtra_up)
+  next tmp
+  if original_users[0]=new_users[0] and original_users[1]=new_users[1] then break
+  xloop=xloop+1
+  wend
+
+  rem 'if SAM>max updt, then substitute lower amt
+  if xtra_up=xhi then xtra_up=0
+  if xtra_sam=xhi then xtra_sam=0
+  if xtra_up>0 and xtra_up*.9<xtra_sam then xtra_sam=xtra_up*.9
+fi
+
+upg=-1
+for tmp=0 to nbr_trans
+  if len(type$[tmp])<4 then continue
+  if pos("SM"=type$[tmp]) then price[tmp]=price[tmp]+xtra_sam
+  if pos(type$[tmp](1,3)="UPD,UG4")=0 or price[tmp]<=0 then continue
+  upg=tmp
+next tmp
+
+if upg>=0 and sam_flag and cvs(contract$,3)<>"" then
+  splevel=arm02.pricing_level
+  dim old_u[2],sm_u[2],old_lp$[2],new_lp$[2]
+  if cvs(new_property$[0],3)<>"" then new_lp$[0]=new_property$[0] else new_lp$[0]=ece11.item_number$(1,3)
+  new_lp$[1]=new_property$[1]
+  rem "Add as 1st tran means user reduction, use lower user count
+  if pos("AD"=type$[0])=1 then sm_u[]=new_users[] else sm_u[]=original_users[]
+  call "price.pgm",firm_id$,"SM1",ece11.item_number$(10,3),old_u[all],sm_u[all],old_lp$[all],new_lp$[all],"","SM1",0,disc_pct,splevel,prc,samprc
+
+  if samprc>0 then 
+    jd=0
+    first=1
+    read (snt01,key=snm01.serial_nbr$,dom=*next)
+    while 1
+      read record(snt01,end=*break)snt01$
+      if snt01.serial_nbr$<>snm01.serial_nbr$ then break
+      if (pos(snt01.type_of_sale$="UPDUG4UG3PLXUNCEXC",3) or first) and snt01.ext_price>0 then jd=fnaonjul(snt01.trans_date$)
+      first=0
+    wend
+
+    if jd then
+      today=jul(0,0,0)
+      days=max(0,today-jd)
+      sam_upg=samprc*days/365
+      if sam_upg>0 and sam_upg<price[upg] then price[upg]=sam_upg
+    fi
+  fi
+fi
+
+goto total_price
+
+trade_price:
+if pos("E"=ece11.lic_property1$)=1 then
+  new_ent_usr=ece11.users
+  new_std_usr=ece11.users2
+else
+  new_ent_usr=ece11.users2
+  new_std_usr=ece11.users
+fi
+ent_add=new_ent_usr-ent_usr
+std_add=new_std_usr-std_usr
+
+rem ' z=53
+z=55
+
+DIM m_item$(20)
+LET m_item$(1)=ece11.item_number$
+jul_renew=fnjul(ece11.annual_dt$)
+xtra$="EN"+$0a$+"0"+$0a$+"0"+$0a$+"0"+$0a$+"0"+$0a$
+
+call "ec_trade.bbj",firm_id$,cust_num$,arm02,arm10i,csm01,csm02,csm03,csm04,csm05,csm07,csm10,csm13,ivm01,smc01,snm01,snm02,snt01,snlist$,m_item$,ent_add,std_add,jul_renew,commentlist$,tranlist$,xtra$
+
+nbr_trans=LEN(tranlist$)/z-1,tran=0
+DIM type$[nbr_trans],price[nbr_trans],t_qty[nbr_trans],t_users[nbr_trans],t_desc$[nbr_trans]
+
+FOR y=0 TO 3; REM put in line_sort order (0 - 3)
+  FOR x=0 TO nbr_trans
+    IF STR(y)=tranlist$(x*z+1,1) THEN
+      type$[tran]=tranlist$(x*z+2,3)+"|"+tranlist$(x*z+5,20)
+      t_desc$[tran]=type$[tran](5)
+      if pos("ADD"=type$[tran]) and addcom$<>"" then t_desc$[tran]=addcom$
+      price[tran]=NUM(tranlist$(x*z+34,11))
+      t_qty[tran]=NUM(tranlist$(x*z+31,3))
+      t_users[tran]=NUM(tranlist$(x*z+25,6))
+      tran=tran+1
+    FI
+  NEXT x
+NEXT y
+
+total_price:
+
+for nbr=0 to nbr_trans
+  rem 'Audev kits are free
+  if ece11.item_number$(13,3)="KIT" and cust_num$="007808" then price[nbr]=0
+  rem 'omit reins fee for zero invoice customers - skip when creating detail lines
+  if no_rif and pos("RIF"=type$[nbr]) then price[nbr]=0
+  price[nbr]=price[nbr] * rental_perc; rem ' this is 1 for non rentals
+  if rental_commit or ece11.item_number$(13,3)="NFR" then price[nbr]=price[nbr]*sam_factor
+
+        price=price + price[nbr]
+next nbr
+
+ if zero_inv then gosub set_oem_price_zero
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Set OEM prices to zero
+rem ' -----------------------------------------------------------------
+
+set_oem_price_zero:
+  dim oem_price[nbr_trans]
+  oem_price=price
+  price=0
+
+  for nbr=0 to nbr_trans
+    oem_price[nbr]=price[nbr]
+    price[nbr]=0
+  next nbr
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Figure SAM factor for AUDEV rentals
+rem ' -----------------------------------------------------------------
+
+audev_sam_factor:
+
+  curr_year=num(date(today_jul:"%Yl"))
+  nxt_mo=num(date(today_jul:"%Mz")) + 1
+  if nxt_mo>12 then
+    nxt_mo=nxt_mo - 12
+    curr_year=curr_year + 1
+  endif
+
+  new_annual_mo=num(smc01.annual_dt$(5,2))
+  new_annual_year=num(smc01.annual_dt$(1,4))
+  if nxt_mo=new_annual_mo then sam_factor=0
+
+  if curr_year<>new_annual_year then new_annual_mo=new_annual_mo + 12
+
+    sam_factor=new_annual_mo-nxt_mo  
+  rem "if renewals haven't been run yet on 1st day of quarter then annual date 
+  rem "hasn't been moved up and the factor will be negative when it should be 2
+  if sam_factor <0 then sam_factor=2
+  sam_factor=sam_factor*30 / 360 
+  sam_factor=sam_factor*365 ; rem sam_factor is divided by 365 in ec_price
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Get ECE-83 serials nbrs for deactivation on Trade In
+rem ' -----------------------------------------------------------------
+
+get_ece83_recs:
+  cl_usr=0, consolidate_users=0, consolidate_users1=0
+  ds_usr=0, ent_usr=0, std_usr=0
+  read (ece83,key=ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$,dom=*next)
+
+tmp_sn_loop:
+  read record(ece83,end=done_tmp_list)ece83$
+  if ece83.firm_id$+ece83.customer_nbr$+ece83.user_code$+ece83.line_number$<>ece11.firm_id$+ece11.customer_nbr$+ece11.user_code$+ece11.line_number$ then goto done_tmp_list
+  tmp_list$=tmp_list$ + ece83.serial_nbr$ + $0a$
+  find record(snm01,key=ece83.serial_nbr$)snm01$
+  if consolidate=0 then
+    if snm01.product$<>"DS5" then 
+      cl_usr=cl_usr+snm01.users 
+    else
+      ds_usr=ds_usr+snm01.users 
+  endif
+
+  dim snm02a$:fattr(snm02$)
+  find record(snm02,key=ece83.serial_nbr$,dom=*next)snm02a$
+  if consolidate then
+    consolidate_users=consolidate_users + snm02a.users1
+    consolidate_users1=consolidate_users1 + snm02a.users2
+    if snm02a.users1+snm02a.users2 then consolidate_users=consolidate_users+snm01.users
+  endif 
+  if pos("E"=snm02a.lic_property1$)=1 then ent_usr=ent_usr+snm02a.users1
+  if pos("E"=snm02a.lic_property2$)=1 then ent_usr=ent_usr+snm02a.users2
+  if pos("S"=snm02a.lic_property2$)=1 then std_usr=std_usr+snm02a.users2
+  if pos("S"=snm02a.lic_property1$)=1 then std_usr=std_usr+snm02a.users1 
+  goto tmp_sn_loop
+
+done_tmp_list:
+  if cl_usr then orig_users=cl_usr
+  if consolidate_users then orig_users=orig_users + consolidate_users
+  ds_usr=min(cl_usr,ds_usr)
+  ent_usr=ds_usr+ent_usr
+  std_usr=max(0,cl_usr-ds_usr)+std_usr
+
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Send Mail
+rem ' -----------------------------------------------------------------
+
+Send_Mail:
+
+  call "mailcall.bbj",err=send_mail_done,1,mailcall$,""
+  mailcall.from$=cvs(arm10f.slspsn_name$,3) + " <" + cvs(arm10f.e_mail$,3) + ">"
+  mailcall.subject$="DirectComm - BASIS Order " + str(num(order_number$)) + " Confirmation"
+  mailcall.attach$=""
+  mailcall.to$=cvs(ecm01.e_mail$,3)
+  mailcall.cc$="BASIS Customer Service <customer-service@basis.cloud>,"+cvs(arm10f.slspsn_name$,3)+" <" + cvs(arm10f.e_mail$,3) + ">"
+  mailcall.msgtxt$=mailtext$
+  call "mailcall.bbj",err=send_mail_done,0,mailcall$,errmsg$
+
+send_mail_done:
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Open Initial Files - needed by all action types
+rem ' -----------------------------------------------------------------
+
+Open_Initial_Files:
+  call "ec_open::ECE12",err=file_access; chan$=chan$+str(ECE12:"00000")
+  call "ec_open::ECE11",err=file_access; chan$=chan$+str(ECE11:"00000")
+  call "ec_open::ECM01",err=file_access; chan$=chan$+str(ECM01:"00000")
+  call "ec_open::ECE83",err=file_access; chan$=chan$+str(ECE83:"00000")
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Open Order Files - needed by add to cart (checking features) and buy now action types
+rem ' -----------------------------------------------------------------
+
+Open_Order_files:
+  call "ec_open::ARE03",err=file_access; chan$=chan$+str(ARE03:"00000")
+  call "ec_open::ARE04",err=file_access; chan$=chan$+str(ARE04:"00000")
+  call "ec_open::ARE07",err=file_access; chan$=chan$+str(ARE07:"00000")
+  call "ec_open::ARE13",err=file_access; chan$=chan$+str(ARE13:"00000")
+  call "ec_open::ARE43",err=file_access; chan$=chan$+str(ARE43:"00000")
+  call "ec_open::ARE73",err=file_access; chan$=chan$+str(ARE73:"00000")
+  call "ec_open::ARE83",err=file_access; chan$=chan$+str(ARE83:"00000")
+  call "ec_open::ARE93",err=file_access; chan$=chan$+str(ARE93:"00000")   
+  call "ec_open::ARS10N",err=file_access; chan$=chan$+str(ARS10N:"00000")
+  call "ec_open::SERIALNUMBERS",err=file_access; chan$=chan$+str(SERIALNUMBERS:"00000")
+  call "ec_open::OEM_AR_PRICE",err=file_access; chan$=chan$+str(OEM_AR_PRICE:"00000")
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Open Customer Files - needed by add to cart and buy now action types
+rem ' -----------------------------------------------------------------
+
+Open_Customer_files:
+  call "ec_open::ARM01",err=file_access; chan$=chan$+str(ARM01:"00000")
+  call "ec_open::ARM02",err=file_access; chan$=chan$+str(ARM02:"00000")
+  call "ec_open::ARM10B",err=file_access; chan$=chan$+str(ARM10B:"00000")
+  call "ec_open::ARM10E",err=file_access; chan$=chan$+str(ARM10E:"00000")
+  call "ec_open::ARM10F",err=file_access; chan$=chan$+str(ARM10F:"00000")
+  call "ec_open::ARM10I",err=file_access; chan$=chan$+str(ARM10I:"00000")
+  call "ec_open::ARM40",err=file_access; chan$=chan$+str(ARM40:"00000")
+  call "ec_open::IVS01",err=file_access; chan$=chan$+str(IVS01:"00000")
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Open Configuration files - needed by add to cart and buy action types 
+rem ' -----------------------------------------------------------------
+
+Open_Configuration_files:
+  call "ec_open::CSM01",err=file_access; chan$=chan$+str(CSM01:"00000")
+  call "ec_open::CSM02",err=file_access; chan$=chan$+str(CSM02:"00000")
+  call "ec_open::CSM03",err=file_access; chan$=chan$+str(CSM03:"00000")
+  call "ec_open::CSM04",err=file_access; chan$=chan$+str(CSM04:"00000")
+  call "ec_open::CSM05",err=file_access; chan$=chan$+str(CSM05:"00000")
+  call "ec_open::CSM06",err=file_access; chan$=chan$+str(CSM06:"00000")
+  call "ec_open::CSM07",err=file_access; chan$=chan$+str(CSM07:"00000")
+  call "ec_open::CSM10",err=file_access; chan$=chan$+str(CSM10:"00000")
+  call "ec_open::CSM13",err=file_access; chan$=chan$+str(CSM13:"00000")
+  call "ec_open::CSM13A",err=file_access; chan$=chan$+str(CSM13A:"00000")
+  call "ec_open::CSM13B",err=file_access; chan$=chan$+str(CSM13B:"00000")
+  call "ec_open::CSM13C",err=file_access; chan$=chan$+str(CSM13C:"00000")
+  call "ec_open::CSM13D",err=file_access; chan$=chan$+str(CSM13D:"00000")
+  call "ec_open::CSM13H",err=file_access; chan$=chan$+str(CSM13H:"00000")
+  call "ec_open::IVM01",err=file_access; chan$=chan$+str(IVM01:"00000")
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Open Serial Nbr Files - needed by add to cart and buy now action types
+rem ' -----------------------------------------------------------------
+
+Open_Serial_nbr_files:
+  call "ec_open::LICENSE_RESET"; chan$=chan$+str(LICENSE_RESET:"00000")
+  call "ec_open::SNM01",err=file_access; chan$=chan$+str(SNM01:"00000")
+  call "ec_open::SNM02",err=file_access; chan$=chan$+str(SNM02:"00000")
+  call "ec_open::SNT01",err=file_access; chan$=chan$+str(SNT01:"00000")
+  call "ec_open::SNT02",err=file_access; chan$=chan$+str(SNT02:"00000")
+  call "ec_open::SNT03",err=file_access; chan$=chan$+str(SNT03:"00000")
+  call "ec_open::SNT04",err=file_access; chan$=chan$+str(SNT04:"00000")
+  call "ec_open::SMC01",err=file_access; chan$=chan$+str(SMC01:"00000")
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Close Files
+rem ' -----------------------------------------------------------------
+
+Close_Files:
+  if len(chan$) then
+    chan=num(chan$(1,5)),chan$=chan$(6)
+    close (chan)
+    goto close_files
+  endif
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Get Order Number
+rem ' -----------------------------------------------------------------
+
+Get_Order_Number:
+  rem ' ARS10N - next order number
+  extract record (ars10n,key=firm_id$+"N",tim=5,err=get_ars10n_locked)ars10n$
+  order_number=ars10n.nxt_ord_nbr
+  ars10n.nxt_ord_nbr=ars10n.nxt_ord_nbr + 1
+  ars10n$=field(ars10n$)
+  write record (ars10n,key=firm_id$+"N")ars10n$
+  order_number$=str(order_number:"0000000")
+return
+
+get_ars10n_locked:
+  if err=0 then
+    wait 1
+    retry
+  endif
+
+  goto file_access
+
+rem ' -----------------------------------------------------------------
+rem ' Put Order Number
+rem ' -----------------------------------------------------------------
+
+Put_Order_Number:
+  rem ' ARS10N - next order number
+  extract record (ars10n,key=firm_id$+"N",tim=5,err=put_ars10n_locked)ars10n$
+  if ars10n.nxt_ord_nbr=num(order_number$)+1 then ars10n.nxt_ord_nbr=num(order_number$)
+  ars10n$=field(ars10n$)
+  write record (ars10n,key=firm_id$+"N")ars10n$
+return
+
+put_ars10n_locked:
+  if err=0 then 
+    wait 1 
+    retry
+  endif
+
+  goto file_access
+
+rem ' -----------------------------------------------------------------
+rem ' Write are83
+rem ' -----------------------------------------------------------------
+
+Write_are83:
+  Rem ' Called by create_order subroutine
+  are83.firm_id$=are13.firm_id$
+  are83.ar_type$=are13.ar_type$
+  are83.customer_nbr$=are13.customer_nbr$
+  are83.order_number$=are13.order_number$
+  are83.line_number$=are13.line_number$
+  are83.license_seq$=license_seq$
+  are83.sequence_nbr$=sequence_nbr$
+  rem 'are83.action$ must be set before calling this subroutine
+  are83.snhist_flag$="N"
+  are83.dealer_str$=fill(fnlength(fattr(are83$),"dealer_str"))
+  are83.serial_nbr$=sn$
+  rem 'are83.license_cnt must be set before calling this subroutine
+  are83_key$=are83.firm_id$+are83.ar_type$+are83.customer_nbr$+are83.order_number$+are83.line_number$+are83.license_seq$+are83.sequence_nbr$
+
+  are83$=field(are83$)
+  write record (are83,key=are83_key$)are83$
+
+  temp$="DeactivateModify    Activate  ",temp=pos(are83.action$="DMA")
+  if temp then mailtext$=mailtext$+"   "+temp$(temp*10-9,10)+" "+cvs(are83.serial_nbr$,1+2)+"\n"
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Write are93 - order entry feature file
+rem ' -----------------------------------------------------------------
+
+write_are93:
+  are93.firm_id$=are83.firm_id$
+  are93.ar_type$=are83.ar_type$
+  are93.customer_nbr$=are83.customer_nbr$
+  are93.order_number$=are83.order_number$
+  are93.line_number$=are83.line_number$
+  are93.license_seq$=are83.license_seq$
+  are93.sequence_nbr$=are83.sequence_nbr$
+  are93.available$=fill(fnlength(fattr(are93$),"available"))
+  for nbr=0 to nbr_feature-1
+    are93.feature_nbr$=str(nbr+1:"000")
+    feature_key$=STR(nbr:"00")
+    feature_line$=featureTable!.get(feature_key$)
+    comma_pos=pos(","=feature_line$)
+    are93.feature$=feature_line$(1,comma_pos-1), feature_line$=feature_line$(comma_pos+1)
+    mailtext$=mailtext$ + "    " + are93.feature$ + " "
+    comma_pos=pos(","=feature_line$)
+    are93.feature_rev$=feature_line$(1,comma_pos-1), feature_line$=feature_line$(comma_pos+1)
+    comma_pos=pos(","=feature_line$)
+    are93.users=num(feature_line$(1,comma_pos-1)), feature_line$=feature_line$(comma_pos+1)
+    mailtext$=mailtext$ + str(are93.users:"####0") + "\n"
+    are93.user_based$=feature_line$
+    are93_key$=are83_key$ + are93.feature_nbr$
+    are93$=field(are93$)
+    write record (are93,key=are93_key$)are93$
+  next nbr
+return
+
+get_ar_info:
+  rem ' get inventory parameters (Warehouse ID)
+  read record (ivs01,key=firm_id$+"IV00",err=file_access)ivs01$
+
+  rem ' Get A/R codes
+  read record (arm10e,key=firm_id$+"E"+"S",err=file_access)arm10e$
+
+  rem ' get customer master info
+  read record (arm01,key=firm_id$+cust_num$,err=file_access)arm01$
+
+  read record (arm02,key=firm_id$+cust_num$+"  ",err=file_access)arm02$
+  allowed_reset=arm02.allowed_resets
+  if allowed_reset=0 and arm02.cust_type$="DSI" then allowed_reset=2
+  rental_perc1=num(arm02.rental_perc1$)
+  rental_perc2=num(arm02.rental_perc2$)
+  rental_perc3=num(arm02.rental_perc3$)
+  rental_billing=arm02.rental_billing
+  if rental_perc1+rental_perc2+rental_perc3=0 then rental_perc1=100
+
+   read record (arm10b,key=firm_id$+"B"+arm02.tax_code$,err=file_access)arm10b$
+
+  rem ' get salesperson contact info
+  read record (arm10f,key=firm_id$+"F"+arm02.slspsn_code$,err=file_access)arm10f$
+  if pos("@"=arm10f.e_mail$)=0 then arm10f.e_mail$="customer-service@basis.cloud"
+return
+
+rem ' -----------------------------------------------------------------
+rem ' do_licenses
+rem ' -----------------------------------------------------------------
+
+do_licenses:
+  sn_nbr=snTable!.size()
+  IF sn_nbr=0 THEN GOTO do_invoice
+  temp_list$=line_list$
+
+line_list_loop:
+  if temp_list$="" then goto do_invoice
+  nbr_key$=temp_list$(1,4)
+  temp_list$=temp_list$(5)
+  sn_line$=snTable!.get(nbr_key$)
+  comma_pos=pos(","=sn_line$)
+  sn$=sn_line$(1,comma_pos-1), sn_line$=sn_line$(comma_pos+1)
+  comma_pos=pos(","=sn_line$) 
+  auth$=cvs(sn_line$(1,comma_pos-1),1+2), sn_line$=sn_line$(comma_pos+1)
+  comma_pos=pos(","=sn_line$)
+  item$=sn_line$(1,comma_pos-1), sn_line$=sn_line$(comma_pos+1)
+  comma_pos=pos(","=sn_line$)
+  port$=sn_line$(1,comma_pos-1), sn_line$=sn_line$(comma_pos+1)
+  comma_pos=pos(","=sn_line$)
+  properties$=sn_line$(1,comma_pos-1), sn_line$=sn_line$(comma_pos+1)
+  comma_pos=pos(","=sn_line$)
+  nbr_users=num(sn_line$(1,comma_pos-1)), sn_line$=sn_line$(comma_pos+1)
+  enterprise_users=num(sn_line$)
+  lic_filename$=""
+  license$=""
+  if len(auth$)<13 then
+    rem gosub do_flex
+    rem directcomlic@basis.cloud is an alias for /dev/null kew 4/21/20009
+    call "BAL.01",sn$,auth$,"directcommlic@basis.cloud","","",license$
+    if license$<>"" then lic_filename$=flex$ + "lic/" + CVS(sn$,1+2) + ".lic"
+  endif
+  auth$=auth$ + FILL(13), auth$=auth$(1,13)
+  sn_line$=sn$ + "," + auth$ + "," + str(len(lic_filename$):"00000") + "," + lic_filename$
+  snTable!.put(nbr_key$,sn_line$)
+
+        goto line_list_loop
+
+do_invoice:
+  rem "thines   if check_cart and cust_num$<>"007808" then
+  if check_cart then gosub make_invoice
+return
+
+rem ' -----------------------------------------------------------------
+rem ' do_flex
+rem ' -----------------------------------------------------------------
+
+do_flex:
+  rev$=item$(10,3)
+  if rev$(1,1)="0" then rev$=rev$(2)
+  rev$=rev$(1,1) + "." + rev$(2)
+  x$="D60"
+  if port$(1,2)="12" then x$="DSD60"
+  if port$(1,2)="14" then x$="ODBCD60"
+  if port$(1,1)<>"2" or len(properties$)=3 then goto call_flex
+  p0s=pos("S"=properties$,2)
+  p1s=pos("E"=properties$,2)
+  if p0s and nbr_users>enterprise_users then x$=item$(1,1)+properties$(p0s,2)
+  if p1s and nbr_users=enterprise_users then enterprise_users=0,x$=item$(1,1)+properties$(p1s,2)
+  x$=x$+"D60"
+
+call_flex:
+  call flex$+"bin/genflexlic.bbx",x$,rev$,sn$,nbr_users,"",license$,"","",enterprise_users
+return
+
+rem ' -----------------------------------------------------------------
+rem ' make_invoice
+rem ' -----------------------------------------------------------------
+
+MAKE_INVOICE: 
+  EXTRACT RECORD (ARS10N,KEY=FIRM_ID$+"N",TIM=5,ERR=ARS10N_LOCKED)ARS10N$
+  IF ARS10N.NEXT_INV_NBR>9999999 THEN LET ARS10N.NEXT_INV_NBR=1000
+  invoice_nbr$=STR(ARS10N.NEXT_INV_NBR:"0000000")
+  ARS10N.NEXT_INV_NBR=ARS10N.NEXT_INV_NBR+1
+  ARS10N$=FIELD(ARS10N$)
+  WRITE RECORD (ARS10N,KEY=FIRM_ID$+"N")ARS10N$
+  ARE03.AR_INV_NBR$=invoice_nbr$
+  ARE03.ORD_INV_FLAG$="I",ARE03.INVOICE_DATE$=ARE03.DATE_ORDERED$,ARE03.ORD_PRT_FLAG$="N"
+  ARE03$=FIELD(ARE03$)
+  WRITE RECORD (ARE03,KEY=ARE03$(1,20))ARE03$
+  remove (are04,key=firm_id$+"O  "+are03.customer_nbr$+are03.order_number$,err=add_are04)
+add_are04: 
+  are04.firm_id$=are03.firm_id$,are04.ord_inv_flag$="I",are04.ar_type$="  ",are04.customer_nbr$=are03.customer_nbr$,are04.order_number$=are03.order_number$
+  are04k$=are04.firm_id$+are04.ord_inv_flag$+are04.ar_type$+are04.customer_nbr$+are04.order_number$,are04$=field(are04$)
+  are04$=field(are04$)
+  write record (are04,key=are04k$)are04$
+  oemkey$=are03.firm_id$+are03.ar_type$+are03.customer_nbr$+are03.order_number$
+  read(oem_ar_price,key=oemkey$,dom=*next)
+  while 1
+    readrecord(oem_ar_price,end=*break)oem_ar_price$
+    if pos(oemkey$=oem_ar_price$)<>1 then break
+    if oem_ar_price.inv_date$<>date(0:"%Yl%Mz%Dz") then continue
+    oem_ar_price.ar_inv_nbr$=invoice_nbr$
+    oem_ar_price$=field(oem_ar_price$)
+    write record (oem_ar_price)oem_ar_price$
+    remove(oem_ar_price,key=oemkey$+oem_ar_price.line_number$,err=*next)
+  wend
+  call "BSN.20",firm_id$,cust_num$,order_number$,snm01,snm02,snt01,snt03,are03,are13,are73,are83,ivm01,csm03,smc01,csm01,csm02
+return
+
+ars10n_locked: If err=0 then wait 1; retry
+
+     goto file_access
+
+rem ' -----------------------------------------------------------------
+rem ' license_status
+rem ' -----------------------------------------------------------------
+
+license_status:
+  let license_status=-1,license_status_channel=0
+  read (are83,key="",dom=*next)
+
+license_status_are83: 
+  k$=key(are83,end=end_license_status_are83)
+  read record(are83,key=k$)are83$
+  if cvs(sn$,2)<>cvs(are83.serial_nbr$,2) or are83.snhist_flag$="Y" or len(cvs(are83.auth_code$,3))<>10 then goto license_status_are83
+
+  if are83.action$="D" then 
+    license_status=-1
+    goto license_status_are83
+  endif
+
+  license_status=are83.license_cnt
+  license_status_channel=are83
+  license_status_key$=k$
+  goto license_status_are83
+
+end_license_status_are83: 
+  if license_status>=0 then goto license_status_end
+
+  read (snt01,key=cvs(sn$,2),dom=*next)
+
+license_status_snt01: 
+  k$=key(snt01,end=license_status_end)
+  read record(snt01,key=k$)snt01$
+  if pos(cvs(sn$,2)=snt01.serial_nbr$)<>1 then goto license_status_end
+
+  if len(cvs(snt01.auth_code$,3))<>10 then goto license_status_snt01
+
+  if snt01.action$="D" then 
+    license_status=-1
+    goto license_status_snt01
+  endif
+
+  license_status=snt01.license_cnt
+  license_status_channel=snt01
+  license_status_key$=k$
+  goto license_status_snt01
+
+license_status_end:
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Get SAM Contract
+rem ' -----------------------------------------------------------------
+
+Get_SAM_Contract:
+
+  start_jul=jul(0,0,0)
+  expire$=date((duration+start_jul):"%Yl%Mz%Dz")
+  start$=date(0:"%Yl%Mz%Dz")
+  if cvs(new_annual_dt$,3)<>"" then expire$=new_annual_dt$
+  valid_date$=expire$
+  gosub validate_date
+  expire$=valid_date$
+  dim smc01$:fattr(smc01$)
+  find record(smc01,key=contract$,knum=0,dom=new_contract)smc01$
+  start$=smc01.contr_start$
+
+  gosub check_single_sn
+  if single then
+    if pos(smc01.contr_type$="DV1RN1",3) then goto contract_done
+    goto finish_contract
+  endif
+
+new_contract:
+  dim counter$:"type:c(3),filler:c(7),nbr:n(6)"
+  counter.type$="CTR"
+  counter.nbr=1
+  extract record(serialnumbers,key=counter.type$,dom=next_contract)counter$
+  counter$=field(counter$)
+
+next_contract:
+  contract$=str(counter.nbr:"000000")
+  counter.nbr$=str((counter.nbr+1):"000000")
+  write record(serialnumbers,key=counter.type$)counter$
+
+  smc01.contract$=contract$
+  if renew then goto write_contract
+
+  smc01.firm_id$=firm_id$
+  smc01.customer_nbr$=cust_num$
+
+finish_contract:
+   smc01.contr_start$=start$
+   smc01.expire_on_dt$=expire$
+   smc01.annual_dt$=expire$
+  if pos(ece11.item_number$(13,3)="NFRKIT",3) or rental_commit then
+    smc01.disb_method$=str(rental_billing:"0000")
+    if rental_billing then smc01.pay_cycles$=str((360/rental_billing)-1:"00")
+    if rental_commit then
+      smc01.contr_type$="RN1"
+      if rental_perc<1 then smc01.commit_perc$=str(rental_perc*100:"00.0")
+    else
+      smc01.contr_type$="DV1"
+    endif
+  else  
+    smc01.contr_type$="SM1"
+    smc01.sam_active$="Y", sam_active$="Y"
+  endif
+
+     if cust_num$="007808" then
+    gosub figure_audev_dts
+    smc01.disb_method$=str(rental_billing:"0000")
+  endif
+
+  smc01.e_mail$=ecm01.e_mail$
+  smc01.new_flag$="Y"
+  smc01.invoiced_flag$=" "
+
+write_contract:
+  smc01$=field(smc01$)
+  write record(smc01)smc01$
+
+contract_done:
+return
+
+check_single_sn:
+single=1
+rem 'find out if there are more serial numbers on this contract
+read(snm01,key=smc01.contract$,knum=3,dom=*next)
+while 1
+  read record(snm01,end=*break)snm01$
+  if snm01.contract$<>smc01.contract$ then break
+  if snm01.firm_id$+snm01.customer_nbr$<>smc01.firm_id$+smc01.customer_nbr$ then break
+  if snm01.serial_nbr$<>sn$ then single=0;break
+wend
+rem 'reset knum
+read(snm01,key=sn$,knum=0,dom=*next)
+return
+
+validate_date:
+  valid_jul=jul(valid_date$,"%Yl%Mz%Dz",err=*next); goto date_done
+  valid_date$(7,2)=str(num(valid_date$(7,2))-1:"00")
+  goto validate_date
+date_done:
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Figure audev rental dates
+rem ' -----------------------------------------------------------------
+
+figure_audev_dts:
+  start_mo=num(date(0:"%Mz"))+ 1
+  annual_day=1
+  start_day=1
+  nxt_qtr_day=1
+  start_year=num(date(0:"%Yl"))
+  annual_year=num(date(0:"%Yl"))
+  nxt_qtr_year=num(date(0:"%Yl"))
+  if start_mo>12 then
+    start_mo=start_mo - 12
+    start_year=start_year + 1
+    annual_year=start_year
+    nxt_qtr_year=start_year
+  endif
+  qtr_mos$="0104071013"
+  p0s=pos(str(start_mo:"00")<=qtr_mos$,2)
+  annual_mo=num(qtr_mos$(p0s,2))
+  if annual_mo>12 then
+    annual_mo=annual_mo - 12
+    annual_year=annual_year + 1
+    nxt_qtr_year=annual_year
+  endif
+  nxt_qtr_mo=annual_mo + rental_billing/30
+  if nxt_qtr_mo>12 then
+    nxt_qtr_mo=nxt_qtr_mo - 12
+    nxt_qtr_year=nxt_qtr_year + 1
+  endif
+  start_jul=jul(start_year,start_mo,start_day)
+  annual_jul=jul(annual_year,annual_mo,annual_day)
+  nxt_qtr_jul=jul(nxt_qtr_year,nxt_qtr_mo,nxt_qtr_day)
+  expire_jul=nxt_qtr_jul - 1
+  smc01.contr_start$=date(start_jul:"%Yl%Mz%Dz")
+  rem smc01.annual_dt$=date(annual_jul:"%Yl%Mz%Dz")
+  smc01.annual_dt$=date(expire_jul:"%Yl%Mz%Dz")
+  smc01.expire_on_dt$=date(expire_jul:"%Yl%Mz%Dz")
+  smc01.pay_cycles$="00"
+return
+
+chk_sam_contract:
+ old_annual_dt$= date(0:"%Yl%Mz%Dz")
+ find record(smc01,key=snm01.contract$,knum=0,dom=no_sam_contract)smc01$
+ today_jul=jul(0,0,0)
+ start_jul=fnjul(smc01.contr_start$)
+ annual_jul=fnjul(smc01.annual_dt$)
+ if smc01.contr_type$="DV1" and sam_flag then
+   if abs(today_jul-annual_jul)<46 then renew=annual_jul else stat=14
+ fi
+ if pos(smc01.contr_type$="DV1RN1,3") then goto no_sam_contract
+ old_annual_dt$=smc01.annual_dt$
+
+   if snm01.sam_active$="N" and sam_flag and smc01.sam_active$<>"N" then old_annual_dt$=smc01.contr_start$
+
+ if new_annual_dt$="" then
+  if sam_flag and today_jul+30>annual_jul then   
+    new_annual_dt$=str(num(old_annual_dt$(1,4))+1:"0000")+old_annual_dt$(5,4)
+  else
+    new_annual_dt$=old_annual_dt$
+  endif
+ endif
+
+ if snm01.sam_active$<>"N" then sam_flag=1
+
+no_sam_contract:
+return
+
+rem ' -----------------------------------------------------------------
+rem ' Set Virtual Flag
+rem ' -----------------------------------------------------------------
+
+set_virtual_flag:
+
+found_vir_nbr = 0
+
+extract record(snm01,key=ece11.serial_nbr$,dom=*next)snm01$; found_vir_nbr = 1
+
+if found_vir_nbr then
+	snm01.media_type$="VIR"
+	snm01$=field(snm01$)
+	write record(snm01)snm01$
+fi
+
+return
+
+END

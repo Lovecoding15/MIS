@@ -1,0 +1,3375 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2023-11-14
+Last Build Time=16:40:48
+Precision=99
+Program Name=directRenew
+Remarks=Yes
+Resource File=directRenew.arc
+Show Forms=All
+
+[EOJ]
+rem ' close all files
+gosub closeFiles
+
+[Init]
+seterr errNotify
+
+rem ' log client information
+    call "ec_open::DIRECT_RENEW_LOG"
+    direct_renew_log.access_date$ = date(0:"%Y%Mz%Dz")
+    direct_renew_log.access_time$ = date(0:"%Hz%mz%sz")
+    direct_renew_log.access_seq$ = "00"
+
+    rem ' Get screen size
+    dim fin$:tmpl(gb__sysgui,ind=0)
+    fin$ = fin(gb__sysgui,ind=0)
+    winWidth = fin.screen_width
+    winHeight = fin.screen_height
+    direct_renew_log.winWidth$ = str(winWidth:"######0")
+    direct_renew_log.winHeight$ = str(winHeight:"######0")
+
+    rem ' Save the users's OS for logging later on
+    userAgent! = info(3,8)
+    userAgent! = userAgent!.toLowerCase()
+    clientOS$ = "Other"
+    if (userAgent!.matches(".*windows.*")) then clientOS$ = "Windows"
+    if (userAgent!.matches(".*linux.*")) then clientOS$ = "Linux"
+    if (userAgent!.matches(".*macintosh.*")) then clientOS$ = "Macintosh"
+    if (userAgent!.matches(".*android.*")) then clientOS$ = "Android"
+    if (userAgent!.matches(".*iphone.*")) then clientOS$ = "iOS"
+    if (userAgent!.matches(".*ipad.*")) then clientOS$ = "iOS"
+    if (userAgent!.matches(".*ipod.*")) then clientOS$ = "iOS"
+    if (userAgent!.matches(".*aix.*")) then clientOS$ = "AIX"
+    if (userAgent!.matches(".*hp-ux.*")) then clientOS$ = "HP-UX"
+    if (userAgent!.matches(".*sunos.*")) then clientOS$ = "Sun OS"
+    direct_renew_log.os$ = clientOS$
+    userAgent$ = userAgent!
+    direct_renew_log.userAgent$ = cvs(userAgent$,3)
+
+    written = 0
+    while 1
+        write record(direct_renew_log, dom = *next)direct_renew_log$; written = 1
+        if !written then
+            direct_renew_log.access_seq$ = str(num(direct_renew_log.access_seq$) + 1 :"00")
+        else
+            break
+        fi
+    wend
+    close(direct_renew_log, err=*next)
+rem ' end log client information
+
+rem ' Add a CSS style so that we can apply different CSS for desktops and touch devices
+buiMgr!=BBjAPI().getBuiManager()
+touch=buiMgr!.isTouchSupported(err=*NEXT)
+if(touch)then
+    BBjAPI().getSysGui().getWindow("Login").addStyle("mobileDevice")
+    BBjAPI().getSysGui().getWindow("snView").addStyle("mobileDevice")
+    BBjAPI().getSysGui().getWindow("multiplesDetails").addStyle("mobileDevice")
+    BBjAPI().getSysGui().getWindow("payment").addStyle("mobileDevice")
+    BBjAPI().getSysGui().getWindow("mainChildWindow").addStyle("mobileDevice")
+    BBjAPI().getSysGui().getWindow("featuresChildWindow").addStyle("mobileDevice")
+else
+    BBjAPI().getSysGui().getWindow("Login").addStyle("desktopDevice")
+    BBjAPI().getSysGui().getWindow("snView").addStyle("desktopDevice")
+    BBjAPI().getSysGui().getWindow("multiplesDetails").addStyle("desktopDevice")
+    BBjAPI().getSysGui().getWindow("payment").addStyle("desktopDevice")
+    BBjAPI().getSysGui().getWindow("mainChildWindow").addStyle("desktopDevice")
+    BBjAPI().getSysGui().getWindow("featuresChildWindow").addStyle("desktopDevice")
+endif
+
+gosub openFiles
+
+rem ' build object reference
+gosub buildObjectReferences
+
+rem ' get the url parmeters
+bypassLogin = 0
+found = 0
+psn$ = clientenv("sn",err=*next); found = 1
+if found and cvs(psn$,3) <> "" then 
+    sn!.setText(cvs(psn$,3))
+    filenamefnd = 0
+    pfilename$ = clientenv("more",err=*next); filenamefnd = 1
+    if filenamefnd and pfilename$ <> "" then
+        more = unt
+        found = 0
+        open(more,err=*next)stbl("TEMP") + pfilename$; found = 1
+        if found then
+            read(more)moreInfo$
+            p = pos("," = moreInfo$)
+            if p <> 0 then
+                pfirm$ = moreinfo$(1,p-1)
+                moreinfo$ = moreinfo$(p+1)
+                p = pos("," = moreinfo$)
+                if p <> 0 then
+                    pcust$ = moreInfo$(1,p-1)
+                    moreinfo$ = moreinfo$(p+1)
+                    ppass$ = moreinfo$
+                    uid!.setText(pfirm$ + pcust$)
+                    pwd!.setText(ppass$)
+                    bypassLogin = 1
+                fi
+            fi
+        fi
+        close(more, err=*next)
+        erase stbl("TEMP") + pfilename$, err = *next
+    fi
+else
+    if argc > 4 then
+        psn$ = argv(1)
+        sn!.setText(cvs(psn$,3))
+        pfirm$ = argv(2)
+        pcust$ = argv(3)
+        ppass$ = argv(4)
+        if len(pcust$) = 6 then
+            rem ' coming from GUI Addon we will add the ** user code
+            rem ' coming from Bcomm the user code will a/ready be included in pcust$ 
+            uid!.setText(pfirm$ + pcust$ + "**")
+        else
+            uid!.setText(pfirm$ + pcust$)
+        fi
+        pwd!.setText(ppass$)
+        bypassLogin = 1
+    else
+        psn$ = "No Serial Number sent"
+    fi
+fi
+
+eMsg$ = "loaded for (" + psn$ + ")", eSubject$ = "loaded"
+gosub sendTrackingMessage
+
+rem 'build the db url
+gosub buildDBURL
+
+rem ' this number is the number of days that the expiration date must be within
+rem ' if contract expires in more that expirationMaxLimit then block
+expirationMaxLimit = 120
+
+if bypassLogin then
+    gosub completeLogin
+else
+    uid!.focus()
+fi
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+gosub closeFiles
+goto gb__eoj
+
+[Event Win=101 ID=106 Code=B <PUSH_BUTTON> (W101_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub completeLogin
+
+[Event Win=101 ID=107 Code=B <PUSH_BUTTON> (W101_C107_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' first 2 bytes are the language
+passdata$ = "EN"
+passdata$ = passdata$ + cvs(uid!.getText(), 3)
+
+login!.setVisible(0)
+
+call "forgotCreds.bbj", passdata$
+passdata$ = ""
+
+rem ' if len(passdata$) > 0 then
+rem '    cmd$ = System.getProperty("basis.BBjHome") + "/bin/bbj -c/mnt/data/basisaon/config.web forgotCreds.bbj - " + passdata$
+rem ' else
+rem '    cmd$ = System.getProperty("basis.BBjHome") + "/bin/bbj -c/mnt/data/basisaon/config.web forgotCreds.bbj"
+rem ' fi
+rem ' a = scall(cmd$)
+
+login!.setVisible(1)
+
+[Event Win=101 ID=110 Code=B <PUSH_BUTTON> (W101_C110_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub closeFiles
+goto gb__eoj
+
+[Event Win=102 ID=0 Code=X <WIN_CLOSE> (W102_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+gosub closeFiles
+goto gb__eoj
+
+[Event Win=102 ID=101 Code=f1 <GOT_FOCUS> (W102_C101_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=103 Code=f1 <GOT_FOCUS> (W102_C103_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=105 Code=f1 <GOT_FOCUS> (W102_C105_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=106 Code=B <PUSH_BUTTON> (W102_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+clearSearchBtnPushed:
+
+if clearSearchBtn!.getText() = "Clear" then
+    gosub clearForm
+else
+    gosub searchSerialNbr
+fi
+
+[Event Win=102 ID=107 Code=f1 <GOT_FOCUS> (W102_C107_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=108 Code=B <PUSH_BUTTON> (W102_C108_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub searchOpenInvoices
+
+[Event Win=102 ID=109 Code=f1 <GOT_FOCUS> (W102_C109_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=111 Code=f1 <GOT_FOCUS> (W102_C111_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=119 Code=f1 <GOT_FOCUS> (W102_C119_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' exitButton!.focus()
+
+[Event Win=102 ID=128 Code=f1 <GOT_FOCUS> (W102_C128_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=132 Code=f1 <GOT_FOCUS> (W102_C132_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=136 Code=f1 <GOT_FOCUS> (W102_C136_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=138 Code=f1 <GOT_FOCUS> (W102_C138_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=143 Code=f1 <GOT_FOCUS> (W102_C143_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=146 Code=B <PUSH_BUTTON> (W102_C146_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+gosub loadDetailsGrid
+snView!.setVisible(0)
+multiplesDetails!.setVisible(1)
+
+[Event Win=102 ID=151 Code=f1 <GOT_FOCUS> (W102_C151_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102 ID=152 Code=B <PUSH_BUTTON> (W102_C152_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+invoiceNumber!.setText(invoiceNbr$)
+invPONumber!.setText(cvs(po_number$, 3))
+invAmount!.setText(cvs(str(balance:"###,###,##0.00-"),3))
+
+snView!.setVisible(0)
+payment!.setVisible(1)
+
+[Event Win=102 ID=153 Code=B <PUSH_BUTTON> (W102_C153_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub validatePONumber
+
+renewButton!.setEnabled(0)
+
+if !validPO then
+    ponumber!.focus()
+    renewButton!.setEnabled(1)
+else
+    rem ' this process will create an invoice to renew the contract
+    rem ' the invoice will be delivered to the customer via the normal daily process
+    rem ' the dates will be rolled on the constract
+
+    rem ' step one - create the invoice -----------
+    gosub getOrderNumber
+    
+    gosub createOrder
+
+    rem ' invoiceNbr$ set in createOrder
+    balance = holdprice + tax
+
+
+    rem ' step two roll the contract dates---------
+    rem ' dates are rolled by the call to BSN.20 in the createOrder sub routine
+
+    eMsg$ = "invoice created (" + invoiceNbr$ + ")", eSubject$ = "invoice"
+    gosub sendTrackingMessage
+
+    openRenewInvoice = 1
+    openRenewInvoice$ = "There is an open invoice number, " + chr(34) +  invoiceNbr$ + chr(34) +  ", with the purchase order number, " + chr(34) +  po_number$ + chr(34)
+    if canadianCust then
+        openRenewInvoice$ = openRenewInvoice$ + " and a balance of " + cvs(str(balance:"###,###,##0.00-"),3) + " CAD."
+    else
+        openRenewInvoice$ = openRenewInvoice$ + " and a balance of " + cvs(str(balance:"###,###,##0.00-"),3) + "."
+    fi
+    autoRenew!.setText(openRenewInvoice$)
+
+    if firm_id$ = "01" then 
+        instructions$ = "Clicking the Pay Invoice button will allow you to pay this invoice using a credit card."
+    else
+        instructions$ = "Thank you for renewing your expiring product."
+    fi
+    instructions!.setText(instructions$)
+
+    renewButton!.setVisible(0)
+    ponumber!.setVisible(0)
+    poLabel!.setVisible(0)
+    rem ' emailAddress!.setLocation(501,440)
+    emailAddress!.setVisible(0)
+    rem ' emailLabel!.setLocation(406,445)
+    emailLabel!.setVisible(0)
+
+    if firm_id$ = "01" then
+        payButton!.setVisible(1)
+        payButton!.focus()
+    else
+        exitButton!.focus()
+    fi
+
+    gosub sendLicAuthForm
+
+    msg$ = "Invoice number " + invoiceNbr$ + " in the amount of " + cvs(str(balance:"###,##0.00"), 3) + " has been created in the system and will be processed by the standard processes. "
+    msg$ = msg$ + "The expiration date on the contract has been rolled to " + expDate$ + ". A License Authorization Form was emailed to: " + sal_to$
+    resp = msgbox(msg$, 0, "Renew Invoice Created")
+
+fi
+
+return
+
+[Event Win=102 ID=199 Code=B <PUSH_BUTTON> (W102_C199_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub validatePONumber
+if !validPO then
+    ponumber!.focus()
+else
+    gosub validateEmailAddress
+    if !validEmailAddress then
+        emailAddress!.focus()
+    else
+        rem ' this process will change the po on the existing invoice to a customer supplied invoice
+        rem ' reprint and sign the invoice, putting a copy in the archives and emailing it to the customer
+        rem ' finally it will roll the dates on the contracts referenced by the invoice
+        gosub updatePONumber
+    fi
+fi
+
+[Event Win=102 ID=200 Code=B <PUSH_BUTTON> (W102_C200_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub closeFiles
+goto gb__eoj
+
+[Event Win=102.301 ID=101 Code=f1 <GOT_FOCUS> (W102_301_C101_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+exitButton!.focus()
+
+[Event Win=102.301 ID=103 Code=f1 <GOT_FOCUS> (W102_301_C103_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+exitButton!.focus()
+
+[Event Win=102.301 ID=105 Code=f1 <GOT_FOCUS> (W102_301_C105_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+exitButton!.focus()
+
+[Event Win=102.301 ID=107 Code=f1 <GOT_FOCUS> (W102_301_C107_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+exitButton!.focus()
+
+[Event Win=102.301 ID=124 Code=f1 <GOT_FOCUS> (W102_301_C124_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+exitButton!.focus()
+
+[Event Win=102.301 ID=126 Code=f1 <GOT_FOCUS> (W102_301_C126_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+exitButton!.focus()
+
+[Event Win=103 ID=103 Code=B <PUSH_BUTTON> (W103_C103_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+multiplesDetails!.setVisible(0)
+snView!.setVisible(1)
+
+[Event Win=104 ID=200 Code=B <PUSH_BUTTON> (W104_C200_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+submitButton!.setEnabled(0)
+cancelButton!.setEnabled(0)
+
+payment!.setCursor(3); rem ' wait
+gosub payInvoice
+payment!.setCursor(0); rem ' arrow
+
+if completedCreditCardProcess then
+    updateButton!.setVisible(0)
+    ponumber!.setVisible(0)
+    poLabel!.setVisible(0)
+    rem ' snView!.setSize(790,480)
+    emailLabel!.setVisible(0)
+    emailAddress!.setVisible(0)
+    payButton!.setVisible(0)
+    
+    payment!.setVisible(0)
+    submitButton!.setEnabled(1)
+    cancelButton!.setEnabled(1)
+
+    snView!.setVisible(1)
+      
+    exitButton!.focus()
+else
+    submitButton!.setEnabled(1)
+    cancelButton!.setEnabled(1)
+fi
+
+[Event Win=104 ID=201 Code=B <PUSH_BUTTON> (W104_C201_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+payment!.setVisible(0)
+snView!.setVisible(1)
+
+[Event Win=105 ID=101 Code=N3:107 <GRID_DCLICK> (W105_C101_GRID_MOUSE_DOUBLE_CLICK)]
+rem ' Notify Event - Grid - Grid Double Clicked (3)
+rem ' gb__event! = cast(BBjGridDoubleClickEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Row is: gb__event!.getRow()
+rem ' Column is: gb__event!.getColumn()
+rem ' Point clicked: gb__event!.getXLocationInCell(), 
+rem '     gb__event!.getYLocationInCell()
+rem ' Cell boundaries: gb__event!.getCellBounds()
+rem ' Meta keys: gb__event!.isShiftDown(), gb__event!.isControlDown()
+
+gb__event! = cast(BBjGridDoubleClickEvent, sysgui!.getLastEvent())
+row = gb__event!.getRow()
+col = gb__event!.getColumn()
+
+rem ' xresp = msgbox("Row: " + str(row) + " Col: " + str(col), 0, "debug")
+
+rem ' serial number is in column 0'
+if col <> 0 then col = 0
+
+selectedSN$ = foundSerialNumbers!.getCellText(row, col)
+
+rem ' xresp = msgbox("Row: " + str(row) + " Col: " + str(col) + " Text: " + selectedSN$, 0, "debug")
+
+findSN!.setVisible(0)
+snView!.setVisible(1)
+
+serialNumber!.setText(selectedSN$)
+
+gosub clearSearchBtnPushed
+
+[Event Win=105 ID=102 Code=N2:19 <LIST_SELECT> (W105_C102_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set wait cursor'
+findSN!.setCursor(3)
+
+gosub clearSearchBtnPushed
+
+foundSerialNumbers!.setSelectedCell(0, 0)
+foundSerialNumbers!.setSelectedCell(-1, -1)
+
+rem ' reset wait cursor'
+findSN!.setCursor(0)
+
+[Event Win=105 ID=104 Code=B <PUSH_BUTTON> (W105_C104_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+selectedSerialNbrCell! = foundSerialNumbers!.getSelectedCell()
+row = selectedSerialNbrCell!.getRow()
+
+if row < 0 then
+    rem ' a cell has not been selected'
+    resp = msgbox("Please select a serial number cell in the grid.", 0, "Select a Serial Number")
+else
+    selectedSN$ = foundSerialNumbers!.getCellText(row, 0)
+
+    rem ' xresp = msgbox("Row: " + str(row) + " Col: " + str(col) + " Text: " + selectedSN$, 0, "debug")
+    
+    findSN!.setVisible(0)
+    snView!.setVisible(1)
+
+    serialNumber!.setText(selectedSN$)
+
+    gosub clearSearchBtnPushed
+fi
+
+[Event Win=105 ID=106 Code=B <PUSH_BUTTON> (W105_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+findSN!.setVisible(0)
+snView!.setVisible(1)
+
+serialNumber!.focus()
+
+[Event Win=106 ID=101 Code=N3:107 <GRID_DCLICK> (W106_C101_GRID_MOUSE_DOUBLE_CLICK)]
+rem ' Notify Event - Grid - Grid Double Clicked (3)
+rem ' gb__event! = cast(BBjGridDoubleClickEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Row is: gb__event!.getRow()
+rem ' Column is: gb__event!.getColumn()
+rem ' Point clicked: gb__event!.getXLocationInCell(), 
+rem '     gb__event!.getYLocationInCell()
+rem ' Cell boundaries: gb__event!.getCellBounds()
+rem ' Meta keys: gb__event!.isShiftDown(), gb__event!.isControlDown()
+
+gb__event! = cast(BBjGridDoubleClickEvent, sysgui!.getLastEvent())
+row = gb__event!.getRow()
+col = gb__event!.getColumn()
+
+rem ' xresp = msgbox("Row: " + str(row) + " Col: " + str(col), 0, "debug")
+
+rem ' serial number is in column 5'
+if col <> 5 then col = 5
+
+selectedSN$ = foundRenewInvoices!.getCellText(row, col)
+if len(cvs(selectedSN$,3)) > 9 then
+    selectedSN$ = selectedSN$(1,9)
+fi
+
+rem ' xresp = msgbox("Row: " + str(row) + " Col: " + str(col) + " Text: " + selectedSN$, 0, "debug")
+
+findInvoice!.setVisible(0)
+snView!.setVisible(1)
+
+serialNumber!.setText(selectedSN$)
+
+gosub clearSearchBtnPushed
+
+[Event Win=106 ID=104 Code=B <PUSH_BUTTON> (W106_C104_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+selectedInvoiceNbrCell! = foundRenewInvoices!.getSelectedCell()
+row = selectedInvoiceNbrCell!.getRow()
+
+if row < 0 then
+    rem ' a cell has not been selected'
+    resp = msgbox("Please select an invoice in the grid.", 0, "Select an Invoice")
+else
+    selectedSerial$ = cvs(foundRenewInvoices!.getCellText(row, 5),3)
+    
+    if len(cvs(selectedSerial$,3)) > 9 then
+        selectedSerial$ = selectedSerial$(1,9)
+    fi
+
+    rem ' xresp = msgbox("Row: " + str(row) + " Col: " + str(col) + " Text: " + selectedSN$, 0, "debug")
+    
+    findInvoice!.setVisible(0)
+    snView!.setVisible(1)
+
+    serialNumber!.setText(selectedSerial$)
+
+    gosub clearSearchBtnPushed
+fi
+
+[Event Win=106 ID=106 Code=B <PUSH_BUTTON> (W106_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+findInvoice!.setVisible(0)
+snView!.setVisible(1)
+
+
+[Function (applyPayment)]
+rem ' -----------------------------------------------------------------
+rem ' applyPayment
+rem ' -----------------------------------------------------------------
+
+applyPayment:
+
+rem ' only paying one invoice
+
+if are01=0 then call "ec_open::ARE01"
+if are11=0 then call "ec_open::ARE11"
+
+rem ' write header record ARE01
+dim are01$:fattr(are01$)
+
+are01.firm_id$ = firm_id$
+are01.customer_nbr$ = cust_num$
+
+today_jul = jul(0, 0, 0)
+are01.receipt_date$ = fndate$(today_jul)
+
+are01.cash_rec_cd$ = "WF "
+
+are01.cash_or_chk$ = "C"
+are01.ar_check_nbr$ = "BC" + date(today_jul:"%M/%D")
+are01.RESERVED_STR_3$ = fill(4)
+are01.payment_amt = balance
+
+are01$ = field(are01$)
+writerecord(are01,key=are01$(1,25))are01$
+
+rem ' write detail record ARE11
+
+dim are11$:fattr(are11$)
+
+are11.firm_id$ = firm_id$
+are11.customer_nbr$ = cust_num$
+
+are11.receipt_date$ = are01.receipt_date$
+
+are11.cash_rec_cd$ = "WF "
+
+are11.ar_check_nbr$ = are01.ar_check_nbr$
+are11.ar_inv_nbr$ = invoiceNumber$
+
+are11.apply_amt = are01.payment_amt
+
+are11.discount_amt = 0
+
+are11$ = field(are11$)
+writerecord(are11,key=are11$(1,32))are11$
+
+close(are01,err=*next)
+are01 = 0
+close(are11,err=*next)
+are11 = 0
+
+return
+
+[Function (buildDBURL)]
+rem ' -----------------------------------------------------------------
+rem ' buildDBURL
+rem ' -----------------------------------------------------------------
+
+buildDBURL:
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+
+DECLARE File file!
+DECLARE FileInputStream fis!
+DECLARE BufferedInputStream bis!
+DECLARE Properties props!
+DECLARE StringBuffer sqlBuilder!
+
+rem ' locate the properties file
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+
+sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+ourDbUrl$ = sqlBuilder!.toString()
+
+rem ' xresp = msgbox(ourDbUrl$,0,"debug")
+
+return
+
+[Function (buildObjectReferences)]
+rem ' -----------------------------------------------------------------
+rem ' buildObjectReferences
+rem ' -----------------------------------------------------------------
+
+buildObjectReferences:
+
+use ::BasisPriceEngine.src::PriceElement
+use ::SerialNumber.src::SerialNumber
+use ::TransactionBuilder.src::TransactionBuilder
+use ::CustomerDiscount.src::CustomerDiscount
+
+declare TransactionBuilder tb!
+declare SerialNumber sn!
+declare CustomerDiscount custDisc!
+declare PriceElement pe!
+
+declare BBjAPI bbjapi!
+declare BBjSysGui sysgui!
+
+declare BBjTopLevelWindow login!
+declare BBjEditBox uid!
+declare BBjEditBox pwd!
+declare BBjEditBox sn!
+
+declare BBjTopLevelWindow snView!
+declare BBjEditBox serialNumber!
+declare BBjEditBox custName!
+declare BBjEditBox prod!
+declare BBjEditBox platform!
+declare BBjButton exitButton!
+declare BBjEditBox oslevel!
+declare BBjEditBox prodrev!
+declare BBjEditBox licensetype!
+declare BBjStaticText prodDesc!
+declare BBjStaticText platDesc!
+declare BBjStaticText oslevDesc!
+declare BBjStaticText prodrevDesc!
+declare BBjStaticText lictypeDesc!
+declare BBjEditBox annvir!
+declare BBjEditBox enduser!
+declare BBjStaticText virtualMSG!
+declare BBjStaticText userlabel!
+declare BBjEditBox users1!
+declare BBjStaticText user2label!
+declare BBjEditBox users2!
+declare BBjEditBox contract!
+declare BBjEditBox contracttype!
+declare BBjEditBox startdate!
+declare BBjEditBox expiredate!
+declare BBjEditBox renewdate!
+declare BBjEditBox contactemail!
+declare BBjStandardGrid features!
+declare BBjVector featuresload!
+declare BBjStandardGrid pricing!
+declare BBjVector loadprices!
+declare BBjCEdit autoRenew!
+declare BBjCEdit instructions!
+declare BBjStaticText poLabel!
+declare BBjEditBox ponumber!
+declare BBjButton renewButton!
+declare BBjButton updateButton!
+declare BBjButton payButton!
+declare BBjButton multipleContracts!
+declare BBjVector snVector!
+declare BBjStandardGrid features!
+declare BBjStandardGrid pricing!
+declare BBjStaticText emailLabel!
+declare BBjEditBox emailAddress!
+declare BBjButton clearSearchBtn!
+declare BBjButton invoiceSearchBtn!
+
+declare BBjChildWindow mainChildWindow!
+declare BBjChildWindow featuresChildWindow!
+
+declare BBjTopLevelWindow multiplesDetails!
+declare BBjStandardGrid detailsGrid!
+declare BBjButton detailsExitBtn!
+declare BBjVector detailsGridLoad!
+
+declare BBjTopLevelWindow payment!
+declare BBjEditBox invoiceNumber!
+declare BBjStaticText invoiceNumberLabel!
+declare BBjEditBox invPONumber!
+declare BBjStaticText invPOLabel!
+declare BBjEditBox invAmount!
+declare BBjStaticText invAmtLabel!
+declare BBjEditBox cardNumber!
+declare BBjStaticText cardNbrLabel!
+declare BBjEditBox nameOnCard!
+declare BBjStaticText nameOnCardLabel!
+declare BBjListButton cardType!
+declare BBjVector cardTypeList!
+declare BBjStaticText cardTypeLabel!
+declare BBjListButton expireMonth! 
+declare BBjVector expireMonthList!
+declare BBjListButton expireYear!
+declare BBjVector expireYearList!
+declare BBjStaticText expiresLabel!
+declare BBjEditBox ccAddress!
+declare BBjStaticText ccAddressLabel!
+declare BBjEditBox ccZipCode!
+declare BBjStaticText ccZipCodeLabel!
+declare BBjEditBox cvv2!
+declare BBjStaticText cvv2Label!
+declare BBjButton submitButton!
+declare BBjButton cancelButton!
+
+declare BBjTopLevelWindow findSN!
+declare BBjStandardGrid foundSerialNumbers!
+declare BBjGridCell selectedSerialNbrCell!
+declare BBjButton selectBtn!
+declare BBjButton searchExitBtn!
+declare BBjListButton orderby!
+declare BBjVector foundSerialNbrGridLoad!
+
+declare BBjTopLevelWindow findInvoice!
+declare BBjStandardGrid foundRenewInvoices!
+declare BBjGridCell selectedInvoiceNbrCell!
+declare BBjButton selectInvoiceBtn!
+declare BBjButton searchInvExitBtn!
+declare BBjVector foundInvoiceNbrGridLoad!
+
+declare BBjRecordSet orderRecordSet!
+declare BBjRecordData orderRecordData!
+
+declare BBjRecordSet searchResults!
+declare BBjRecordData searchLine!
+
+bbjapi! = BBjAPI()
+sysgui! = bbjapi!.getSysGui()
+
+rem ' login window
+login! = cast(BBjTopLevelWindow, sysgui!.getWindow("Login"))
+uid! = cast(BBjEditBox, login!.getControl("uid"))
+pwd! = cast(BBjEditBox, login!.getControl("pwd"))
+sn! = cast(BBjEditBox, login!.getControl("sn"))
+
+rem ' view sn window
+snView! = cast(BBjTopLevelWindow, sysgui!.getWindow("snView"))
+serialNumber! = cast(BBjEditBox, snView!.getControl("serialNumber"))
+custName! = cast(BBjEditBox, snView!.getControl("custName"))
+
+autoRenew! = cast(BBjCEdit, snView!.getControl("autoRenew"))
+instructions! = cast(BBjCEdit, snView!.getControl("instructions"))
+poLabel! = cast(BBjStaticText, snView!.getControl("poLabel"))
+ponumber! = cast(BBjEditBox, snView!.getControl("ponumber"))
+
+renewButton! = cast(BBjButton, snView!.getControl("renewButton"))
+updateButton! = cast(BBjButton, snView!.getControl("updateButton"))
+payButton! = cast(BBjButton, snView!.getControl("payButton"))
+multipleContracts! = cast(BBjButton, snView!.getControl("multipleContracts"))
+clearSearchBtn! = cast(BBjButton, snView!.getControl("clearSearchBtn"))
+invoiceSearchBtn! = cast(BBjButton, snView!.getControl("invoiceSearchBtn"))
+
+emailLabel! = cast(BBjStaticText, snView!.getControl("emailLabel"))
+emailAddress! = cast(BBjEditBox, snView!.getControl("emailAddress"))
+
+prod! = cast(BBjEditBox, snView!.getControl("prod"))
+platform! = cast(BBjEditBox, snView!.getControl("platform"))
+exitButton! = cast(BBjButton, snView!.getControl("exitButton"))
+oslevel! = cast(BBjEditBox, snView!.getControl("oslevel"))
+prodrev! = cast(BBjEditBox, snView!.getControl("prodrev"))
+licensetype! = cast(BBjEditBox, snView!.getControl("licensetype"))
+
+prodDesc! = cast(BBjStaticText, snView!.getControl("prodDesc"))
+platDesc! = cast(BBjStaticText, snView!.getControl("platDesc"))
+oslevDesc! = cast(BBjStaticText, snView!.getControl("oslevDesc"))
+prodrevDesc! = cast(BBjStaticText, snView!.getControl("prodrevDesc"))
+lictypeDesc! = cast(BBjStaticText, snView!.getControl("lictypeDesc"))
+
+contract! = cast(BBjEditBox, snView!.getControl("contract"))
+startdate! = cast(BBjEditBox, snView!.getControl("startdate"))
+renewdate! = cast(BBjEditBox, snView!.getControl("renewdate"))
+contactemail! = cast(BBjEditBox, snView!.getControl("contactemail"))
+
+
+rem ' child window mainChildWindow
+mainChildWindow! = snView!.getChildWindow("mainChildWindow")
+annvir! = cast(BBjEditBox, mainChildWindow!.getControl("annvir"))
+userlabel! = cast(BBjStaticText, mainChildWindow!.getControl("userlabel"))
+users1! = cast(BBjEditBox, mainChildWindow!.getControl("users1"))
+user2label! = cast(BBjStaticText, mainChildWindow!.getControl("user2label"))
+users2! = cast(BBjEditBox, mainChildWindow!.getControl("users2"))
+virtualMSG! = cast(BBjStaticText, mainChildWindow!.getControl("virtualMSG"))
+enduser! = cast(BBjEditBox, mainChildWindow!.getControl("enduser"))
+contracttype! = cast(BBjEditBox, mainChildWindow!.getControl("contracttype"))
+expiredate! = cast(BBjEditBox, mainChildWindow!.getControl("expiredate"))
+pricing! = cast(BBjStandardGrid, mainChildWindow!.getControl("pricing"))
+loadprices! = bbjapi!.makeVector()
+
+
+rem ' child window featuresChildWindow
+featuresChildWindow! = snView!.getChildWindow("featuresChildWindow")
+features! = cast(BBjStandardGrid, featuresChildWindow!.getControl("features"))
+features!.setColumnAlignment(0,features!.GRID_ALIGN_LEFT)
+features!.setColumnHeaderCellAlignment(0,features!.GRID_ALIGN_LEFT)
+featuresload! = bbjapi!.makeVector()
+
+snVector! = bbjapi!.makeVector()
+
+multiplesDetails! = cast(BBjTopLevelWindow, sysgui!.getWindow("multiplesDetails"))
+detailsGrid! = cast(BBjStandardGrid, multiplesDetails!.getControl("detailsGrid"))
+detailsExitBtn! = cast(BBjButton, multiplesDetails!.getControl("detailsExitBtn"))
+detailsGridLoad! = bbjapi!.makeVector()
+
+payment! = cast(BBjTopLevelWindow, sysgui!.getWindow("payment"))
+invoiceNumber! = cast(BBjEditBox, payment!.getControl("invoiceNumber"))
+invoiceNumberLabel! = cast(BBjStaticText, payment!.getControl("invoiceNumberLabel"))
+invPONumber! = cast(BBjEditBox, payment!.getControl("invPONumber"))
+invPOLabel! = cast(BBjStaticText, payment!.getControl("invPOLabel"))
+invAmount! = cast(BBjEditBox, payment!.getControl("invAmount"))
+invAmtLabel! = cast(BBjStaticText, payment!.getControl("invAmtLabel"))
+cardNumber! = cast(BBjEditBox, payment!.getControl("cardNumber"))
+cardNbrLabel! = cast(BBjStaticText, payment!.getControl("cardNbrLabel"))
+nameOnCard! = cast(BBjEditBox, payment!.getControl("nameOnCard"))
+nameOnCardLabel! = cast(BBjStaticText, payment!.getControl("nameOnCardLabel"))
+
+cardType! = cast(BBjListButton, payment!.getControl("cardType"))
+cardTypeList! = bbjapi!.makeVector()
+cardTypeList!.addItem("Visa")
+cardTypeList!.addItem("Mastercard")
+cardTypeList!.addItem("American Expiress")
+cardType!.insertItems(0, cardTypeList!)
+cardTypeLabel! = cast(BBjStaticText, payment!.getControl("cardTypeLabel"))
+
+expireMonth! = cast(BBjListButton, payment!.getControl("expireMonth"))
+expireMonthList! = bbjapi!.makeVector()
+year = num(date(0:"%Yl"))
+for temp = 1 TO 12
+    temp$ = date(jul(year, temp, 1):"%Ml")
+    expireMonthList!.addItem(temp$)
+next temp 
+expireMonth!.insertItems(0, expireMonthList!)
+
+expireYear! = cast(BBjListButton, payment!.getControl("expireYear"))
+expireYearList! = bbjapi!.makeVector()
+for temp = year to year + 10
+    temp$ = str(temp)
+    expireYearList!.addItem(temp$)
+next temp
+expireYear!.insertItems(0, expireYearList!)
+
+expiresLabel! = cast(BBjStaticText, payment!.getControl("expiresLabel"))
+ccAddress! = cast(BBjEditBox, payment!.getControl("ccAddress"))
+ccAddressLabel! = cast(BBjStaticText, payment!.getControl("ccAddressLabel"))
+ccZipCode! = cast(BBjEditBox, payment!.getControl("ccZipCode"))
+ccZipCodeLabel! = cast(BBjStaticText, payment!.getControl("ccZipCodeLabel"))
+cvv2! = cast(BBjEditBox, payment!.getControl("cvv2"))
+cvv2Label! = cast(BBjStaticText, payment!.getControl("cvv2Label"))
+submitButton! = cast(BBjButton, payment!.getControl("submitButton"))
+cancelButton! = cast(BBjButton, payment!.getControl("cancelButton"))
+
+findSN! = cast(BBjTopLevelWindow, sysgui!.getWindow("findSN"))
+foundSerialNumbers! = cast(BBjStandardGrid, findSN!.getControl("foundSerialNumbers"))
+foundSerialNumbers!.setColumnHeaderCellAlignment(3, GRID_ALIGN_LEFT)
+foundSerialNumbers!.setColumnAlignment(3, GRID_ALIGN_LEFT)
+selectBtn! = cast(BBjButton, findSN!.getControl("selectBtn"))
+searchExitBtn! = cast(BBjButton, findSN!.getControl("searchExitBtn"))
+orderby! = cast(BBjListButton, findSN!.getControl("orderby"))
+orderby!.selectIndex(0)
+foundSerialNbrGridLoad! = bbjapi!.makeVector()
+
+findInvoice! = cast(BBjTopLevelWindow, sysgui!.getWindow("findInvoice"))
+foundRenewInvoices! = cast(BBjStandardGrid, findInvoice!.getControl("foundRenewInvoices"))
+selectInvoiceBtn! = cast(BBjButton, findInvoice!.getControl("selectInvoiceBtn"))
+searchInvExitBtn! = cast(BBjButton, findInvoice!.getControl("searchInvExitBtn"))
+foundInvoiceNbrGridLoad! = bbjapi!.makeVector()
+
+
+
+return
+
+[Function (calcDaysExpired)]
+rem ' -----------------------------------------------------------------
+rem ' calcDaysExpired
+rem ' -----------------------------------------------------------------
+
+calcDaysExpired:
+
+todayJul = jul(0, 0, 0)
+
+rem ' neegative daysExpired indicates the contract is expired, 
+rem ' 0 days expired means today is the expiration date.
+rem ' positive days expired means that the contract has not expired yet
+daysExpired = expDateJul - todayJul
+
+return
+
+[Function (calculatePrice)]
+rem ' -----------------------------------------------------------------
+rem ' calculatePrice
+rem ' -----------------------------------------------------------------
+
+calculatePrice:
+
+rem ' get a TransactionBuilder
+tb! = new TransactionBuilder(canadianCust)
+
+sn! = new SerialNumber(cvs(sn$, 3))
+custDisc! = new CustomerDiscount(firm_id$, cust_num$)
+stdDisc = custDisc!.getStandardDiscount()
+samDisc = custDisc!.getSamDiscount()
+
+if smc01.contr_type$ = "SM1" then
+ priceElements! = tb!.calcAnnualSam(sn!)
+else
+ if smc01.contr_type$ = "RN1" then
+    priceElements! = tb!.calcAnnualRental(sn!)
+ else
+    if smc01.contr_type$ = "DV1" then
+       priceElements! = tb!.calcAnnualKitRenew(sn!)
+    fi
+ fi
+fi
+if priceElements!.size() > 0 then
+    for x = 0 to priceElements!.size() - 1
+        pe! = cast(PriceElement, priceElements!.getItem(x))
+        custDisc!.calculateDiscount(pe!)
+    next x
+endif
+
+price = tb!.sumDiscountedPrice(priceElements!)
+listprice = tb!.sumListPrice(priceElements!)
+
+
+return
+
+[Function (checkForOpenAutoGeneratedRenewOrder)]
+rem ' -----------------------------------------------------------------
+rem ' checkForOpenAutoGeneratedRenewOrder
+rem ' -----------------------------------------------------------------
+
+checkForOpenAutoGeneratedRenewOrder:
+
+openRenewOrder = 0
+openRenewOrder$ = ""
+
+sql$ = "SELECT t2.ORDER_NUMBER, t2.SERIAL_NBR  FROM ARE03 t1 " 
+sql$ = sql$ + "INNER JOIN ARE83 t2 ON t1.ORDER_NUMBER = t2.ORDER_NUMBER "
+sql$ = sql$ + "WHERE (AR_PO_NUMBER = 'SAM Renew' OR AR_PO_NUMBER = 'SAM Roll' OR AR_PO_NUMBER = 'DVK Renew' OR AR_PO_NUMBER = 'DVK Roll' "
+sql$ = sql$ + "OR AR_PO_NUMBER = 'RNT Renew' OR AR_PO_NUMBER = 'RNT Roll' ) and t2.SERIAL_NBR = '" + cvs(sn$,3) + "'"
+
+orderRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+if orderRecordSet!.isEmpty() then
+    openRenewOrder = 0
+    return
+else
+    orderRecordSet!.first()
+    orderRecordData! = orderRecordSet!.getCurrentRecordData()
+    orderNbr$ = orderRecordData!.getFieldValue("ORDER_NUMBER")
+    
+    openRenewOrder$ = "There is an auto generated open order in the order entry system, number " + chr(34) + orderNbr$ + chr(34) + ". The invoice will be delivered later today."     
+    openRenewOrder = 1
+    snVector! =  bbjapi!.makeVector()
+    
+fi
+
+orderRecordSet!.close()
+
+
+return
+
+[Function (checkForOpenRenewInvoice)]
+rem ' -----------------------------------------------------------------
+rem ' checkForOpenRenewInvoice
+rem ' -----------------------------------------------------------------
+
+checkForOpenRenewInvoice:
+
+rem ' auto generated renew invoices open for this serial number
+
+openRenewInvoice = 0
+openRenewInvoice$ = ""
+
+DECLARE BBjRecordSet invoiceRecordSet!
+DECLARE BBjRecordData invoiceRecordData!
+
+rem ' interested in invoices in the last 95 days
+targetdatejul = jul(0, 0, 0) - 95
+targetdate$ = date(targetdatejul:"%Y-%Mz-%Dz") 
+if smc01.contr_type$ = "SM1" then
+    po$ = "SAM Renew"
+else
+    if smc01.contr_type$ = "DV1" then
+        po$ = "DVK Renew"
+    else
+        po$ = "RNT Renew"
+    fi
+fi
+po_number$ = po$
+
+sql$ = "SELECT * FROM ART83 WHERE AR_INV_NBR IN "
+sql$ = sql$ + "(SELECT AR_INV_NBR FROM ART03 WHERE FIRM_ID = '" + firm_Id$ + "' AND  CUSTOMER_NBR = '" + cust_num$ + "' "
+sql$ = sql$ + "AND AR_PO_NUMBER = '" + po$ + "' AND INVOICE_DATE >= '" + targetdate$ + "') "
+sql$ = sql$ + "AND SERIAL_NBR = '" + cvs(sn$,3) + "'"
+
+invoiceRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+if invoiceRecordSet!.isEmpty() then
+    openRenewInvoice$ = "There are no open auto generated renew invoices for this serial number."
+
+    rem ' check for multiple serial numbers on the contract
+    sql$ = "SELECT * FROM SNM01 WHERE FIRM_ID = '" + FIRM_ID$ + "' AND CUSTOMER_NBR = '" + cust_num$ + "' "
+    sql$ = sql$ + "AND CONTRACT = '" + smc01.contract$ + "'"
+
+    invoiceRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+    snCount = 0
+    snVector! =  bbjapi!.makeVector()
+    if invoiceRecordSet!.isEmpty() 
+        rem ' do nothing
+    else
+        invoiceRecordSet!.first()
+        while 1
+            invoiceRecordData! = invoiceRecordSet!.getCurrentRecordData()
+            lineSerNbr$ = invoiceRecordData!.getFieldValue("SERIAL_NBR")
+            snVector!.addItem(lineSerNbr$)
+            invoiceRecordSet!.next(err=*break)
+        wend
+        snCount =  snVector!.size()
+        invoiceRecordSet!.close()
+    fi
+
+else
+    invoiceRecordSet!.first()
+    invoiceRecordData! = invoiceRecordSet!.getCurrentRecordData()
+    invoiceNbr$ = invoiceRecordData!.getFieldValue("AR_INV_NBR") 
+    invoiceRecordSet!.close()
+
+    rem ' check for multiple serial numbers on the invoice
+    sql$ = "SELECT * FROM ART83 WHERE FIRM_ID = '" + FIRM_ID$ + "' AND AR_TYPE = '  ' AND CUSTOMER_NBR = '" + cust_num$ + "' "
+    sql$ = sql$ + "AND AR_INV_NBR = '" + invoiceNbr$ + "'"
+
+    invoiceRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+    
+    snCount = 0
+    snVector! =  bbjapi!.makeVector()
+    if invoiceRecordSet!.isEmpty() 
+        rem ' do nothing
+    else
+        invoiceRecordSet!.first()
+        while 1
+            invoiceRecordData! = invoiceRecordSet!.getCurrentRecordData()
+            lineSerNbr$ = invoiceRecordData!.getFieldValue("SERIAL_NBR")
+            snVector!.addItem(lineSerNbr$)
+            invoiceRecordSet!.next(err=*break)
+        wend
+        snCount =  snVector!.size()
+        invoiceRecordSet!.close()
+    fi
+
+    rem ' get the balance of the invoice
+    sql$ = "SELECT * FROM ART01 WHERE FIRM_ID = '" + FIRM_ID$ + "' AND AR_TYPE = '  ' AND CUSTOMER_NBR = '" + cust_num$ + "' "
+    sql$ = sql$ + "AND AR_INV_NBR = '" + invoiceNbr$ + "'"
+
+    invoiceRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+    if invoiceRecordSet!.isEmpty() then
+        openRenewInvoice$ = "There are no open auto generated renewal invoices for this serial number."
+
+        rem ' check for mulitple serial numbers on the invoice
+
+    else
+        invoiceRecordSet!.first()
+        invoiceRecordData! = invoiceRecordSet!.getCurrentRecordData()
+        balance = num(invoiceRecordData!.getFieldValue("INVOICE_AMT"))
+        rem ' convert to Canadian Dollars if Canadian customer
+        if canadianCust then
+              read record(art03, key = firm_id$ + "  " + cust_num$ + invoiceNbr$ + "000")art03$
+              convertKey$ = firm_id$ + cust_num$ + art03.invoice_date$ + art03.order_number$ 
+              found = 0
+              read record(art03_canada, key = convertKey$, dom = *next)art03_canada$; found = 1
+              if found then
+                    dim canadian_exch$:fattr(canadian_exch$)
+                    canadian_exch.ratedate$ = art03_canada.ratedate$
+                    canadian_exch.sequence_nbr$ = art03_canada.sequence_nbr$
+                    canadian_exch.to_us_doll = art03_canada.to_us_doll
+                    canadian_exch.to_cana_doll = art03_canada.to_cana_doll
+                    amountin = balance, amountout = 0
+                    call "canDollConversion", canadian_exch$, 0, amountin, amountout
+                    balance = amountout, amountout = 0
+              fi
+        fi
+        invoiceRecordSet!.close()
+
+        sql$ = "SELECT * FROM ART11 WHERE FIRM_ID = '" + FIRM_ID$ + "' AND AR_TYPE = '  ' AND CUSTOMER_NBR = '" + cust_num$ + "' "
+        sql$ = sql$ + "AND AR_INV_NBR = '" + invoiceNbr$ + "'"
+
+        invoiceRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+        
+        if invoiceRecordSet!.isEmpty() then
+
+            openRenewInvoice = 1
+            openRenewInvoice$ = "There is an open invoice number, " + chr(34) +  invoiceNbr$ + chr(34) +  ", with the purchase order number, " + chr(34) +  po$ + chr(34)
+            if canadianCust then
+                openRenewInvoice$ = openRenewInvoice$ + " and a balance of " + cvs(str(balance:"###,###,##0.00-"),3) + " CAD."
+            else
+                openRenewInvoice$ = openRenewInvoice$ + " and a balance of " + cvs(str(balance:"###,###,##0.00-"),3) + "."
+            fi
+        else
+            invoiceRecordSet!.first()
+            while 1
+
+                invoiceRecordData! = invoiceRecordSet!.getCurrentRecordData()
+                transAmt = num(invoiceRecordData!.getFieldValue("TRANS_AMT"))
+                if canadianCust then
+                    amountin = transAmt, amountout = 0
+                    call "canDollConversion", canadian_exch$, 0, amountin, amountout
+                    transAmt = amountout, amountout = 0
+                fi
+                balance = balance + transAmt
+                invoiceRecordSet!.next(err=*break)
+            wend
+          
+            if balance = 0 then
+                openRenewInvoice$ = "There are no open auto generated renewal invoices for this serial number."
+            else
+                openRenewInvoice = 1
+                openRenewInvoice$ = "There is an open invoice number, " + chr(34) + invoiceNbr$ + chr(34) + ", with the purchase order number, " + chr(34) + po$ + chr(34)
+                if canadianCust then
+                    openRenewInvoice$ = openRenewInvoice$ + " and a balance of " + cvs(str(balance:"###,###,##0.00-"),3) + " CAD."
+                else
+                    openRenewInvoice$ = openRenewInvoice$ + " and a balance of " + cvs(str(balance:"###,###,##0.00-"),3) + "."
+                fi
+            fi
+        fi  
+  
+        if snVector!.size() > 1 then
+            openRenewInvoice$ = openRenewInvoice$ + " There are " + str(snVector!.size()) + " serial numbers being renewed on this invoice (" 
+            for x = 0 to snVector!.size() - 1
+                serNbr$ = cast(BBjString,snVector!.getItem(x))
+                openRenewInvoice$ = openRenewInvoice$ + cvs(serNbr$,3) + ", "
+            next x
+            rem ' the quote space at the end
+            openRenewInvoice$ = openRenewInvoice$(1, len(openRenewInvoice$) - 2) + ") Click the Details button for details on these serial numbers."
+        fi
+    fi
+fi
+
+return
+
+[Function (clearForm)]
+rem ' -----------------------------------------------------------------
+rem ' clearForm
+rem ' -----------------------------------------------------------------
+
+clearForm:
+
+clearSearchBtn!.setText("Search")
+clearSearchBtn!.setShortCue("Click to begin the search by serial number.")
+
+serialNumber!.setText("")
+serialNumber!.setShortCue("Enter a full or partial serial number (min 3 characters.)")
+serialNumber!.setPlaceholder("Serial Nbr")
+serialNumber!.setEditable(1)
+
+enduser!.setText("")
+contracttype!.setText("")
+
+users1!.setText("")
+users2!.setText("")
+annvir!.setText("")
+
+prod!.setText("")
+platform!.setText("")
+oslevel!.setText("")
+prodrev!.setText("")
+licenseType!.setText("")
+
+prodDesc!.setText("")
+platDesc!.setText("")
+oslevDesc!.setText("")
+prodrevDesc!.setText("")
+lictypeDesc!.setText("")
+
+virtualMSG!.setVisible(0)
+ 
+startdate!.setText("")
+expiredate!.setText("")
+renewdate!.setText("")
+contactemail!.setText("")
+
+autoRenew!.setText("")
+instructions!.setText("")
+
+ponumber!.setText("")
+ponumber!.setVisible(0)
+poLabel!.setVisible(0)
+
+rem ' emailAddress!.setText("")
+emailAddress!.setVisible(0)
+emailLabel!.setVisible(0)
+
+renewButton!.setVisible(0)
+updateButton!.setVisible(0)
+payBUtton!.setVisible(0)
+
+pricing!.clearText()
+pricing!.setSelectedCell(0,0)
+
+features!.clearText()
+features!.setSelectedCell(0,0)
+
+detailsGrid!.clearText()
+detailsGrid!.setSelectedCell(0,0)
+
+foundSerialNumbers!.clearText()
+foundSerialNumbers!.setSelectedCell(0,0)
+
+foundRenewInvoices!.clearText()
+foundRenewInvoices!.setSelectedCell(0,0)
+
+
+rem ' payment window'
+invoiceNumber!.setText("")
+invPONumber!.setText("")
+invAmount!.setText("")
+
+datesRolled = 0
+completedCreditCardProcess = 0
+
+return
+
+[Function (closeFiles)]
+rem ' -----------------------------------------------------------------
+rem ' closeFiles
+rem ' -----------------------------------------------------------------
+
+closeFiles:
+
+close(snm01,err=*next)
+close(snm02,err=*next)
+close(snt01,err=*next)
+close(snt03,err=*next)
+close(snt04,err=*next)
+close(smc01,err=*next)
+close(snmel,err=*next)
+close(snmeu,err=*next)
+close(csm03,err=*next)
+
+close(arm01,err=*next)
+close(arm02,err=*next)
+close(ecm01,err=*next)
+
+close(csm01,err=*next)
+close(csm02,err=*next)
+close(csm03,err=*next)
+close(csm04,err=*next)
+close(csm05,err=*next)
+
+close(art01,err=*next)
+close(art03,err=*next)
+close(art13,err=*next)
+close(art83,err=*next)
+
+close(ars10N,err=*next)
+
+close(arm02_canada,err=*next)
+close(canadian_exch,err=*next)
+close(art03_canada,err=*next)
+
+close(are03,err=*next)
+close(are04,err=*next)
+close(are07,err=*next)
+close(are43,err=*next)
+close(are13,err=*next)
+close(are73,err=*next)
+close(are83,err=*next)
+close(ivm01,err=*next)
+close(ivs01,err=*next)
+close(arm10e,err=*next)
+close(arm10b,err=*next)
+
+close(dir_rnw_po_log,err=*next)
+
+return
+
+[Function (completeLogin)]
+rem ' -----------------------------------------------------------------
+rem ' completeLogin
+rem ' -----------------------------------------------------------------
+
+completeLogin:
+
+user$ = uid!.getText()
+pwd$ = pwd!.getText()
+sn$ = sn!.getText()
+
+rem ' validate serial number
+rem ' accepting either full length serial Nbr or no serial Nbr'
+if len(sn$) <> 9 and len(sn$) <> 0 then
+    resp = msgbox("Invalid Length Serial Number",0,"Invalid SN")
+    sn!.focus()
+    return
+else
+    if len(sn$) = 9 then
+        sn$ = sn$ + fill(20," "), sn$ = sn$(1,20)
+        found = 0
+        read record(snm01, key=sn$, dom=*next)snm01$; found = 1
+        if !found then
+            resp = msgbox("Invalid Serial Number",0,"Invalid SN")
+            sn!.focus()
+            return
+        fi
+    else
+        rem ' no serial number entered, zero length
+        rem ' no nothing, proceed'
+    fi
+fi
+
+
+rem ' validate user id
+x = len(user$)
+if x < 3 or x > 10 then goto loginError
+
+user_code$ = ""
+x$ = user$(1,2)
+if pos(x$ = "0102",2) and x > 5 then user$ = user$(3),firm_id$ = x$, x = x - 2 else x$ = ""
+for n = x - 1 to x
+    if pos(user$(n,1) = "0123456789") = 0 then 
+        user_code$ = user_code$ + user$(n,1)
+        user$(n,1) = " "
+    fi
+next n
+user_code$ = pad(user_code$,2)
+user$ = cvs(user$,3)
+cust_num$ = str(num(user$):"000000", err = *next)
+
+if firm_id$ = "" then firm_id$ = "01"
+
+rem ' get customer EC record
+tries=0
+get_ecm01:
+read record (ecm01, key = firm_id$ + cust_num$ + user_code$, TIM=3, dom = ecm01_not_found, err = accountInUse)ecm01$
+read record(arm01, key = firm_id$ + cust_num$)arm01$
+goto check_password
+
+ecm01_not_found: 
+if firm_id$ = "01" and tries = 0 then
+    firm_id$ = "02"
+    tries = tries + 1
+    goto get_ecm01
+else
+    if firm_id$ = "02" and tries = 0 then
+        firm_id$ = "02"
+        tries = tries + 1
+        goto get_ecm01
+    fi
+fi
+let firm_id$ = "", cust_num$ = "", user_code$ = ""
+goto loginError
+
+check_password: 
+if cvs(ecm01.password$,3) <> cvs(pwd$,3) then firm_id$ = "", cust_num$ = "", user_code$ = ""; goto loginError
+if len(cvs(ecm01.password$,3)) < 9 then firm_id$ = "", cust_num$ = "", user_code$ = ""; goto loginError
+
+rem ' set the ecm01$ email address into the emailAddress text box on the snView window
+emailAddress!.setText(cvs(ecm01.e_mail$,3))
+rem ' @For Debugging
+rem ' emailAddress!.setText("kurt.e.williams@comcast.net")
+
+rem ' canadian customer"
+found = 0 
+read record(arm02_canada, key = firm_id$ + cust_num$, dom = *next)arm02_canada$; found = 1
+if found then canadianCust = 1 else canadianCust = 0
+
+eMsg$ = "login complete for " + firm_id$ + " " +cust_num$ + " " + user_code$ + " " + ecm01.e_mail$ + " " + snm01.serial_nbr$ + " " + smc01.contract$, eSubject$ = "login complete"
+gosub sendTrackingMessage
+
+if len(cvs(sn$,3)) = 0 then
+    login!.setVisible(0)
+    snView!.setVisible(1)
+    custName!.setText(firm_id$ + cust_num$ + " " + cvs(arm01.cust_name$,3))
+    gosub clearForm
+    serialNumber!.focus()
+    goto loginDone
+fi
+
+gosub lookup_serialNbr
+if msgCode$ = "WrongCust" then goto wrongCustomer
+if msgCode$ = "Inactive" then goto inactiveSN
+if msgCode$ = "WrongContType" then goto wrongContrType
+
+gosub showSnView
+
+eMsg$ = "serial number provided at login " + cvs(sn$,3) + " " + smc01.contract$, eSubject$ = "serial number loaded."
+gosub sendTrackingMessage
+
+goto loginDone
+
+accountInUse:
+    resp = msgbox("This account is already being used by another login. Try again later after the account has cleared.",0,"Account in use")
+    goto loginDone
+
+inactiveSN:
+    resp = msgbox("This serial number has been deactivated.",0,"Inactive Serial Number")
+    goto serialNumberFailed
+
+noContract:
+    resp = msgbox("This serial number does not have a contract. To add SAM please use the B-commerce application which can be found at https://poweredbybbj.com/", 0, "No Contract")
+    goto serialNumberFailed
+
+wrongContrType:
+    resp = msgbox("The contract on this serial number is not a SAM, Rental or Developer's Kit contract.",0,"Wrong Contract Type")
+    goto serialNumberFailed
+
+wrongCustomer:
+    resp = msgbox("This serial number is linked to another customer.",0,"Not The Owner")
+    goto serialNumberFailed
+
+loginError:
+    resp = msgbox("Invalid User Id or Password",0,"Login Error")
+    goto loginDone
+    
+serialNumberFailed:
+gosub clearForm
+serialNumber!.focus()
+
+loginDone:
+
+return
+
+[Function (createOrder)]
+rem ' -----------------------------------------------------------------
+rem ' createOrder
+rem ' -----------------------------------------------------------------
+
+createOrder:
+
+taxable = 0,tax = 0,subtotal = 0,total = 0
+
+rem ' write the order header
+
+are03.firm_id$ = firm_id$
+are03.ar_type$ = "  "
+are03.customer_nbr$ = cust_num$
+are03.order_number$ = order_number$
+are03.sequence_000$ = "000"
+are03.invoice_type$ = "S"
+are03.ord_inv_flag$ = "O"
+are03.backord_flag$ = " "
+are03.invoice_date$ = fndate$(jul(0,0,0))
+are03.ar_ship_date$ = fndate$(jul(0,0,0)+1)
+are03.ar_ship_via$ = fill(10)
+are03.ar_inv_nbr$ = fill(7)
+
+are03.ar_po_number$ = po_number$
+
+are03.slspsn_code$ = arm02.slspsn_code$
+
+terms$ = arm02.terms_code$
+if pos(terms$ = "030506", 2) = 0 then terms$ = "03"
+are03.terms_code$ = terms$
+
+are03.rel_to_ship$ = "Y"
+are03.reserved_str_2$ = fill(9)
+
+are03.disc_code$ = str(samDisc:"##")
+
+are03.dist_code$ = arm02.dist_code$
+are03.ord_prt_flag$ = "N"
+are03.ord_lock$ = "Y"; rem ' lock until all related records are updated
+are03.message_code$ = arm02.message_code$
+are03.territory$ = arm02.territory$
+are03.list_prc_cde$ = "  "
+are03.date_ordered$ = are03.invoice_date$
+are03.tax_code$ = arm02.tax_code$
+are03.pricing_code$ = arm02.pricing_code$
+are03.ar_job_nbr$ = fill(10)
+are03.ord_taken_by$ = "+ON"
+are03.cash_sale$ = "N"
+are03.reprint_flag$ = " "
+are03.ord_cred_flg$ = " "
+are03.shipto_nbr$ = fill(6)
+
+are03.tax_amount = tax
+are03.freight_amt = 0
+are03.discount_amt = 0
+are03.comm_percent = 0
+are03.taxable_amt = taxable
+are03.comm_amt = 0
+are03.total_sales = total
+are03.total_cost = 0
+
+are03_key$ = are03.firm_id$ + are03.ar_type$ + are03.customer_nbr$ + are03.order_number$ + are03.sequence_000$
+are03$ = field(are03$)
+write record (are03, key = are03_key$)are03$
+
+rem ' write the order/invoice print file
+
+are04.firm_id$ = are03.firm_id$
+are04.ord_inv_flag$ = are03.ord_inv_flag$
+are04.ar_type$ = are03.ar_type$
+are04.customer_nbr$ = are03.customer_nbr$
+are04.order_number$ = are03.order_number$
+
+are04_key$ = are04.firm_id$ + are04.ord_inv_flag$ + are04.ar_type$ + are04.customer_nbr$ + are04.order_number$
+are04$ = field(are04$)
+write record (are04, key = are04_key$)are04$
+
+rem ' write the open order sort file 
+
+are43.firm_id$ = are03.firm_id$
+are43.ar_type$ = are03.ar_type$
+are43.customer_nbr$ = are03.customer_nbr$
+are43.order_number$ = are03.order_number$
+
+are43_key$ = are43.firm_id$ + are43.ar_type$ + are43.order_number$ + are43.customer_nbr$
+are43$ = field(are43$)
+write record (are43,key=are43_key$)are43$
+
+rem ' get the warehouse
+read record (ivs01, key = firm_id$ + "IV00")ivs01$
+
+rem 'get line codes record
+read record (arm10e, key = firm_id$ + "ES")arm10e$
+
+rem ' get the tax rate
+read record (arm10b, key = firm_id$ + "B" + arm02.tax_code$)arm10b$
+
+rem ' Now loop through the detail lines (ARE13) from the loadprices! and priceElements! vectors
+
+while 1
+    dim iv_item$(20)
+    iv_item$(1) = prod!.getText() + "SAM1"
+    line_nbr$ = "005"
+
+    price = tb!.sumDiscountedPrice(priceElements!)  
+
+    holdprice = price
+
+    rem ' if canadian table then convert canadian dollars to us dollars for storage
+    if canadianCust then
+            amountin = price, amountout = 0
+            call "canDollConversion", canadian_exch$, 1, amountin, amountout
+            price = amountout
+    endif
+  
+    rem ' SM1 iv_item$ set above, do RN1 and DV1 here
+    if contracttype!.getText() = "RN1" or contracttype!.getText() = "DV1" then
+     iv_item$(1) = sn!.getProduct() + sn!.getPlatform() + sn!.getOSLevel() + sn!.getProductRev() + sn!.getLicenseType()
+    endif
+
+    find record (ivm01, key = smc01.firm_id$ + iv_item$, dom = *next)ivm01$; goto set_line_detail
+    if len(cvs(iv_item$, 1 + 2)) < 15 or iv_item$(1,3) <> "BAS" then goto set_line_detail
+    dim hold_item$(20)
+    hold_item$(1) = iv_item$, iv_item$(10,3) = "CUR", iv_item$(13,3) = "EXP"
+    find record (ivm01, key = smc01.firm_id$ + iv_item$)ivm01$
+    iv_item$(1) = hold_item$
+ 
+    set_line_detail:
+    are13.firm_id$ = are03.firm_id$
+    are13.ar_type$ = are03.ar_type$
+    are13.customer_nbr$ = are03.customer_nbr$
+    are13.order_number$ = are03.order_number$
+    are13.line_number$ = line_nbr$
+    are13.line_code$ = "S"
+    are13.man_price$ = "N"
+    are13.product_type$ = ivm01.product_type$
+    are13.pull_assmble$ = "P"
+    are13.warehouse_id$ = ivs01.warehouse_id$
+    are13.item_number$ = iv_item$
+    are13.order_memo$ = fill(40)
+    are13.est_shp_date$ = are03.ar_ship_date$
+    are13.commit_flag$ = "Y"
+    are13.pick_flag$ = " "
+    are13.reserved_str_2$ = fill(19)
+    are13.unit_cost = 0
+    are13.unit_price = price
+    are13.qty_ordered = 1
+    are13.qty_backord = 0
+    are13.qty_shipped = 1
+    are13.std_list_prc = 0
+    are13.ext_price = price * 1
+    are13.taxable_amt = 0
+    if arm10e.taxable_flag$ = "Y" and ivm01.taxable_flag$ = "Y" then are13.taxable_amt = are13.ext_price
+    are13.disc_percent = samDisc
+    are13.comm_percent = 0
+    are13.comm_amt = 0
+    are13.spl_comm_pct = 0
+    are13.disc_cust = samDisc
+    are13_key$ = are13.firm_id$ + are13.ar_type$ + are13.customer_nbr$ + are13.order_number$ + are13.line_number$
+
+    are13$ = field(are13$)
+    write record (are13, key = are13_key$)are13$
+ 
+    rem ' write open orders by item
+    are07.firm_id$ = are13.firm_id$
+    are07.warehouse_id$ = are13.warehouse_id$
+    are07.item_number$ = are13.item_number$
+    are07.ar_type$ = are13.ar_type$
+    are07.order_number$ = are13.order_number$
+    are07.line_number$ = are13.line_number$
+    are07.customer_nbr$ = are13.customer_nbr$
+    are07_key$ = are07.firm_id$ + are07.warehouse_id$ + are07.item_number$ + are07.ar_type$ + are07.order_number$ + are07.line_number$ + are07.customer_nbr$
+
+    are07$ = field(are07$)
+    write record (are07, key = are07_key$)are07$
+
+    rem ' write the order config detail record
+    are73.firm_id$ = are13.firm_id$
+    are73.ar_type$ = are13.ar_type$
+    are73.customer_nbr$ = are13.customer_nbr$
+    are73.order_number$ = are13.order_number$
+    are73.line_number$ = are13.line_number$
+    are73.media_type$ = "N/A"
+
+    if smc01.contr_type$ = "SM1" then
+        are73.type_of_sale$ = "SM1"
+    else
+        are73.type_of_sale$ = "RNW"
+    endif
+
+    are73.fixed_float$="F"
+    
+    if prod!.getText() = "BAS" then
+        are73.lic_property1$ = cvs(snm02.lic_property1$, 3)
+        are73.lic_property2$ = cvs(snm02.lic_property2$, 3)
+    fi
+
+    if smc01.contr_type$ = "SM1" then
+        are73.exp_type$ = "   "
+    else
+        if smc01.contr_type$ = "RN1" then
+            are73.exp_type$ = "RN1"
+        else
+            if smc01.contr_type$ = "DV1" and sn!.getLicenseType() = "NFR" then
+                are73.exp_type$ = "NFR"
+            else
+                are73.exp_type$ = "KIT"
+            endif
+        endif
+    endif
+
+    are73.dealer_str$=fill(4)
+    are73.contract$ = contract!.getText()
+    are73.media_qty = 0
+    are73.users = num(users1!.getText())
+    are73.users2 = num(users2!.getText())
+    are73_key$ = are73.firm_id$ + are73.ar_type$ + are73.customer_nbr$ + are73.order_number$ + are73.line_number$
+
+    are73$ = field(are73$)
+    write record (are73, key = are73_key$)are73$
+
+    rem ' write are83
+    sequence_nbr = 0
+    sequence_nbr$ = str(sequence_nbr:"000")
+    are83.action$ = "M"
+    are83.auth_code$ = ""
+    are83.license_cnt = 0
+    are83.firm_id$ = are13.firm_id$
+    are83.ar_type$ = are13.ar_type$
+    are83.customer_nbr$ = are13.customer_nbr$
+    are83.order_number$ = are13.order_number$
+    are83.line_number$ = are13.line_number$
+    are83.license_seq$ = license_seq$
+    are83.sequence_nbr$ = sequence_nbr$
+    are83.snhist_flag$ = "N"
+    are83.contract$ = contract!.getText()
+    are83.sam_active$ = "Y"
+    are83.dealer_str$=fill(1)
+    pad_ser_nbr$ = cvs(serialNumber!.getText(), 3) + fill(20)
+    pad_ser_nbr$ = pad_ser_nbr$(1, 20)
+    are83.serial_nbr$ = pad_ser_nbr$
+    are83_key$ = are83.firm_id$ + are83.ar_type$ + are83.customer_nbr$ + are83.order_number$ + are83.line_number$ + are83.license_seq$ + are83.sequence_nbr$
+ 
+    are83$ = field(are83$)
+    write record (are83,key=are83_key$)are83$
+
+    break
+
+wend
+
+rem ' finalize the order
+taxable = price
+precision 6
+tax = taxable * arm10b.tax_rate/100
+precision 2
+total = price
+are03.tax_amount = tax
+are03.taxable_amt = taxable
+are03.total_sales = total
+are03.ord_lock$ = "N"; rem ' unlock the order header
+are03$ = field(are03$)
+write record (are03, key = are03_key$)are03$
+
+
+if canadianCust then
+    rem 'write the exchange rate record for this order
+    dim art03_canada$:fattr(art03_canada$)
+
+    art03_canada.firm_id$ = are03.firm_id$
+    art03_canada.customer_nbr$ = are03.customer_nbr$
+    art03_canada.invoice_date$ = are03.invoice_date$
+    art03_canada.order_number$ = are03.order_number$
+    art03_canada.ar_inv_nbr$ = fill(7)
+    art03_canada.ratedate$ = canadian_exch.ratedate$
+    art03_canada.sequence_nbr$ = canadian_exch.sequence_nbr$
+    art03_canada.to_us_doll = canadian_exch.to_us_doll
+    art03_canada.to_cana_doll = canadian_exch.to_cana_doll
+  
+    art03_canadaKey$ = art03_canada.firm_id$ + art03_canada.customer_nbr$ + art03_canada.invoice_date$ + art03_canada.order_number$
+    write record(art03_canada,key=art03_canadaKey$)art03_canada$
+endif
+
+rem ' invoice it
+rem 'create invoice, update serial number files
+extracted=0
+extract record (ars10n, key = firm_id$ + "N", tim=5, err=*next)ars10n$; extracted = 1
+if extracted=0 then 
+  if err=0 then 
+     wait 1
+     retry
+  fi
+fi
+if ars10n.next_inv_nbr > 9999999 then let ars10n.next_inv_nbr = 1000
+are03.ar_inv_nbr$ = str(ars10n.next_inv_nbr:"0000000")
+invoiceNbr$ = are03.ar_inv_nbr$
+ars10n.next_inv_nbr = ars10n.next_inv_nbr + 1
+
+ars10n$=field(ars10n$)
+write record (ars10n, key = firm_id$ + "N")ars10n$
+
+are03.ord_inv_flag$ = "I", are03.invoice_date$ = are03.date_ordered$, are03.ord_prt_flag$="N"
+are03$=field(are03$)
+write record (are03, key = are03$(1,20))are03$
+
+remove (are04, key = are03.firm_id$ + "O  " + are03.customer_nbr$ + are03.order_number$, err=*next)
+are04.firm_id$ = are03.firm_id$
+are04.ord_inv_flag$ = "I"
+are04.ar_type$ = "  "
+are04.customer_nbr$ = are03.customer_nbr$
+are04.order_number$ = are03.order_number$
+are04k$=are04.firm_id$ + are04.ord_inv_flag$ + are04.ar_type$ + are04.customer_nbr$ + are04.order_number$
+
+are04$=field(are04$)
+write record (are04,key=are04k$)are04$
+
+rem ' call BSN.20 to write the SN Hist and roll the dates
+call "BSN.20", firm_id$, cust_num$, order_number$,snm01,snm02,snt01,snt03,are03,are13,are73,are83,ivm01,csm03,smc01
+
+rem ' get the new dates and check to ensure they rolled
+contkey$ = contract!.getText()
+read record(smc01, key = contkey$, dom = *next)smc01$
+
+rem ' did the dates get rolled in BSN.20?
+interfaceAnnual_dt$ = renewdate!.getText() 
+interfaceAnnual_dt$ = interfaceAnnual_dt$(1,4) + interfaceAnnual_dt$(6,2) + interfaceAnnual_dt$(9,2)
+if smc01.annual_dt$ = interfaceAnnual_dt$ then gosub rollTheDates
+
+expiredate!.setText(smc01.expire_on_dt$(1,4) + "-" + smc01.expire_on_dt$(5,2) + "-" + smc01.expire_on_dt$(7,2))
+renewdate!.setText(smc01.annual_dt$(1,4) + "-" + smc01.annual_dt$(5,2) + "-" + smc01.annual_dt$(7,2))
+expDate$ = renewdate!.getText()
+datesRolled = 1
+
+return
+
+[Function (errNotify)]
+rem ' -----------------------------------------------------------------
+rem ' errNotify
+rem ' -----------------------------------------------------------------
+
+errNotify:
+
+eMsg$ = "ERROR: " + errmes(-1) + " (" + str(err) + ")" + " occurred at line " + str(tcb(5)) + " in program " + pgm(-2)
+eSubject$ = "ERROR"
+gosub sendTrackingMessage
+
+goto gb__err
+
+return
+
+[Function (getGracePeriod)]
+rem ' -----------------------------------------------------------------
+rem ' getGracePeriod
+rem ' -----------------------------------------------------------------
+
+getGracePeriod:
+
+rem ' grace period applices only to SAM contracts. RN1 and DV1 will be deactivated as soon as the contract 
+rem ' expires, unless and open Renewal invoice exists.
+
+rem ' preferred customer types get a 90 day renew window of no rif for SAM 
+preferred$="|AAI|AEI|APA|APE|API|APP|MG|MGI|MP|MPI|MS|MSI|"
+
+read record(arm02, key = firm_id$ + cust_num$ + "  ")arm02$
+cust_type$=cvs(arm02.cust_type$,3)
+preferred = pos(cust_type$=preferred$)
+
+if preferred then
+    rem ' preferred customers get a 90 day window
+    gracePeriod = 90
+else
+    gracePeriod = 14
+fi
+
+return
+
+[Function (getOrderNumber)]
+rem ' -----------------------------------------------------------------
+rem ' getOrderNumber
+rem ' -----------------------------------------------------------------
+
+getOrderNumber:
+
+rem ' get the last used order number
+extract record (ars10n, key = firm_id$ + "N", tim=5, err = ars10n_locked)ars10n$
+
+rem ' bump it by one
+order_number = ars10n.nxt_ord_nbr
+ars10n.nxt_ord_nbr = ars10n.nxt_ord_nbr + 1
+
+rem ' write it back to the parameter table
+ars10n$ = field(ars10n$)
+write record (ars10n, key = firm_id$ + "N")ars10n$
+
+order_number$ = str(order_number:"0000000")
+
+return
+
+ars10n_locked:
+
+rem ' the record should only be locked for a small sliver of time
+if err=0 then 
+  wait 1 
+  retry 
+else 
+  goto gb__err
+fi
+
+return
+
+[Function (loadDetailsGrid)]
+rem ' -----------------------------------------------------------------
+rem ' loadDetailsGrid
+rem ' -----------------------------------------------------------------
+
+loadDetailsGrid:
+
+detailsGrid!.clearText()
+detailsGrid!.setSelectedCell(0,0)
+
+
+rowcount = 0
+detailsGridLoad! = bbjapi!.makeVector()
+
+for x = 0 to snVector!.size() - 1
+    vSerNbr$ = cast(BBjString, snVector!.getItem(x))
+    read record(snm01, key = vSerNbr$)snm01$
+    if snm01.active_flag$ = "N" then continue
+    
+    detailsGridLoad!.addItem(cvs(vSerNbr$,3))
+
+    rem ' users
+    found = 0 
+    read record(snm02, key =vSerNbr$, dom=*next)snm02$; found = 1
+    if !found then
+        detailsGridLoad!.addItem("")
+        detailsGridLoad!.addItem(str(snm01.users))
+    else
+        licProp1$ = cvs(snm02.lic_property1$,3)
+        licProp2$ = cvs(snm02.lic_property2$,3)
+        users1 = snm02.users1
+        users2 = snm02.users2
+    
+        rem ' load extended users
+        if licProp1$ = "EF" then
+            detailsGridLoad!.addItem(str(users1))
+        else
+            if licProp2$ = "EF" then
+                detailsGridLoad!.addItem(str(users2))
+            else
+                detailsGridLoad!.addItem("")
+            fi
+        fi
+
+        rem ' load Standard users
+        if licProp1$ = "SF" then
+            detailsGridLoad!.addItem(str(users1))
+        else
+            if licProp2$ = "SF" then
+                detailsGridLoad!.addItem(str(users2))
+            else
+                detailsGridLoad!.addItem("")
+            fi
+        fi
+    fi
+
+    rem ' load contract
+    detailsGridLoad!.addItem(snm01.contract$)
+    detailsGridLoad!.addItem(smc01.contr_type$)
+    expires$ = smc01.expire_on_dt$
+    expires$ = expires$(1,4) + "-" + expires$(5,2) + "-" + expires$(7,2)
+    detailsGridLoad!.addItem(expires$)
+    rowcount = rowcount + 1
+next x
+detailsGrid!.setNumRows(rowcount)
+detailsGrid!.setCellText(detailsGridLoad!)
+
+return
+
+[Function (loadPrices)]
+rem ' -----------------------------------------------------------------
+rem ' loadPrices
+rem ' -----------------------------------------------------------------
+
+loadPrices:
+
+rem ' load price grid
+pricing!.clearText()
+pricing!.setSelectedCell(0,0)
+
+rowcount = 0
+
+if priceElements!.size() > 0 then
+    for x = 0 to priceElements!.size() - 1
+        pe! = cast(PriceElement, priceElements!.getItem(x))
+        loadprices!.addItem(pe!.getProductCode())
+        if canadianCust then
+            loadprices!.addItem(cvs(str(pe!.getListPrice():"###,###,##0.00"),3) + " CAD")
+            loadprices!.addItem(cvs(str(pe!.getDiscountedPrice():"###,###,##0.00"),3) + " CAD")
+        else
+            loadprices!.addItem(cvs(str(pe!.getListPrice():"###,###,##0.00"),3))
+            loadprices!.addItem(cvs(str(pe!.getDiscountedPrice():"###,###,##0.00"),3))
+        fi
+        rowcount = rowcount + 1
+    next x
+    if rowcount then
+        rowcount = rowcount + 1
+        pricing!.setNumRows(rowcount)
+        loadprices!.addItem("Total")
+        if canadianCust then 
+            loadprices!.addItem(cvs(str(listprice:"###,###,##0.00"),3) + " CAD")
+            loadprices!.addItem(cvs(str(price:"###,###,##0.00"),3) + " CAD")
+        else
+            loadprices!.addItem(cvs(str(listprice:"###,###,##0.00"),3))
+            loadprices!.addItem(cvs(str(price:"###,###,##0.00"),3))
+        fi
+        pricing!.setCellText(loadprices!)
+endif
+
+return
+
+[Function (loadSearchGrid)]
+rem ' -----------------------------------------------------------------
+rem ' loadSearchGrid
+rem ' -----------------------------------------------------------------
+
+loadSearchGrid:
+
+foundSerialNumbers!.clearText()
+foundSerialNumbers!.setSelectedCell(0,0)
+
+rowcount = 0
+foundSerialNbrGridLoad! = bbjapi!.makeVector()
+
+rowCount = 0
+searchResults!.first()
+while 1
+    searchLine! = searchResults!.getCurrentRecordData()
+    lineSerNbr$ = searchLine!.getFieldValue("SERIAL_NBR")
+    foundSerialNbrGridLoad!.addItem(lineSerNbr$)
+    lineExpireDate$ = searchLine!.getFieldValue("EXPIRES_YYYYMMDD")
+    foundSerialNbrGridLoad!.addItem(lineExpireDate$)
+    lineUsers$ = searchLine!.getFieldValue("USERS")
+    foundSerialNbrGridLoad!.addItem(lineUsers$)
+    lineEUComp$ = searchLine!.getFieldValue("END_USER")
+    foundSerialNbrGridLoad!.addItem(lineEUComp$)
+  
+    rowCount = rowCount + 1
+    searchResults!.next(err=*break)
+wend
+searchResults!.close()
+
+foundSerialNumbers!.setNumRows(rowcount)
+foundSerialNumbers!.setCellText(foundSerialNbrGridLoad!)
+
+return
+
+[Function (lookup_serialNbr)]
+rem ' -----------------------------------------------------------------
+rem ' lookup_serialNbr
+rem ' -----------------------------------------------------------------
+
+lookup_serialNbr:
+
+msgCode$ = ""
+
+rem ' serial number must be for the logged in customer
+if firm_id$ <> snm01.firm_id$ or cust_num$ <> snm01.customer_nbr$ then msgCode$ = "WrongCust"; goto lookupDone
+
+rem ' must be an active serial number
+rem ' usser id and password authenticate now check if serial number is active
+if snm01.active_flag$ <> "Y" then msgCode$ = "Inactive"; goto lookupDone
+
+rem ' must be an exiring license
+read record (smc01, key = snm01.contract$, err = noContract)smc01$
+if pos(smc01.contr_type$ = "SM1RN1DV1",3) = 0 then msgCode$ = "WrongContType"; goto lookupDone
+
+
+rem ' set the ecm01$ email address into the emailAddress text box on the snView window
+emailAddress!.setText(cvs(ecm01.e_mail$,3))
+rem ' @For Debugging
+rem ' emailAddress!.setText("kurt.e.williams@comcast.net")
+
+lookupDone:
+
+return
+
+[Function (openFiles)]
+rem ' -----------------------------------------------------------------
+rem ' openFiles
+rem ' -----------------------------------------------------------------
+
+openFiles:
+
+call "ec_open::SNM01"
+call "ec_open::SNM02"
+call "ec_open::SNT01"
+call "ec_open::SNT03"
+call "ec_open::SNT04"
+call "ec_open::SMC01"
+call "ec_open::SNMEL"
+call "ec_open::SNMEU"
+call "ec_open::CSM03"
+
+call "ec_open::ARM01"
+call "ec_open::ARM02"
+call "ec_open::ECM01"
+
+call "ec_open::CSM01"
+call "ec_open::CSM02"
+call "ec_open::CSM03"
+call "ec_open::CSM04"
+call "ec_open::CSM05"
+
+call "ec_open::ART01"
+call "ec_open::ART03"
+call "ec_open::ART13"
+call "ec_open::ART83"
+
+call "ec_open::ARS10N"
+
+call "ec_open::ARM02_CANADA"
+call "ec_open::CANADIAN_EXCH"
+call "ec_open::ART03_CANADA"
+rem ' get the current exchange rate
+exchKey$ = keyl(canadian_exch)
+read record(canadian_exch,key=exchKey$)canadian_exch$
+
+call "ec_open::ARE03"
+call "ec_open::ARE04"
+call "ec_open::ARE07"
+call "ec_open::ARE43"
+call "ec_open::ARE13"
+call "ec_open::ARE73"
+call "ec_open::ARE83"
+call "ec_open::IVM01"
+call "ec_open::IVS01"
+call "ec_open::ARM10E"
+call "ec_open::ARM10B"
+
+call "ec_open::DIR_RNW_PO_LOG"
+
+return
+
+[Function (payInvoice)]
+rem ' -----------------------------------------------------------------
+rem ' payInvoice
+rem ' -----------------------------------------------------------------
+
+payInvoice:
+
+rem ' validate the data
+gosub validateCCData
+
+if validCCData then
+
+    rem ' process the credit card trans--------------
+    call "ec_creditCardProcessing.bbj", ccCallStr$
+    if ccCallStr.is_approved then 
+        failed = 0
+    else
+        failed = 1
+    endif
+
+    if failed then
+        resp = msgbox(ccCallStr.message$, 0, "Transaction Failed")
+        completedCreditCardProcess = 0
+    else
+        rem ' credit card transaction succeeded
+
+        rem ' send receipt email-------------------------
+        from$ = "customer-service@basis.cloud"
+
+        rem ' properties file should be pointed to the paypal test site for debugging        
+        rem ' for debugging
+        rem ' to$ = "kurt.e.williams@comcast.net"
+        
+        rem ' for live
+        to$ = cvs(emailAddress!.getText(), 3)
+        if to$ = "" or pos("@" = to$) = 0 then
+            to$ = cvs(ecm01.e_mail$, 3)
+        fi
+        if to$ = "" or pos("@" = to$) = 0 then
+            to$ = "customer-service@basis.cloud"
+        fi
+
+        rem ' for debugging
+        rem ' cc$ = ""
+        rem ' for live 
+        cc$ = "customer-service@basis.cloud"
+
+        rem ' bcc$ = "misdev@basis.cloud"
+
+        subject$ = "Payment Receipt"
+        msgtxt$ = "Invoice # " + invoiceNumber$ + " in the amount of " + invAmount$ + " was paid by credit card # " + maskedCCNbr$
+        call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+        rem ' write the cash receipts transaction
+        gosub applyPayment
+
+        rem ' step three roll the contract dates---------
+        expDate$ = expiredate!.getText()
+        if datesRolled = 0 then
+            gosub rollTheDates
+            expiredate!.setText(expDate$)
+            renewdate!.setText(expDate$)
+        fi
+
+        rem ' inform the user
+        msg$ = "A credit card transaction paying invoice, " + invoiceNumber!.getText() + " has been completed. The expiration date "
+        msg$ = msg$ + "on the contract for this serial number is now " + expDate$ + "."
+        resp = msgbox(msg$, 0, "Transaction Completed")
+
+        gosub sendLicAuthForm
+        payInv_resp = msgbox("License Authorization Form emailed to: " + sal_to$,0,"Form Sent")        
+
+        eMsg$ = "cc payment completed (" + invoiceNumber!.getText() + ")", eSubject$ = "payment completed"
+        gosub sendTrackingMessage
+
+        autoRenew!.setText("")
+        instructions!.setText("")
+
+        completedCreditCardProcess = 1
+    fi
+else
+    completedCreditCardProcess = 0
+fi
+return
+
+[Function (rollTheDates)]
+rem ' -----------------------------------------------------------------
+rem ' rollTheDates
+rem ' -----------------------------------------------------------------
+
+rollTheDates:
+
+contract$ = cvs(contract!.getText(), 3)
+expDate$ = cvs(expiredate!.getText(), 3)
+year$ = expDate$(1,4)
+year$ = str(num(year$) + 1)
+expDate$(1,4) = year$
+expDateWrite$ = expDate$(1,4) + expDate$(6,2) + expDate$(9,2)
+extract record(smc01, key = contract$)smc01$
+smc01.annual_dt$ = expDateWrite$
+smc01.expire_on_dt$ = expDateWrite$
+smc01.sam_active$ = "Y"
+smc01.invoiced_flag$ = " "
+smc01$ = field(smc01$)
+write record(smc01, key = contract$)smc01$
+
+rtd_sn$ = cvs(serialNumber!.getText(),3)
+rtd_sn$ = rtd_sn$ + fill(20)
+rtd_sn$ = rtd_sn$(1,20)
+extract record(snm01, key = rtd_sn$)snm01$
+snm01.sam_active$ = "Y"
+snm01.avail_support = 5
+snm01$ = field(snm01$)
+write record(snm01, key = rtd_sn$)snm01$
+
+datesRolled = 1
+
+return
+
+[Function (searchOpenInvoices)]
+rem ' -----------------------------------------------------------------
+rem ' searchOpenInvoices
+rem ' -----------------------------------------------------------------
+
+searchOpenInvoices:
+
+gosub clearForm
+
+snView!.setCursor(3)
+
+sql$ = "CALL OPEN_RENEW_INVS('" + firm_id$ + "','" + cust_num$ + "')"
+rem ' xresp = msgbox(sql$, 0, "debug")
+
+searchResults! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+if searchResults!.isEmpty() then
+    resp = msgbox("The search did not find any open renew invoices.", 0, "No Matches")
+    searchResults!.close()
+    
+    rem ' unset wait cursor'
+    snView!.setCursor(0)
+
+else
+    
+    foundRenewInvoices!.clearText()
+    foundRenewInvoices!.setSelectedCell(0,0)
+
+    foundInvoiceNbrGridLoad! = bbjapi!.makeVector()
+
+    rowCount = 0
+    searchResults!.first()
+    while 1
+        searchLine! = searchResults!.getCurrentRecordData()
+        
+        lineInvNbr$ = searchLine!.getFieldValue("AR_INV_NBR")
+        foundInvoiceNbrGridLoad!.addItem(lineInvNbr$)
+
+        linePONbr$ = searchLine!.getFieldValue("AR_PO_NUMBER")
+        foundInvoiceNbrGridLoad!.addItem(linePONbr$)
+        
+        lineInvDate$ = searchLine!.getFieldValue("INVOICE_DT")
+        foundInvoiceNbrGridLoad!.addItem(lineInvDate$)
+        
+        lineInvAmt$ = searchLine!.getFieldValue("INV_AMOUNT")
+        foundInvoiceNbrGridLoad!.addItem(lineInvAmt$)
+
+        lineInvPaymnts$ = searchLine!.getFieldValue("INV_PAYMENTS")
+        foundInvoiceNbrGridLoad!.addItem(lineInvPaymnts$)
+        
+        lineSerNbr$ = searchLine!.getFieldValue("SERIAL_NBRS")
+        foundInvoiceNbrGridLoad!.addItem(lineSerNbr$)
+  
+        rowCount = rowCount + 1
+        searchResults!.next(err=*break)
+    wend
+    searchResults!.close()
+
+    foundRenewInvoices!.setNumRows(rowcount)
+    foundRenewInvoices!.setCellText(foundInvoiceNbrGridLoad!)
+
+    snView!.setCursor(0)
+    
+    snView!.setVisible(0)
+    findInvoice!.setVisible(1)
+
+fi
+
+return
+
+[Function (searchSerialNbr)]
+rem ' -----------------------------------------------------------------
+rem ' searchSerialNbr
+rem ' -----------------------------------------------------------------
+
+searchSerialNbr:
+
+sn$ = cvs(serialNumber!.getText(),7)
+
+loop = 1
+while loop
+
+  if len(sn$) < 3 then
+      resp = msgbox("To search with a parial serial number at least the first three characters must be provided.",0,"First Three Characters")
+      serialNumber!.focus()
+      loop = 0 
+      continue
+  fi
+
+  if len(sn$) > 9 then
+      resp = msgbox("The serial number provided exceeds the maximum length of 9 chaaaracters.",0,"Length of SN")
+      serialNumber!.focus()
+      loop = 0 
+      continue
+  fi
+
+  if len(sn$) = 9 then
+        found = 0
+        sn$ = sn$ + fill(20), sn$ = sn$(1,20)
+        read record(snm01, key=sn$, dom=*next)snm01$; found = 1
+        if !found then
+            resp = msgbox("Invalid Serial Number",0,"Invalid SN")
+            loop = 0
+            serialNumber!.focus()
+        else
+            gosub lookup_serialNbr
+            if msgCode$ = "WrongCust" then 
+                resp = msgbox("This serial number is linked to another customer.",0,"Not The Owner")
+            else    
+                if msgCode$ = "Inactive" then
+                    resp = msgbox("This serial number has been deactivated.",0,"Inactive Serial Number")
+                else
+                    if msgCode$ = "WrongContType" then
+                        resp = msgbox("The contract on this serial number is not a SAM, Rental or Developer's Kit contract.",0,"Wrong Contract Type")
+                    else
+                        gosub showSnView
+                    fi
+                fi
+            fi
+        fi
+        loop = 0
+        continue
+  fi
+  
+  rem ' search with partial serial number
+  if len(sn$) >= 3 and len(sn$) <= 8 then
+  
+    rem ' max_result_count = 1000
+    
+    rem ' sql$ = "SELECT TOP " + str(max_result_count) + " t1.serial_nbr, t2.expire_on_dt as EXPIRES_YYYYMMDD, t1.users, t4.company_name as end_user "
+    sql$ = "SELECT t1.serial_nbr, t2.expire_on_dt as EXPIRES_YYYYMMDD, t1.users, t4.company_name as end_user "
+    sql$ = sql$ + "FROM SNM01 t1 "
+    sql$ = sql$ + "INNER JOIN SMC01 t2 ON t1.contract = t2.contract "
+    sql$ = sql$ + "LEFT OUTER JOIN SNMEL t3 on t1.serial_nbr = t3.serial_nbr "
+    sql$ = sql$ + "LEFT OUTER JOIN SNMEU t4 on t3.end_user_nbr = t4.end_user_nbr "
+    sql$ = sql$ + "WHERE t1.firm_id = '" + firm_id$ + "' AND "
+    sql$ = sql$ + "t1.customer_nbr = '" +cust_num$ + "' AND "
+    sql$ = sql$ + "t1.active_flag = 'Y' AND "
+    sql$ = sql$ + "t1.serial_nbr LIKE '" + sn$ + "%' "
+    
+    CurrentOrderbyClause$ = "ORDER BY "
+    selectedOrder = orderby!.getSelectedIndex()
+    sql$ = sql$ + " " + CurrentOrderbyClause$ + cvs(orderby!.getItemAt(selectedOrder),3)
+    
+    rem ' xresp = msgbox(sql$,0,"debug")
+    
+    rem ' set wait cursor'
+    snView!.setCursor(3)
+
+    searchResults! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql$)
+
+    if searchResults!.isEmpty() then
+        resp = msgbox("The search did not find any matching serial numbers.", 0, "No Matches")
+        searchResults!.close()
+        
+        rem ' unset wait cursor'
+        snView!.setCursor(0)
+
+        loop = 0
+        continue
+    else
+        
+        gosub loadSearchGrid
+        
+        rem ' unset wait cursor'
+        snView!.setCursor(0)
+        
+        snView!.setVisible(0)
+        findSN!.setVisible(1)
+
+        loop = 0
+        continue
+    fi
+  fi
+
+  loop = 0
+
+wend
+
+return
+
+[Function (sendLicAuthForm)]
+rem ' -----------------------------------------------------------------
+rem ' sendLicAuthForm
+rem ' -----------------------------------------------------------------
+
+sendLicAuthForm:
+
+rem ' set the to email address
+temp$ = cvs(emailAddress!.getText(),3)
+
+if temp$="" or pos("@" = temp$) = 0  then 
+    sal_resp = msgbox("Please enter an email address to use for delivery of the License Registration Form.", 0, "No email address")
+    return
+fi
+
+while pos(";" = temp$)
+    p = pos(";" = temp$)
+    temp$ = temp$(1,p-1) + "," + temp$(p+1)
+wend
+sal_to$ = temp$
+
+dim sal_rec$:"number:c(10*=44),auth_key:c(10*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),flex_feature:c(7*=44),flex_key:c(12*=44),flex_rev_lvl:c(10*=44),flex_host_id:c(10*=44),flex_expiry_date:c(11*=44),flex_checksum:c(2*=44),flex_users:c(10*=44),flex_number:c(10*=44),platform:c(1*=44),po:c(5*=44),cust:c(6)"
+
+sal_rec.number$=cvs(snm01.serial_nbr$,3)
+
+rem ' get authcode
+authocode$ = "No Authocode"
+read record(snt01, key = snm01.serial_nbr$, dom = *next)snt01$
+while 1
+	read record(snt01, end = *break)snt01$
+	if pos(snm01.serial_nbr$ = snt01$) <> 1 then break
+	if cvs(snt01.auth_code$,3) <> "" then authcode$ = cvs(snt01.auth_code$,3)
+wend
+
+sal_rec.auth_key$ = authcode$
+sal_rec.users$ = str(snm01.users)
+if cvs(order_number$,3) = "" then order_number$ = "0000000"
+sal_rec.order_no$ = order_number$
+sal_rec.order_date$ = DATE(0:"%Mz/%Dz/%Y")
+sal_rec.part_num$ = snm01.product$ + snm01.platform$ + snm01.os_level$ + snm01.product_rev$ + snm01.license_type$
+sal_rec.desc1$ = proddesc$
+
+
+rem ' get port id
+sal_found=0
+read record(csm03,key=firm$ + snm01.os_level$, dom=*next); sal_found=1
+if sal_found
+    sal_rec.system$ = "Port ID " + csm03.port_id$
+fi
+
+rem ' product rev description
+sal_rec.rev_lvl$ = prodrevdesc$
+
+sal_rec.cust$ = cvs(snm01.customer_nbr$,3)
+
+sal_firm$=firm$
+sal_toline$=""
+sal_subjline$=""
+sal_choice$ = "E"
+sal_flex = 1
+sal_html$=""
+
+call "BLK.30",sal_firm$,sal_toline$,sal_subjline$,sal_choice$,sal_rec$,sal_flex,sal_html$
+
+rem ' write the html
+htmlfile$ = stbl("TEMP") + CVS(sal_rec.NUMBER$,2)+".htm"
+attachfilelist$ = htmlfile$ +"|"
+erase htmlfile$, err=*next
+string htmlfile$
+htmlfile = unt
+open(htmlfile)htmlfile$
+write record (htmlfile)sal_html$
+close(htmlfile)
+
+rem ' get the message text
+msg_chan=unt
+msg_text$=""
+open(msg_chan)"BLK16.txt"
+f1$=fin(msg_chan),s=dec(f1$(1,4))
+readrecord(msg_chan,siz=s)msg_text$
+close(msg_chan)
+msg_text$ = msg_text$ + $0A$ + $0A$ + "directRenew.bbj"
+
+rem ' send email via email.bbj
+sal_from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+sal_cc$ = "customer-service@basis.cloud"
+sal_bcc$ = ""; rem ' for monitoring
+sal_subj$ = "BASIS Serial Number: " + cvs(snm01.serial_nbr$,3)
+
+rem ' for debugging
+rem ' sal_to$ = "grobledo@basis.cloud"
+rem ' sal_cc$ = "kurt.e.williams@comcast.net"
+rem ' sal_bcc$ = "kw5121151@gmail.com"; rem ' for monitoring
+rem ' sal_subj$ = "BASIS Serial Number: " + cvs(snm01.serial_nbr$,3) + " Testing Direct Renew"
+
+call "sendEmail.src", sal_from$, sal_to$, sal_cc$, sal_bcc$, sal_subj$, msg_text$, attachfilelist$
+
+while pos("|" = attachfilelist$) <> 0 
+    ppos = pos("|" = attachfilelist$)
+    attachfile$ = attachfilelist$(1, ppos - 1)
+    attachfilelist$ = attachfilelist$(ppos + 1)
+    erase attachfile$,err=*next
+wend
+
+rem ' sal_resp = msgbox("License Authorization Form emailed to: " + sal_to$,0,"Form Sent")
+
+return
+
+[Function (sendTrackingMessage)]
+rem ' -----------------------------------------------------------------
+rem ' sendTrackingMessage
+rem ' -----------------------------------------------------------------
+
+sendTrackingMessage:
+
+from$ = "customer-service@basis.cloud"
+to$ = "misdev@basis.cloud"
+cc$ = ""
+bcc$ = ""
+subject$ = "directRenew Tracking " +eSubject$
+msgtxt$ = eMsg$+ $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+rem ' call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+eSubject$ = ""
+eMsg$ = ""
+
+return
+
+[Function (showSnView)]
+rem ' -----------------------------------------------------------------
+rem ' showSnView
+rem ' -----------------------------------------------------------------
+
+showSnView:
+
+login!.setVisible(0)
+
+rem ' snView!.setSize(790,480)
+snView!.setVisible(1)
+
+clearSearchBtn!.setText("Clear")
+clearSearchBtn!.setShortCue("Use to clear the form and enter full or partial serial number for a search.")
+
+serialNumber!.setText(cvs(sn$,3))
+serialNumber!.setEditable(0)
+
+custName!.setText(firm_id$ + cust_num$ + " " + cvs(arm01.cust_name$,3))
+
+prod!.setText(cvs(snm01.product$,3))
+platform!.setText(cvs(snm01.platform$,3))
+oslevel!.setText(cvs(snm01.os_level$,3))
+prodrev!.setText(cvs(snm01.product_rev$,3))
+licenseType!.setText(cvs(snm01.license_Type$,3))
+
+read record(csm01, key = firm_id$ + snm01.product$, dom=*next)csm01$
+if cvs(csm01.description$,3) <> "" then proddesc$ = csm01.description$ else proddesc$ = snm01.product$ 
+
+read record(csm02, key = firm_id$ + snm01.platform$, dom=*next)csm02$
+if cvs(csm02.description$,3) <> "" then platdesc$ = csm02.description$ else platdesc$ = snm01.platform$ 
+
+read record(csm03, key = firm_id$ + snm01.os_level$, dom=*next)csm03$
+if cvs(csm03.description$,3) <> "" then osleveldesc$ = csm03.description$ else osleveldesc$ = snm01.os_level$ 
+
+read record(csm04, key = firm_id$ + snm01.product_rev$, dom=*next)csm04$
+if cvs(csm04.description$,3) <> "" then prodrevdesc$ = csm04.description$ else prodrevdesc$ = snm01.product_rev$ 
+
+read record(csm05, key = firm_id$ + snm01.license_Type$, dom=*next)csm05$
+if cvs(csm05.description$,3) <> "" then lictypedesc$ = csm05.description$ else lictypedesc$ = snm01.license_Type$ 
+
+prodDesc!.setText(proddesc$)
+platDesc!.setText(platdesc$)
+oslevDesc!.setText(osleveldesc$)
+prodrevDesc!.setText(prodrevdesc$)
+lictypeDesc!.setText(lictypedesc$)
+
+rem ' will not show the Annual status if the license is annual
+if snm01.media_type$ = "VIR" then
+    rem ' annvir!.setText("Virtual")
+    virtualMSG!.setVisible(1)
+else
+    rem ' annvir!.setText("-------")
+    virtualMSG!.setVisible(0)
+fi
+
+rem ' users
+if snm01.product$ <> "BAS" then
+    userlabel!.setText("Users:")
+    users1!.setText(snm01.users$)
+    user2label!.setVisible(0)
+    users2!.setVisible(0)
+else
+    found = 0
+    read record(snm02, key = sn$, dom = *next)snm02$; found = 1
+    if found then
+        userlabel!.setText(snm02.lic_property1$ + " Users:")
+        users1!.setText(snm02.users1$)
+        if cvs(snm02.lic_property2$,3) <> "" then
+            user2label!.setVisible(1)
+            users2!.setVisible(1)
+            user2label!.setText(snm02.lic_property2$ + " Users:")
+            users2!.setText(snm02.users2$)
+        else
+            user2label!.setVisible(0)
+            users2!.setVisible(0)
+        fi
+    fi
+fi
+        
+rem ' end user 
+found = 0
+read record(snmel, key = sn$, dom = *next)snmel$; found = 1
+if found then
+    found = 0
+    read record(snmeu, key = snmel.end_user_nbr$)snmeu$; found = 1
+        enduser!.setText(snmeu.company_name$)
+    fi
+fi
+
+rem ' contract data
+
+contract!.setText(snm01.contract$)
+if smc01.contr_type$ = "SM1" then
+    contracttype!.setText("SAM")
+else
+    if smc01.contr_type$ = "RN1" then
+        contracttype!.setText("Rental")
+    else
+        if smc01.contr_type$ = "DV1" then
+            contracttype!.setText("Developer's Kit")
+        else
+            contracttype!.setText(smc01.contr_type$)
+        fi
+    fi
+fi
+startdate!.setText(smc01.contr_start$(1,4) + "-" + smc01.contr_start$(5,2) + "-" + smc01.contr_start$(7,2))
+expiredate!.setText(smc01.expire_on_dt$(1,4) + "-" + smc01.expire_on_dt$(5,2) + "-" + smc01.expire_on_dt$(7,2))
+renewdate!.setText(smc01.annual_dt$(1,4) + "-" + smc01.annual_dt$(5,2) + "-" + smc01.annual_dt$(7,2))
+contactemail!.setText(smc01.e_mail$)
+
+rem ' features
+features!.clearText()
+features!.setSelectedCell(0,0)
+
+rowcount = 0
+read record(snt04, key = sn$, dom = *next)snt04$
+while 1
+    read record(snt04, end = *break)snt04$
+    if snt04.serial_nbr$ <> sn$ then break
+    if cvs(snt04.feature$,7) = "SOFTWAREASSETMANAGEMENT" then continue
+    featuresload!.addItem(cvs(snt04.feature$,3))
+    featuresload!.addItem(cvs(snt04.feature_rev$,3))
+    featuresload!.addItem(cvs(snt04.users$,3))
+    if cvs(snt04.expire_on_dt$,3) = ""
+        featuresload!.addItem("")
+    else
+        featuresload!.addItem(snt04.expire_on_dt$(1,4) + "-" + snt04.expire_on_dt$(5,2) + "-" + snt04.expire_on_dt$(7,2))
+    fi
+    rowcount = rowcount + 1
+wend
+if rowcount then
+    features!.setNumRows(rowcount)
+    features!.setCellText(featuresload!)
+fi
+
+rem ' check some conditions
+gosub getGracePeriod
+
+expDateJul = jul(num(smc01.expire_on_dt$(1,4)), num(smc01.expire_on_dt$(5,2)), num(smc01.expire_on_dt$(7,2)))
+
+gosub calcDaysExpired
+
+rem ' first release will not handle features
+if featuresload!.size() = 0 then
+    gosub calculatePrice
+fi
+
+rem ' if the contract does not expire until after expirationMaxLimit days in the future. Can not be renewed here.
+if daysExpired > expirationMaxLimit then
+    if featuresload!.size() = 0 then gosub loadPrices
+    instructions$ = "The SAM, Rental or Developer's Kit contract expires more than " +str(expirationMaxLimit) + " days in the future."
+    instructions!.setText(instructions$)
+    exitButton!.focus()
+    return
+fi
+
+gosub checkForOpenAutoGeneratedRenewOrder
+if openRenewOrder then
+    autoRenew!.setText(openRenewOrder$)
+else
+    gosub checkForOpenRenewInvoice
+    autoRenew!.setText(openRenewInvoice$)
+fi
+if snVector!.size() > 1 then multipleContracts!.setVisible(1)
+
+rem ' temporary block on supporting serial numbers with feature lines
+if featuresload!.size() > 0  and !openRenewInvoice then
+    instructions$ = "This serial number has feature lines associated with it. Currently renewing SAM, Rental or Developer's Kit contracts with feature lines is not supported in this tool."
+    instructions!.setText(instructions$)
+    exitButton!.focus()
+    return
+fi
+
+if snVector!.size() > 1 and !openRenewInvoice then
+    instructions$ = "This serial number is on a contract with other serial numbers. Currently renewal of mulitple serial number contracts is not supported in this tool. "
+    instructions$ = instructions$ + "Click the Details button for details on these serial numbers."
+    instructions!.setText(instructions$)
+    exitButton!.focus()
+    return
+fi
+
+rem ' sam contract expired longer than the grace period with no open renew invoice may not be renewed here
+if smc01.contr_type$ = "SM1" and daysExpired < 0 and abs(daysExpired) > gracePeriod and !openRenewInvoice then
+    instructions$ = "The SAM contract has been expired longer than the allowed grace period and there is no open renew invoice. "
+    instructions$ = instructions$ + " Please go to B-commerce, https://poweredbybbj.com/, to add SAM back to the serial number."
+    instructions!.setText(instructions$)
+    exitButton!.focus()
+    return
+fi
+
+rem ' sam contract expired longer than the grace period with an open renew invoice may only be paid
+if smc01.contr_type$ = "SM1" and daysExpired < 0 and abs(daysExpired) > gracePeriod and openRenewInvoice then
+    if firm_id$ = "01" then
+        instructions$ = "The SAM contract has been expired longer than the allowed grace period. However, there is an open renew invoice."
+        instructions$ = instructions$ + " Paying the open invoice now will extend the SAM term by one year immmediately."        
+        instructions!.setText(instructions$)
+        payButton!.setVisible(1)
+        payButton!.focus()
+    else
+        instructions$ = "The SAM contract has been expired longer than the allowed grace period. However, there is an open renew invoice."
+        instructions$ = instructions$ + " Please contact BASIS Europe Sales at +49 681 968 14 0. "        
+        exitButton!.focus()
+    fi
+    return
+fi
+
+rem ' expired rental and devloper kit contracts with no open renew invoice will have been deactivated may not be renewed here
+rem ' once the deactiveation program is automatically deactivating these serail numbers they well be caught earlier in the program
+if (smc01.contr_type$ = "RN1" or smc01.contr_type$ = "DV1") and daysExpired < 0 and !openRenewInvoice then
+    instructions$ = "The Rental or Developer Kit contract has expired and there is no open renew invoice."
+    instructions$ = instructions$ + " Please go to B-commerce, https://poweredbybbj.com/, to purcahse a new Rental or Developer Kit license."
+    instructions!.setText(instructions$)
+    exitButton!.focus()
+    return
+fi
+
+rem ' expired rental and devloper kit contracts with an open renew invoice may only be paid, with the exception of Descore and ESS
+if (smc01.contr_type$ = "RN1" or smc01.contr_type$ = "DV1") and daysExpired < 0 and openRenewInvoice then
+    if firm_id$ = "01" then
+        instructions$ = "The Rental or Developer Kit contract has expired. However, there is an open renew invoice."
+        if cust_num$ = "001022" or cust_num$ = "002157" then
+            instructions$ = instructions$ + " Entering a purchase order or paying the open invoice now will extend the Rental or Developer Kit term by one year immmediately."
+            payButton!.setVisible(1)
+            updateButton!.setVisible(1)
+            ponumber!.setLocation(471,415)
+            ponumber!.setVisible(1)
+            poLabel!.setLocation(296,420)
+            poLabel!.setVisible(1)
+            rem ' snView!.setSize(790,480)
+            emailLabel!.setVisible(1)
+            emailAddress!.setVisible(1)
+            ponumber!.focus()
+        else
+            instructions$ = instructions$ + " Paying the open invoice now will extend the Rental or Developer Kit term by one year immmediately."
+            payButton!.setVisible(1)
+            payButton!.focus()
+        fi
+        instructions!.setText(instructions$)
+    else
+        instructions$ = "The Rental or Developer Kit contract has expired. However, there is an open renew invoice."
+        instructions$ = instructions$ + " Please contact BASIS Europe Sales at +49 681 968 14 0. "
+        instructions!.setText(instructions$)
+        exitButton!.focus()
+    fi    
+    return
+fi
+
+if openRenewOrder then
+    instructions$ = "Please wait for the delivery of the proforma invoice later today to do any transaction on this contract."
+    exitButton!.focus()
+else
+  if openRenewInvoice then
+      if firm_id$ = "01" then
+          instructions$ = "Click the Pay Invoice button to pay this invoice using a credit card "
+          rem ' instructions$ = instructions$ + "The expiration date will be increased by one year immediately. "
+          instructions$ = instructions$ + "or enter your own PO number and click the Update PO # " 
+          instructions$ = instructions$ + "button to change the PO on the existing invoice. An updated invoice "
+          instructions$ = instructions$ + "will be emailed to you. In either case the expiration date will be increased by one year immediately."
+          payButton!.setVisible(1)
+          updateButton!.setVisible(1)
+          ponumber!.setLocation(471,415)
+          ponumber!.setVisible(1)
+          poLabel!.setLocation(296,420)
+          poLabel!.setVisible(1)
+          rem ' snView!.setSize(790,480)
+          emailLabel!.setVisible(1)
+          emailAddress!.setVisible(1)
+          payButton!.focus()
+      else
+          rem ' firm 02 BSG
+          instructions$ = "Entering your own purchase order number and clicking the Update PO # " 
+          instructions$ = instructions$ + "button will change the purchase order on the existing invoice. An updated invoice "
+          instructions$ = instructions$ + "will be emailed to you and the expiration date will be increased by one year immediately."
+          rem ' paying the invoice is not an option for BSG
+          payButton!.setVisible(0)
+          updateButton!.setLocation(681,415)
+          updateButton!.setVisible(1)
+          ponumber!.setLocation(471,415)
+          ponumber!.setVisible(1)
+          poLabel!.setLocation(296,420)
+          poLabel!.setVisible(1)
+          rem ' snView!.setSize(790,480)
+          emailAddress!.setLocation(600,440)
+          emailAddress!.setVisible(1)
+          emailLabel!.setLocation(510,445)
+          emailLabel!.setVisible(1)
+          ponumber!.focus()
+      fi
+  else
+      gosub loadPrices
+      instructions$ = "Entering your own purchase order number and clicking the renew button will "
+      instructions$ = instructions$ + "create an invoice under your purchase order number. "
+      instructions$ = instructions$ + "The expiration date will be increased by one year immediately." 
+      renewButton!.setLocation(681,415)
+      renewButton!.setVisible(1)
+      ponumber!.setLocation(566,415)
+      ponumber!.setVisible(1)
+      poLabel!.setLocation(391,420)
+      poLabel!.setVisible(1)
+      emailLabel!.setLocation(376,450)
+      emailLabel!.setVisible(1)
+      emailAddress!.setLocation(491,445)
+      emailAddress!.setVisible(1)
+      ponumber!.focus()
+  fi
+fi
+instructions!.setText(instructions$)
+
+rem ' datesRolled is a boolean that will be set to true when the dates are rolled by this program
+datesRolled = 0
+
+return
+
+[Function (updatePONumber)]
+rem ' -----------------------------------------------------------------
+rem ' updatePONumber
+rem ' -----------------------------------------------------------------
+
+updatePONumber:
+
+rem ' this process will change the po on the existing invoice to a customer supplied invoice
+rem ' reprint and sign the invoice, putting a copy in the archives and emailing it to the customer
+rem ' finally it will roll the dates on the contracts referenced by the invoice
+
+rem ' we will log the PO Number change in DIR_RNW_PO_LOG
+dim dir_rnw_po_log$:fattr(dir_rnw_po_log$)
+
+rem ' step one update the PO Number in ART03--------------------------------------------------
+dir_rnw_po_log.firm_id$ = firm_id$
+dir_rnw_po_log.customer_nbr$ = cust_num$
+dir_rnw_po_log.ar_inv_nbr$ = invoiceNbr$
+
+art03key$ = firm_id$ + "  " + cust_num$ + invoiceNbr$ + "000"
+extract record(art03, key = art03key$)art03$
+po_number$ = po_number$ + fill(10), po_number$ = po_number$(1,10)
+dir_rnw_po_log.old_po$ = art03.ar_po_number$ 
+art03.ar_po_number$ = po_number$
+dir_rnw_po_log.new_po$ = art03.ar_po_number$ 
+write record(art03)art03$
+order_number$ = art03.order_number$
+
+dir_rnw_po_log.inv_amount = art03.total_sales
+dir_rnw_po_log.user_code$ = user_code$
+dir_rnw_po_log.serial_nbr$ = sn$
+dir_rnw_po_log.contract$ = snm01.contract$
+
+rem ' step one A update the due date for descore and ESS----------------------------------------------
+art01key$ = firm_id$ + "  " + cust_num$ + invoiceNbr$ + "00"
+extract record(art01, key = art01key$)art01$
+due_date$ = art01.due_date$
+call "expCompDate.src", due_date$, exp_due_date$
+dir_rnw_po_log.old_due_dt$ = exp_due_date$
+if cust_num$ = "001022" or cust_num$ = "002157" then
+    rem ' add one to the month
+    mnth = num(exp_due_date$(5,2)) + 1
+    if mnth > 12 then 
+        mnth = 1
+        year = num(exp_due_date$(1,4)) + 1
+    fi
+    exp_due_date$(1,4) = str(year:"0000")
+    exp_due_date$(5,2) = str(mnth:"00")
+    call "expCompDate.src",exp_due_date$, cmp_due_date$
+    art01.due_date$ = cmp_due_date$
+    dir_rnw_po_log.new_due_dt$ = exp_due_date$
+    art01$ = field(art01$)
+    write record(art01)art01$
+else
+    rem ' old and new are the same
+    dir_rnw_po_log.new_due_dt$ = exp_due_date$
+    rem ' clear the extract
+    read(art01, key = "", err=*next)
+fi
+
+rem ' step two repirint the invoice-----------------------------------------------------------
+sign = 1
+archive = 1
+call "reprint_invoice.src", firm_id$,  cust_num$, invoiceNbr$, emailAddress$, "PO Number Updated on Invoice " + invoiceNbr$, sign, archive
+
+rem ' step three roll the contract dates
+expDate$ = expiredate!.getText()
+if datesRolled = 0 then
+    gosub rollTheDates
+    expiredate!.setText(expDate$)
+    renewdate!.setText(expDate$)
+fi
+
+rem ' step four update form fields
+autoRenew$ = autoRenew!.getText()
+po_number$ = cvs(po_number$, 3)
+p = pos("order number, " + chr(34) = autoRenew$)
+if p then
+    autoRenew1$ = autoRenew$(1, p + 14) + po_number$
+    autoRenew2$ = autoRenew$(p + 15)
+    p = pos(chr(34) = autoRenew2$)
+    if p then
+        autoRenew2$ = autoRenew2$(p)
+    fi
+    autoRenew$ = autoRenew1$ + autoRenew2$
+fi
+autoRenew!.setText(autoRenew$)
+
+rem ' write the direct renew po log
+while 1
+    dir_rnw_po_log.logid$ = date(0:"%Y%Mz%Dz%Hz%mz%sz")
+    dir_rnw_po_log$ = field(dir_rnw_po_log$)
+    written = 0
+    write record(dir_rnw_po_log, dom=*next)dir_rnw_po_log$; written = 1
+    if written then break
+    wait 1
+wend
+
+rem ' step five inform the customer
+msg$ = "The PO Number on the invoice has been updated to: " + cvs(po_number$, 3) 
+msg$ = msg$ + ", an updated copy of the invoice has been emailed to: " + emailAddress$
+msg$ = msg$ + " and the expiration date has been updated to: " + expDate$ + "."
+resp = msgbox(msg$, 0, "PO Number Updated")
+
+eMsg$ = "po changed (" + po_number$ + " / " + invoiceNbr$ + ")", eSubject$ = "po number change"
+gosub sendTrackingMessage
+
+if firm_id$ = "01" then
+    instructions$ = "Clicking the Pay Invoice button will allow you to pay this invoice using a credit card."
+else
+    instructions$ = "Thank you for updating the invoice with your own PO number."
+fi
+instructions!.setText(instructions$)
+
+gosub sendLicAuthForm
+update_po_resp = msgbox("License Authorization Form emailed to: " + sal_to$,0,"Form Sent")
+
+updateButton!.setVisible(0)
+ponumber!.setVisible(0)
+poLabel!.setVisible(0)
+rem ' snView!.setSize(790,480)
+emailLabel!.setVisible(0)
+emailAddress!.setVisible(0)
+if firm_id$ = "01" then
+    payButton!.focus()
+else
+    exitButton!.focus()
+fi
+return
+
+[Function (userDefinedFunctions)]
+rem ' -----------------------------------------------------------------
+rem ' userDefinedFunctions
+rem ' -----------------------------------------------------------------
+
+userDefinedFunctions:
+
+rem ' -----------------------------------------------------------------
+rem ' fndate
+rem ' -----------------------------------------------------------------
+
+def fndate$(julian)
+  d$=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+
+: chr(asc(date(julian:"%Dp"))+32)
+  return d$
+fnend
+
+
+
+return
+
+[Function (validateCCData)]
+rem ' -----------------------------------------------------------------
+rem ' validateCCData
+rem ' -----------------------------------------------------------------
+
+validateCCData:
+
+validCCData = 0
+
+dim ccCallStr$:"CARDNUMBER:C(16*=10),EXPDATE:C(6*=10),AMOUNT:C(12*=10),NAME:C(40*=10),UNIQUEID:C(20*=10),CVV2:C(4*=10),CCTYPE:C(1*=10),CCSTREET:C(30*=10),CCZIP:C(5*=10),COMMENT1:C(128*=10)"
+
+rem ' "CARDNUMBER:C(16*=10),   xxx
+rem ' EXPDATE:C(6*=10),        xxx
+rem ' AMOUNT:C(12*=10),        xxx
+rem ' NAME:C(40*=10),          xxx
+rem ' UNIQUEID:C(20*=10),      xxx
+rem ' CVV2:C(4*=10),           xxx
+rem ' CCTYPE:C(1*=10),         xxx
+rem ' CCSTREET:C(30*=10),      xxx
+rem ' CCZIP:C(5*=10),          xxx
+rem ' COMMENT1:C(128*=10)"     xxx
+
+while 1
+    rem ' credit dard number
+    temp$ = cardNumber!.getText()
+    ccNbr$ = ""
+    rem ' remove non numeric char
+    if len(temp$) then 
+        for temp = 1 to len(temp$)
+            if temp$(temp, 1) >= "0" and temp$(temp, 1) <= "9" then ccNbr$ =ccNbr$ + temp$(temp, 1)
+        next temp
+    fi
+
+    rem ' get card type
+    cardType = cardType!.getSelectedIndex()
+    if cardType < 0 then 
+        resp = msgbox("You must select a card type.", 0, "Select Card Type")
+        break
+    fi
+    cc_type$ = cardType!.getItemAt(cardType)
+    cc_type$ = cc_type$(1,1)
+
+    gosub validateCCNumber
+    if !validCC then 
+        resp = msgbox("You must enter a valid credit card number.", 0, "Invalid Card Number")
+        break
+    fi
+
+    ccCallStr.cardnumber$ = ccNbr$
+    maskedCCNbr$ = fill(len(ccNbr$) - 4, "*") + ccNbr$(len(ccNbr$) - 3, 4)
+    ccCallStr.cctype$ = cc_type$
+
+    rem ' get expiration Month
+    expireMonth = expireMonth!.getSelectedIndex()
+    if expireMonth < 0 then 
+        resp = msgbox("You must select an expiration month and year.", 0, "Select Expiration")
+        break
+    fi
+    expireMonth$ = str(expireMonth + 1:"00")
+
+    rem ' get expiration Year
+    expireYear = expireYear!.getSelectedIndex()
+    if expireYear < 0 then 
+        resp = msgbox("You must select an expiration month and year.", 0, "Select Expiration")
+        break
+    fi
+    expireYear$ = expireYear!.getItemAt(expireYear)
+    expireDate$ = expireMonth$ + expireYear$(3,2)
+    ccCallStr.expdate$ = expireDate$
+
+    rem ' get the name
+    nameOnCard$ = cvs(nameOnCard!.getText(), 3)
+    rem ' mot required
+    ccCallStr.name$ = nameOnCard$
+    
+    rem ' get the amount
+    invAmount$ = invAmount!.getText()
+    ccCallStr.amount$ = str(balance)
+    
+    rem ' addresss must exist
+    ccAddress$ = ccAddress!.getText()
+    if len(ccAddress$)=0 then
+        resp = msgbox("Please enter the address associated with this card.", 0, "Enter Credit Card Address")
+        break
+    endif
+    ccCallStr.ccstreet$ = ccAddress$
+
+    rem ' zip code must exist
+    ccZipCode$ = ccZipCode!.getText()
+    if len(ccZipCode$)=0 then
+        resp = msgbox("Pleas enter the postal code associated with this card.", 0, "Enter Credit Card Postal Code")
+        break
+    endif
+    ccCallStr.cczip$ = ccZipCode$
+
+    rem ' cvv2 must be 3 or 4 bytes long
+    cvv2$ = cvv2!.getText()
+    if len(cvv2$) <> 3 and len(cvv2$) <> 4 then
+        resp = msgbox("Please enter the credit card verification number.", 0, "Enter Credit Card Verification Number")
+        break
+    endif
+    ccCallStr.cvv2$ = cvv2$
+
+    rem ' create the unique id
+    unique$=date(0:"%Yd%Mz%Dz%Hz%mz%sz")+cust$+"B"
+    ccCallStr.uniqueid$ = unique$
+
+    rem ' create the comment
+    invoiceNumber$ = invoiceNumber!.getText()
+    comment$ = firm_id$ + cust_num$ + "/" + invoiceNumber$
+    ccCallStr.comment1$ = comment$
+
+    validCCData = 1
+    
+    break
+    
+wend
+
+return
+
+[Function (validateCCNumber)]
+rem ' -----------------------------------------------------------------
+rem ' validateCCNumber
+rem ' -----------------------------------------------------------------
+
+validateCCNumber:
+
+rem 'pass credit card number, return 0 or 1 in validCC
+
+validCC = 0
+l = len(ccNbr$)
+
+while 1
+    
+    if l = 0 or l > 16 then break
+
+    rem ' not Amex (3), Visa (4), or MasterCard (2 and 5)
+    if ccNbr$(1,1) <> "2" and ccNbr$(1,1) <> "3" and ccNbr$(1,1) <> "4" and ccNbr$(1,1) <> "5" then break
+
+    rem ' invalid amex
+    if ccNbr$(1,1) = "3" and (l <> 15 or cc_type$ <> "A") then break
+
+    rem ' invalid visa
+    if ccNbr$(1,1) = "4" and l <> 16 and l <> 13 then break
+    if ccNbr$(1,1) = "4" and cc_type$ <> "V" then break
+
+    rem ' invalid mastercard
+    if (ccNbr$(1,1) = "2" or ccNbr$(1,1) = "5") and ( l <> 16 or cc_type$ <> "M") then break
+
+    rem ' validate using the Luhn Formula
+    sum = num(ccNbr$(l,1), ERR=*break)
+    FOR c = l - 1 to 1 step -1
+        digit = num(ccNbr$(c,1), err=*break)
+        if mod(l - c, 2) = 1 then 
+            double = digit * 2
+            sum = sum + int(double / 10) + mod(double, 10) 
+        else 
+            sum = sum + digit
+        fi
+    next c
+    validCC = (MOD(sum, 10) = 0)
+    break
+
+wend
+
+return
+
+[Function (validateEmailAddress)]
+rem ' -----------------------------------------------------------------
+rem ' validateEmailAddress
+rem ' -----------------------------------------------------------------
+
+validateEmailAddress:
+
+rem ' the email address must be present and contain an @
+
+emailAddress$ = cvs(emailAddress!.getText(),3)
+validEmailAddress = 1
+
+if emailAddress$ = "" then
+    resp = msgbox("You must enter an Email Address to complete thie process.", 0 , "Enter Email Address")
+    validEmailAddress = 0
+else
+    if pos("@" = emailAddress$) = 0 then
+        resp = msgbox("You must enter a valid Email Address to complete thie process.", 0 , "Enter Valid Email Address")
+        validEmailAddress = 0
+    fi
+fi
+
+return
+
+[Function (validatePONumber)]
+rem ' -----------------------------------------------------------------
+rem ' validatePONumber
+rem ' -----------------------------------------------------------------
+
+validatePONumber:
+
+rem ' the po number must have a value and it can not be SAM Renew, DVK Renew or RNT Renew
+
+po_number$ = cvs(ponumber!.getText(),3)
+validPO = 1
+
+if po_number$ = "" then
+    resp = msgbox("You must enter a purchase order number to complete thie process.", 0 , "Enter PO Number")
+    validPO = 0
+else
+    if po_number$ = "SAM Renew" or po_number$ = "DVK Renew" or po_number$ = "RNT Renew" then
+        resp = msgbox("The purchase order number can not be SAM Renew, DVK Renew or RNT Renew.", 0 , "Enter PO Number")
+        validPO = 0
+    else
+        if len(po_number$) > 10 then
+            resp = msgbox("The purchase order number must not be longer than 10 characters.", 0 , "Enter PO Number")
+            validPO = 0
+        fi
+    fi
+fi
+
+return
+

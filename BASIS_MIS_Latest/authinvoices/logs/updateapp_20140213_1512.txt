@@ -1,0 +1,290 @@
+Updatexml log started: 2014-02-13@15:12:19
+Source syn file: /mnt/data/aon_git_authinvoices/authinvoices/config/authinvoices.syn
+Target directory: /mnt/data/aon_prod/apps/authinvoices
+[AUTHINVOICES] source=/mnt/data/aon_prod/v1110/authinvoices/data/  target=/mnt/data/aon_prod/apps/authinvoices/data/
+[ARCHIVEBASE] source=AP Vendor Invoices/  target=AP Vendor Invoices/
+[AUTHINVOICES_PROG] source=/mnt/data/aon_prod/v1110/authinvoices/prog/  target=/mnt/data/aon_prod/apps/authinvoices/prog/
+[AUTHINVOICES_IMAGE] source=/mnt/data/aon_prod/v1110/authinvoices/image/  target=/mnt/data/aon_prod/apps/authinvoices/image/
+[AUTHINVOICES_PROP] source=/mnt/data/aon_prod/v1110/authinvoices/prop/  target=/mnt/data/aon_prod/apps/authinvoices/prop/
+[AUTHTHRESHHOLD] source=1000  target=1000
+[AUTHINVOICES_LIB] source=/mnt/data/aon_prod/v1110/authinvoices/lib/  target=/mnt/data/aon_prod/apps/authinvoices/lib/
+PREFIX source=/mnt/data/aon_prod/v1110/authinvoices/prog/  target=/mnt/data/aon_prod/apps/authinvoices/prog/
+PREFIX source=/mnt/data/aon_prod/v1110/authinvoices/data/  target=/mnt/data/aon_prod/apps/authinvoices/data/
+PREFIX source=/mnt/data/bbj/utils/email/  target=/mnt/data/bbj/utils/email/
+
+Source directory: /mnt/data/aon_git_authinvoices/authinvoices/
+Target directory: /mnt/data/aon_prod/apps/authinvoices
+
+copy source: /mnt/data/aon_git_authinvoices/authinvoices/
+    /mnt/data/aon_git_authinvoices/authinvoices/config/authinvoices.syn
+    /mnt/data/aon_git_authinvoices/authinvoices/config/enu/authinvoices.men
+    /mnt/data/aon_git_authinvoices/authinvoices/config/install_rules.txt
+    /mnt/data/aon_git_authinvoices/authinvoices/data/apm_approvers.dat.old
+    /mnt/data/aon_git_authinvoices/authinvoices/data/arc/enu/apm_invimage.arc
+    /mnt/data/aon_git_authinvoices/authinvoices/data/arc/enu/apm_app_list.arc
+    /mnt/data/aon_git_authinvoices/authinvoices/data/arc/enu/apm_approvers.arc
+    /mnt/data/aon_git_authinvoices/authinvoices/data/arc/enu/apm_invapproval.arc
+    /mnt/data/aon_git_authinvoices/authinvoices/data/apm_invimage.dat
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/apm_invimage.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/apm_app_list.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/ape_payselect.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/apt_invoicehdr.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/ape_invoicehdr.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/apm_approvers.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/apm_invapproval.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/ape_mancheckdet.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/fut_arm01.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/apm_invimage.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/apm_app_list.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/ape_payselect.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/apt_invoicehdr.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/ape_invoicehdr.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/apm_approvers.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/apm_invapproval.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/ape_mancheckdet.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/bar/delta/fut_arm01.xml
+    /mnt/data/aon_git_authinvoices/authinvoices/data/KevinSignature.png
+    /mnt/data/aon_git_authinvoices/authinvoices/data/Aire Filter.pdf
+    /mnt/data/aon_git_authinvoices/authinvoices/data/NicoSignature.png
+    /mnt/data/aon_git_authinvoices/authinvoices/data/Midway BO.pdf
+    /mnt/data/aon_git_authinvoices/authinvoices/data/Aramark Coffee.pdf
+    /mnt/data/aon_git_authinvoices/authinvoices/data/apm_invapproval.dat.bak
+    /mnt/data/aon_git_authinvoices/authinvoices/data/apm_invapproval.dat.old
+    /mnt/data/aon_git_authinvoices/authinvoices/data/apm_invapproval.dat
+    /mnt/data/aon_git_authinvoices/authinvoices/data/def/enu/apm_invimage.def
+    /mnt/data/aon_git_authinvoices/authinvoices/data/def/enu/apm_app_list.def
+    /mnt/data/aon_git_authinvoices/authinvoices/data/def/enu/apm_approvers.def
+    /mnt/data/aon_git_authinvoices/authinvoices/data/def/enu/apm_invapproval.def
+    /mnt/data/aon_git_authinvoices/authinvoices/data/cdf/apm_invimage.cdf
+    /mnt/data/aon_git_authinvoices/authinvoices/data/cdf/ape_mancheckdet.cdf
+    /mnt/data/aon_git_authinvoices/authinvoices/data/cdf/ape_invoicehdr.cdf
+    /mnt/data/aon_git_authinvoices/authinvoices/data/cdf/ape_payselect.cdf
+    /mnt/data/aon_git_authinvoices/authinvoices/data/cdf/apm_approvers.cdf
+    /mnt/data/aon_git_authinvoices/authinvoices/data/apm_invimage.dat.old
+    /mnt/data/aon_git_authinvoices/authinvoices/data/apm_approvers.dat
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/approver_list.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/getSignerFiles.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/notify_apprv_exit_orig.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/sendEmailHtml.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/image_preview.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/apm_chkimage.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/apr_invoiceentry.aon
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/apm_upload_image.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/sendEmail.properties
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/payselectExit.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/apr_apchecks.aon
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/delete_notify_approvers.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/notify_apprv_exit.src
+    /mnt/data/aon_git_authinvoices/authinvoices/prog/sendEmail.src
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/source/apm_invimage_cpt.src
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/source/ape_invoicehdr_cpt.src
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/source/ape_mancheckdet_cpt.src
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/source/apm_approvers_cpt.src
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/source/ape_payselect_cpt.src
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/prog/ape_invoicehdr_cpt.bbj
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/prog/ape_payselect_cpt.bbj
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/prog/apm_invimage_cpt.bbj
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/prog/ape_mancheckdet_cpt.bbj
+    /mnt/data/aon_git_authinvoices/authinvoices/callpoints/prog/apm_approvers_cpt.bbj
+
+copy SYSSTBL/STBL: AUTHINVOICES
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_approvers.dat.old
+    /mnt/data/aon_prod/v1110/authinvoices/data/arc/enu/apm_invimage.arc
+    /mnt/data/aon_prod/v1110/authinvoices/data/arc/enu/apm_app_list.arc
+    /mnt/data/aon_prod/v1110/authinvoices/data/arc/enu/apm_approvers.arc
+    /mnt/data/aon_prod/v1110/authinvoices/data/arc/enu/apm_invapproval.arc
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invimage.dat
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apm_invimage.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apm_app_list.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/ape_payselect.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apt_invoicehdr.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/ape_invoicehdr.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apm_approvers.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apm_invapproval.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/ape_mancheckdet.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/fut_arm01.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apm_invimage.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apm_app_list.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/ape_payselect.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apt_invoicehdr.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/ape_invoicehdr.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apm_approvers.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apm_invapproval.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/ape_mancheckdet.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/fut_arm01.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/KevinSignature.png
+    /mnt/data/aon_prod/v1110/authinvoices/data/Aire Filter.pdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/NicoSignature.png
+    /mnt/data/aon_prod/v1110/authinvoices/data/Midway BO.pdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/Aramark Coffee.pdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invapproval.dat.bak
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invapproval.dat.old
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invapproval.dat
+    /mnt/data/aon_prod/v1110/authinvoices/data/def/enu/apm_invimage.def
+    /mnt/data/aon_prod/v1110/authinvoices/data/def/enu/apm_app_list.def
+    /mnt/data/aon_prod/v1110/authinvoices/data/def/enu/apm_approvers.def
+    /mnt/data/aon_prod/v1110/authinvoices/data/def/enu/apm_invapproval.def
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/apm_invimage.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/ape_mancheckdet.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/ape_invoicehdr.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/ape_payselect.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/apm_approvers.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invimage.dat.old
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_approvers.dat
+
+copy SYSSTBL/STBL: ARCHIVEBASE
+    SKIPPED AP Vendor Invoices
+
+copy SYSSTBL/STBL: AUTHINVOICES_PROG
+    /mnt/data/aon_prod/v1110/authinvoices/prog/approver_list.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/getSignerFiles.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/notify_apprv_exit_orig.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/sendEmailHtml.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/image_preview.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/apm_chkimage.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/apr_invoiceentry.aon
+    /mnt/data/aon_prod/v1110/authinvoices/prog/apm_upload_image.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/sendEmail.properties
+    /mnt/data/aon_prod/v1110/authinvoices/prog/payselectExit.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/apr_apchecks.aon
+    /mnt/data/aon_prod/v1110/authinvoices/prog/delete_notify_approvers.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/notify_apprv_exit.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/sendEmail.src
+
+copy SYSSTBL/STBL: AUTHINVOICES_IMAGE
+
+copy SYSSTBL/STBL: AUTHINVOICES_PROP
+
+copy SYSSTBL/STBL: AUTHTHRESHHOLD
+    SKIPPED 1000
+
+copy SYSSTBL/STBL: AUTHINVOICES_LIB
+
+copy SYSPFX/PREFIX: /mnt/data/aon_prod/v1110/authinvoices/prog/
+    /mnt/data/aon_prod/v1110/authinvoices/prog/approver_list.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/getSignerFiles.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/notify_apprv_exit_orig.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/sendEmailHtml.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/image_preview.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/apm_chkimage.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/apr_invoiceentry.aon
+    /mnt/data/aon_prod/v1110/authinvoices/prog/apm_upload_image.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/sendEmail.properties
+    /mnt/data/aon_prod/v1110/authinvoices/prog/payselectExit.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/apr_apchecks.aon
+    /mnt/data/aon_prod/v1110/authinvoices/prog/delete_notify_approvers.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/notify_apprv_exit.src
+    /mnt/data/aon_prod/v1110/authinvoices/prog/sendEmail.src
+
+copy SYSPFX/PREFIX: /mnt/data/aon_prod/v1110/authinvoices/data/
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_approvers.dat.old
+    /mnt/data/aon_prod/v1110/authinvoices/data/arc/enu/apm_invimage.arc
+    /mnt/data/aon_prod/v1110/authinvoices/data/arc/enu/apm_app_list.arc
+    /mnt/data/aon_prod/v1110/authinvoices/data/arc/enu/apm_approvers.arc
+    /mnt/data/aon_prod/v1110/authinvoices/data/arc/enu/apm_invapproval.arc
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invimage.dat
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apm_invimage.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apm_app_list.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/ape_payselect.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apt_invoicehdr.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/ape_invoicehdr.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apm_approvers.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/apm_invapproval.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/ape_mancheckdet.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/fut_arm01.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apm_invimage.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apm_app_list.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/ape_payselect.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apt_invoicehdr.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/ape_invoicehdr.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apm_approvers.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/apm_invapproval.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/ape_mancheckdet.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/bar/delta/fut_arm01.xml
+    /mnt/data/aon_prod/v1110/authinvoices/data/KevinSignature.png
+    /mnt/data/aon_prod/v1110/authinvoices/data/Aire Filter.pdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/NicoSignature.png
+    /mnt/data/aon_prod/v1110/authinvoices/data/Midway BO.pdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/Aramark Coffee.pdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invapproval.dat.bak
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invapproval.dat.old
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invapproval.dat
+    /mnt/data/aon_prod/v1110/authinvoices/data/def/enu/apm_invimage.def
+    /mnt/data/aon_prod/v1110/authinvoices/data/def/enu/apm_app_list.def
+    /mnt/data/aon_prod/v1110/authinvoices/data/def/enu/apm_approvers.def
+    /mnt/data/aon_prod/v1110/authinvoices/data/def/enu/apm_invapproval.def
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/apm_invimage.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/ape_mancheckdet.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/ape_invoicehdr.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/ape_payselect.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/cdf/apm_approvers.cdf
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_invimage.dat.old
+    /mnt/data/aon_prod/v1110/authinvoices/data/apm_approvers.dat
+
+copy SYSPFX/PREFIX: /mnt/data/bbj/utils/email/
+    SKIPPED /mnt/data/bbj/utils/email
+
+update target syn file: /mnt/data/aon_prod/apps/authinvoices/config/authinvoices.syn
+// Application Synchronization File
+
+// Barista Application Framework.  Copyright BASIS International Ltd.
+
+SYSID=AUTHINVOICES
+
+SYSDESC=Authorize AP Invoices
+
+SYSCOMP=01007514;BASIS International
+
+SYSCOPY=Copyright: Authorize invoices for payment, save images of the invoices and print checks with a signature graphic file.^
+
+SYSPAR=ADDON           
+
+SYSDIR=/mnt/data/aon_prod/apps/authinvoices/
+
+SYSAPP=APM;AP Modifications;;;authinvoices;/mnt/data/aon_prod/apps/authinvoices/prop/;ENU
+
+SYSSTBL=SET AUTHINVOICES=/mnt/data/aon_prod/apps/authinvoices/data/
+
+SYSSTBL=SET AUTHINVOICES_IMAGE=/mnt/data/aon_prod/apps/authinvoices/image/
+
+SYSSTBL=SET AUTHINVOICES_LIB=/mnt/data/aon_prod/apps/authinvoices/lib/
+
+SYSSTBL=SET AUTHINVOICES_PROG=/mnt/data/aon_prod/apps/authinvoices/prog/
+
+SYSSTBL=SET AUTHINVOICES_PROP=/mnt/data/aon_prod/apps/authinvoices/prop/
+
+SYSSTBL=SET ARCHIVEBASE=AP Vendor Invoices/
+
+SYSSTBL=SET AUTHTHRESHHOLD=1000
+
+#SYSSTBL=SET +DOC_DIR_PDF=/mnt/data/aon_prod/v1110/authinvoices/documents/
+
+#SYSSTBL=SET +DOC_DIR_HTM=/mnt/data/aon_prod/v1110/authinvoices/documents/
+
+#SYSSTBL=SET +DOC_DIR_XML=/mnt/data/aon_prod/v1110/authinvoices/documents/
+
+#SYSSTBL=SET +DOC_DIR_CSV=/mnt/data/aon_prod/v1110/authinvoices/documents/
+
+#SYSSTBL=SET +DOC_DIR_TXT=/mnt/data/aon_prod/v1110/authinvoices/documents/
+
+#SYSSTBL=SET +DOC_DIR_XLS=/mnt/data/aon_prod/v1110/authinvoices/documents/
+
+#SYSSTBL=SET +DOC_DIR_DEFAULT=/mnt/data/aon_prod/v1110/authinvoices/documents/
+
+#SYSSTBL=SET +DOC_DIR_ARCHIVE=/mnt/data/aon_prod/v1110/authinvoices/documents/archive/
+
+SYSPFX=/mnt/data/aon_prod/apps/authinvoices/prog/
+
+SYSPFX=/mnt/data/aon_prod/apps/authinvoices/data/
+
+SYSPFX=/mnt/data/bbj/utils/email/
+
+SYSCFG=AUTHINVOICES=/mnt/data/aon_prod/apps/authinvoices/data/
+
+SYSLANG=ENU
+
+
+
+update target adm_modules XML files: 
+
+Updatexml log finished: 2014-02-13@15:12:22

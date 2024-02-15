@@ -1,0 +1,25 @@
+rem ' test renderCustStatements.src
+
+rem ' ---------------------------------------
+rem ' be sure to move the rems on the email addresses in the email_statement subroutine
+rem ' and rem out the sysgui! open
+rem ' ---------------------------------------
+
+firm$ = "01"
+stmt_date$ = "20220708"
+message$ = "Test Print"
+aging$ = "A"
+agingOnDate$ = "I"
+minbal = 0; rem ' not supported
+printSNDetail = 0; rem ' not supported
+option$ = "S"; rem ' S = single, R = restart
+sequence$ = "N"; rem ' A is alpha, N is numeric
+customer_nbr$ = "001022"
+rem ' stmts is returned from  renderCustStatements
+
+call "renderCustStatements.src", firm$, stmt_date$, message$, aging$, agingOnDate$, minbal, printSNDetail, option$, sequence$, customer_nbr$, stmts
+
+print "stmts: ", stmts
+
+end
+

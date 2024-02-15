@@ -1,0 +1,17 @@
+The attached file contains your serial number information. To view, simply open the attached HTML file. Accessing an active internet connection enables proper printing and viewing of the BASIS logo.
+
+The License Registration Form will print on one page. If it prints on two pages, try making any or all of these changes inside your browser:
+1. On the default page set up, 
+   a. Remove the header and footer. 
+   b. Change the margins to .5 or .25 inches.
+2. Change the default font to a narrower or condensed font such as Arial Narrow.
+
+Thank you,
+
+
+BASIS International Ltd.
+Customer Service
+customer-service@basis.cloud
+ 1.505.938.6121 (US)
++1.505.338.4188 (International)
+

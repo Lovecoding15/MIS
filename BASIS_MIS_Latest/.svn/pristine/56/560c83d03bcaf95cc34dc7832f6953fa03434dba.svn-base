@@ -1,0 +1,296 @@
+SETERR exit
+REM ' Program name: nc_update.bbj
+ENTER snlist$,newitemlist$,saletypelist$,email1$,email2$,msg$
+rem 'open & get templates
+CALL "ec_open::SNM01"; LET chan$=STR(snm01:"000")
+CALL "ec_open::SNM04"; LET chan$=chan$+STR(snm04:"000")
+CALL "ec_open::SNT01"; LET chan$=chan$+STR(snt01:"000")
+CALL "ec_open::CSM01"; LET chan$=chan$+STR(csm01:"000")
+CALL "ec_open::CSM02"; LET chan$=chan$+STR(csm02:"000")
+CALL "ec_open::CSM03"; LET chan$=chan$+STR(csm03:"000")
+CALL "ec_open::CSM04"; LET chan$=chan$+STR(csm04:"000")
+CALL "ec_open::ARM02"; LET chan$=chan$+STR(arm02:"000")
+
+rem ' log the entry
+logchan = unt
+open(logchan, mode="O_APPEND",err=log_done)"/mnt/data/basisaon/aon/tmp/nc_update.log"
+write(logchan,err=log_done)date(0,"%Y%Mz%Dz %Hz%Mz%sz") + "snlist       " + snlist$
+write(logchan,err=log_done)date(0,"%Y%Mz%Dz %Hz%Mz%sz") + "newitemlist  " + newitemlist$
+write(logchan,err=log_done)date(0,"%Y%Mz%Dz %Hz%Mz%sz") + "saletypelist " + saletypelist$
+write(logchan,err=log_done)date(0,"%Y%Mz%Dz %Hz%Mz%sz") + "email1       " + email1$
+write(logchan,err=log_done)date(0,"%Y%Mz%Dz %Hz%Mz%sz") + "email2       " + email2$
+write(logchan,err=log_done)date(0,"%Y%Mz%Dz %Hz%Mz%sz") + "msg          " + msg$
+close(logchan,err=log_done)
+log_done:
+
+first_sn=1
+po$=fncomma$(msg$)
+msg$=""
+msg_text$=""
+dsblist$=""
+dsb=0
+no_lic=0
+
+rem 'Main loop
+while pos($0a$=snlist$)
+
+lf=pos($0a$=snlist$)
+sn$=snlist$(1,lf-1),snlist$=snlist$(lf+1)
+sn$=CVS(sn$,7)+FILL(20),sn$=sn$(1,20)
+lf=pos($0a$=newitemlist$)
+newitem$=newitemlist$(1,lf-1),newitemlist$=newitemlist$(lf+1)
+lf=pos($0a$=saletypelist$)
+sale_type$=saletypelist$(1,lf-1),saletypelist$=saletypelist$(lf+1)
+uncounted=(pos("Y"=cvs(sale_type$,4))=4)
+if len(sale_type$)>3 then sale_type$=sale_type$(1,3)
+
+tries=0,ok=0
+EXTRACT RECORD (snm01,KEY=sn$,ERR=*next)snm01$;ok=1
+if ok=0 then
+ if tries>5 then exitto exit
+ tries=tries+1
+ wait 1
+ retry
+fi
+
+LET firm$=snm01.firm_id$
+
+READ RECORD (csm03,KEY=firm$+newitem$(7,3),DOM=*next)csm03$
+port$=csm03.port_id$
+LET today=JUL(0,0,0)
+LET d3$=CHR(ASC(DATE(today:"%Yp"))+32)+CHR(ASC(DATE(today:"%Mp"))+32)+CHR(ASC(DATE(today:"%Dp"))+32)
+
+dim snt01tmp$:fattr(snt01$)
+READ (snt01,KEY=sn$,ERR=read_snt01)
+read_snt01: 
+LET k$=KEY(snt01,END=snt01end)
+IF POS(sn$=k$)<>1 THEN GOTO snt01end
+READ RECORD (snt01,KEY=k$)snt01$
+seq$=snt01.sn_det_seq$
+t_date$=snt01.trans_date$
+IF CVS(snt01.auth_code$,3)="" OR snt01.action$="D" THEN GOTO read_snt01
+LET snt01tmp$=field(snt01$)
+GOTO read_snt01
+snt01end: 
+
+float$="F"
+if csm03.fixed_lic_flag$="Y" AND snm01.users<2 and uncounted THEN float$="X"
+
+snm01.product$=newitem$(1,3)
+snm01.platform$=newitem$(4,3)
+snm01.os_level$=newitem$(7,3)
+snm01.product_rev$=newitem$(10,3)
+snm01.license_type$=newitem$(13,3)
+snm01.port_id$=port$
+
+READ RECORD (csm04,KEY=firm$+newitem$(10,3))CSM04$
+keyusr=snm01.users,actkey$=""
+IF csm04.Key_or_licen$="K" THEN call "ec_an",firm$,newitem$,sn$,dummy$,keyusr,actkey$,dummy
+
+LET snt01.serial_nbr$=sn$
+LET snt01.trans_date$=d3$
+LET snt01.sn_det_seq$="00001"
+IF d3$=t_date$ THEN 
+: LET snt01.sn_det_seq$=STR(NUM(seq$)+1:"00000")
+LET snt01.customer_nbr$=snm01.customer_nbr$
+LET snt01.ar_inv_nbr$="0000000"
+LET snt01.sequence_nbr$="000"
+LET snt01.type_of_sale$=sale_type$
+LET snt01.product_rev$=newitem$(10,3)
+REM 'For new auth#, 1st 5 is day number of year followed by 2 digit year
+LET temp$="0000"+CVS(sn$,2),temp=LEN(temp$)
+LET temp$=temp$(temp-3,4),y$=date(0:"%Y")
+LET d=today-JUL(num(y$),1,1)
+LET authnum$=STR(d+1:"000")+y$(3,2)+temp$+STR(float$="F")
+LET snt01.auth_code$=authnum$
+if actkey$<>"" then LET snt01.auth_code$=actkey$
+LET snt01.server_nbr$=snt01tmp.server_nbr$
+LET snt01.firm_id$=firm$
+LET snt01.action$="M"
+LET snt01.fixed_float$=float$
+LET snt01.contract$=snm01.contract$
+LET snt01.sam_active$=sam_active$
+LET snt01.item$=newitem$
+LET temp$=FATTR(snt01$,"dealer_str"),temp=DEC(temp$(10,2))
+LET snt01.dealer_str$=FILL(temp)
+LET snt01.users=snm01.users
+LET snt01.ext_price=0
+LET snt01.license_cnt=snt01tmp.license_cnt
+LET snt01.dealer_num_1=0
+LET snt01.dealer_num_2=0
+LET snt01.dealer_num_3=0
+LET snt01$=FIELD(snt01$)
+WRITE RECORD (snt01,KEY=snt01$(1,28))snt01$
+LET snm01$=FIELD(snm01$)
+WRITE RECORD (snm01,KEY=snm01$(1,20))snm01$
+
+LET TODAY$=DATE(0:"%Mz/%Dz/%Y")
+LET seq=1,com$="N/C Ecomm update to "+cvs(newitem$,3)+" "+TODAY$
+if len(com$)>48 then com$=com$(1,48)
+READ (snm04,KEY=sn$,DOM=*NEXT)
+ WHILE seq<100
+ READ RECORD (snm04,END=*break)snm04$
+ IF snm04.serial_nbr$=sn$ THEN LET seq=NUM(snm04.comments_seq$)+1; CONTINUE
+ LET snm04.serial_nbr$=sn$
+ LET snm04.comments_seq$=STR(seq:"00"),seq=100
+ LET snm04.cmt_line$=com$
+ LET snm04$=FIELD(snm04$)
+ WRITE RECORD (snm04,KEY=snm04$(1,22))snm04$
+ WEND
+
+LET users=snm01.users,item$=newitem$
+LET RV$=CVS(csm04.description$,3),p=POS(" "=RV$); IF p=0 THEN LET p=LEN(RV$)
+LET PROD_TYPE$=item$(13,3),REV_LEVEL$=CVS(RV$(1,p),2)
+LET PORT_REV$=PORT$+"."+RV$,p=POS("."=RV$); IF p THEN LET PORT_REV$=PORT_REV$(1,6)+RV$(1,p-1)+RV$(p+1)
+READ (csm01,KEY=firm$+item$(1,3))*,PRDDESC$
+READ (csm02,KEY=firm$+item$(4,3))*,PLTDESC$
+LET PRINT_DESC$=CVS(PRDDESC$,2)
+IF csm04.Key_or_licen$="L" THEN LET OSLINE$=CVS(REV_DESC$,2)+" Port ID "+PORT_REV$+"  "+CVS(PLTDESC$,2) ELSE LET OSLINE$=CVS(PLTDESC$,2),item$=CVS(item$,2)+"  "+PORT$
+IF LEN(PRINT_DESC$)>30 THEN LET PRINT_DESC$=PRINT_DESC$(1,30); IF LEN(CVS(PRDDESC$,2))>20 THEN LET PRINT_DESC$=CVS(PRDDESC$,2)
+IF LEN(OSLINE$)>48 THEN LET OSLINE$=OSLINE$(1,48)
+LET LICTEXT$=""
+IF csm04.Key_or_licen$="L" THEN 
+  call "temp_license.pgm",sn$,lictext$
+  if lictext$="" then no_lic=no_lic+1
+fi
+
+LET LICTEXT$=LICTEXT$+","+po$+","+snm01.CUSTOMER_NBR$
+
+let print_desc$=fncomma$(PRINT_DESC$)
+LET osline$=fncomma$(OSLINE$)
+LET OUTREC$=CVS(snm01.SERIAL_NBR$,2)+","+CVS(snt01.AUTH_CODE$,2)+","+STR(users)+",000000,"+TODAY$+","+CVS(item$,2)+","+CVS(PRINT_DESC$,35)+","+CVS(REV_LEVEL$,2)+","+CVS(OSLINE$,35)+LICTEXT$
+
+LET KEY_TMP$="number:c(10*=44),auth_key:c(13*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),po:c(5*=44),cust:c(6)"
+LET LIC_TMP$="number:c(10*=44),auth_key:c(10*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),flex_feature:c(7*=44),flex_key:c(12*=44),flex_rev_lvl:c(10*=44),flex_host_id:c(10*=44),flex_expiry_date:c(11*=44),flex_checksum:c(2*=44),flex_users:c(10*=44),flex_number:c(10*=44),platform:c(1*=44),po:c(5*=44),cust:c(6)"
+LET k$="",C1=POS(","=OUTREC$)
+IF C1 THEN LET C2=POS(","=OUTREC$(C1+1)); IF C2 THEN LET k$=OUTREC$(C1+1,C2-1)
+LET K_SIZE=LEN(CVS(k$,3)); REM Keys are 13 characters, authorization#'s  are 10
+IF K_SIZE=10 THEN 
+  DIM REC$:LIC_TMP$
+  LET FLEX=1 
+ELSE 
+  DIM REC$:KEY_TMP$
+  LET FLEX=0
+FI
+LET REC$=OUTREC$
+
+if first_sn then 
+  READ RECORD (ARM02,KEY=FIRM$+snm01.customer_nbr$+"  ",DOM=*next)ARM02$
+  if arm02.cust_type$="DSI" or pos("01003017"=arm02$)=1 then let dsb=1
+fi
+
+LET DSBLIST$=DSBLIST$+OUTREC$+$0A$
+if no_lic=0 then GOSUB lic_form
+msg$=msg$+sn$+$0a$
+
+wend
+rem 'End of main loop
+
+IF DSB  and no_lic=0 then
+  LET DSBID$="00000dsb.txt"
+  LET AT$=$0A$+"--==========_BASIS"+$0A$+"Content-Disposition: attachment"+$0A$+"Content-Transfer-Encoding: 7bit"+$0A$+"Content-Type: text/plain;"+$0A$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+DSBID$+$22$+$0A$+$0A$+DSBLIST$
+ WRITE RECORD (OUTFILE)AT$
+fi
+
+CLOSE (OUTFILE,err=*next)
+if no_lic=0 and pos("@"=email$) then 
+	rem ' send mail is no longer used
+	rem ' LET a=SCALL("/usr/lib/send mail -t < "+OUTFILE$)
+	
+	rem ' email$ is the to address
+	from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+	cc$ = "customer-service@basis.cloud"
+	bcc$ = "kw5121151@gmail.com"; rem ' for monitoring
+	subj$ = s$
+	if pos("nc_update" = msg_text$) = 0 then msg_text$ = msg_text$ + $0A$ + $0A$ + "nc_update"
+		
+	htmlfile$ = stbl("TEMP") + CVS(REC.NUMBER$,2)+".htm"
+	erase htmlfile$, err=*next
+	string htmlfile$
+	htmlfile = unt
+	open(htmlfile)htmlfile$
+	write record (htmlfile)savehtml$
+	close(htmlfile)
+	call "sendEmail.src", from$, email$, cc$, bcc$, subj$, msg_text$, htmlfile$
+	erase htmlfile$,err=*next
+fi
+ERASE OUTFILE$,ERR=*next
+if no_lic then goto bcomm_orders 
+goto exit
+
+DEF FNCOMMA$(Q1$)
+COMMA1: LET COMMA_POS=POS(","=Q1$)
+IF COMMA_POS THEN LET Q1$(COMMA_POS,1)=" "; GOTO COMMA1
+RETURN cvs(Q1$,35)
+FNEND
+
+lic_form:
+
+if first_sn then 
+ email$=cvs(email1$,3)
+ if cvs(email2$,3)<>"" then email$=email$+","+cvs(email2$,3)
+ if pos(","=email$)=1 then email$=email$(2)
+
+ LET OUTFILE$=STBL("TEMP")+CVS(sn$,3)+"email.txt"
+ ERASE OUTFILE$,ERR=OPEN_OUTFILE
+ OPEN_OUTFILE: STRING OUTFILE$
+ LET OUTFILE=UNT; OPEN (OUTFILE)OUTFILE$
+ LET s$=CVS(sn$,3)+" License registration"
+ LET HEADER$="Mime-Version: 1.0"+$0A$+"Content-Type: multipart/mixed;"+$0A$+" boundary="+$22$+"==========_BASIS"+$22$+$0A$
+ LET HEADER$=HEADER$+"To: "+email$+$0A$+"From: BASIS Customer Service <customer-service@basis.cloud>"+$0A$+"Reply-To: customer-service@basis.cloud"+$0A$+"Cc: customer-service@basis.cloud"+$0A$+"Subject: "+s$+$0A$+"--==========_BASIS"+$0A$+"Content-Type: text/plain;"+$0A$+" charset="+$22$+"us-ascii"+$22$+$0A$+"Content-Transfer-Encoding: 7bit"+$0A$+$0A$
+if msg_text$="" then gosub msg_text
+ LET HEADER$=HEADER$+msg_text$
+ WRITE RECORD (OUTFILE)HEADER$
+ first_sn=0
+fi 
+
+LET PAGEBREAK$=$0A$+"--==========_BASIS"+$0A$+"Content-Disposition: attachment"+$0A$+"Content-Transfer-Encoding: 7bit"+$0A$+"Content-Type: text/html;"+$0A$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+CVS(REC.NUMBER$,2)+".htm"+$22$+$0A$+$0A$
+
+LET TOLINE$="",SUBJLINE$="",choice$="E",html$=""
+call "BLK.30",firm$,toline$,subjline$,choice$,rec$,flex,html$
+savehtml$ = html$
+WRITE RECORD (OUTFILE)pagebreak$+HTML$
+return
+msg_text:
+msg_chan=unt
+txtfile$=stbl("DATA_SERVER")+stbl("AON")+"ADATA/BLK16.txt"
+open(msg_chan)txtfile$
+f1$=fin(msg_chan),s=dec(f1$(1,4))
+readrecord(msg_chan,siz=s)msg_text$
+close(msg_chan)
+return
+bcomm_orders:
+bcom$="BEGIN"+$0a$+firm$+$0a$+str(dsb)+$0a$+email1$+$0a$+email2$+$0a$+dsblist$+"END"+$0a$
+outfile$=stbl("AON")+"bcomm_orders.txt"
+outfile=unt
+waited=0
+open(outfile,err=nolock)outfile$
+lock(outfile,err=nolock)
+f$=fin(outfile)
+s=dec(f$(1,4))
+textin$=""
+if s then readrecord(outfile,siz=s)textin$
+print(outfile)bcom$
+close(outfile)
+goto exit
+
+nolock:
+if err=12 then 
+  string outfile$,err=exit
+  wait 1
+  a=scall("chmod 666 "+outfile$+" 2>/dev/null")
+fi
+if err=0 then
+  wait 1
+  waited=waited+1
+  if waited>30 then goto exit
+fi
+retry
+
+exit: 
+while len(chan$)>=3
+  close(num(chan$(1,3)),err=*next)
+  chan$=chan$(4)
+wend
+
+EXIT

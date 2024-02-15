@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADC_COUNTRY</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<CNTRY_ID>SV</CNTRY_ID>
+		<DESC>Sweden</DESC>
+		<CNTRY_DATE_FMT>YMD</CNTRY_DATE_FMT>
+		<CNTRY_DATE_SEP>-</CNTRY_DATE_SEP>
+		<CNTRY_TIME_FMT>Hms</CNTRY_TIME_FMT>
+		<CNTRY_TIME_SEP>:</CNTRY_TIME_SEP>
+		<CNTRY_CURR_SYM>kr</CNTRY_CURR_SYM>
+		<CNTRY_DEC_SYM>,</CNTRY_DEC_SYM>
+		<CNTRY_GRP_SYM>.</CNTRY_GRP_SYM>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

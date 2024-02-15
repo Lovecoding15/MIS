@@ -1,0 +1,346 @@
+REM /**
+REM  * HostId.src
+REM  * @author kurt williams
+REM  *
+REM  */
+
+class public HostIdConstants
+
+    field public BBjNumber TOKEN = 1
+    field public BBjNumber HASH = 2
+    field public BBjNumber FULL = 3  
+    
+     method public HostIdConstants()
+    
+     methodend  
+    
+    method public BBjNumber TOKEN()
+    
+        methodret #TOKEN
+
+    methodend
+
+    method public BBjNumber HASH()
+    
+        methodret #HASH
+
+    methodend
+    
+    method public BBjNumber FULL()
+    
+        methodret #FULL
+
+    methodend
+
+classend
+
+
+class public HostId
+
+    use ::SQLProperties.bbj::SQLProperties
+
+    field private BBjString dbConnectStr!
+    
+    field private BBjNumber hostidFound!
+    
+    field private BBjString hostidToken!
+    field private BBjString hostidHash!
+    field private BBjString hostidFull!
+    
+    field private BBjTemplatedString hostid_alias!
+    field private BBjString hostid_aliasdef!
+    field private BBjNumber hostid_aliasdev!
+    
+    field private BBjString msgString!
+    
+    method public HostId(BBjNumber hostidType!, BBjString hostidString!)
+    
+        if hostidType! <> 1 and hostidType! <> 2 and hostidType! <> 3 then throw "Invalid HostId type provided.",311  
+        #openfiles()
+
+        sqlProps! = new SQLProperties()
+        #dbConnectStr! = cast(BBjString, sqlProps!.getDBConnect())
+        
+        #reset()
+        
+        if hostidType! = 1  then #gatherDataToken(cvs(hostidString!,3))
+        if hostidType! = 2  then #gatherDataHash(cvs(hostidString!,3))
+        if hostidType! = 3  then #gatherDataFull(cvs(hostidString!,3))
+                
+    methodend
+
+    method public HostId()
+    
+        #openfiles()
+        #reset()
+        
+        sqlProps! = new SQLProperties()
+        #dbConnectStr! = cast(BBjString, sqlProps!.getDBConnect())
+                        
+    methodend
+    
+    method public BBjNumber exists()
+    
+        methodret #hostidFound!
+        
+    methodend
+        
+    method public BBjString getHostidToken()
+    
+        methodret #hostidToken!
+    
+    methodend
+    
+    method public BBjString getHostidHash()
+    
+        methodret #hostidHash!
+        
+    methodend
+    
+    method public BBjString getHostidFull()
+    
+        methodret #hostidFull!
+        
+    methodend
+    
+    method public BBjNumber createNewHostidXrefEntry(BBjString hostidFull!)
+    
+        success = 0
+        
+        hostidFull$ = hostidFull!
+
+        if #isNewHostid(hostidFull$) then
+            hostidHash$ = cast(BBjString, org.apache.commons.codec.digest.DigestUtils.sha256Hex(hostidFull!))
+        
+            sql$ = "SELECT * FROM HOSTID_ALIAS where hostid_hash = '" + hostidHash$ + "'"
+            sChan = SQLUNT
+            sqlOpen(sChan)#dbConnectStr!
+            sqlPrep(sChan)sql$
+            sqlExec(sChan)
+            dim rec$:sqltmpl(sChan)
+            
+            found = 0
+            rec$ = sqlfetch(sChan, err= *next); found = 1
+        
+            if !found then
+
+                rem ' write a new row
+                dim hostid_alias$:#hostid_aliasdef!
+                hostid_alias.hostid_full$ = hostidFull!
+                
+                hostidHash$ = hostidHash$ + "0"
+                hostid_alias.hostid_hash$ = hostidHash$
+            
+                hostidToken$ = date(0:"%Y%Mz%Dz%Hz%mz%sz") + "00"
+                hostid_alias.hostid_token$ = hostidToken$
+
+                rem ' check for duplicates on both indexes
+                key0ready = 0
+                dim hostid_alias_alt$:#hostid_aliasdef!
+                while !key0ready
+                    found=0
+                    read record(#hostid_aliasdev!, knum = 0, key = hostid_alias.hostid_token$, dom = *next)hostid_alias_alt$; found=1
+                    if found then
+                        hostidToken$ = hostid_alias.hostid_token$
+                        hostidToken$(15,2) = str(num(hostidToken$(15,2)) + 1)
+                        hostid_alias.hostid_token$ = hostidToken$
+                    else
+                        key0ready = 1
+                    fi
+                wend
+
+                key1ready = 0, fullHostidExists = 0 
+                dim hostid_alias_alt$:#hostid_aliasdef!
+                while !key1ready
+                    found=0
+                    read record(#hostid_aliasdev!, knum = 1, key = hostid_alias.hostid_hash$, dom = *next)hostid_alias_alt$; found=1
+                    if found then
+                        rem ' check to see if the full hostid = this full hostid'
+                        if hostid_alias.hostid_full$ = hostidFull! then
+                            fullHostidExists = 1
+                            key1ready = 1
+                        else
+                            hostidHash$ = hostid_alias.hostid_hash$
+                            hostidHash$(65,1) = str(num(hostidHas$(65,1)) + 1)
+                        fi
+                    else
+                        key1ready = 1
+                    fi
+                wend
+            
+                if !fullHostidExists then
+                    write record(#hostid_aliasdev!)hostid_alias$
+                    success = 1
+                    #gatherDataToken(cvs(hostid_alias.hostid_token$,3))
+                else
+                    #msgString! = "HostId already exists."
+                fi
+            fi
+                
+            sqlclose(sChan, err = *next)
+            
+        else
+            rem ' legacy host id
+            rem ' for legacy host ids the taken, hash and full hostids are the same
+            
+            sql$ = "SELECT * FROM HOSTID_ALIAS where hostid_hash = '" + hostidFull$ + "'"
+            sChan = SQLUNT
+            sqlOpen(sChan)#dbConnectStr!
+            sqlPrep(sChan)sql$
+            sqlExec(sChan)
+            dim rec$:sqltmpl(sChan)
+       
+            found = 0
+            rec$ = sqlfetch(sChan, err= *next); found = 1
+   
+            if !found then
+                rem ' write a new row
+                dim hostid_alias$:#hostid_aliasdef!
+                hostid_alias.hostid_full$ = hostidFull!
+                hostid_alias.hostid_token$ = hostidFull!
+                hostid_alias.hostid_hash$ =  hostidFull!
+
+                write record(#hostid_aliasdev!)hostid_alias$
+                success = 1
+                #gatherDataToken(cvs(hostid_alias.hostid_token$,3))
+                
+            else
+                #msgString! = "HostId already exists."
+            fi
+            
+            sqlclose(sChan, err = *next)
+        fi
+            
+        methodret success
+    
+    methodend
+    
+    method public BBjNumber isNewHostid(BBjString hostidFull$)
+    
+        rem ' new or legacy hostid
+        rem ' any full hostid longer than 60 bytes is a New format hostid
+        rem ' any full hostid where the lenght is 60 or less is must be evaluated further
+        rem ' any hostid between where the length is 60 or less that also meets other tests is a Legacy 
+        rem ' format hostid
+        rem ' any hostid between where the length is 60 or less that does not pass these other tests is 
+        rem ' a new format hostid 
+
+        newHostid = 0
+        hostidFull$ = cvs(hostidFull$,3)
+        
+        if len(hostidFull$) > 60 then
+            newHostid = 1
+        else
+            if hostidFull$(1,3) = chr(34) + "00" or hostidFull$(1,3) = "000" then
+                newHostid = 0
+            else
+                if hostidFull$(1,1) = chr(34) and hostidFull$(14,1) = " " and hostidFull$(27,1) = " " then
+                    newHostid = 0
+                else
+                    if hostidFull$(13,1) = " " and hostidFull$(26,1) = " " then
+                        newHostid = 0
+                    else
+                        if hostidFull$(1,5) = "COMPO" or hostidFull$(1,11) = "DISK_SERIAL" or hostidFull$(1,9) = "ID_STRING" then
+                            newHostId = 0
+                        else
+                            newHostId = 1
+                        fi
+                    fi
+                fi
+            fi
+        fi
+    
+        newHostId! = newHostId
+    
+        methodret newHostId!
+    
+    methodend
+    
+    
+    method public BBjString getMessage()
+    
+        methodret #msgString!
+        
+    methodend
+    
+    method private void openfiles()
+        
+        call "ec_open::HOSTID_ALIAS"
+        #hostid_aliasdev! = hostid_alias
+        #hostid_aliasdef! = fattr(hostid_alias$)
+        #hostid_alias! = BBjAPI().makeTemplatedString(#hostid_aliasdef!)
+        
+    methodend
+    
+    method private void reset()
+    
+        #hostidFound! = 0
+        #hostidToken! = ""
+        #hostidHash! = ""
+        #hostidFull! = ""
+        #msgString! = ""
+
+    methodend
+
+    method private void gatherDataToken(BBjString hostidToken!)
+    
+       dim hostid_alias$:#hostid_aliasdef!
+       hostidToken$ = hostidToken! + fill(60," ")
+       hostidToken$ = hostidToken$(1,60)
+       
+       found = 0
+       read record(#hostid_aliasdev!, knum = 0, key = hostidToken$, dom=*next)hostid_alias$; found = 1
+       
+       if found then
+           #hostidFound! = 1
+           #hostidToken! = hostid_alias.hostid_token$
+           #hostidHash! = hostid_alias.hostid_hash$
+           #hostidFull! = hostid_alias.hostid_full$
+       fi
+
+    methodend
+    
+    method private void gatherDataHash(BBjString hostidHash!)
+    
+       dim hostid_alias$:#hostid_aliasdef!
+       hostidHash$ = hostidHash! + fill(65," ")
+       hostidHash$ = hostidHash$(1,65)
+       
+       found = 0
+       read record(#hostid_aliasdev!, knum = 1, key = hostidHash$, dom=*next)hostid_alias$; found = 1
+       
+       if found then
+           #hostidFound! = 1
+           #hostidToken! = hostid_alias.hostid_token$
+           #hostidHash! = hostid_alias.hostid_hash$
+           #hostidFull! = hostid_alias.hostid_full$
+       fi
+
+    methodend
+
+    method private void gatherDataFull(BBjString hostidFull!)
+
+       sql$ = "SELECT * FROM HOSTID_ALIAS where hostid_full = '" + hostidFull! + "'"
+       sChan = SQLUNT
+       sqlOpen(sChan)#dbConnectStr!
+       sqlPrep(sChan)sql$
+       sqlExec(sChan)
+       dim rec$:sqltmpl(sChan)
+       
+       found = 0
+       rec$ = sqlfetch(sChan, err= *next); found = 1
+       
+       if !found then
+            #hostidFound! = 0
+       else
+            dim hostid_alias$:#hostid_aliasdef!
+            #hostidFound! = 1
+            #hostidToken! = rec.HOSTID_TOKEN$
+            #hostidHash! = rec.HOSTID_HASH$
+            #hostidFull! = rec.HOSTID_FULL$
+       fi
+       sqlclose(sChan, err = *next)
+       
+    methodend
+
+classend

@@ -1,0 +1,83 @@
+rem --- test program
+
+setesc std_error
+seterr std_error
+
+enter
+
+sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+dim sysinfo$:sysinfo_template$
+sysinfo$=stbl("+SYSINFO",err=std_error_release)
+
+firm_id$=sysinfo.firm_id$
+user$=sysinfo.user_id$
+
+rem --- get the grid
+userNamespace! = BBjAPI().getExistingNamespace(user$ + ".paymentSelect")
+gridInvoices! = userNamespace!.getValue("gridInvoices")
+
+rem --- get the approval vector
+approvalsEntered! = userNamespace!.getValue("approvalsEntered")
+
+if approvalsEntered!.size() > 0 then
+	rem --- write them
+
+	rem --- Open/Lock files
+	files=1,begfile=1,endfile=files
+	dim files$[files],options$[files],chans$[files],templates$[files]
+	files$[1]="APM_INVAPPROVAL"
+	options$[1]="OTA"
+	call stbl("+DIR_SYP")+"bac_open_tables.bbj",
+:		begfile,
+:		endfile,
+:		files$[all],
+:		options$[all],
+:		chans$[all],
+:		templates$[all],
+:		table_chans$[all],
+:		batch,
+:		status$
+
+	dim apm_invapproval$:templates$[1]
+	apm_invapproval = num(chans$[1])
+
+	for item = 0 to approvalsEntered!.size() - 1
+	
+		apm_invapproval! = approvalsEntered!.getItem(item)
+		apm_invapproval$ = apm_invapproval!.getString()
+
+		write record(apm_invapproval)apm_invapproval$
+	next item
+endif
+
+call "notify_apprv_exit.src", firm_id$, user$, gridInvoices!
+
+exit
+
+std_error: rem --- Standard error handler (01Apr2006)
+
+	err_text$=""
+	if tcb(5)<>0 and pgm(-1)=pgm(-2) err_text$=pgm(tcb(5),err=*next)
+	call stbl("+DIR_SYP")+"bac_error.bbj",err=std_error_exit,pgm(-2),str(tcb(5)),str(err),err_text$,err_act$
+	if pos("EXIT"=err_act$) goto std_error_exit
+	if pos("ESCAPE"=err_act$) seterr 0;setesc 0
+	if pos("RETRY"=err_act$) retry
+
+std_error_exit:
+
+	master_user$=cvs(stbl("+MASTER_USER",err=std_error_release),2)
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=std_error_release)
+	if cvs(sysinfo.user_id$,2)=master_user$ escape
+
+std_error_release:
+
+	status=999
+	if pgm(-1)<>pgm(-2) exit
+
+	release
+
+std_exit: rem --- Standard program end (01Mar2006)
+
+	release

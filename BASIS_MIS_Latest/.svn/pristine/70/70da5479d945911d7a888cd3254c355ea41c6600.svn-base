@@ -1,0 +1,265 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2018-02-7
+Last Build Time=14:19:57
+Precision=99
+Program Name=c:/zwork/basis/svncloud/basisaon/ec/CustSalesReport
+Remarks=Yes
+Resource File=CustSalesReport.arc
+Show Forms=All
+
+[Init]
+rem ' get set
+
+call "ec_open::ARM01"
+
+firm_id$ = gb__arg.firm_id$
+customer_nbr$ = gb__arg.customer_nbr$
+repEmail$ = gb__arg.repEmail$
+
+gosub buildObjectReferences
+
+firmId!.setText(firm_id$)
+customerNbr!.setText(customer_nbr$)
+
+found = 0
+read record(arm01, key = firm_id$ + customer_nbr$, dom = *next)arm01$
+custName$ = cvs(arm01.cust_name$,3)
+custName!.setText(custName$)
+
+today$ = date(0:"%Y%Mz%Dz")
+year = num(today$(1,4))-1
+month = 1
+theday = 1
+startDate$ = date(jul(year, month, theday):"%Y-%Mz-%Dz")
+startDate!.setText(startDate$)
+
+month = 12
+theday = 31
+endDate$ = date(jul(year, month, theday):"%Y-%Mz-%Dz")
+endDate!.setText(endDate$)
+
+repEmail!.setText(repEmail$)
+
+
+[Event Win=101 ID=112 Code=B <PUSH_BUTTON> (W101_C112_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+goto pgm_end
+
+[Event Win=101 ID=113 Code=B <PUSH_BUTTON> (W101_C113_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub validateFields
+
+if validFields then
+    firmId$ = firmId!.getText()
+    customer_nbr$ = customerNbr!.getText()
+    startDate$ = startDate!.getText()
+    endDate$ = endDate!.getText()
+    repEmail$ = repEmail!.getText()
+
+    call "getLineItemSalesbyCustinGivenTimeFrame.src", firmId$, customer_nbr$, startDate$, endDate$, repEmail$
+
+    xresp = msgbox("The report has been built and emailed to " + repEmail$,0,"Report Complete")
+
+    goto pgm_end
+fi
+
+
+[Function (buildObjectReferences)]
+rem ' -----------------------------------------------------------------
+rem ' buildObjectReferences
+rem ' -----------------------------------------------------------------
+
+buildObjectReferences:
+
+declare BBjAPI bbjapi!
+declare BBjSysGui sysgui!
+
+declare BBjTopLevelWindow custSaleReportForm!
+declare BBjEditBox firmId!
+declare BBjEditBox customerNbr!
+declare BBjEditBox custName!
+declare BBjEditBox startDate!
+declare BBjEditBox endDate!
+declare BBjEditBox repEmail!
+
+bbjapi! = BBjAPI()
+sysgui! = bbjapi!.getSysGui()
+
+rem ' main window
+custSalesReportForm! = cast(BBjTopLevelWindow, sysgui!.getWindow("custSalesReportForm"))
+firmId! = cast(BBjEditBox, custSalesReportForm!.getControl("firmID"))
+customerNbr! = cast(BBjEditBox, custSalesReportForm!.getControl("customerNbr"))
+custName! = cast(BBjEditBox, custSalesReportForm!.getControl("custName"))
+startDate! = cast(BBjEditBox, custSalesReportForm!.getControl("startDate"))
+endDate! = cast(BBjEditBox, custSalesReportForm!.getControl("endDate"))
+repEmail! = cast(BBjEditBox, custSalesReportForm!.getControl("repEmail"))
+
+return
+
+[Function (pgm_end)]
+rem ' -----------------------------------------------------------------
+rem ' pgm_end
+rem ' -----------------------------------------------------------------
+
+pgm_end:
+
+close(arm01,err=*next)
+
+goto gb__eoj
+
+return
+
+[Function (validateFields)]
+rem ' -----------------------------------------------------------------
+rem ' validateFields
+rem ' -----------------------------------------------------------------
+
+validateFields:
+
+validFields = 1
+if firmId!.getText() <> "01" and firmId!.getText() <> "02" then 
+    xresp = msgbox("Firm Id must be 01 or 02.",0,"Validation")
+    validFields = 0
+    firmId!.focus()    
+    return
+fi
+
+custNbr$ = customerNbr!.getText()
+fieldBad = 0
+if len(custNbr$) < 4 then
+    fieldBad = 1
+else
+    good = 0
+    custNbr = num(custNbr$,err=*next); good = 1
+    if !good then 
+        fieldBad = 1
+    else
+        custNbr$ = str(custNbr:"000000")
+        found = 0 
+        firmId$ = firmId!.getText()
+        read record(arm01, key = firmId$ + custNbr$, dom = *next)arm01$; found = 1
+        if !found then 
+            fieldBad = 1
+        else
+            customerNbr!.setText(custNbr$)
+            custName!.setText(cvs(arm01.cust_name$,3))
+        fi
+    fi
+fi
+if fieldBad then
+    xresp = msgbox("Customer Number must be valid.",0,"Validation")
+    customerNbr!.focus()
+    validFields = 0
+    return
+fi
+
+startDate$ = startDate!.getText()
+fieldBad = 0
+if len(startDate$) <> 10 then
+    fieldBad = 1
+else
+    year$ = startDate$(1,4)
+    month$ = startDate$(6,2)
+    theday$ = startDate$(9,2)
+    good = 0
+    year = num(year$,err = *next); good = 1
+    if !good then
+        fieldBad = 1
+    else
+        good = 0
+        month = num(month$, err = *next); good = 1
+        if !good then
+            fieldBad = 1
+        else
+            good = 0
+            theday = num(theday$, err = *next); good = 1
+            if !good then
+                fieldBad = 1
+            else
+                good = 0
+                startDate$ = date(jul(year, month, theday, err = *next):"%Y-%Mz-%Dz"); good = 1
+                if !good then
+                    fieldBad = 1
+                else
+                    startDate!.setText(startDate$)
+                fi
+            fi
+        fi
+    fi
+fi
+if fieldBad then
+    xresp = msgbox("Start Date must be valid.",0,"Validation")
+    startDate!.focus()
+    validFields = 0
+    return
+fi
+
+endDate$ = endDate!.getText()
+fieldBad = 0
+if len(endDate$) <> 10 then
+    fieldBad = 1
+else
+    year$ = endDate$(1,4)
+    month$ = endDate$(6,2)
+    theday$ = endDate$(9,2)
+    good = 0
+    year = num(year$,err = *next); good = 1
+    if !good then
+        fieldBad = 1
+    else
+        good = 0
+        month = num(month$, err = *next); good = 1
+        if !good then
+            fieldBad = 1
+        else
+            good = 0
+            theday = num(theday$, err = *next); good = 1
+            if !good then
+                fieldBad = 1
+            else
+                good = 0
+                endDate$ = date(jul(year, month, theday, err = *next):"%Y-%Mz-%Dz"); good = 1
+                if !good then
+                    fieldBad = 1
+                else
+                    endDate!.setText(endDate$)
+                fi
+            fi
+        fi
+    fi
+fi
+if fieldBad then
+    xresp = msgbox("End Date must be valid.",0,"Validation")
+    endDate!.focus()
+    validFields = 0
+    return
+fi
+
+repEmail$ = cvs(repEmail!.getText(), 3)
+fieldBad = 0
+if len(repEmail$) = 0 then
+    fieldBad = 1
+else
+    if pos("@" = repEmail$) = 0 then
+        fieldBad = 1
+    fi
+fi
+if fieldBad then
+    xresp = msgbox("Email Address must be valid.",0,"Validation")
+    repEmail!.focus()
+    validFields = 0
+    return
+fi
+
+return
+

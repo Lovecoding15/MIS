@@ -1,0 +1,25 @@
+0010 REM "ADC - Set Operating System Environment Variable"
+0020 REM "Program: ADC.04"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0040 REM 
+0041 REM "KJS|10/16/96|Version 6.0
+0089 REM 
+0090 SETERR 9900
+0095 ENTER OS$
+0100 REM " --- Open files"
+0110 LET ADS02_DEV=UNT; OPEN (ADS02_DEV,ERR=9900)"ADS-02"
+1000 REM " --- Get O/S name"
+1020 READ (ADS02_DEV)OS$
+1040 LET OS$=FNU$(OS$)+"    ",OS$=OS$(1,4)
+1060 LET X$=STBL("!OS",OS$)
+4000 GOTO 9900
+8000 REM " --- Functions"
+8020 DEF FNU$(Q$)=CVS(Q$,4)
+9900 REM " --- Exit"
+9910 CLOSE (ADS02_DEV,ERR=9911)
+9990 EXIT 
+9999 END

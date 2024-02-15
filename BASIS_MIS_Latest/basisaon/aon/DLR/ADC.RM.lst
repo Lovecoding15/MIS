@@ -1,0 +1,12 @@
+0010 REM "ADC - Bridge - Resize Mask"
+0020 REM "Program: ADC.RM"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0090 ENTER MASK$,LENGTH,MIN,MAX
+1020 CALL "SYC.RM",MASK$,LENGTH,MIN,MAX
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

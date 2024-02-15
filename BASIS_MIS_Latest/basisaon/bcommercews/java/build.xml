@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+This build file is a generic build file that works in conjuction with a build.properties
+file to package, process, and deploy a web service.  This file should not need to be
+modified in most simple cases.  Please use the default build.properties file as a
+template, and make configuration changes there.  The build.properties file must
+reside in the same directory as this file.  Also, you need to include the config.xml
+file in this same directory.  Use the default config.xml file as a template for your 
+service specific version.
+
+The script assumes that all of your server classes are in ${server.build}/classes, and
+that your client classes (if any) are in ${server.client}/classes and that you have your 
+web.xml and jaxrpc-ri.xml files in the ${server.build}/WEB-INF directory.
+
+To build everything, run:  ant
+To build only the server, run:  ant server
+To build only the client, run:  ant client
+To deploy the app, run:  ant deploy
+To undeploy the app, run:  ant undeploy
+To redeploy the app, run:  ant redeploy  
+(Sometimes redeploy fails due to timing issues on the server. If so, do undeploy, then deploy)
+
+NOTE: This ant build script requires that you use the ant version that is installed with
+the JWSDP, or that you put the catalina-ant.jar file from the Tomcat server/lib directory
+in your Tomcat installation into the lib directory under your ant installation.
+--><project basedir="." default="build" name="BBj Web Service Application Builder">
+
+    <property file="build.properties"/>
+
+    <taskdef classname="org.apache.catalina.ant.DeployTask" name="deploy"/>
+    <taskdef classname="org.apache.catalina.ant.UndeployTask" name="undeploy"/>
+    <taskdef classname="org.apache.catalina.ant.ListTask" name="list"/>
+    <taskdef classname="org.apache.catalina.ant.StartTask" name="start"/>
+    <taskdef classname="org.apache.catalina.ant.StopTask" name="stop"/>
+
+
+    <!-- Sets up the necessary directories for the building process. -->
+    <target description="Creates the necessary directories" name="prepare">
+        <echo message="Creating the required directories..."/>
+        <mkdir dir="${server.build}"/>
+        <mkdir dir="${server.build}/classes"/>
+        <mkdir dir="${server.build}/lib"/>
+        <mkdir dir="${dist}"/>
+        <mkdir dir="${client.build}"/>
+        <mkdir dir="${client.build}/classes"/>
+        <mkdir dir="${client.build}/lib"/>
+    </target>
+
+
+    <!-- Compile server side java classes. -->
+    <property name="compile.debug" value="true"/>
+    <property name="compile.optimize" value="false"/>
+    
+    <path id="compile.classpath">
+        <pathelement location="${mail.jar}"/>
+        <pathelement location="${activation.jar}"/>
+        <pathelement location="${jsr173_api.jar}"/>
+        <pathelement location="${fastinfoset.jar}"/>
+        <pathelement location="${jaxrpc-api.jar}"/>
+        <pathelement location="${jaxrpc-spi.jar}"/>
+        <pathelement location="${jaxrpc-impl.jar}"/>
+        <pathelement location="${saaj-api.jar}"/>
+        <pathelement location="${saaj-impl.jar}"/> 
+        <pathelement location="${bbj.lib}/BBjThinClient.jar"/>
+        <pathelement location="${bbj.lib}/BBjUtil.jar"/>
+    </path>
+    
+    <target depends="prepare" description="Compiles the server side java classes" name="compile-server">
+        <echo message="Compiling the server side java classes..."/>
+        <javac debug="${compile.debug}" destdir="${server.build}/classes" optimize="${compile.optimize}" srcdir="${server.src}">
+            <classpath refid="compile.classpath"/>
+        </javac>
+        <jar jarfile="${dist}/${server.jar}">
+            <fileset dir="${server.build}/classes" includes="**"/>
+        </jar>
+    </target>
+
+    <!-- Generates a model file -->
+    <target depends="set-ws-scripts" description="Generates a model file using wscompile" name="gen-model">
+        <echo message="Running wscompile to generate a model file..."/>
+        <exec executable="${wscompile}">
+            <!-- Uncomment for verbose mode
+            <arg line="-verbose"/>
+            -->
+            <arg line="-define -f:documentliteral -d ${server.build} -classpath ${server.build}/classes -model model.xml.gz server_config.xml"/>
+        </exec>
+    </target>
+ 
+    <path id="run.server.classpath">
+        <path refid="compile.classpath"/>
+        <pathelement location="${server.build}/classes"/>
+    </path>
+ 
+    <!-- Run the client class -->
+    <target depends="compile-server" description="Run the server class" name="run-server">
+        <echo message="Running the server side class..."/>
+        <java classname="${server.class}" classpathref="run.server.classpath" fork="true">
+        </java>
+    </target>
+
+
+    <!-- Copy the necessary JAR/XML files into the appropriate directories under ${server.build}. -->
+    <target depends="prepare" description="Copies necessary files for war to the ${server.build} directory" name="copy-files-for-war">
+        <echo message="Copying necessary files for war to the ${server.build} directory..."/>
+        <copy todir="${server.build}">
+            <fileset dir="./">
+                <include name="web.xml"/>
+                <include name="jaxrpc-ri.xml"/>
+                <include name="model.xml.gz"/>
+            </fileset>
+        </copy>
+        <copy todir="${server.build}/lib">
+            <fileset file="${mail.jar}"/>
+            <fileset file="${activation.jar}"/>
+            <fileset file="${jsr173_api.jar}"/>
+            <fileset file="${fastinfoset.jar}"/>
+            <fileset file="${jaxrpc-api.jar}"/>
+            <fileset file="${jaxrpc-spi.jar}"/>
+            <fileset file="${jaxrpc-impl.jar}"/>
+            <fileset file="${saaj-api.jar}"/>
+            <fileset file="${saaj-impl.jar}"/>       
+            <fileset dir="${bbj.lib}">
+                <include name="BBjThinClient.jar"/>
+                <include name="BBjUtil.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+
+    <!-- Packages the $server.build dir and its subdirectories into a WAR that is NOT ready to deploy -->
+    <target depends="compile-server,gen-model,copy-files-for-war" description="Packages the non-deployable WAR file" name="package-war">
+        <echo message="Packaging the non-deployable WAR file..."/>
+        <delete file="${dist}/${portable.war}"/>
+        <jar jarfile="${dist}/${portable.war}">
+            <fileset dir="${build}" includes="${server.build.sub}/**"/>
+        </jar>
+    </target>
+
+
+    <!-- Set the values for wscompile and wsdeploy. -->
+    <target description="Sets the value of the wscompile and wsdeploy properties for this build file" name="set-ws-scripts">
+        <echo message="Setting the value of the wscompile and wsdeploy properties for this build file..."/>
+        <condition property="script-suffix" value="bat">
+            <os family="windows"/>
+        </condition>
+        <condition property="script-suffix" value="sh">
+            <not>
+                <os family="windows"/>
+            </not>
+        </condition>
+        <property name="wscompile" value="${wscompile.path}/wscompile.${script-suffix}"/>
+        <property name="wsdeploy" value="${wscompile.path}/wsdeploy.${script-suffix}"/>
+    </target>
+
+
+    <!-- Processes the WAR into a WAR that is ready to deploy. -->
+    <target depends="set-ws-scripts,package-war" description="Runs wsdeploy to generate the ties and create a deployable WAR file" name="process-war">
+        <echo message="Running wsdeploy to generate the ties and create a deployable WAR file..."/>
+        <delete file="${dist}/${deployable.war}"/>
+        <exec executable="${wsdeploy}">
+            <!-- Uncomment for verbose mode
+            <arg line="-verbose"/>
+            -->
+            <!-- Uncomment to keep temporary files
+            <arg line="-keep"/>
+            -->
+            <arg line="-tmpdir"/>
+            <arg line="${dist}"/>
+            <arg line="-o"/>
+            <arg line="${dist}/${deployable.war}"/>
+            <arg line="${dist}/${portable.war}"/>
+        </exec>
+    </target>
+
+
+    <!-- Build a war file to deploy. -->
+    <target depends="package-war,process-war" description="Builds the server side distributable WAR." name="build-war">
+        <echo message="Building the server side distributable WAR...."/>
+    </target>
+
+
+    <!-- Build a war file to deploy  -->
+    <target depends="build-war" description="Executes the targets needed to build the serve side pieces." name="build">
+        <echo message="Executing the targets needed to build the server side pieces..."/>
+    </target>
+
+
+    <!-- Build the client side stubs. -->
+    <target depends="set-ws-scripts,prepare" description="Runs wscompile to generate the client stub classes" name="build-client">
+        <echo message="Waiting for service ${context.url}..."/>
+         <waitfor>
+            <http url="${context.url}"/>
+         </waitfor>
+        <echo message="Running wscompile to generate the client stub classes...."/>
+        <exec executable="${wscompile}">
+            <arg line="-gen:client"/>
+            <!-- Uncomment to keep generated client java source
+            -->
+            <arg line="-keep"/>
+            <!-- Uncomment for verbose mode
+            <arg line="-verbose"/>
+            -->
+            <arg line="-d ${client.build}/classes"/>
+            <arg line="-classpath ${server.build}/classes"/>
+            <arg line="config.xml"/>
+        </exec>
+    </target>
+
+    <!-- Compile the client classes -->
+    <target depends="build-client" description="Compiles the client side classes" name="compile-client">
+        <echo message="Compiling the client side classes..."/>
+        <javac debug="${compile.debug}" destdir="${client.build}/classes" optimize="${compile.optimize}" srcdir="${client.src}">
+            <classpath refid="compile.classpath"/>
+        </javac>
+        <jar jarfile="${dist}/${client.jar}">
+            <fileset dir="${client.build}/classes" includes="**"/>
+        </jar>
+    </target>
+    
+    <path id="run.classpath">
+        <path refid="compile.classpath"/>
+            <pathelement location="${build}/client/classes"/>
+            <pathelement location="${dist}/${client.jar}"/>
+    </path>
+
+    
+    <!-- Run the client class -->    
+    <target description="Run the client class" name="run-client">
+        <echo message="Running the client side class..."/>
+        <waitfor>
+            <http url="${context.url}"/>
+        </waitfor>
+        <java classname="${client.class}" classpathref="run.classpath" fork="true">
+        </java>
+    </target>
+
+
+    <!-- Deploy the war -->
+    <target description="Deploys a Web application" name="deploy">
+        <echo message="Deploying the Web application..."/>
+        <dirname file="${deployable.war}" property="war.dir"/>
+        <deploy password="${password}" path="/${context.path}" url="${url}" username="${username}" war="file:${war.dir}/${dist}/${deployable.war}"/>
+    </target>
+
+
+    <!-- UnDeploy the war -->
+    <target description="Undeploys a Web application" name="undeploy">
+        <echo message="UnDeploying the Web application..."/>
+        <undeploy password="${password}" path="/${context.path}" url="${url}" username="${username}"/>
+    </target>
+
+
+    <!-- ReDeploy the war -->
+    <target description="Undeploys and deploys a Web aplication" name="redeploy">
+        <echo message="ReDeploying the Web application..."/>
+        <antcall target="undeploy"/>
+        <antcall target="deploy"/>
+    </target>
+
+    
+    <!-- List the web applications -->
+    <target description="Lists Web applications" name="list">
+        <echo message="Listing the Web applications..."/>
+        <list password="${password}" url="${url}" username="${username}"/>
+    </target>
+
+
+    <!-- Start the web application -->
+    <target description="Starts a Web application" name="start">
+        <echo message="Starting the Web application..."/>
+        <start password="${password}" path="/${context.path}" url="${url}" username="${username}"/>
+    </target>
+
+
+    <!-- Stop the web application -->
+    <target description="Stops a Web application" name="stop">
+        <echo message="Stopping the Web application..."/>
+        <stop password="${password}" path="/${context.path}" url="${url}" username="${username}"/>
+    </target>
+
+
+    <!-- Remove the distribution and build directories -->
+    <target description="Removes the ${dist} and ${build) directories" name="clean">
+        <echo message="Removing the ${dist} and ${build} directories..."/>
+        <delete dir="${dist}"/>
+        <delete dir="${build}"/>
+    </target>
+
+    <!-- Display values of build file properties -->
+    <target description="Displays values of the properties of this build file" name="show-props">
+        <property name="cp" refid="compile.classpath"/>
+        <echo message="Displaying values of the properties of this build file..."/>
+        <echo message="context.path     = ${context.path}"/>
+        <echo message="jwsdp.home       = ${jwsdp.home}"/>
+        <echo message="build            = ${build}"/>
+        <echo message="server.build.sub = ${server.build.sub}"/>
+        <echo message="server.build     = ${server.build}"/>
+        <echo message="client.build     = ${client.build}"/>
+        <echo message="dist             = ${dist}"/>
+        <echo message="server.src       = ${server.src}"/>
+        <echo message="client.src       = ${client.src}"/>
+        <echo message="client.class     = ${client.class}"/>
+        <echo message="bbj.home         = ${bbj.home}"/>
+        <echo message="bbj.lib          = ${bbj.lib}"/>
+        <echo message="client.jar       = ${client.jar}"/>
+        <echo message="url.base         = ${url.base}"/>
+        <echo message="url              = ${url}"/>
+        <echo message="context.url      = ${context.url}"/>
+        <echo message="username         = ${username}"/>
+        <echo message="password         = ${password}"/>
+        <echo message="portable.war     = ${portable.war}"/>
+        <echo message="deployable.war   = ${deployable.war}"/>
+        <echo message="compile.classpath= ${cp}"/>
+    </target>
+
+</project>

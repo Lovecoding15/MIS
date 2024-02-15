@@ -1,0 +1,172 @@
+call "ec_open::ART03"
+call "ec_open::ART13"
+call "ec_open::ART73"
+call "ec_open::ART83"
+call "ec_open::CSM03"
+call "ec_open::IVM01"
+call "ec_open::SNM01"
+call "ec_open::SMC01"
+support_expire$=date((jul(0,0,0)+364):"%Y%Mz%Dz")
+max_support=5
+firm$="01"
+num1=144758
+num2=144792
+
+while 1
+invoice$=str(num1:"0000000")
+num1=num1+1
+if num1>num2 then break
+
+ART03k$=firm$+invoice$
+read record (ART03,key=ART03k$,knum=1)ART03$
+samkeys$=""
+sam_process=0
+prev_support$=""
+oldsc=0
+
+read (ART13,key=ART03$(1,17),dom=ART13_key)
+
+ART13_key:
+if sam_process then
+ let p=pos($0a$=samkeys$); if p=0 then goto pgm_exit
+ let ART13k$=samkeys$(1,p-1),samkeys$=samkeys$(p+1)
+ goto samkeys
+fi
+let ART13k$=key(ART13,end=sam_exit)
+if ART13k$(1,17)<>ART03$(1,17) then goto sam_exit
+samkeys:
+read record (ART13,key=ART13k$)ART13$
+if ART13.line_code$="o" then oldsc=ART13.ext_price
+read record (ART73,key=ART13k$,dom=ART13_key)ART73$
+REM 'Save all SAM transactions for last so total users can be checked to determine if this is a new SAM that gets 5 TS incidents
+if pos("SM"=ART73.type_of_sale$)=1 and sam_process=0 then let samkeys$=samkeys$+ART13k$+$0a$; goto ART13_key
+let iv_desc$=fill(60),ivm_item$=ART13.item_number$
+gosub ivm_item
+let iv_desc$=ivm01.item_desc$
+let port$=""
+read record (csm03,key=firm$+ART13.item_number$(7,3),dom=*next)csm03$
+if csm03.firm_id$=firm$ and csm03.os_level$=ART13.item_number$(7,3) then port$=csm03.port_id$
+let expire=0
+read (ART83,key=ART13k$,dom=ART83_key)
+
+ART83_key: 
+let ART83k$=key(ART83,end=ART13_key)
+if pos(ART13k$=ART83k$)<>1 then goto ART13_key
+read record (ART83,key=ART83k$)ART83$
+lic_type$=ART73.exp_type$
+if cvs(lic_type$,3)="" then lic_type$=ART13.item_number$(13,3)
+rev_code$=ART13.item_number$(10,3)
+l_prop$=ART73.lic_property1$+ART73.lic_property2$
+trans_users=ART73.users+ART73.users2, original_users=0
+trans_is_total=(cvs(ART73.available1$,4)="T")
+on pos(ART83.action$="AMD") goto ART83_key,activate,modify,deactivate
+activate:
+snm01.serial_nbr$=ART83.serial_nbr$,snm01.serial_desc$=iv_desc$
+snm01.product$=ART13.item_number$(1,3)
+snm01.platform$=ART13.item_number$(4,3)
+snm01.os_level$=ART13.item_number$(7,3)
+snm01.product_rev$=rev_code$
+snm01.license_type$=lic_type$
+snm01.media_type$=ART73.media_type$
+snm01.active_flag$="Y"
+snm01.orig_sale_date$=ART03.invoice_date$
+snm01.customer_nbr$=ART03.customer_nbr$
+snm01.port_id$=port$
+snm01.firm_id$=ART83.firm_id$
+snm01.contract$=ART83.contract$
+snm01.sam_active$=ART83.sam_active$
+snm01.dealer_str$=fill(dec(FATTR(snm01$,"dealer_str")(10,2)))
+snm01.comment$=fill(dec(FATTR(snm01$,"comment")(10,2)))
+snm01.users=trans_users
+snm01.dist_reset=0
+snm01.avail_support=0
+let expire=1
+if cvs(snm01.contract$,3)<>"" then expire=max_support
+goto snt01_rec
+modify:
+read record (snm01,key=ART83.serial_nbr$,dom=ART83_key)snm01$
+u=trans_users,original_users=snm01.users
+if trans_is_total=0 then u=u+snm01.users
+if pos(ART73.type_of_sale$="ADDCON",3) then let snm01.users=u; goto check_contract
+if cvs(ART83.auth_code$,2)="" then goto check_contract; REM SAM or SUPPORT
+if rev_code$<>"   " then let snm01.product_rev$=rev_code$
+if lic_type$<>"   " then let snm01.license_type$=lic_type$
+if port$<>"" then let snm01.port_id$=port$
+rem 'Item is a configured inventory item if os_level & port check out
+if ART13.item_number$(7,3)<>"   " and port$<>"" then 
+  let snm01.os_level$=ART13.item_number$(7,3)
+  let snm01.product$=ART13.item_number$(1,3)
+  let snm01.platform$=ART13.item_number$(4,3)
+fi
+check_contract:
+if ART13.ext_price>0 then let expire=1
+if pos("TS"=ART73.type_of_sale$)=1 then let expire=2
+if cvs(ART83.contract$,3)<>"" then
+  smc01.new_flag$=" " 
+  readrecord (smc01,key=ART83.contract$,dom=*next)smc01$
+  if cvs(snm01.contract$,3)="" or smc01.new_flag$="Y" then let expire=max_support
+  snm01.contract$=ART83.contract$,snm01.sam_active$=ART83.sam_active$
+  rem 'No support when crediting SAM contract
+  if sam_process and ART03.terms_code$="08" and ART83.sam_active$="N" then snm01.avail_support=0,expire=0
+fi
+if ART73.type_of_sale$="RNW" then 
+  readrecord (smc01,key=ART83.contract$,dom=*next)smc01$
+  if smc01.contract$<>ART83.contract$ or pos("DV"=smc01.contr_type$)=0 then goto snt01_rec
+  expire=max_support
+  snm01.contract$=smc01.contract$
+  snm01.sam_active$=""
+  snm01.users=trans_users
+fi
+goto snt01_rec
+deactivate:
+read record (snm01,key=ART83.serial_nbr$,dom=art83_key)snm01$
+let snm01.active_flag$="N"
+snt01_rec:
+if expire then gosub expire
+escape
+let snm01$=field(snm01$)
+write record (snm01,key=snm01.serial_nbr$)snm01$
+goto ART83_key
+
+expire: 
+if cvs(snm01.avail_expire$,3)="" or snm01.avail_support=0 then let snm01.avail_expire$=support_expire$
+rem "TS incident purchase
+if expire=2 then 
+  let snm01.avail_support=snm01.avail_support+ART13.qty_ordered
+  return
+fi
+let snm01.avail_support=snm01.avail_support+expire
+if snm01.avail_support>max_support then let snm01.avail_support=max_support
+snm01.avail_support=max(snm01.avail_support,0)
+if cvs(ART83.contract$,3)<>"" then
+ let snm01.avail_expire$=fill(8)
+fi
+return
+
+ivm_item:
+let ivm01.item_desc$="Not Available",ivmok=0
+find record (ivm01,key=ART13.firm_id$+ivm_item$,err=*next)ivm01$;ivmok=1
+if ivmok or len(cvs(ivm_item$,3))<15 then return
+ivm_item$(10,3)="CUR"
+if ivm_item$(13,3)<>"STD" and ivm_item$(1,3)="BAS" then ivm_item$(13,3)="EXP"
+find record (ivm01,key=ART13.firm_id$+ivm_item$,err=*next)ivm01$;ivmok=1
+return
+ 
+def fnjul(yyyymmdd$)
+  xjul=0,xy=0,xm=0,xd=0
+  xy=NUM(yyyymmdd$(1,4),ERR=*next)
+  xm=NUM(yyyymmdd$(5,2),ERR=*next)
+  xd=NUM(yyyymmdd$(7,2),ERR=*next)
+  if xy*xm*xd then xjul=jul(xy,xm,xd)
+  return xjul
+fnend
+
+sam_exit:
+if samkeys$="" then goto pgm_exit
+let sam_process=1; goto ART13_key
+
+pgm_exit:
+wend
+
+end
+

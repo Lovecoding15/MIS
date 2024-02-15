@@ -1,0 +1,25 @@
+Table Definition Module
+APM_INVIMAGE - Invoice and other document Images
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+APM_INVIMAGE^/mnt/data/aon_prod/apps/authinvoices/;^AOPT-OPDC;^^^Invoice and other document Images^Invoice and other document Images^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;
+{ColumnDefs}
+FIRM_ID^APM_INVIMAGE^001^C^^^^^^^1^^Y^^^^^FIRM_ID^Firm ID^Firm ID^Firm ID^C^^H^^^^0^^^^^^^^^^^^^^^^^^^2^0^^^^^^^^^^0^^stbl("+FIRM_ID")^^^^^^
+VENDOR_ID^APM_INVIMAGE^002^C^^3001^dis_vendor_id^0^^^2^^Y^^^F^^VENDOR_ID^Vendor Number^Vendor ID^Vend ID^C^^E^^^^0^^^^^[+FIRM_ID]+@^APM_VENDMAST^VENDOR_NAME^^^^^^^^^^^^6^0^^^UUUUUU^^^I^^30^R^0^Enter A Valid Vendor^^^^^^^
+AP_INV_NO^APM_INVIMAGE^003^C^^3002^ine_ap_inv_no^0^^^3^^Y^^^^^AP_INV_NO^AP Invoice Number^AP Invoice Number^AP Inv No^C^^E^^^^0^^^^^^^^^^^^^^^^^^^10^0^^^^^^^^20^L^0^^^^^^^^
+SEQUENCE_NUM^APM_INVIMAGE^004^C^^3003^ine_sequence_num^0^^^4^^Y^^^^^SEQUENCE_NUM^Sequence Number^Sequence Number^Seq No^C^S^E^^^^0^^^^^^^^^^^^^^^^^^^2^^^^00^00^^^^30^R^^^^^^^^^
+DOC_URL^APM_INVIMAGE^005^C^^3004^ine_doc_url^0^^^5^^N^^^^^TEXT_80^Text 80 Characters^Text^Text^C^^E^^^^0^^^^^^^^^^^^^^^^^^^80^0^^^^^^^^^^0^^^^^^^^
+{ColumnDefsEnd}
+{KeyDefs}
+APM_INVIMAGE^PRIMARY^APM_INVIMAGE.FIRM_ID                    APM_INVIMAGE.VENDOR_ID                  APM_INVIMAGE.AP_INV_NO                  APM_INVIMAGE.SEQUENCE_NUM               ^stbl("+FIRM_ID")+APM_INVIMAGE.VENDOR_ID$+APM_INVIMAGE.AP_INV_NO$+APM_INVIMAGE.SEQUENCE_NUM$^stbl("+FIRM_ID")+RD_REC_DATA.VENDOR_ID$+RD_REC_DATA.AP_INV_NO$+RD_REC_DATA.SEQUENCE_NUM$^stbl("+FIRM_ID")                        RD_REC_DATA.VENDOR_ID$                  RD_REC_DATA.AP_INV_NO$                  RD_REC_DATA.SEQUENCE_NUM$               
+{KeyDefsEnd}
+{GridCols}
+002APM_INVIMAGE.VENDOR_ID                  ;003APM_INVIMAGE.AP_INV_NO                  ;004APM_INVIMAGE.SEQUENCE_NUM               ;005APM_INVIMAGE.DOC_URL                    ;
+{GridColsEnd}

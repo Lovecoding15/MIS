@@ -1,0 +1,17 @@
+// Print serial number counter resets   <aonserm_112>
+
+enter snm01;
+ctr=0;
+display/header "Date         Reset by   Reset to";
+for each license_reset where serial_nbr=snm01.serial_nbr
+{
+ctr=ctr+1;
+dt$=license_reset.reset_date;
+display_date$=dt$(5,2)+"/"+dt$(7,2)+"/"+dt$(1,4);
+display/notitle 
+	display_date$ /col=1
+	license_reset.reset_by/col=14
+	license_reset.reset_to/col=32;
+}
+if ctr=0 then display "";
+//

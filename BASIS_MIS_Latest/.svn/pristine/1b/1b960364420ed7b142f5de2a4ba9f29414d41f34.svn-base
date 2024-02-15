@@ -1,0 +1,322 @@
+0010 REM "Progam BSG.10 - Invoice Emailing - Germany"
+0050 BEGIN 
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files "
+0110 LET FILES=18
+0115 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0120 LET FILES$[1]="ARE-03",FILES$[2]="ARE-04",FILES$[3]="ARE-13"
+0125 LET FILES$[4]="ARE-33",FILES$[5]="ARM-01",FILES$[6]="ARM-03"
+0130 LET FILES$[7]="ARM-10",FILES$[8]="IVM-01",FILES$[9]="SYS-01"
+0135 LET FILES$[10]="TMM-01"
+0140 LET FILES$[11]="ARE-73",FILES$[12]="ARE-83",FILES$[13]="CSM-03"
+0145 LET FILES$[14]="ARM-02",FILES$[15]="TMM-05",FILES$[16]="SMC-01"
+0147 LET FILES$[17]="TMM-03",FILES$[18]="country.dat"
+0150 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0155 IF STATUS>0 THEN GOTO done
+0160 ARE03_DEV=CHANNELS[1],ARE04_DEV=CHANNELS[2],ARE13_DEV=CHANNELS[3]
+0165 ARE33_DEV=CHANNELS[4],ARM01_DEV=CHANNELS[5],ARM03_DEV=CHANNELS[6]
+0170 ARM10_DEV=CHANNELS[7],IVM01_DEV=CHANNELS[8],SYS01_DEV=CHANNELS[9]
+0175 TMM01_DEV=CHANNELS[10],ARE73_DEV=CHANNELS[11],ARE83_DEV=CHANNELS[12]
+0180 CSM03_DEV=CHANNELS[13],ARM02_DEV=CHANNELS[14],TMM05_DEV=CHANNELS[15]
+0185 SMC01_DEV=CHANNELS[16],TMM03_DEV=CHANNELS[17],country_dev=channels[18]
+0200 REM " --- IOLists"
+0210 ARS01A: IOLIST P0$,P1$,P2$,P3$,P4$,M0$,M1$,M2$,M3$
+0220 IVS01A: IOLIST X$,X$,I2$,I3$,X$,X$,M1$,M2$,M3$,M4$
+0230 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0260 CSM03A: IOLIST CS0$,CS1$,CS2$
+0290 call "templates.pgm::ARE03"
+0300 call "templates.pgm::TMM01"
+0310 call "templates.pgm::TMM05"
+0320 call "templates.pgm::TMM03"
+0330 call "templates.pgm::country"
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET N0$=F0$(16,2),N1$=F4$,N2$="AR",N4$=F5$
+0430 FIND (SYS01_DEV,KEY=N0$+N2$+"00",DOM=9800)IOL=ARS01A
+0440 FIND (SYS01_DEV,KEY=N0$+"IV00",DOM=9800)IOL=IVS01A
+0460 DIM P[2],I[6]
+0465 FOR X=0 TO 6
+0470 LET I[X]=NUM(I2$(X*2+1,2))
+0475 NEXT X
+0485 LET P[0]=NUM(P2$(1,2)),P[1]=NUM(P2$(3,2)),P[2]=NUM(P3$(4,1))
+0490 LET M0=LEN(M0$),M2=LEN(M2$),M3=LEN(M3$),M4=LEN(M4$)
+0500 REM " --- Initialize Data"
+0510 LET P5$="",P6$="",lf$=$0d0a$,o9=4
+0530 PRECISION I[2]
+0540 DIM A0$(117),A[10]
+0600 dsrv$=stbl("DATA_SERVER")
+0610 tmpdir$=STBL("TEMP")
+0620 path$="/basisaon/holding/"
+0700 REM " --- Background"
+0800 if n0$<>"02" then 
+0802    xresp = msgbox("This Function is only available for firm 02, BSG.",0,"Not Firm BSG")
+0804	goto done
+0806 endif
+0900 PRINT 'SB',@(19,5),"Beginning Customer:",@(22,7),"Ending Customer:",'SF',
+1000 REM " --- Beginning Cust
+1010 PRINT 'CF',
+1020 LET V2$=P5$,V1=39,V2=5,V4$="Press ENTER for all"
+1040 GOSUB enter_cust
+1050 IF V3=4 THEN GOTO done
+1060 LET P5$=cvs(V$,3); IF P6$="" THEN LET P6$=P5$
+1070 if p5$="" then goto 4000
+1200 REM " --- Ending Cust
+1220 LET V2$=P6$,V1=39,V2=7,v4$="."
+1240 GOSUB enter_cust
+1260 LET P6$=V$; IF P6$<P5$ THEN GOTO 1200
+4000 REM " --- Correct?"
+4010 LET V4$="Is The Above Information Correct"
+4020 CALL "SYC.YN",1,V4$,2,V$,V3
+4040 IF V3=4 THEN GOTO done
+4050 ON POS(V$="YN") GOTO 4000,4100,1000
+4100 emsg$=""
+4200 READ (ARE03_DEV,KEY=N0$,DOM=*next)
+4210 main_read: 
+4220 READ record(ARE03_DEV,END=done)are03$
+4230 IF are03.firm_id$<>N0$ THEN goto done
+4240 IF Are03.ord_inv_flag$<>"I" or are03.invoice_type$="V" THEN goto main_read
+4250 IF Are03.message_code$(1,1)<>" " THEN goto main_read; rem 'emailed flag
+4260 IF Are03.ord_prt_flag$<>"B" AND Are03.ord_lock$="Y" THEN goto main_read
+4270 if pos("SAM RENEW"=cvs(are03.ar_po_number$,7)) then rnw$="SM" else rnw$="  "
+4280 READ (ARM02_DEV,KEY=N0$+are03.customer_nbr$+"  ",DOM=main_read)*,X$
+4290 IF P5$<>"" AND are03.customer_nbr$<P5$ THEN goto main_read
+4300 IF P6$<>"" AND are03.customer_nbr$>P6$ THEN goto main_read
+4400 K1$=are03.firm_id$+"  "+are03.customer_nbr$+are03.order_number$+"000"
+4410 invoice$=are03.ar_inv_nbr$,a0$(1)=k1$
+4420 CUST$=are03.customer_nbr$
+4425 from$="eu@basis.cloud"
+4430 GOSUB get_email_address
+4440 GOSUB EMAIL_WINDOW
+4460 IF HEAD$="-Q" THEN GOTO done
+4470 IF HEAD$="-S" THEN GOTO main_read
+4480 hold_lang$=lang$; rem 'lang$ may get changed in BSG.02
+4500 workfile$=tmpdir$+FID(0)+date(0:"%m%s")+".txt",prtr_dev=unt
+4510 ERASE workfile$,ERR=*next
+4520 open(prtr_dev,mode="FILE="+workfile$)"PX"
+4530 rem ' call "BSG.02";rem 'Call standard invoice print program
+
+4534 xfirm$ = are03.firm_id$, xcustomer$ = are03.customer_nbr$, xinvoice$ = are03.ar_inv_nbr$
+4535 call "renderInvoiceBSG.src", xfirm$, xcustomer$, xinvoice$, jasperInvoice$
+
+4540 close(prtr_dev,err=*next)
+4545 lang$=hold_lang$
+4550 if t1$="" then gosub init_char
+4560 gosub convert_txt
+4570 GOSUB translate
+4580 gosub create_email
+4589 rem ' if invoice balance zero write flag file to prevent signing
+4590 rem ' if ITOT = 0 then string path$ + invoice$ + "_zerobal.txt", err=*next
+4591 rem ' we no longer sign BSG invoices
+
+4600 pdffile$=path$+invoice$+"_original.pdf"
+4605 a = scall("cp " + jasperInvoice$ + " " + pdffile$)
+
+4610 rem call "PDF.01",workfile$,pdffile$,""
+4630 rem gosub sign_pdf
+
+4650 erase workfile$,err=*next
+4651 erase jasperInvoice$, err=*next
+
+4660 are03.message_code$(1,1)="Y",are03.ord_prt_flag$="Y",are03$=field(are03$)
+4670 WRITE record(ARE03_DEV,KEY=k1$)ARE03$
+4700 GOTO main_read
+5000 create_email:
+5100 OUTFILE$=path$+invoice$+"_email.txt"
+5110 ERASE OUTFILE$,ERR=*next
+5120 STRING OUTFILE$
+5130 em_chan=UNT; OPEN (em_chan)OUTFILE$
+5140 boundary$="--==========_BASIS"
+5160 cc$="eu@basis.cloud, customer-service@basis.cloud"
+5170 PRINT (em_chan)"Mime-Version: 1.0"+LF$+"Content-Type: multipart/mixed;"+LF$+" boundary="+$22$+boundary$(3)+$22$
+5180 PRINT (em_chan)"To: "+EADDR$+LF$+"From: "+from$+LF$+Subject$+LF$+"Cc: "+cc$+LF$
+5190 PRINT (em_chan)boundary$+LF$+"Content-Type: text/plain;"+LF$+" charset="+$22$+"iso-8859-1"+$22$+LF$+"Content-Transfer-Encoding: 7bit"+LF$+LF$
+5200 PRINT (em_chan)msgtext$
+5210 PRINT (em_chan)LF$+boundary$+LF$+"Content-Type: application/pdf; name="+$22$+invoice$+".pdf"+$22$+LF$+"Content-Disposition: attachment; name="+$22$+invoice$+".pdf"+$22$+LF$+"Content-Transfer-Encoding: base64"+lf$
+5220 print(em_chan)"<invoice>"
+5230 if report_required and ITOT <> 0 then
+5240 PRINT (em_chan)LF$+boundary$+LF$+"Content-Type: application/pdf; name="+$22$+invoice$+"_ver.pdf"+$22$+LF$+"Content-Disposition: attachment; name="+$22$+invoice$+"_ver.pdf"+$22$+LF$+"Content-Transfer-Encoding: base64"+lf$
+5250 print(em_chan)"<report>"
+5260 fi
+5270 PRINT (em_chan)boundary$+"--"+LF$
+5280 close(em_chan)
+5300 if report_required=0 then return
+5310 OUTFILE$=path$+invoice$+"_ver.pdf"
+5320 ERASE OUTFILE$,ERR=*next
+5330 STRING OUTFILE$
+5390 return
+5550 sign_pdf:
+5560 rem call "sign_invoice.bbj",firm$,invoice$
+5590 return
+6500 get_file_text:
+6510 tmp=unt
+6520 file_text$="",sz=-1
+6530 open(tmp,err=close_tmp)tmpfile$
+6540 f$=fin(tmp),sz=dec(f$(1,4))
+6550 if sz then readrecord(tmp,siz=sz)file_text$
+6560 close_tmp:
+6570 close(tmp,err=*next)
+6590 return
+6600 EMAIL_WINDOW: 
+6605 temp$="Invoice "+invoice$
+6610 PRINT 'WINDOW'(1,8,78,8,""),'CURSOR'("ON"),
+6620 LET HEAD$=FILL(80),emlen=70; IF POS("@"=EADDR$)=0 THEN LET EADDR$=""
+6625 IF len(EADDR$)>emlen THEN LET EADDR$=eaddr$(1,emlen)
+6630 PRINT_STUFF: PRINT 'CS',@(2,0),temp$,@(2,1),"Customer ",CUST$," ",N$,@(1,3),"To:",@(5,3),EADDR$,@(1,4),
+6635 INPUTE 5,3,emlen,"_",EADDR$
+6640 PRINT @(2,5),"OK? CR/N/S(skip this)/Q(quit emailing)",
+6645 INPUT @(41,5),I$,
+6650 LET I$=CVS(I$,4)
+6655 IF I$="N" THEN GOTO PRINT_STUFF
+6660 PRINT 'POP',
+6670 IF POS(I$="SQ") THEN LET HEAD$="-"+I$; RETURN 
+6680 IF CVS(EADDR$,3)="" OR POS("@"=EADDR$)=0 THEN GOTO EMAIL_WINDOW
+6690 RETURN 
+6700 convert_txt:
+6710 tmpfile$=workfile$
+6720 gosub get_file_text
+6730 txt$=file_text$
+6740 if txt$="" then return
+6750 for xx=1 to len(txt$)
+6760 p=pos(txt$(xx,1)=t1$)
+6770 if p then txt$(xx,1)=t2$(p,1)
+6780 next xx
+6790 erase workfile$,err=*next
+6800 string workfile$
+6810 cvtxt=unt
+6820 open(cvtxt)workfile$
+6830 writerecord(cvtxt)txt$
+6840 close(cvtxt)
+6890 return
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8080 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+8245 LET Q=1,Q0=0
+8250 WHILE LEN(Q2$(Q))
+8255 IF POS(Q2$(Q,1)="-()") THEN LET Q0=Q0+1 ELSE LET Q2$(Q,1)="X"
+8260 LET Q=Q+1
+8265 WEND
+8270 IF LEN(Q1$)>LEN(Q2$)-Q0 THEN LET Q1$=Q1$(1,LEN(Q2$)-Q0)
+8280 RETURN STR(Q1$:Q2$)
+8290 FNEND
+8500 enter_cust:
+8510 LET V0$="Z",V1$="K",V3$="",V0=6
+8520 GOSUB 7000
+8530 PRINT @(V1,V2),V$
+8550 RETURN
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO done
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 done: 
+9910 RUN "SYS.AA"
+9999 END
+11000 get_email_address:
+11010 EADDR$=""
+11020 tmm01_k$=are03.firm_id$+are03.customer_nbr$+"000000"
+11030 dim tmm01$:fattr(tmm01$)
+11040 readrecord(tmm01_dev,key=tmm01_k$,dom=*next)tmm01$
+11070 dim email$[4],tmm05$:fattr(tmm05$)
+11080 email$[4]=from$
+11090 find record(tmm05_dev,key=tmm01_k$,dom=*next)tmm05$
+11100 email$[1]=cvs(tmm05.email$,3)
+11110 read(tmm03_dev,key=tmm01_k$,dom=*next)
+11120 while 1
+11130  read record(tmm03_dev,end=*break)tmm03$
+11140  if pos(tmm01_k$=tmm03$)<>1 then break
+11150  addr$=cvs(tmm03.e_mail$,3)
+11160  if addr$="" then continue
+11170  if tmm03.ap_contact$="Y" then email$[0]=addr$;break
+11180  if cvs(tmm03.contact_name$,7)=cvs(tmm01.cont_name$,7) then
+11190    email$[2]=addr$
+11200  else
+11210    if email$[3]="" then email$[3]=addr$
+11220  fi
+11230 wend
+11240 i=0
+11250 while eaddr$=""
+11260   eaddr$=email$[i]
+11270   i=i+1
+11280 wend
+11290 lang$=cvs(tmm01.lang_code$,7),country.country_code$="DE"
+11300 readrecord(country_dev,key=tmm01.country_code$,dom=*next)country$
+11310 report_required=pos(country.country_code$="DE")
+
+11311 rem ' reports are no longer required
+11312 report_required = 0 
+
+11320 if lang$="" then lang$=cvs(country.lang_code$,7)
+11330 if lang$="" then lang$="EN"
+11390 return
+12100 translate:
+12105 if emsg$="" then gosub get_text
+12110 msgtext$="",subject$="Subject: Invoice No. "+invoice$
+12115 sr$=cvs(rnw$,3); if sr$<>"" then sr$=sr$+"_"
+12120 sr$=sr$+lang$
+12125 if lang$="EN" then sr$=sr$+"2"
+12130 if report_required and lang$="DE" then sr$=sr$+"_V"
+12135 sr$=sr$+":"
+12140 while 1
+12150   p0=pos(sr$=cvs(emsg$,4));if p0=0 then break
+12160   txt$=emsg$(p0)
+12170   p0=pos("{"=txt$);if p0=0 then break
+12180   txt$=txt$(p0+1),p0=pos("}"=txt$)
+12190   if p0=0 then break
+12200   msgtext$=txt$(1,p0-1)
+12210   break
+12220 wend
+12230 if msgtext$="" and lang$<>"EN" then lang$="EN";goto translate
+12235 while 1
+12240 p=pos("<invoice>"=msgtext$)
+12245 if p=0 then break
+12250 msgtext$=msgtext$(1,p-1)+invoice$+msgtext$(p+9)
+12255 wend
+12260 p=pos("SUBJECT:"=cvs(msgtext$,4))
+12270 if p then
+12280  txt$=msgtext$(p),p1=pos($0a$=txt$)
+12290  if p1 then subject$=cvs(txt$(1,p1-2),3),msgtext$=txt$(p1+1)
+12300 fi
+12310  subject$=subject$+" -"+cust$
+12390 return
+12500 get_text:
+12510 tmpfile$="invoice_email.txt"
+12520 gosub get_file_text
+12530 emsg$=file_text$
+12590 return
+13000 init_char:
+13100 t1$=chr(132)+chr(148)+chr(129)+chr(142)+chr(153)+chr(154)+chr(225)+chr(238)+chr(133)+chr(160)+chr(131)+chr(138)+chr(130)+chr(136)+chr(141)+chr(161)+chr(140)+chr(149)+chr(162)+chr(147)+chr(151)+chr(163)+chr(150)+chr(135)
+13120 t2$=chr(228)+chr(246)+chr(252)+chr(196)+chr(214)+chr(220)+chr(223)+chr(128)+chr(224)+chr(225)+chr(226)+chr(232)+chr(233)+chr(234)+chr(236)+chr(237)+chr(238)+chr(242)+chr(243)+chr(244)+chr(249)+chr(250)+chr(251)+chr(231)
+13190 return

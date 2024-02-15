@@ -1,0 +1,18 @@
+0010 REM "ADC - ADD+ON 6.0 Bridge - Open A Printer"
+0020 REM "Program: ADC.GA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0080 SETERR 9000
+0090 ENTER STATUS
+1000 REM " --- Adjust CALL/ENTER list"
+1010 LET CHANNEL=7,MESSAGE=0,PFDESC$="",SELECTPR$=""
+1020 CALL "SYC.GA",CHANNEL,MESSAGE,PFDESC$,SELECTPR$,STATUS
+1090 GOTO 9900
+9000 REM " --- Error exit"
+9020 LET STATUS=1
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

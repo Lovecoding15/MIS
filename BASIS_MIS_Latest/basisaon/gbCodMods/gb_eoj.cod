@@ -1,0 +1,22 @@
+rem gb_eoj.cod - GUIBuilder generated programs: End of Job
+rem Copyright (C) 1998-2009 BASIS International Ltd.  All rights reserved.
+rem
+rem ***** P R O G R A M   E X I T **************************************
+rem
+gb__eoj:
+   if gb__forms and gb__sysgui then
+:     for gb__temp=1 to gb__forms;
+:        print (gb__sysgui)'context'(gb__form_context[gb__temp]),'destroy'(0);
+:     next gb__temp
+
+   if gb__sysgui then
+:     close (gb__sysgui)
+
+   resclose (gb__handle,err=gb__eoj_final)
+
+gb__eoj_final:
+
+   if tcb(13) then
+:     exit
+:  else
+:     release

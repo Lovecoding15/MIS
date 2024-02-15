@@ -1,0 +1,61 @@
+Table Definition Module
+FUT_ARM02 - Customer Detail
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_ARM02^^^^^Customer Detail^Customer Detail^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_ARM02^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Firm ID^^^^^^^N^
+CUSTOMER_NBR^FUT_ARM02^002^C^^3002^dis_customer_nbr^0^^^2^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^Enter Customer Number^^^0^^^^N^
+AR_TYPE^FUT_ARM02^003^C^^3003^ine_ar_type^0^^^3^^Y^^^^^FUT_AR_TYPE^AR Type^AR Type^AR Type^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter A/R Type (Not Used)^^^^^^^Y^
+SLSPSN_CODE^FUT_ARM02^004^C^^3004^ine_slspsn_code^0^^^4^^N^^^^^FUT_SLSPSN_CODE^Salesperson Code^Salesperson Code^Salesperson Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Salesperson Code^^^^^^^N^
+TERMS_CODE^FUT_ARM02^005^C^^3005^ine_terms_code^0^^^5^^N^^^^^FUT_TERMS_CODE^Terms Code^Terms Code^Terms Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Terms Code^^^^^^^N^
+DISC_CODE^FUT_ARM02^006^C^^3006^ine_disc_code^0^^^6^^N^^^^^FUT_DISC_CODE^Sales Discount Code^Sales Discount Code^Sales Discount Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Sales Discount Code^^^^^^^N^
+DIST_CODE^FUT_ARM02^007^C^^3007^ine_dist_code^0^^^7^^N^^^^^FUT_DIST_CODE^Distribution Code^Distribution Code^Distribution Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Distribution Code^^^^^^^N^
+FINANCE_CHG^FUT_ARM02^008^C^^3008^ine_finance_chg^0^^^8^^N^^^^^FUT_FINANCE_CHG^Finance Charge?^Finance Charge?^Finance Charge?^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Finance Charge?^^^^^^^N^
+SA_FLAG^FUT_ARM02^009^C^^3009^ine_sa_flag^0^^^9^^N^^^^^FUT_SA_FLAG^Sales Analysis (N/P/I)^Sales Analysis (N/P/I)^Sales Analysis (N/P/I)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Sales Analysis (N/P/I)^^^^^^^N^
+FEAT_USER_FLAG^FUT_ARM02^010^C^^3010^ine_feat_user_flag^0^^^10^^N^^^^^FUT_FEAT_USER_FL^Total Users Per Feature?  (Y/N)^Total Users Per Feature?  (Y/N)^Total Users Per Feature?  (Y/N)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+INVOICE_COPY^FUT_ARM02^011^C^^3011^ine_invoice_copy^0^^^11^^N^^^^^FUT_INVOICE_COPY^Invoice Copy^Reserved For Add+on Use^Reserved For Add+on Use^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Reserved For ADD+ON Use^^^^^^^N^
+LASTINV_DATE^FUT_ARM02^012^C^^3012^ine_lastinv_date^0^^^12^^N^^^^^FUT_LASTINV_DATE^Last invoice date^Last invoice date^Last invoice date^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Last invoice date^^^^^^^N^
+LASTPAY_DATE^FUT_ARM02^013^C^^3013^ine_lastpay_date^0^^^13^^N^^^^^FUT_LASTPAY_DATE^Last payment date^Last payment date^Last payment date^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Last payment date^^^^^^^N^
+STATEMENTS^FUT_ARM02^014^C^^3014^ine_statements^0^^^14^^N^^^^^FUT_STATEMENTS^Statements?^Statements?^Statements?^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Statements?^^^^^^^N^
+TERRITORY^FUT_ARM02^015^C^^3015^ine_territory^0^^^15^^N^^^^^FUT_TERRITORY^Territory Code^Territory Code^Territory Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Territory Code^^^^^^^N^
+PRICING_CODE^FUT_ARM02^016^C^^3016^ine_pricing_code^0^^^16^^N^^^^^FUT_PRICING_CODE^Customer Pricing Code^Customer Pricing Code^Customer Pricing Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^0^Enter Customer Pricing Code^^^^^^^N^
+DISC_CODE_A^FUT_ARM02^017^C^^3017^ine_disc_code_a^0^^^17^^N^^^^^FUT_DISC_CODE_A^Disc Code A^Disc Code A^Disc Code A^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Number Of Labels^^^^^^^N^
+MESSAGE_CODE^FUT_ARM02^018^C^^3018^ine_message_code^0^^^18^^N^^^^^FUT_MESSAGE_CODE^Standard Message Code^Standard Message Code^Standard Message Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Standard Message Code^^^^^^^N^
+TAX_CODE^FUT_ARM02^019^C^^3019^ine_tax_code^0^^^19^^N^^^^^FUT_TAX_CODE^Tax Code^Tax Code^Tax Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Tax Code^^^^^^^N^
+CUST_TYPE^FUT_ARM02^020^C^^3020^ine_cust_type^0^^^20^^N^^^^^FUT_CUST_TYPE^Customer Type^Customer Type^Customer Type^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Customer Type^^^^^^^N^
+INVOICE_PRCD^FUT_ARM02^021^C^^3021^ine_invoice_prcd^0^^^21^^N^^^^^FUT_INVOICE_PRCD^Invoice in DM or Euro (D/E)^Invoice in Dm or Euro (D/E)^Invoice in Dm or Euro (D/E)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Invoice in DM or Euro (D^^^^^^^N^
+INV_HIST_FLG^FUT_ARM02^022^C^^3022^ine_inv_hist_flg^0^^^22^^N^^^^^FUT_INV_HIST_FLG^Retain Detail Invoice History?^Retain Detail Invoice History?^Retain Detail Invoice History?^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Retain Detail Invoice Hi^^^^^^^N^
+CRED_HOLD^FUT_ARM02^023^C^^3023^ine_cred_hold^0^^^23^^N^^^^^FUT_CRED_HOLD^Credit Hold (Y/N/E)^Credit Hold (Y/N/E)^Credit Hold (Y/N/E)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Credit Hold (Y/N/E)^^^^^^^N^
+LINK_TO_CUST^FUT_ARM02^024^C^^3024^ine_link_to_cust^0^^^24^^N^^^^^FUT_LINK_TO_CUST^Linked to Customer Number^Linked to Customer Number^Linked to Customer Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^0^Enter Linked to Customer Numbe^^^^^^^N^
+PRODUCT_PREFIX^FUT_ARM02^025^C^^3025^ine_product_prefix^0^^^25^^N^^^^^FUT_PRODUCT_PREF^Customer Product Prefix^Customer Product Prefix^Customer Product Prefix^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^2^^^^^^^^N^
+RENTAL_PERC1^FUT_ARM02^026^C^^3026^ine_rental_perc1^0^^^26^^N^^^^^FUT_RENTAL_PERC1^Rental Perc1^Rental Perc1^Rental Perc1^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^2^^^^^^^^N^
+RENTAL_PERC2^FUT_ARM02^027^C^^3027^ine_rental_perc2^0^^^27^^N^^^^^FUT_RENTAL_PERC2^Rental Perc2^Rental Perc2^Rental Perc2^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^2^^^^^^^^N^
+RENTAL_PERC3^FUT_ARM02^028^C^^3028^ine_rental_perc3^0^^^28^^N^^^^^FUT_RENTAL_PERC3^Rental Perc3^Rental Perc3^Rental Perc3^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^2^^^^^^^^N^
+SEND_NOTICE^FUT_ARM02^029^C^^3029^ine_send_notice^0^^^29^^N^^^^^FUT_SEND_NOTICE^Send Notice^Send Notice^Send Notice^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+RESERVED_STR_3^FUT_ARM02^030^C^^3030^ine_reserved_str_3^0^^^30^^N^^^^^FUT_RESERVED_STR^Reserved For ADD+ON Use^Reserved For Add+on Use^Reserved For Add+on Use^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Reserved For ADD+ON Use^^^^^^^Y^
+AGING_FUTURE^FUT_ARM02^031^C^^3031^inn_aging_future^0^^^31^^N^^^^^FUT_AGING_FUTURE^Aging Amount - Future^Aging Amount   Future^Aging Amount   Future^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Aging Amount - Future^^^^^^^Y^
+AGING_CUR^FUT_ARM02^032^C^^3032^inn_aging_cur^0^^^32^^N^^^^^FUT_AGING_CUR^Aging Amount - Current^Aging Amount   Current^Aging Amount   Current^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Aging Amount - Current^^^^^^^Y^
+AGING_30^FUT_ARM02^033^C^^3033^inn_aging_30^0^^^33^^N^^^^^FUT_AGING_30^Aging Amount -  30 Days^Aging Amount    30 Days^Aging Amount    30 Days^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Aging Amount -  30 Days^^^^^^^Y^
+AGING_60^FUT_ARM02^034^C^^3034^inn_aging_60^0^^^34^^N^^^^^FUT_AGING_60^Aging Amount -  60 Days^Aging Amount    60 Days^Aging Amount    60 Days^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Aging Amount -  60 Days^^^^^^^Y^
+AGING_90^FUT_ARM02^035^C^^3035^inn_aging_90^0^^^35^^N^^^^^FUT_AGING_90^Aging Amount -  90 Days^Aging Amount    90 Days^Aging Amount    90 Days^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Aging Amount -  90 Days^^^^^^^Y^
+AGING_120^FUT_ARM02^036^C^^3036^inn_aging_120^0^^^36^^N^^^^^FUT_AGING_120^Aging Amount - 120 Days^Aging Amount   120 Days^Aging Amount   120 Days^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Aging Amount - 120 Days^^^^^^^Y^
+CREDIT_LIMIT^FUT_ARM02^037^C^^3037^inn_credit_limit^0^^^37^^N^^^^^FUT_CREDIT_LIMIT^Credit Limit^Credit Limit^Credit Limit^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Credit Limit^^^^^^^Y^
+PRICING_LEVEL^FUT_ARM02^038^C^^3038^inn_pricing_level^0^^^38^^N^^^^^FUT_PRICING_LEVE^Reserved For ADD+ON Use^Reserved For Add+on Use^Reserved For Add+on Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^2^Enter Reserved For ADD+ON Use^^^^^^^Y^
+ALLOWED_RESETS^FUT_ARM02^039^C^^3039^inn_allowed_resets^0^^^39^^N^^^^^FUT_ALLOWED_RESE^Number of Allowed Resets^Reserved For Add+on Use^Reserved For Add+on Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^2^Enter Reserved For ADD+ON Use^^^^^^^Y^
+RENTAL_BILLING^FUT_ARM02^040^C^^3040^inn_rental_billing^0^^^40^^N^^^^^FUT_RENTAL_BILLI^Rental Billing^Reserved For Add+on Use^Reserved For Add+on Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^Enter Reserved For ADD+ON Use^^^^^^^Y^
+RESERVED_NUM_4^FUT_ARM02^041^C^^3041^inn_reserved_num_4^0^^^41^^N^^^^^FUT_RESERVED_NUM^Reserved For ADD+ON Use^Reserved For Add+on Use^Reserved For Add+on Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^Enter Reserved For ADD+ON Use^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_ARM02^PRIMARY^FUT_ARM02.FIRM_ID                       FUT_ARM02.CUSTOMER_NBR                  FUT_ARM02.AR_TYPE                       ^FUT_ARM02.FIRM_ID$+FUT_ARM02.CUSTOMER_NBR$+FUT_ARM02.AR_TYPE$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.CUSTOMER_NBR$+RD_REC_DATA.AR_TYPE$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.CUSTOMER_NBR$               RD_REC_DATA.AR_TYPE$                    
+{KeyDefsEnd}
+{GridCols}
+001FUT_ARM02.FIRM_ID                       ;002FUT_ARM02.CUSTOMER_NBR                  ;003FUT_ARM02.AR_TYPE                       ;004FUT_ARM02.SLSPSN_CODE                   ;005FUT_ARM02.TERMS_CODE                    ;006FUT_ARM02.DISC_CODE                     ;007FUT_ARM02.DIST_CODE                     ;008FUT_ARM02.FINANCE_CHG                   ;009FUT_ARM02.SA_FLAG                       ;010FUT_ARM02.FEAT_USER_FLAG                ;011FUT_ARM02.INVOICE_COPY                  ;012FUT_ARM02.LASTINV_DATE                  ;013FUT_ARM02.LASTPAY_DATE                  ;014FUT_ARM02.STATEMENTS                    ;015FUT_ARM02.TERRITORY                     ;016FUT_ARM02.PRICING_CODE                  ;017FUT_ARM02.DISC_CODE_A                   ;018FUT_ARM02.MESSAGE_CODE                  ;019FUT_ARM02.TAX_CODE                      ;020FUT_ARM02.CUST_TYPE                     ;021FUT_ARM02.INVOICE_PRCD                  ;022FUT_ARM02.INV_HIST_FLG                  ;023FUT_ARM02.CRED_HOLD                     ;024FUT_ARM02.LINK_TO_CUST                  ;025FUT_ARM02.PRODUCT_PREFIX                ;026FUT_ARM02.RENTAL_PERC1                  ;027FUT_ARM02.RENTAL_PERC2                  ;028FUT_ARM02.RENTAL_PERC3                  ;029FUT_ARM02.SEND_NOTICE                   ;030FUT_ARM02.RESERVED_STR_3                ;031FUT_ARM02.AGING_FUTURE                  ;032FUT_ARM02.AGING_CUR                     ;033FUT_ARM02.AGING_30                      ;034FUT_ARM02.AGING_60                      ;035FUT_ARM02.AGING_90                      ;036FUT_ARM02.AGING_120                     ;037FUT_ARM02.CREDIT_LIMIT                  ;038FUT_ARM02.PRICING_LEVEL                 ;039FUT_ARM02.ALLOWED_RESETS                ;040FUT_ARM02.RENTAL_BILLING                ;041FUT_ARM02.RESERVED_NUM_4                ;
+{GridColsEnd}

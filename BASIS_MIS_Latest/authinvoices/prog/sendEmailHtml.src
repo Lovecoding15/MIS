@@ -1,0 +1,151 @@
+rem ' ****************************************************************
+rem ' send email using email.bbj
+rem ' ****************************************************************
+
+seterr errorRoutine
+
+rem ' ****************************************************************
+rem ' ENTER
+rem ' ****************************************************************
+
+enter from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+rem ' from$ a single email address - required
+rem ' to$ is a comma separated list of to email addresses
+rem ' cc$ is a comma separated list of cc email addresses
+rem ' bcc$ is a comman separted list of bcc email addresses
+rem ' subject$ is the email subject
+rem ' msgtxt$ is the text of the message
+rem ' file$ is a | separated list of files to attach to the email
+
+rem ' ****************************************************************
+rem ' get properties
+rem ' ****************************************************************
+
+use java.io.File
+use java.io.FileInputStream
+use java.io.BufferedInputStream
+use java.util.Properties
+
+props=unt
+open(props)"sendEmail.properties"
+props$=fid(props)
+props$=props$(9)
+close(props)
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+
+rem ' ****************************************************************
+rem ' get Email instance
+rem ' ****************************************************************
+
+use ::email.bbj::Email
+use java.util.Date
+
+declare Email mail!
+
+host$ = props!.getProperty("mailhost")
+port = num(props!.getProperty("mailport"))
+rem ' for use on developers laptop
+rem ' user$ = props!.getProperty("username")
+rem ' password$ = props!.getProperty("password")
+rem ' smtp$ = "smtps"; rem --- use smtps
+
+rem ' for use on production
+mail! = new Email(host$, port)
+rem ' for use on developers laptop
+rem ' mail! = new Email(host$,port,user$,password$,smtp$)
+
+rem ' ****************************************************************
+rem ' from is required, only a single from is supported
+rem ' ****************************************************************
+mail!.setFrom(from$)
+
+rem ' ****************************************************************
+rem ' supports multiple to with a comma separated input string
+rem ' example: buser@basis.com, xuser@basis.com, yuser@basis.com
+rem ' to is required
+rem ' ****************************************************************
+while pos("," = to$)
+	p = pos("," = to$)
+	xTo$ = cvs(to$(1, p - 1), 3)
+	to$ = cvs(to$(p + 1),3)
+	mail!.addTo(xTo$)
+wend
+rem ' add the last one
+mail!.addTo(to$)
+
+rem ' ****************************************************************
+rem ' supports multiple cc with a comma separated input string
+rem ' example: buser@basis.com, xuser@basis.com, yuser@basis.com
+rem ' cc is not required
+rem ' ****************************************************************
+if cvs(cc$,3) <> "" then
+	while pos("," = cc$)
+		p = pos("," = cc$)
+		xCC$ = cvs(cc$(1, p - 1), 3)
+		cc$ = cvs(cc$(p + 1),3)
+		mail!.addCc(xCC$)
+	wend
+	rem ' add the last one
+	mail!.addCc(cc$)
+fi
+
+
+rem ' ****************************************************************
+rem ' supports multiple bcc with a comma separated input string
+rem ' example: buser@basis.com, xuser@basis.com, yuser@basis.com
+rem ' bcc is not required
+rem ' ****************************************************************
+if cvs(bcc$,3) <> "" then
+	while pos("," = bcc$)
+		p = pos("," = bcc$)
+		xBcc$ = cvs(bcc$(1, p - 1), 3)
+		bcc$ = cvs(bcc$(p + 1),3)
+		mail!.addBcc(xBcc$)
+	wend
+	rem ' add the last one
+	mail!.addBcc(bcc$)
+fi
+
+if cvs(subject$,3) <> "" then mail!.setSubject(subject$)
+
+mail!.setSentDate(new Date())
+
+rem ' add the html as data
+mail!.addData(msgtxt$, "text/html")
+
+rem ' ****************************************************************
+rem ' supports multiple files to be attached with a | separated input string
+rem ' example: "/mnt/data/fileStore/fileA.xls|/mnt/data/acct/fileB.csv
+rem ' a file list is not required
+rem ' ****************************************************************
+if cvs(file$,3) <> "" then
+	filelist$ = file$
+	while len(filelist$)
+		spos = pos("|"=filelist$)
+		if spos then
+			sfile$ = filelist$(1,spos - 1)
+			filelist$ = filelist$(spos + 1)
+			mail!.addFile(cvs(sfile$,3))
+		else
+			sfile$ = filelist$
+			mail!.addFile(cvs(sfile$,3))
+			filelist$ = ""
+		fi
+	wend
+fi
+
+mail!.setHeader("X-Mailer","BBj")
+
+mail!.send()
+
+exit
+
+errorRoutine:
+	errmsg$ = "An error " + str(err) + " occurred on line: " + str(tcb(5)) + " of sendEmailHtml.src. " + errmes(-1)
+	throw errmsg$, 252
+	exit

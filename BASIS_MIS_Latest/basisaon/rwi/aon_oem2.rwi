@@ -1,0 +1,39 @@
+// <aon_oem2> OEM Serial number inquiry (ALG version)
+
+new_sn:
+display/form="MAS_HEAD" firm_name="" 
+screen_desc="OEM Serial Number Lookup";
+osn$="";
+prompt for /prompt="Enter Serial Number:" /len=9 /imask="XXXNNNNNN"
+	/help="Enter=exit"/drop osn$;
+if ctl(2) or cvs(osn$,3)="" then exit;
+
+find/next/noerror oem_sn_trans using osn$;
+if available(oem_sn_trans)=0 or oem_sn_trans.serial_num<>osn$ then
+	{pause/message=osn$+" Not found";goto new_sn;}
+
+display/notitle
+"Serial#  Trans  Date        Type SaleType Active Item      Rev    AuthNumber";
+display fill(78,"-");
+
+for each oem_sn_trans where serial_num=osn$
+{ 
+find/noerror/index=sn_new oem_sn_xref using oem_sn_trans.serial_num;
+old$="";if available(oem_sn_xref) then 
+	{old$="Canceled: "+oem_sn_xref.sn_old; 
+	if oem_sn_xref.seq<>"001" then old$=old$+"*Duplicate";}
+dt$=oem_sn_trans.date_tran(5,2)+"/"+oem_sn_trans.date_tran(7,2)+"/"+oem_sn_trans.date_tran(1,4);
+r$="";if oem_sn_trans.sale_type="R" then r$="Readonly";
+display/notitle oem_sn_trans.serial_num tran/col=11 dt$/len=10
+ oem_sn_trans.tran_type r$/len=10 oem_sn_trans.active_flag/len=2
+ oem_sn_trans.item_num rev_level lic_auth;
+display/notitle "CurUsers:"/col=4 oem_sn_trans.cur_user/len=4
+"NewUsers:"/col=18 oem_sn_trans.new_user/len=4
+"LicCount:"/col=32 oem_sn_trans.lic_count/len=1 
+"ProdType:"/col=46 oem_sn_trans.prod_type;
+if old$<>"" then display/notitle old$/col=4;
+}
+display/newpage;
+goto new_sn;
+
+//

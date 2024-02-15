@@ -1,0 +1,183 @@
+0010 REM "TMM - Country Maintenance
+0020 REM "Program BTM.02
+0079 REM 
+0080 BEGIN 
+0090 SETERR 9000
+0100 REM "OPEN/LOCK FILES"
+0110 OPEN (1)"country.dat"
+0120 OPEN (2)"languages.dat"
+0160 OPEN (6)"SYS-01"
+0200 REM "IOLISTS"
+0270 IOLIST X$,F0$,X$,X$,X$,F4$,F5$,F6$
+0400 REM " --- Parameters"
+0405 FIND (6,KEY="T"+FID(0),DOM=9800)IOL=0270
+0500 REM "INIT DATA"
+0520 call "templates.pgm::country"
+0530 call "templates.pgm::languages"
+0700 REM "BACKGROUND"
+0720 PRINT 'SB',@(11,3),"Country:",@(6,4),"Country code:",@(2,5),"Postal code flag:",@(5,6),"Shipping zone:",@(1,7),"BSG shipping zone:",@(1,8),"Shipping required:",@(10,9),"Language:"
+0790 PRINT 'SF',
+0900 REM "INIT FILE"
+0920 find (1,KEY="",knum=1,DOM=0930)
+1000 REM "KEY"
+1010 PRINT 'CF',
+1020 READrecord (1,err=*next)country$
+1030 v2$=country.country_name$
+1040 gosub 5000
+1050 LET V0$="S",V1$="^",V3$="",V0=30,V1=20,V2=3,V4$="Enter Country, (<F3>=Lookup)"
+1060 GOSUB 7000
+1070 IF V3=4 OR V$="END" THEN GOTO 4500
+1080 IF V3=3 THEN channel=1;GOSUB 6000
+1100 PRINT @(V1,V2),V$; IF V$="" THEN GOTO 1000
+1200 REM "FIND KEY"
+1210 LET O9=0,cntry$=pad(v$,30)
+1220 dim country$:fattr(country$)
+1230 Readrecord (1,KEY=cntry$,knum=1,err=*next)country$
+1250 if pos(cntry$=country.country_name$)<>1 then goto 1400
+1300 REM "DISPLAY"
+1320 GOSUB 5000
+1340 GOTO 4000
+1400 REM "NEW RECORD"
+1410 LET V0$="Y",V1$="C^",V2$="",V3$="",V4$="Is This A New Record? <Y/N>: ",V0=1,V1=55,V2=22
+1420 GOSUB 7000
+1440 ON POS(V$="YN") GOTO 1400,1500,1000
+1500 REM "SET-UP"
+1510 dim country$:fattr(country$)
+1520 country.country_name$=cntry$
+1530 country.postcode_pos$="A"
+1540 country.ship_required$="N"
+1600 REM "Country code
+1610 GOSUB 5000
+1620 LET O9=1,ok=0
+1630 LET V0$="S",V1$="^",V2$=country.country_code$,V3$="",V0=2,V1=20,V2=4,I0=0,V4$="ISO Country Code? "
+1640 GOSUB 7000
+1650 findrecord(1,key=v$,knum=0,dom=*next)country$;ok=1
+1660 if ok then goto 1000;rem 'key already exists
+1670 country.country_code$=V$
+2000 REM "POSTAL CODE FLAG
+2010 LET O9=1
+2020 LET V0$="S",V1$="^",V2$=country.postcode_pos$,V3$="",V0=1,V1=20,V2=5,V4$="Code prints After or Before city? <A/B>"
+2040 GOSUB 7000
+2050 IF POS(V$="AB")=0 THEN GOTO 2000
+2060 LET country.postcode_pos$=v$
+2090 GOTO 3900
+2100 REM "Zone
+2110 LET O9=1
+2120 LET V0$="Z",V1$="",V2$=country.zone$,V3$="000",V0=3,V1=20,V2=6,V4$="UPS Shipping Zone"
+2140 GOSUB 7000
+2160 LET country.zone$=V$
+2190 GOTO 3900
+2200 REM "Zone2 (shipping from BSG)
+2210 LET O9=1
+2220 LET V0$="Z",V1$="",V2$=country.zone2$,V3$="000",V0=3,V1=20,V2=7,V4$="BSG Shipping Zone"
+2240 GOSUB 7000
+2260 LET country.zone2$=V$
+2290 GOTO 3900
+2300 REM "Shipping required from BSG
+2310 LET O9=1
+2320 LET V0$="S",V1$="^",V2$=country.ship_required$,V3$="",V0=1,V1=20,V2=8,V4$="BSG Shipping Requred <Y/N>"
+2340 GOSUB 7000
+2350 IF POS(V$=" YN")=0 THEN GOTO 2300
+2360 LET country.ship_required$=V$
+2390 GOTO 3900
+2400 REM "Language 
+2405 dim languages$:fattr(languages$)
+2410 findrecord(2,key=country.lang_code$,knum=0,dom=*next)languages$
+2420 LET O9=1,ok=0,v2$=languages.language$,hold$=v2$
+2430 LET V0$="S",V1$="^",V3$="",V0=30,V1=20,V2=9,V4$="Enter Language (<F3>=Lookup)"
+2440 GOSUB 7000
+2450 IF V3=3 THEN channel=2;GOSUB 6000
+2460 LET v$=pad(v$,30)
+2470 findrecord(2,key=v$,knum=1,dom=*next)languages$;ok=1
+2480 if ok then country.lang_code$=languages.lang_code$,hold$=v$
+2490 if cvs(v$,3)="" then country.lang_code$="  ",hold$=v$
+2500 print @(v1,v2),hold$
+3900 REM "NEXT FIELD"
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 ON I0 GOTO 2000,2100,2200,2300,2400,3990
+3990 LET I0=K0
+4000 REM "OPTIONS"
+4010 LET V0$="S",V1$="KC^",V2$="Y",V3$="",V4$="Is The Above Information Correct? <Y/N/Delete>: ",V0=6,V1=64,V2=22
+4020 GOSUB 7000
+4030 IF V$="DELETE" THEN GOTO 4200
+4040 IF V$="" THEN IF O9=0 THEN GOTO 1000
+4050 ON POS(V$="YN") GOTO 4000,4100,2000
+4100 REM "WRITE"
+4110 country$=field(country$)
+4120 WRITErecord (1)country$
+4190 GOTO 1000
+4200 REM "DELETE"
+4220 REMOVE (1,KEY=country.country_code$,DOM=4230)
+4230 dim country$:fattr(country$)
+4290 GOTO 1000
+4500 REM " --- Print?"
+4505 goto 9900
+4510 CALL "SYC.YN",1,"Print A List Of All Records",1,V$,V3
+4540 ON V3 GOTO 4550,4500,4500,4500,9900
+4590 ON POS(V$="YN") GOTO 4500,4900,9900
+4900 REM " --- Report Initializations"
+4905 LET PROGRAM$="",NUMBER=1,HEADINGS=3,WIDTH=80,CHANNEL=1
+4915 DIM FIELD$[NUMBER],FIELD[NUMBER],POSITION[NUMBER]
+4920 DIM LENGTH[NUMBER],TYPE$[NUMBER],MASK$[NUMBER]
+4925 DIM HEADINGS$[HEADINGS]
+4930 LET FIELD$[0]="Country",FIELD[0]=1,POSITION[0]=1
+4940 LET LENGTH[0]=30,TYPE$[0]="S",MASK$[0]=""
+4945 LET FIELD$[1]="Postal Code Flag",FIELD[1]=1,POSITION[1]=33
+4950 LET LENGTH[1]=1,TYPE$[1]="S",MASK$[1]="",TOTAL$="Countries"
+4980 LET HEADINGS$[0]="",HEADINGS$[1]="Country Listing",RECORD$="",N0$=""
+4990 RUN "SYR.AA"
+5000 REM "DISPLAY"
+5010 dim languages$:fattr(languages$)
+5020 PRINT @(20,4),country.country_code$,@(20,5),country.postcode_pos$,@(20,6),country.zone$,@(20,7),country.zone2$,@(20,8),country.ship_required$
+5030 readrecord(2,key=country.lang_code$,knum=0,dom=*next)languages$
+5040 PRINT @(20,9),languages.language$
+5090 RETURN 
+6000 REM " --- Code Lookup"
+6010 LET TITLE$="Countries",NUMBER=1
+6020 DIM DESCRIPTION$[NUMBER],FIELD[NUMBER],POSITION[NUMBER],LENGTH[NUMBER]
+6030 LET DESCRIPTION$[0]="Country",DESCRIPTION$[1]="ISO Code"
+6032 if channel=2 then LET DESCRIPTION$[0]="Language",title$="Languages"
+6040 LET FIELD[0]=1,POSITION[0]=3,LENGTH[0]=30
+6050 LET FIELD[1]=1,POSITION[1]=1,LENGTH[1]=2
+6060 LET COLUMN=79-LENGTH[0]-LENGTH[1]-2-NUMBER*4
+6070 LET V$="",ROW=V2+2
+6080 CALL "BTM.10",CHANNEL,NUMBER,TITLE$,DESCRIPTION$[ALL],FIELD[ALL],POSITION[ALL],LENGTH[ALL],COLUMN,ROW,V$
+6090 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 RUN "SYS.AA"
+65000 END

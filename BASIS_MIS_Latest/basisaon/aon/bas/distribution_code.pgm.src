@@ -1,0 +1,52 @@
+rem distribution_code.pgm
+rem 'return distribution code in dist$
+seterr pgm_exit
+enter firm$,item$,type_of_sale$,lic_property1$,csm10,ivm02,arm10,dist$
+
+rem 'if dist$ already set in calling program, exit
+gosub validate_code
+if dist$<>"" then goto pgm_exit
+
+rem 'need csm05 -not opened in update programs
+csm05=unt
+open(csm05)"CSM-05"
+call "templates.pgm::CSM05"
+call "templates.pgm::CSM10"
+prod$="B"+cvs(lic_property1$,3)
+if prod$="B" then PROD$=ITEM$(1,3)
+IF PROD$="VP5" THEN PROD$="PR5"
+License_type$=ITEM$(13,3)
+read record(csm05,key=firm$+license_type$,dom=*next)csm05$
+dist$=cvs(csm05.dist_code$,3)
+close(csm05)
+gosub validate_code
+if dist$<>"" then goto pgm_exit
+found=0
+READ RECORD(CSM10,KEY=firm$+license_type$+type_of_sale$,DOM=*next)CSM10$;found=1
+
+if found=0 then READ RECORD(CSM10,KEY=firm$+prod$+type_of_sale$,DOM=*next)CSM10$;found=1
+if found then 
+  dist$=cvs(csm10.dist_code$,3)
+  gosub validate_code  
+  if dist$<>"" then goto pgm_exit
+fi
+call "templates.pgm::IVM02"
+tries=0,iv_itm$=item$
+while tries<2
+  readrecord(ivm02,KEY=firm$+"01"+iv_itm$,ERR=*next)ivm02$;tries=1
+  tries=tries+1
+  dist$=cvs(ivm02.dist_code$,3)
+  iv_itm$(10,3)="CUR"
+  if iv_itm$(13,3)<>"STD" and iv_itm$(1,3)="BAS" then iv_itm$(13,3)="EXP"
+wend
+gosub validate_code
+
+pgm_exit:
+
+exit
+
+validate_code:
+valid=0
+find(arm10,key=firm$+"D"+dist$,err=*next);valid=1
+if valid=0 then dist$=""
+return

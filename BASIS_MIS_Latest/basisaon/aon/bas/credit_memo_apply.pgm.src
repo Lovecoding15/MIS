@@ -1,0 +1,123 @@
+rem 'Program name: credit_memo_apply.pgm
+begin
+to$="customer-service@basis.cloud"
+subj$="Auto credit memo apply"
+msg$=""
+seterr pgm_err
+call "ec_open::art01"
+call "ec_open::art11"
+call "ec_open::are01"
+call "ec_open::are11"
+call "ec_open::art03"
+arw07=unt
+open(arw07)"ARW-07"
+dim arw07$:"firm_id:c(2),unused:c(15),customer_nbr:c(6),cm_inv_nbr:c(7),ar_inv_nbr:c(7*),amt:n(1*)"
+today=jul(0,0,0)
+today$=CHR(ASC(DATE(today:"%Yp"))+32)+CHR(ASC(DATE(today:"%Mp"))+32)+CHR(ASC(DATE(today:"%Dp"))+32)
+update_cm=0
+while 1
+  arw07key$=key(arw07,end=*break)
+  readrecord(arw07,key=arw07key$)arw07$
+  if arw07.unused$<>fill(15) then continue
+  remove(arw07,key=arw07key$)
+  firm$=arw07.firm_id$
+  cust$=arw07.customer_nbr$
+  inv_num$=arw07.cm_inv_nbr$
+  gosub inv_balance
+  if balance=0 then continue
+  cm_balance=balance
+  inv_num$=arw07.ar_inv_nbr$
+  gosub inv_balance
+  if cm_balance+balance then continue
+  readrecord(art03,key=firm$+"  "+cust$+arw07.cm_inv_nbr$+"000",dom=*continue)art03$
+  if cm_balance<>art03.total_sales+art03.tax_amount+art03.freight_amt then continue
+  readrecord(art03,key=firm$+"  "+cust$+arw07.ar_inv_nbr$+"000",dom=*continue)art03$
+  if balance<>art03.total_sales+art03.tax_amount+art03.freight_amt then continue
+  dim are01$:fattr(are01$)
+  are01.firm_id$=firm$
+  are01.customer_nbr$=cust$
+  are01.receipt_date$=today$
+  
+  if firm$ = "01" then
+    are01.cash_rec_cd$ = "WF "
+  else
+    rem ' only one cash receipt code for BSE, all blank
+    are01.cash_rec_cd$ = "   "
+  fi  
+  
+  are01.cash_or_chk$="C"
+  are01.ar_check_nbr$="APPLY"
+  are01.reserved_str_2$="A";rem 'flag as as Auto update
+  readrecord(are01,key=are01$(1,25),dom=*next)are01$
+  are01.payment_amt=are01.payment_amt+cm_balance+balance
+  are01$=field(are01$)
+  writerecord(are01,key=are01$(1,25))are01$
+
+  dim are11$:fattr(are11$)
+  are11.firm_id$=firm$
+  are11.customer_nbr$=cust$
+  are11.receipt_date$=today$
+  
+  if firm$ = "01" then
+    are11.cash_rec_cd$ = "WF "
+  else
+    rem ' only one cash receipt code for BSE, all blank
+    are11.cash_rec_cd$ = "   "
+  fi  
+  
+  are11.ar_check_nbr$=are01.ar_check_nbr$
+  are11.ar_inv_nbr$=arw07.cm_inv_nbr$
+  are11.apply_amt=cm_balance
+  are11$=field(are11$)
+  writerecord(are11,key=are11$(1,32))are11$
+
+  are11.ar_inv_nbr$=arw07.ar_inv_nbr$
+  are11.apply_amt=balance
+  are11$=field(are11$)
+  writerecord(are11,key=are11$(1,32))are11$
+  msg$=msg$+firm$+" "+cust$+" Inv:"+arw07.ar_inv_nbr$+"  CM:"+arw07.cm_inv_nbr$+$0a$
+  update_cm=1
+wend
+
+close(art01,err=*next)
+close(art11,err=*next)
+close(are01,err=*next)
+close(are11,err=*next)
+close(art03,err=*next)
+close(arw07,err=*next)
+
+if update_cm then call "ARU.AA"
+pgm_exit:
+if msg$="" then msg$="No credit memos applied"
+if pos("Error"=msg$)<>1 then gosub notify
+run "SYS.AA"
+
+pgm_err:
+to$="mis@basis.cloud"
+subj$="Program error"
+msg$ = "Error " + str(err) + " " + errmes(-1) + " in " + str(tcb(5)) + " of " +pgm(-2)
+gosub notify
+goto pgm_exit
+
+notify:
+from$ = "customer-service@basis.cloud"
+cc$ = ""
+bcc$ = ""
+call "sendEmail.src", from$, to$, cc$, bcc$, subj$, msg$, ""
+return
+
+inv_balance:
+tot=0
+balance=0
+art01key$=firm$+"  "+cust$+inv_num$+"00"
+read record(art01,key=art01key$,dom=*next)art01$;found=1
+if found=0 then return
+read(art11,key=art01$(1,17),dom=*next)
+while 2
+  read record(art11,end=*break)art11$
+  if pos(art01$(1,17)=art11$)<>1 then break
+  if art11.AR_TRAN_CODE$="C" then tot=tot+art11.trans_amt
+wend
+balance=art01.invoice_amt+tot
+return
+

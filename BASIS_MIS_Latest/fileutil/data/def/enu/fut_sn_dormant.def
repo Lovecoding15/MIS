@@ -1,0 +1,25 @@
+Table Definition Module
+FUT_SN_DORMANT - SNs to not Send Perpetual Notices to
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SN_DORMANT^^^^^SNs to not Send Perpetual Notices to^SNs to not Send Perpetual Notices to^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+SERIAL_NBR^FUT_SN_DORMANT^001^C^^3001^ine_serial_nbr^0^^^1^^Y^^^^^FUT_SERIAL_NBR^Serial Number (Basis)^Serial Number (Basis)^Serial Number (Basis)^C^^E^^^^0^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^^^^^^^^N^
+FIRM_ID^FUT_SN_DORMANT^002^C^^3002^ine_firm_id^0^^^2^^N^/mnt/data/aon_prod/apps/fileutil/;^BINP;^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^0^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+CUSTOMER_NBR^FUT_SN_DORMANT^003^C^^3003^dis_customer_nbr^0^^^3^^N^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^0^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^^^^0^^^^N^
+AVAILABLE^FUT_SN_DORMANT^004^C^^^^^^^4^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^1^^^^^^^^G;I;O;W;^^^0^^^^^^^^N^
+COMMENT1^FUT_SN_DORMANT^005^C^^3004^ine_comment1^0^^^5^^N^^^^^FUT_COMMENT1^Comment^Comment^Comment^C^^E^^^^0^^^^^^^^^^^^^^^^^^^40^^^^^^^^^^^0^^^^0^^^^N^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SN_DORMANT^PRIMARY^FUT_SN_DORMANT.SERIAL_NBR               ^FUT_SN_DORMANT.SERIAL_NBR$^RD_REC_DATA.SERIAL_NBR$^RD_REC_DATA.SERIAL_NBR$                 
+{KeyDefsEnd}
+{GridCols}
+001FUT_SN_DORMANT.SERIAL_NBR               ;002FUT_SN_DORMANT.FIRM_ID                  ;003FUT_SN_DORMANT.CUSTOMER_NBR             ;005FUT_SN_DORMANT.COMMENT1                 ;
+{GridColsEnd}

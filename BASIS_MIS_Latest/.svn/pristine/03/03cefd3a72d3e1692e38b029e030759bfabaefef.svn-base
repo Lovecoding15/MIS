@@ -1,0 +1,41 @@
+//  Serial number reports menu   <aonserr_mnu.rwi>
+
+repeat
+{
+display/form="MAS_HEAD" screen_desc="Serial Number Reports" firm_name="";
+
+choose /traditional
+	/black
+	/drop
+	a from
+
+	"Active Serial Numbers for a Customer"
+	/help="Listing of active SN's for a selected range of ports"
+
+	"Data Server/Clients for a Customer"
+	/help="List DS and Client serials for customer"
+
+	"AddOn Reseller Reconciliation Report"
+	/help="Produces text file that can be imported into EXCEL"
+
+	"Port Sales Summary"
+	/help="Licenses, users, revenue for selected ports and dates"
+
+	"Mega Report"
+	/help="Sale type,month,user group w/avg price per user for selected period"
+
+	"Exit" ;
+if ctl(2) then exit;
+switch a
+{
+case 0: call/window "(BBX)serr_13.bbx";
+case 1: call/window "(BBX)serr_8.bbx";
+case 2: call/window "(BBX)serr_19.bbx";
+case 3: call/window "(BBX)serr_20.bbx";
+case 4: call/window "(BBX)mega.bbx";
+case 5: exit;
+}
+
+}
+//  
+

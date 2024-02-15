@@ -1,0 +1,70 @@
+// <aon_oem1>
+
+display/form="MAS_HEAD"/nodrop firm_name=""
+	screen_desc="Create OEM Spread Sheet File";
+
+edt$=date(0:"%Mz/%Dz/%Y");
+bdt$=edt$(1,3)+"01"+edt$(6);
+date1:
+prompt for /notitle/nobox/nodrop/len=10/row=5/col=10
+/prompt="Beginning date: "/mask="00/00/0000"
+bdt$;
+if ctl(2) then exit;
+call/nowindow "(BBX)aondate.bbx",bdt$,tdt$,"P";
+if tdt$="" then goto date1;
+call/nowindow "(BBX)aondate.bbx",tdt$,bdt$,"U";
+date2:
+prompt for /notitle/nobox/nodrop/len=10/row=7/col=10
+/prompt="   Ending date: "/mask="00/00/0000"
+edt$;
+if ctl(2) then exit;
+call/nowindow "(BBX)aondate.bbx",edt$,tdt$,"P";
+if tdt$="" then goto date2;
+call/nowindow "(BBX)aondate.bbx",tdt$,edt$,"U";
+d1$=bdt$(7,4)+bdt$(1,2)+bdt$(4,2);
+d2$=edt$(7,4)+edt$(1,2)+edt$(4,2);
+
+host$=info(3,4);
+if pos("kazoo"=host$) then fpath$="/u/docfiles/cs/";
+	else fpath$=stbl("TEMP");
+txtfil$=fpath$+"OSAS.txt";
+prompt for /nobox/nodrop /len=40/row=9/col=8
+	/prompt="Output file name: "
+	txtfil$;
+if ctl(2) then exit;
+
+pause/message "Selecting transactions";
+
+t$=$09$; 
+ctr=0;
+set display/rows=1/cols=400/trim txtfil$;
+display/notitle/margin=1 "Serial#"+t$+"Trans"+t$+"Date"+t$
++"Type"+t$+"H"+t$+"SaleType"+t$+"Active"+t$
++"Item"+t$+"Rev"+t$+"CurUser"+t$+"NewUser"+t$
++"Cancel Serial#"+t$+"Original Price";
+for each oem_sn_trans where date_tran between d1$ and d2$
+{ 
+price$="";
+find/noerror/index=sn_new oem_sn_xref using oem_sn_trans.serial_num;
+old$="";if available(oem_sn_xref) then 
+	{old$=oem_sn_xref.sn_old; 
+	if oem_sn_xref.seq<>"001" then old$=old$+"*Duplicate";
+	if pos(old$(1,3)="BODPRO",3) then
+		{k$=old$+fill(20);
+		find/next/noerror snt01 using k$(1,20); 
+		if available(snt01) and snt01.serial_nbr=k$(1,20) then
+			price$=str(snt01.ext_price:"####0.00");
+		}
+	}
+dt$=oem_sn_trans.date_tran(5,2)+"/"+oem_sn_trans.date_tran(7,2)+"/"+oem_sn_trans.date_tran(1,4);
+r$="";if oem_sn_trans.sale_type="R" then r$="Read only";
+h$="";if oem_sn_trans.prod_type="H" then h$=oem_sn_trans.prod_type;
+line$=oem_sn_trans.serial_num+t$+tran+t$+dt$+t$
++tran_type+t$+h$+t$+r$+t$+active_flag+t$
++oem_sn_trans.item_num+t$+rev_level+t$+str(cur_user)+t$+str(new_user)+t$
++old$+t$+price$;
+display/notitle/margin=1 line$;
+ctr=ctr+1;
+}
+pause/message=str(ctr)+" records in file "+txtfil$;
+//

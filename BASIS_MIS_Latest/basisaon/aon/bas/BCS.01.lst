@@ -1,0 +1,122 @@
+0010 REM "BCS - Generate Credit Memos for Past Due SAM Renewals"
+0020 REM "Program BCS.01"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| February 2004                                             |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM
+0080 begin 
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files"
+0110 LET FILES=4
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 FILES$[1]="ART-01",FILES$[2]="ART-11",FILES$[3]="SYS-01"
+0140 files$[4]="ART-03"
+0190 CALL "SYC.DA",1,1,files,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0200 IF STATUS>0 THEN GOTO 9900
+0230 ART01_DEV=CHANNELS[1],ART11_DEV=CHANNELS[2],SYS01_DEV=CHANNELS[3]
+0240 art03_dev=channels[4]
+0300 REM " --- IOLists/Templates
+0310 call "templates.pgm::ART01"
+0320 call "templates.pgm::ART11"
+0330 call "templates.pgm::SYS01T"
+0340 call "templates.pgm::ART03"
+0500 REM " --- Parameters"
+0510 FIND record(SYS01_DEV,KEY="T"+FID(0),DOM=9800)sys01t$
+0520 LET firm_id$=sys01t.firm_id$
+0600 REM " --- Initializations"
+0610 samInvoice!=new java.util.TreeMap()
+0620 LET msk$="-######.00"
+0630 today_jul=jul(0,0,0)
+0700 REM " --- Background"
+0710 call "SYC.WA",mode,54,5,18,10,"",name$
+0720 message$="Scanning Invoice:  "
+0730 print 'sb',@(27-int((len(message$)+9)/2),1),message$,'sf',
+1000 rem " --- Position Invoice History"
+1010 read(art03_dev,key=firm_id$,dom=*next)
+1100 rem " --- Invoice loop"
+1105 invoice_loop:
+1110 read record(art03_dev,end=send_message)art03$
+1120 if art03.firm_id$<>firm_id$ then goto send_message
+1130 if cvs(art03.ar_po_number$,1+2+4)<>"SAM RENEW" then goto invoice_loop
+1135 print @(39,1),art03.ar_inv_nbr$
+1140 check_payments:
+1150 read record(art01_dev,key=art03.firm_id$+"  "+art03.customer_nbr$+art03.ar_inv_nbr$+"00",dom=invoice_loop)art01$
+1160 due_date$=fnb4$(art01.due_date$),invoice_date$=fnb4$(art01.invoice_date$)
+1170 due_jul=jul(num(due_date$(7,4)),num(due_date$(1,2)),num(due_date$(4,2)))
+1180 if art01.late_notice$="1" or today_jul<due_jul+30 then goto invoice_loop
+1190 total_pay=0
+1200 rem " --- position detail file
+1210 READ (ART11_DEV,KEY=firm_id$+"  "+art03.customer_nbr$+art01.ar_inv_nbr$,DOM=*next)
+1220 REM " --- Read ART-11 AR Open Invoice Detail
+1230 detail_loop:
+1240 read record(art11_dev,end=check_amount)art11$
+1250 if firm_id$+"  "+art01.customer_nbr$+art01.ar_inv_nbr$<>art11.firm_id$+"  "+art11.customer_nbr$+art11.ar_inv_nbr$ then
+1260   goto check_amount
+1270 endif
+1280 total_pay=total_pay+art11.trans_amt+art11.adj_disc_amt
+1290 goto detail_loop
+1300 REM " --- check balance due
+1310 check_amount:
+1320 if art01.invoice_amt+total_pay<=0 or (abs(total_pay)>0 and abs(total_pay)<art01.invoice_amt) then
+1330   goto invoice_loop
+1340 endif
+1400 rem credit memo - order_num$ passed back from BCS.02
+1410 call "BCS.02",firm_id$,art03.customer_nbr$,art03.ar_inv_nbr$,order_num$
+1420 samInvoice!.put(order_num$,art03.customer_nbr$+art03.ar_inv_nbr$)
+1440 goto invoice_loop
+1500 send_message:
+1510 if samInvoice!.size()=0 then
+1520   DIM MESSAGE$[1]
+1530   MESSAGE$[0]="There are no SAM Renewals that require a Credit Memo"
+1540   MESSAGE$[1]="        (<Enter>=Continue)"
+1550   CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+1560   goto finish
+1570 endif
+1660 sendto$ = "customer-service@basis.cloud"
+1670 from$ = "customer-service@basis.cloud"
+1680 cc$ = "", bcc$ = "kurt.e.williams@comcast.net"
+1690 subject$ = "SAM Renewal Credit Memos"
+1700 HEADER$ = "The following is a list of generated Credit Memos for "
+1710 header$ = header$ + "past due SAM Renewal invoices.  Once they have been invoiced "
+1720 header$ = header$ + "and updated, they need to be applied to the corresponding listed "
+1730 header$ = header$ + "invoice."+$0a0a$
+1740 header$ = header$ + "     Customer     Order #     Invoice"+$0a$
+1750 keys!=samInvoice!.keySet()
+1760 e!=keys!.iterator()
+1770 while (e!.hasNext())
+1780   order$ = e!.next()
+1790   line$ = samInvoice!.get(order$)
+1800   header$ = header$ + fill(5) + line$(1,6) + fill(7) + order$ + fill(5) + line$(7) + $0a$
+1810 wend
+1820 call "sendEmail.src", from$, sendto$, cc$, bcc$, subject$, header$, ""
+4000 finish:
+4010 call "SYC.WD",name$
+4020 goto 9900
+8000 REM " --- Functions
+8010 REM Date with 4 digit year
+8020 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8030 DEF FNA4$(Q$,Q2$)=STR(((ASC(Q$)-32)+1900)*POS(" "<>Q2$(2,1)):"0000")
+8040 DEF FNB4$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA4$(Q1$(1),Q1$)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,lf$
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,lf$
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END

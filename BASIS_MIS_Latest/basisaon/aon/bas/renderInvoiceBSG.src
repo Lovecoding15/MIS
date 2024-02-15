@@ -1,0 +1,136 @@
+REM ========================================================================
+REM Render Customer Invoices for BSG via JasperReports - renderInvoicesBSG.src
+REM ========================================================================
+
+seterr err_trap
+
+REM ========================================================================
+REM This program will sort out which invoice render, BSG EN, BSG DE or 
+REM BSG FR. It will created the invoice in a PDF and return the path to the 
+REM pdf file.
+REM Signing the invoice and delivering the invoice file via email is handled 
+REM by the caller.
+REM Cleaning up by erasing the rendered invoice pdf after it is emailed
+REM must be handled by the caller
+REM ========================================================================
+
+REM ========================================================================
+REM USE and Declares
+REM ========================================================================
+
+	use ::bbjasper.bbj::BBJasperReport
+	use ::bbjasper.bbj::BBJasperViewerWindow
+	use ::SQLProperties.bbj::SQLProperties
+
+	declare BBJasperReport BBjReport!
+	declare BBJasperViewerWindow BBjReportWindow!
+	declare SQLProperties props!
+	
+REM ========================================================================
+REM Enter the data
+REM ========================================================================
+
+	enter firm$, customer_nbr$, ar_inv_nbr$, invoicefile$
+	
+	rem ' firm$ is the firm_id$ - either 01 or 02
+	if firm$ <> "01" and firm$ <> "02" then throw "Invalid Firm supplied.", 311
+	
+	
+	rem ' ensure that cusomer_nbr$ is 6 bytes long, if empty then throw an error, if len less than 6 pad from with "0"
+	if len(customer_nbr$) = 0 then
+		throw "No customer number supplied.", 311
+	else
+		while len(customer_nbr$) < 6
+			customer_nbr$ = "0" + customer_nbr$
+		wend
+	fi
+	
+	rem ' ensure that ar_inv_nbr$ is bytes long, if empty then throw an error, if len less than 7 pad from with "0"
+	if len(ar_inv_nbr$) = 0 then
+		throw "No invoice number supplied.", 311
+	else
+		while len(ar_inv_nbr$) < 7
+			ar_inv_nbr$ = "0" + ar_inv_nbr$
+		wend
+	fi
+	
+	invoicefiles$ = ""
+
+REM ========================================================================
+REM Configure Environment
+REM ========================================================================
+	
+	rem ' set the environment
+	bbjhome$ = System.getProperty("basis.BBjHome") + "/"
+	addPrefix$=bbjhome$ + "utils/reporting/bbjasper/"
+	oldPrefix$=pfx
+	newPrefix$=oldPrefix$+" "+addPrefix$
+	prefix newPrefix$
+	pdfLocation$ = stbl("TEMP")
+
+	REM Open the BBj SysGUI Channel
+	rem ' un rem this to use the code that shows the invoice in a viewer window
+	rem ' sysgui!=BBjAPI().openSysGui("X0") 
+	
+	rem ' set the connect str
+	props! = new SQLProperties()
+	rem ' connect_str$ = "jdbc:basis:bbjserver.basis.cloud:2001?database=AddOnData&user=" + props!.getProperty("sqlURL.user") + "&pwd=" + props!.getPassword() + "&ssl=true"
+	rem ' connect_str$ = "jdbc:basis:upgrade.basis.cloud:2001?database=AddOnData&user=" + props!.getProperty("sqlURL.user") + "&pwd=" + props!.getPassword() + "&ssl=true"
+	connect_str$ = "jdbc:basis:localhost:2001?database=AddOnData&user=" + props!.getProperty("sqlURL.user") + "&pwd=" + props!.getPassword() + "&ssl=true"
+
+REM ========================================================================
+REM what language?
+REM ========================================================================
+
+call "ec_open::TMM01"
+
+read record(tmm01, key = firm$ + customer_nbr$ + "000000")tmm01$
+
+rem ' lang must be either EN, DE or FR, if not DE or FR then it is EN
+lang$ = tmm01.lang_code$
+close(tmm01)
+
+
+REM ========================================================================
+REM render invoice
+REM ========================================================================
+
+if lang$ = "FR" then
+	reportName$ = "custInvoicesBSGfr.jasper"
+else
+	if lang$ = "DE" then
+		reportName$ = "custInvoicesBSGde.jasper"
+	else
+		rem ' then everything else is English
+		reportName$ = "custInvoicesBSGen.jasper"
+	fi
+fi
+
+BBjReport! = new BBJasperReport(reportName$, connect_str$)
+
+BBjReport!.putParam("P_FIRM_ID",firm$)
+BBjReport!.putParam("P_CUSTOMER",customer_nbr$)
+BBjReport!.putParam("P_INVOICE",ar_inv_nbr$)
+BBjReport!.fill()
+invoicefile$ = pdfLocation$ + "invoice_" + ar_inv_nbr$ + ".pdf"
+BBjReport!.exportToPDF(BBjAPI().FALSE, invoicefile$)
+
+rem ' to see the invoice in a viewer window un-rem the statements below
+rem ' BBjReportWindow! = new BBJasperViewerWindow(BBjReport!, 0, 0, 920, 700,"BASIS International, Ltd.", $93$)
+rem ' BBjReportWindow!.center()
+rem ' BBjReportWindow!.show(1)
+
+rem ' BBjReportWindow!.destroy()
+
+BBjReport!.destroy()
+
+rem ' return the prefix to original state
+prefix oldPrefix$
+
+exit
+	
+err_trap:
+	msg$ = "While rendering an invoice (renderInvoicesBSG.src) an error " + str(err) + " occurred at line " + str(tcb(5)) + " error message " + errmes(-1)
+	resp = msgbox(msg$,0,"Problem")
+	exit err
+end	

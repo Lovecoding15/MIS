@@ -1,0 +1,154 @@
+rem ' print invoice
+
+begin
+
+firm$ = "02" 
+
+
+rem ' goto single_invoice_test
+rem ' goto historyInvoices
+goto invoicesInOrderTable
+rem ' goto from_invoice_list
+
+historyInvoices:
+	call "ec_open::ART03"
+	escape
+
+	read record(art03, key = "010215330", knum = 1, dom=*next)art03$
+
+	while 1
+		read record(art03, end=*break)art03$
+		if art03.firm_id$ <> "01" then break
+		if art03.invoice_type$ = "V" then continue
+
+		firm_id$ = art03.firm_id$
+		customer_nbr$ = art03.customer_nbr$
+		ar_inv_nbr$ = art03.ar_inv_nbr$
+		invoicefile$ = ""
+
+		gosub render_invoice
+		print firm_id$ + " " + customer_nbr$ + " " + ar_inv_nbr$
+
+		wait 2
+		input "Next ",*
+	wend
+
+	goto program_end
+
+
+rem ' single invoice test
+single_invoice_test:
+
+	firm_id$ = firm$
+	customer_nbr$ = "020045"
+	ar_inv_nbr$ = "0034100"
+
+	invoicefile$ = ""
+
+	gosub render_invoice
+
+	goto program_end
+
+invoicesInOrderTable:
+
+	call "ec_open::ARE03"
+	escape
+
+	read record(are03, key = firm$, dom=*next)are03$
+
+	while 1
+		read record(are03, end=*break)are03$
+		if are03.firm_id$ <> firm$ then break
+		if are03.invoice_type$ = "V" then continue
+		if are03.ord_inv_flag$ <> "I" then continue
+
+		firm_id$ = are03.firm_id$
+		customer_nbr$ = are03.customer_nbr$
+		ar_inv_nbr$ = are03.ar_inv_nbr$
+		invoicefile$ = ""
+
+		gosub render_invoice
+		print firm_id$ + " " + customer_nbr$ + " " + ar_inv_nbr$
+
+		wait 2
+		rem ' input "Next ",*
+		escape
+	wend
+
+	goto program_end
+
+from_invoice_list:
+
+	firm_id$ = firm$
+	customer_nbr$ = "020004"
+	inv_list$ = "0031475|0031694|0031716|0031717|0031802|0031928|0031941|0032016|0032033|0032034|0032058|0032184|0032199|0032362|0032403|0032418|"
+		
+	while len(inv_list$) > 0
+	
+		p = pos("|" = inv_list$)
+		ar_inv_nbr$ = inv_list$(1,p-1)
+		inv_list$ = inv_list$(p+1)
+		
+		gosub render_invoice
+		print firm_id$ + " " + customer_nbr$ + " " + ar_inv_nbr$
+
+		wait 2
+		input "Next ",*
+	wend
+
+	goto program_end
+	
+render_invoice:
+
+	rem ' call the program to produce the invoice
+	if firm_id$ = "01" then
+		call "renderInvoice.src", firm_id$, customer_nbr$, ar_inv_nbr$, invoicefile$
+	else
+		call "renderInvoiceBSG.src", firm_id$, customer_nbr$, ar_inv_nbr$, invoicefile$
+	fi
+	
+	gosub sign_invoice
+	
+	rem ' strip the invoice_ from the front of the invoice pdf file name
+	rem ' p0 = pos("invoice_" = invoicefile$)
+	rem ' final_invoicefile$ = invoicefile$(1,p0-1) + invoicefile$(p0 + len("invoice_"))
+	rem ' x = scall("cp " + invoicefile$ + " " + final_invoicefile$)
+
+	rem ' email the invoice file
+	from$ = "customer-service@basis.cloud"
+	to$ = "kurt.e.williams@comcast.net"
+	cc$ = ""
+	bcc$ = ""
+	subject$ = "Invoice No. " + ar_inv_nbr$ + " custInvoicesDriverTest.src"
+	msgtxt$ = "Attachment is in Adobe Portable Document Format (PDF). "
+	msgtxt$ = msgtxt$ + "Viewing and printing PDF files requires the Adobe Acrobat "
+	msgtxt$ = msgtxt$ + "Reader, available free at www.adobe.com."
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, path$+final_pdfile$
+
+	rem ' clean up
+	erase invoicefile$
+	erase path$+final_pdfile$
+	
+return
+
+sign_invoice:
+	rem ' sign the invoice
+	final_pdfile$ = ar_inv_nbr$+".pdf"
+	path$ = stbl("TEMP")
+	if path$(len(path$), 1) <> "/" then let path$ = path$ + "/"
+	erase path$ + final_pdfile$, err = *next
+	pwd$=dir("")
+	chdir("/mnt/data/basisaon")
+	if firm_id$ = "01" then
+		jv$=" SignBASISPDF"
+	else
+		jv$=" SignBASISPDFA4"
+	fi
+	com$="/usr/java/latest/bin/java -classpath "+chr(34)+"/basisaon:/basisaon/itext-1.3.jar"+chr(34)+jv$+" " + invoicefile$ + " "+path$+final_pdfile$
+	a=scall(com$)
+	chdir(pwd$)
+return
+
+program_end:
+
+end

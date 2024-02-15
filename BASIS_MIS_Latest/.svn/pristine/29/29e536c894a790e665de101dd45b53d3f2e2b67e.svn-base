@@ -1,0 +1,58 @@
+//  Serial number record selection <aonserm_1>
+
+repeat 
+{
+display/form="MAS_HEAD" firm_name="" screen_desc="SERIAL NUMBER LOOKUP";
+
+other_file=0;
+
+// Look up one serial number at a time
+sserial_num$="";
+prompt for
+	/prompt="ENTER SERIAL NUMBER:"
+	/len=12
+	/imask="XXXNNNNNNNNN"
+	/help="(#F6)=exit"
+	/black
+	sserial_num$;
+sserial_num$=sserial_num$+fill(20);
+sserial_num$=sserial_num$(1,20);
+
+find/noerror snm01 using sserial_num$;
+
+if available(snm01)=0 then
+	{ 
+	init snm01;
+	for each are83 where serial_nbr=sserial_num$
+	and len(cvs(auth_code,2))=10 and action<>"D"
+		{
+		snm01.serial_nbr=are83.serial_nbr;
+		snm01.firm_id=are83.firm_id;
+		snm01.customer_nbr=are83.customer_nbr;
+		//snm01.active_flag="Y";
+		snm01.serial_desc="Order# "+are83.order_number;
+		other_file=1;
+		}
+	if other_file=0 then 
+		{
+	oemsn$=cvs(sserial_num$,2);
+	find/next/noerror oem_sn_trans using oemsn$;
+	nxt_oem:
+	if available(oem_sn_trans)=0 or 
+	   oem_sn_trans.serial_num<>oemsn$ then goto end_find;
+	//if oem_sn_trans.active_flag="N" then {other_file=0;goto end_find;}
+	snm01.serial_nbr=sserial_num$;
+	snm01.serial_desc="OEM "+oem_sn_trans$(1,13);
+	other_file=1;
+	find/next/noerror oem_sn_trans;
+	goto nxt_oem;
+		}
+	end_find:
+	if other_file=0 then pause/message=sserial_num$+" Not Found";
+	}
+
+if (other_file or available(snm01)) and ctl()<>6
+	then call "(BBX)aonserm_11.bbx",snm01;
+}
+
+//

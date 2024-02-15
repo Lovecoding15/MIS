@@ -1,0 +1,694 @@
+rem ' queries to find problem situations in the database
+rem ' prob_queries.src
+
+enter
+
+seterr err_trap
+
+goto checkBypass
+
+rem Bypass until the switch over is complete
+
+rem ' must run on bbjserver.basis.cloud only
+use java.net.InetAddress
+declare java.net.InetAddress ip! 
+declare java.net.InetAddress host!
+
+ip! = InetAddress.getLocalHost()
+thisIpAddr$ = ip!.getHostAddress()
+thisHostName$ = ip!.getHostName()
+
+host! = InetAddress.getByName("bbjserver.basis.cloud")
+bbjServerIpAddr$ = host!.getHostAddress()
+bbjServerHostName$ = host!.getHostName()
+
+if thisIpAddr$ <> bbjServerIpAddr$ then
+	msg$ = "prob_queries.src attempted to run on " + thisHostName$ + " (" + thisIpAddr$ + "). This program is limited to " + bbjServerHostName$ + " (" + bbjServerIpAddr$ + "). Run terminated."
+	subject$ = "Wrong Server"
+	call "sendEmail.src","customer-service@basis.cloud", "kw5121151@gmail.com","kurt.e.williams@comcast.net", "", subject$, msg$, ""
+	exit
+fi
+
+checkBypass:
+
+msgtxt$ = "problems created by the SAM BUY BACK" + $0A$
+msgtxt$ = msgtxt$ + "rev K and KP5 problem " + $0A$
+
+sql$ = "SELECT serial_nbr, customer_nbr, product_rev FROM SNM01 where product_rev = 'K' or product_rev = 'KP5'"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlChan = sqlunt
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + " " + rec.customer_nbr$ + " " + rec.product_rev$ + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' same in SNT01
+msgtxt$ = msgtxt$ + $0A$ + "rev K and KP5 problem in SNT01 " + $0A$
+
+sql$ = "SELECT t1.serial_nbr, t1.product_rev as snt01_rev, t2.product_rev as snm01_rev FROM SNT01 t1 "
+sql$ = sql$ + "inner join SNM01 t2 on t1.serial_nbr = t2.serial_nbr "
+sql$ = sql$ + "where t1.product_rev = 'KP5' or t1.product_rev = 'K'"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlChan = sqlunt
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + " " + rec.snt01_rev$ + " " + rec.snm01_rev$ + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' problem with SAM in Platform and 1 in OS_LEVEL
+msgtxt$ = msgtxt$ + $0A$ + "platform = SAM or OS_LEVEL = 1" + $0A$
+
+sql$ = "SELECT serial_nbr, customer_nbr, product, platform, os_level, product_rev, license_type FROM SNM01 where platform = 'SAM' or OS_LEVEL = '1'"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + " " + rec.customer_nbr$ + " " + rec.product$ + " " + rec.platform$ + " " + rec.os_level$ + " " + rec.product_rev$ + " " + rec.license_type$ + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' new problem of corrupted Product and Platform caused by PRSAM1, DISSAM1, etc
+msgtxt$ = msgtxt$ + $0A$ + "bad Product or Platform " + $0A$
+
+sql$ = "SELECT t1.serial_nbr, t1.product, t1.platform, t1.os_level, t1.product_rev, t1.license_type, t2.description, t3.description FROM SNM01 t1 "
+sql$ = sql$ + "LEFT OUTER JOIN CSM01 t2 on t1.firm_id = t2.firm_id and t1.product = t2.product "
+sql$ = sql$ + "LEFT OUTER JOIN CSM02 t3 on t1.firm_id = t3.firm_id and t1.platform = t3.platform "
+sql$ = sql$ + "where t2.description is null or t3.description is null"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + " " + rec.product$ + " " + rec.platform$ + " " + rec.os_level$ + " " + rec.product_rev$ + " " + rec.license_type$ + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' problem of users in SNM-02 out of sync with users in SNM-01
+msgtxt$ = msgtxt$ + $0A$ + "user count in SNM-01 out of sync with user breakdown in SNM-02" + $0A$
+
+sql$ = "SELECT serial_nbr, round(t1.users,0) as snm01_users, round(iff(t2.users1 is null,0,t2.users1) + iff(t2.users2 is null,0,t2.users2),0) as snm02_users FROM SNM01 t1 "
+sql$ = sql$ + "INNER JOIN SNM02 t2 ON t1.serial_nbr = t2.serial_nbr "
+sql$ = sql$ + "where t1.active_flag = 'Y' and t1.product <> 'ODB' and t1.product <> 'VP5' and t1.product <> 'DS5' and t1.product <> 'PR5' and "
+sql$ = sql$ + "round(t1.users,0) <> round(iff(t2.users1 is null,0,t2.users1) + iff(t2.users2 is null,0,t2.users2),0)" 
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + " " + str(rec.SNM01_USERS) + " " + str(rec.SNM02_USERS) + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' problem with an SNT04 record with a null serial_nbr
+msgtxt$ = msgtxt$ + $0A$ + "null serial number in SNT04" + $0A$
+
+sql$="SELECT * FROM SNT04 where serial_nbr = ''"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + cvs(rec.feature$,3) + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' any features with feature 01001081OSAS in SNT04
+msgtxt$ = msgtxt$ + $0A$ + "feature 01001081OSAS in SNT04" + $0A$
+
+sql$="SELECT * FROM SNT04 where feature = '01001081OSAS'"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + " " + cvs(rec.feature$,3) + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' any Descore invoices in ART03 without a proper exchange Rate record
+msgtxt$ = msgtxt$ + $0A$ + "Descore invoices in ART03 not linked to exhange rates" + $0A$
+
+rem ' range is the previous month and the current month
+dyear = num(date(0:"%Y"))
+dmonth = num(date(0:"%Mz"))
+dday = num(date(0:"%Dz"))
+pmonth = dmonth -1
+if pmonth = 0 then pmonth = 12, pyear = dyear - 1 else pyear = dyear
+pday = 1
+if dmonth = 1 or dmonth = 3 or dmonth = 5 or dmonth = 7 or dmonth = 8 or dmonth = 10 or dmonth = 12 then 
+	dday = 31
+else
+	if dmonth = 4 or dmonth = 6 or dmonth = 9 or dmonth = 11 then 
+		dday = 30
+	else
+		if dmoth = 2 and mod(dyear, 4) = 0 then
+			dday = 29
+		else
+			dday = 28
+		fi
+	fi
+fi
+
+sql$="select t1.firm_id, t1.customer_nbr, YEAR(t1.invoice_date) as inv_year, MONTH(t1.invoice_date) as inv_month, "
+sql$=sql$ +"DAYOFMONTH(t1.invoice_date) as inv_day, t1.ar_inv_nbr, t1.order_number, "
+sql$=sql$ +"t2.order_number, t2.invoice_date from ART03 t1 "
+sql$=sql$ +"LEFT JOIN ART03_CANADA t2 on t1.firm_id = t2.firm_id and t1.customer_nbr = '001022' and "
+sql$=sql$ +"t1.invoice_date = t2.invoice_date and t1.order_number = t2.order_number "
+sql$=sql$ +"where t1.firm_id = '01' and t1.customer_nbr = '001022' and t1.invoice_type <> 'V' and "
+sql$=sql$ +"t1.invoice_date >= '" + str(pyear) + "-" + str(pmonth:"00") + "-" + str(pday:"00") + "' and "
+sql$=sql$ +"t1.invoice_date <= '" + str(dyear) + "-" + str(dmonth:"00") + "-" + str(dday:"00") + "' "
+sql$=sql$ +"and t2.order_number is null"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	
+	msgtxt$ = msgtxt$ + str(rec.inv_year:"0000") + "-" + str(rec.inv_month:"00") + "-" + str(rec.inv_day:"00") + " " + cvs(rec.ar_inv_nbr$,3) + " " + cvs(rec.order_number$,3) + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' any Descore invoices in ARE03 without a proper exchange Rate record
+msgtxt$ = msgtxt$ + $0A$ + "Descore invoices in ARE03 not linked to exhange rates" + $0A$
+
+sql$="select t1.firm_id, t1.customer_nbr, YEAR(t1.invoice_date) as inv_year, MONTH(t1.invoice_date) as inv_month, "
+sql$=sql$ +"DAYOFMONTH(t1.invoice_date) as inv_day, t1.ar_inv_nbr, t1.order_number, t2.order_number, t2.invoice_date " 
+sql$=sql$ +"from ARE03 t1 LEFT JOIN ART03_CANADA t2 on t1.firm_id = t2.firm_id and t1.customer_nbr = '001022' "
+sql$=sql$ +"and t1.invoice_date = t2.invoice_date and t1.order_number = t2.order_number where t1.firm_id = '01' "
+sql$=sql$ +"and t1.customer_nbr = '001022' and t1.ord_inv_flag = 'I' and t2.order_number is null"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	
+	msgtxt$ = msgtxt$ + str(rec.inv_year:"0000") + "-" + str(rec.inv_month:"00") + "-" + str(rec.inv_day:"00") + " " + cvs(rec.ar_inv_nbr$,3) + " " + cvs(rec.order_number$,3) + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' any expiring licenses without contracts
+msgtxt$ = msgtxt$ + $0A$ + "Expiring Licenses without contracts" + $0A$
+
+sql$ = "select t1.serial_nbr, t1.license_type FROM SNM01 t1 "
+sql$ = sql$ + "LEFT OUTER JOIN SMC01 t2 on t1.contract = t2.contract "
+sql$ = sql$ + "where (t1.license_type = 'RN1' or t1.license_type = 'KIT' or "
+sql$ = sql$ + "t1.license_type = 'NFR' or t1.license_type = 'EXP') and "
+sql$ = sql$ + "t1.active_flag = 'Y' and t2.contract is null"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	
+	msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + " " + rec.license_type$ + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' any RN1 license types with contracts that are not RN1
+msgtxt$ = msgtxt$ + $0A$ + "RN1 License Types with contracts that are not RN1" + $0A$
+
+sql$ = "select * from snm01 t1 "
+sql$ = sql$ + "inner join smc01 t2 on t1.contract = t2.contract " 
+sql$ = sql$ + "where license_type = 'RN1' and active_flag = 'Y' and t2.contr_type <> 'RN1'"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	
+	msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + rec.license_type$ + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' ensure there are no records in ECM02
+msgtxt$ = msgtxt$ + $0A$ + "Records in ECM02 should be 0" + $0A$
+
+call "ec_open::ECM02"
+let xfid$ = xfid(ecm02)
+let numrecs = dec(xfid$(6,4))
+
+msgtxt$ = msgtxt$ + $0A$ + "There are " + str(numrecs) + " in ECM02" + $0A$
+if numrecs <> 0 then msgtxt$ = msgtxt$ + "ATTENTION ECM02 issue." + $0A$
+
+close(ecm02)
+
+rem ' check for any Internetworx orders in ARE03
+msgtxt$ = msgtxt$ + $0A$ + "Are there any orders for InterNetworx 001014 in ARE03" + $0A$
+
+sql$ = "select customer_nbr, order_number, ord_inv_flag, ar_po_number, taxable_amt from are03 "
+sql$ = sql$ + "where firm_id = '01' and customer_nbr = '001014'"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	
+	msgtxt$ = msgtxt$ + rec.customer_nbr$ + rec.order_number$ + rec.ord_inv_flag$ + rec.ar_po_number$ + str(rec.taxable_amt$) + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' any expiring Enhanced grids in the next month
+msgtxt$ = msgtxt$ + $0A$ + "Expiring EnhanceGrid features" + $0A$
+
+rem ' sql$ = "SELECT t1.serial_nbr, t2.feature, t2.expire_on_dt FROM SNM01 t1 "
+rem ' sql$ = sql$ + "INNER JOIN SNT04 t2 on t1.serial_nbr = t2.serial_nbr "
+rem ' sql$ = sql$ + "where t1.active_flag = 'Y' and t2.feature = 'EnhancedGrid' and t2.expire_on_dt <> '' and t2.expire_on_dt < '"
+rem ' sql$ = sql$ + checkDate$ + "'"
+
+checkDate = jul(0,0,0)
+checkDate = checkDate + 60
+checkDate$ = date(checkDate:"%Y%Mz%Dz")
+
+sql$ = "SELECT t2.firm_id, t2.customer_nbr, t1.serial_nbr, t1.feature, t1.expire_on_dt as feature_expires, "
+sql$ = sql$ + "t1.users, t2.active_flag, t2.license_type, t3.expire_on_dt as contract_expires "
+sql$ = sql$ + "FROM SNT04 t1 "
+sql$ = sql$ + "INNER JOIN SNM01 t2 on t1.serial_nbr = t2.serial_nbr "
+sql$ = sql$ + "INNER JOIN SMC01 t3 on t2.contract = t3.contract "
+sql$ = sql$ + "where t1.feature  = 'EnhancedGrid' and t1.expire_on_dt  <> '' and t1.expire_on_dt < '"
+sql$ = sql$ + checkDate$ + "' and t2.active_flag = 'Y' order by t2.customer_nbr, t1.expire_on_dt"
+
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	
+	msgtxt$ = msgtxt$ + rec.firm_id$ + "  " + rec.customer_nbr$ + "  " + rec.serial_nbr$ + " " + rec.feature$ + " " + rec.feature_expires$ 
+	msgtxt$ = msgtxt$ + "  " + rec.users$ + "  " + rec.active_flag$ + "  " + rec.license_type$ + "  " + rec.contract_expires$ + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' temporary: see the tax amount, taxable_amt, total_sales problem in ARE03
+msgtxt$ = msgtxt$ + $0A$ + "temporary: see the tax amount, taxable_amt, total_sales problem in ARE03" + $0A$
+
+sql$ = "SELECT customer_nbr, order_number, ar_inv_nbr, round(tax_amount,2) as tax_amount, round(taxable_amt,2) as taxable_amt , "
+sql$ = sql$ + "round(total_sales,2) as total_sales, round(tax_amount + taxable_amt,2) as TOTAL_INVOICE, "
+sql$ = sql$ + "IFF(round(TOTAL_SALES,2) = round(TAX_AMOUNT + TAXABLE_AMT,2), 'Problem YES', 'Problem NO') as Check "
+sql$ = sql$ + "FROM ARE03 where tax_amount <> 0"
+
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	
+	msgtxt$ = msgtxt$ + rec.customer_nbr$ + " " + rec.order_number$ + "  " + rec.ar_inv_nbr$ + " " + rec.tax_amount$ + " " + rec.taxable_amt$ 
+	msgtxt$ = msgtxt$ + "  " + rec.total_sales$ + "  " + rec.total_invoice$ + "  " + rec.check$ + $0A$
+wend
+
+sqlclose(sqlchan)
+
+rem ' find any serial numbers with BAR in the PRODUCT Field (not valid) means Barista
+msgtxt$ = msgtxt$ + $0A$ + "Serial Number records with BAR in the Product field" + $0A$
+
+sql$ = "SELECT serial_nbr, product "
+sql$ = sql$ + "FROM SNM01 where PRODUCT = 'BAR'"
+
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+problemsFound = 0
+while 1
+    rec$=sqlfetch(sqlChan,end=*break)
+    
+    msgtxt$ = msgtxt$ + rec.serial_nbr$ + " " + rec.product$ + $0A$
+    problemsFound = 1
+wend
+
+if problemsFound = 0 then
+    msgtxt$ = msgtxt$ + "NONE" + $0A$ + $0A$
+fi
+
+sqlclose(sqlchan)
+
+rem ' check BASIS inhouse licensses for expired SAM
+msgtxt$ = msgtxt$ + $0A$ + "Check BASIS inhouse licensses for expired SAM" + $0A$
+
+sql$ = "SELECT T1.SERIAL_NBR, T1.SAM_ACTIVE AS SAM_ACTIVE_SNM01, T1.CONTRACT, T2.EXPIRE_ON_DT, T2.SAM_ACTIVE AS SAM_ACTIVE_SMC01 FROM SNM01 T1 "
+sql$ = sql$ + "LEFT OUTER JOIN SMC01 T2 ON T1.CONTRACT = T2.CONTRACT "
+sql$ = sql$ + "WHERE T1.CUSTOMER_NBR = '007514' AND T1.ACTIVE_FLAG = 'Y' "
+sql$ = sql$ + "ORDER BY EXPiRE_ON_DT"
+
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+    rec$=sqlfetch(sqlChan,end=*break)
+    
+    msgtxt$ = msgtxt$ + cvs(rec.serial_nbr$,3) + " " + rec.sam_active_snm01$ + "  " + rec.contract$ + " " + rec.expire_on_dt$ + " " + rec.sam_active_smc01$  + $0A$
+    
+wend
+
+sqlclose(sqlchan)
+
+rem ' email the results
+
+from$="customer-service@basis.cloud"
+to$="kw5121151@gmail.com"
+cc$="kurt.e.williams@comcast.net"
+subject$="query result from prob_queries.src"
+msgtxt$=msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+rem ' problem with Invoiced flag set and expire on date > + 50 or 52
+
+today = jul(0,0,0)
+day$=date(today:"%Ds")
+
+msgtxt$ = ""
+hour$ = date(0:"%Hz")
+
+msgtxt$ = msgtxt$ + $0A$ + "problem with Invoiced flag set to I and expire on date > + 50 or 52" + $0A$ + $0A$
+
+days=50
+if cvs(day$,7)="FRI" then days=52
+threshholdday = today + days
+threshholddate$ = date(threshholdday:"%Y%Mz%Dz")
+
+sql$ = "SELECT t1.contract, t1.customer_nbr, t1.expire_on_dt, t1.invoiced_flag, t2.serial_nbr, t2.active_flag FROM SMC01 t1 "
+sql$ = sql$ + "INNER JOIN SNM01 t2 on t1.contract = t2.contract "
+sql$ = sql$ + "WHERE t1.EXPIRE_ON_DT > '" + threshholddate$ + "' and t1.INVOICED_FLAG = 'I' and t2.ACTIVE_FLAG = 'Y' and t1.CONTRACT <> '000001'"
+
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+problemsFound = 0
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + rec.contract$ + " " + rec.customer_nbr$ + " " + rec.expire_on_dt$ + " " + rec.invoiced_flag$ + " " + cvs(rec.serial_nbr$,3) + " " + rec.active_flag$ + $0A$
+	problemsFound = 1
+wend
+
+sqlclose(sqlchan)
+
+if problemsFound = 0 then
+	msgtxt$ = msgtxt$ + "NONE" + $0A$ + $0A$
+fi
+
+
+msgtxt$ = msgtxt$ + $0A$ + "problem with Invoiced flag set to Y and expire on date > + 65 or 67" + $0A$ + $0A$
+
+days=65
+if cvs(day$,7)="FRI" then days=67
+threshholdday = today + days
+threshholddate$ = date(threshholdday:"%Y%Mz%Dz")
+
+sql$ = "SELECT t1.contract, t1.customer_nbr, t1.expire_on_dt, t1.invoiced_flag, t2.serial_nbr, t2.active_flag, t1.contr_type "
+sql$ = sql$ + "FROM SMC01 t1 INNER JOIN SNM01 t2 on t1.contract = t2.contract " 
+sql$ = sql$ + "WHERE t1.EXPIRE_ON_DT > '" + threshholddate$ + "' and t1.INVOICED_FLAG = 'Y' and "
+sql$ = sql$ + "t2.ACTIVE_FLAG = 'Y' and t1.CONTRACT <> '000001' and t2.customer_nbr <> '001081' and t2.customer_nbr <> '007808' "
+sql$ = sql$ + "and t1.contr_type = 'SM1'"
+
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+problemsFound = 0
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	msgtxt$ = msgtxt$ + rec.contract$ + " " + rec.customer_nbr$ + " " + rec.expire_on_dt$ + " " + rec.invoiced_flag$ + " " + cvs(rec.serial_nbr$,3) + " " + rec.active_flag$ + $0A$
+	problemsFound = 1
+wend
+
+sqlclose(sqlchan)
+
+if problemsFound = 0 then
+	msgtxt$ = msgtxt$ + "NONE" + $0A$ + $0A$
+fi
+
+
+rem ' email the results
+
+while msgtxt$ <> ""
+	if cvs(day$,7) <> "SAT" and cvs(day$,7) <> "SUN" and hour$ = "07" then
+		from$="customer-service@basis.cloud"
+		to$="customer-service@basis.cloud, kw5121151@gmail.com"
+		rem ' to$="kurt.e.williams@comcast.net"
+		cc$ = "kurt.e.williams@comcast.net"
+		subject$="query results from incorrect Invoiced Flag query"
+		msgtxt$=msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+		call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+		msgtxt$ = ""
+	else
+		from$="customer-service@basis.cloud"
+		to$="kw5121151@gmail.com"
+		cc$="kurt.e.williams@comcast.net"
+		subject$="query results from incorrect Invoiced Flag query"
+		msgtxt$=msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+		call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+		msgtxt$ = ""
+	fi
+wend
+
+rem ' tracking the virtual licenses in the database
+rem ' bypass this now
+goto endVirtualLicense
+
+today = jul(0,0,0)
+day$=date(today:"%Ds")
+
+msgtxt$ = ""
+hour$ = date(0:"%Hz")
+
+if cvs(day$,7) <> "SAT" and cvs(day$,7) <> "SUN" and hour$ = "07" then
+
+	msgtxt$ = msgtxt$ + $0A$ + "count of active virtual licenses" + $0A$ + $0A$
+
+	sql$ = "SELECT count(*) as count FROM SNM01 t1 where t1.media_type = 'VIR' and t1.active_flag = 'Y' and customer_nbr <> '007514'"
+
+	msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+	sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+	sqlprep(sqlChan)sql$
+	sqlexec(sqlChan)
+	dim rec$:sqltmpl(sqlChan)
+
+	while 1
+		rec$=sqlfetch(sqlChan,end=*break)
+		msgtxt$ = msgtxt$ + rec.count$ + " active virtual licenses." + $0A$
+	wend
+
+	sqlclose(sqlchan)
+	
+	msgtxt$ = msgtxt$ + $0A$ + "list of active virtual licenses with expired SAM" + $0A$ + $0A$
+	
+	expireDt$ = date(0:"%Y%Mz%Dz")
+
+	sql$ = "SELECT t1.serial_nbr, t1.license_type, t1.media_type, t1.firm_id, t1.customer_nbr, "
+	sql$ = sql$ + "t1.contract, t2.contr_type, t2.contr_start, t2.annual_dt, t2.expire_on_dt FROM SNM01 t1 "
+	sql$ = sql$ + "INNER JOIN SMC01 t2 on t1.contract = t2.contract "
+	sql$ = sql$ + "where t1.media_type = 'VIR' and t1.active_flag = 'Y'  and customer_nbr <> '007514' and expire_on_dt < '" + expireDt$ + "'"
+
+	msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+	sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+	sqlprep(sqlChan)sql$
+	sqlexec(sqlChan)
+	dim rec$:sqltmpl(sqlChan)
+
+	licensesFound = 0
+	while 1
+		rec$=sqlfetch(sqlChan,end=*break)
+		msgtxt$ = msgtxt$ + rec.serial_nbr$ + " " + rec.license_type$ + " " + rec.media_type$ + " " + rec.firm_id$ + " " + rec.customer_nbr$ + " " + rec.contract$ + " " + rec.contr_type$ + " " + rec.contr_start$ + " " + rec.annual_dt$ + " " + rec.expire_on_dt$ + $0A$
+		licensesFound = 1
+	wend
+
+	sqlclose(sqlchan)
+
+	if licensesFound = 0 then
+		msgtxt$ = msgtxt$ + "NONE"
+	fi
+
+fi
+
+rem ' email the results
+
+while msgtxt$ <> ""
+	from$="customer-service@basis.cloud"
+	to$="kw5121151@gmail.com"
+	cc$="kurt.e.williams@comcast.net"
+	subject$="information on virtual licenses"
+	msgtxt$=msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	msgtxt$ = ""
+wend
+
+endVirtualLicense:
+
+rem ' tracking the demo7 license issues
+rem ' bypass for now
+goto endDEMO7
+
+
+today = jul(0,0,0)
+day$=date(today:"%Ds")
+
+msgtxt$ = ""
+hour$ = date(0:"%Hz")
+
+rem ' if cvs(day$,7) <> "SAT" and cvs(day$,7) <> "SUN" and hour$ = "07" then
+
+if hour$ = "07" then
+
+	msgtxt$ = msgtxt$ + $0A$ + "demo7 licenses issued yesterday" + $0A$ + $0A$
+
+	yesterday = today - 1
+	yesterday$ = date(yesterday:"%Y-%Mz-%Dz")
+	
+	sql$ = "SELECT count(*) as count FROM SN_LICENSE t1 where t1.prod_type like '%DEMO7%' and t1.date = '" + yesterday$ +  "'" 
+	
+	msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+	sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+	sqlprep(sqlChan)sql$
+	sqlexec(sqlChan)
+	dim rec$:sqltmpl(sqlChan)
+
+	while 1
+		rec$=sqlfetch(sqlChan,end=*break)
+		msgtxt$ = msgtxt$ + rec.count$ + " demo7 licenses issued yesterday. " + $0A$
+	wend
+
+	sqlclose(sqlchan)
+	
+	msgtxt$ = msgtxt$ + $0A$ + "list of demo7 licenses issued yesterday " + $0A$ + $0A$
+	
+	sql$ = "SELECT t1.serial_num, t2.license_type, t2.media_type, date(t1.date) as regdate, t1.prod_type, t1.prod_rev, t1.expire, t1.firm_id, t1.customer_nbr, t2.users, t1.lic_count FROM SN_LICENSE t1 "
+	sql$ = sql$ + "INNER JOIN SNM01 t2 on t1.serial_num = t2.serial_nbr "
+	sql$ = sql$ + "where t1.prod_type like '%DEMO7%' and t1.date = '" + yesterday$ + "' " 
+	sql$ = sql$ + "order by t2.media_type" 
+
+	msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+	sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+	sqlprep(sqlChan)sql$
+	sqlexec(sqlChan)
+	dim rec$:sqltmpl(sqlChan)
+
+	demo7sFound = 0
+	while 1
+		rec$=sqlfetch(sqlChan,end=*break)
+		msgtxt$ = msgtxt$ + rec.serial_num$ + " " + rec.license_type$ + " " + rec.media_type$ + " " + rec.regdate$ + " " + rec.prod_type$ + " " + rec.prod_rev$ + " " + rec.expire$ + " " + rec.firm_id$ + " " + rec.customer_nbr$ + " " + rec.users$ + " " + rec.lic_count$ + $0A$
+		demo7sFound = 1
+	wend
+
+	sqlclose(sqlchan)
+
+	if demo7sFound = 0 then
+		msgtxt$ = msgtxt$ + "NONE"
+	fi
+
+fi
+
+email_results:
+
+while msgtxt$ <> ""
+	from$="customer-service@basis.cloud"
+	to$="misdev@basis.cloud"
+	cc$=""
+	subject$="ERROR in prob_queries.src"
+	msgtxt$=msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	msgtxt$ = ""
+wend
+
+endDEMO7:
+
+exit
+
+err_trap:
+msgtxt$ = "An error " + str(err) + " occurred on line: " + str(tcb(5)) + " of prob_queries.src. " + errmes(-1)
+goto email_results
+
+end

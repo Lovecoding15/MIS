@@ -1,0 +1,405 @@
+0010 REM "SMC - Generate Renewal Orders"
+0020 REM "Program SMC.11"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| January 2004                                             |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0060 enter 
+0080 SETERR pgm_err
+0090 SETESC pgm_err
+0100 REM " --- Open/Lock Files"
+0105 LET FILES=23
+0110 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0145 LET CHANNELS[1]=ivm01,CHANNELS[2]=ivm02,CHANNELS[3]=arm02,CHANNELS[4]=arm10,CHANNELS[5]=tmm01
+0150 LET CHANNELS[6]=ivm06,CHANNELS[7]=are04,CHANNELS[8]=are07,CHANNELS[9]=are13,CHANNELS[10]=ivm10
+0155 LET CHANNELS[11]=are73,CHANNELS[12]=are83,CHANNELS[13]=ars10n,CHANNELS[14]=smc01,CHANNELS[15]=snm01
+0160 LET CHANNELS[16]=sys01,CHANNELS[17]=arm01,CHANNELS[18]=are03,CHANNELS[19]=are43
+0170 channels[20]=snt03,snm01_dev1=channels[21]=snm01a,channels[22]=snm02,channels[23]=csm04
+0200 REM " --- IOLIST's"
+0500 REM " --- Initializations"
+0530 ctr_list$="",firm_id$=smckey$(1,2)
+0550 cust_nbr$=smckey$(3)
+2000 BEGIN_ORDER:
+2010 gosub get_setup_info
+2020 order_loop:
+2030 if cvs(selected_list$,1+2)="" then goto finish_up
+2040 if single_order then 
+2050   ctr_list$=selected_list$
+2060   selected_list$=""
+2070 else
+2080   ctr_list$=selected_list$(1,7)
+2090   selected_list$=selected_list$(8)
+2100 endif
+2110 gosub make_serial_file
+2120 if no_serial then
+2130   gosub get_order_number
+2140   gosub do_order
+2150 endif
+2250 rem gosub create_message
+2260 rem gosub send_message
+2270 if serial_tmp then close(serial_tmp);wait 1
+2280 if line_tmp then close(line_tmp);wait 1
+2290 erase serial_file$,err=*next
+2300 erase line_file$,err=*next
+2390 goto order_loop
+4500 finish_up:
+4520 if serial_tmp then close(serial_tmp)
+4530 erase serial_file$,err=*next
+4540 if line_tmp then close(line_tmp)
+4550 erase line_file$,err=*next
+4560 exit
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8500 def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+9000 REM " --- Standard Error Routine
+9005 pgm_err:
+9010 IF ERR=127 THEN GOTO 9300
+9020 goto finish_up
+9300 REM " --- Standard Escape Routine"
+9390 RETURN 
+10000 make_serial_file:
+10002 no_serial=0
+10010 serial_file$=stbl("TEMP")+"sam_serial."+date(0:"%Y%M%D%H%m%s")
+10020 erase serial_file$,err=create_file
+10030 create_file:
+10040 if err<>12 then goto pgm_err
+10050 mkeyed serial_file$,[0:1:23],0,23
+10060 serial_tmp=unt;open(serial_tmp)serial_file$
+10070 dim serial_tmp$:"line_nbr:c(3),serial_nbr:c(20)"
+10080 make_line_file:
+10090 line_file$=stbl("TEMP")+"sam_line."+date(0:"%Y%M%D%H%m%s"),line_num=0
+10100 erase line_file$,err=create_line_file
+10110 create_line_file:
+10120 if err<>12 then goto pgm_err
+10130 mkeyed line_file$,[0:1:3],[0:4:23:"U"],0,33
+10140 line_tmp=unt;open(line_tmp)line_file$
+10150 dim line_tmp$:"line_nbr:c(3),prod_id:c(3),users:c(5),users1:c(5),lic_prop:c(2),lic_prop1:c(2),contract:c(6),quantity:n(7)"
+10160 contract$=ctr_list$(1,6)
+10170 extract record(snm01,key=contract$,knum=3,dom=build_files)
+10180 build_files:
+10190 read record(snm01,end=build_done)snm01$
+10200 if snm01.contract$<>contract$ then goto build_done
+10205 if snm01.firm_id$+snm01.customer_nbr$<>firm_id$+cust_nbr$ then goto build_files
+10210 if snm01.active_flag$="N" or snm01.sam_active$="N" or snm01.license_type$="KIT" then goto build_files
+10220 if snm01.product$="VP5" then snm01.product$="PR5"
+10224 lic_prop$="  ",lic_prop1$="  ",users=snm01.users,users1=0,no_serial=1
+10226 dim snm02$:fattr(snm02$)
+10228 find record(snm02,key=snm01.serial_nbr$,dom=*next)snm02$
+10230 if cvs(snm02.lic_property1$,1+2)<>"" then lic_prop$=snm02.lic_property1$,users=snm02.users1
+10232 if cvs(snm02.lic_property2$,1+2)<>"" then lic_prop1$=snm02.lic_property2$,users1=snm02.users2
+10238 line_key$=snm01.product$+str(users:"00000")+str(users1:"00000")+lic_prop$+lic_prop1$+snm01.contract$
+10240 find record(line_tmp,key=line_key$,knum=1,dom=new_rec)line_tmp$;goto do_recs
+10250 new_rec:
+10260 line_num=line_num+5,line_tmp.line_nbr$=str(line_num:"000"),line_tmp.quantity=0
+10270 line_tmp.prod_id$=snm01.product$,line_tmp.users$=str(users:"00000"),line_tmp.users1$=str(users1:"00000")
+10275 line_tmp.lic_prop$=lic_prop$,line_tmp.lic_prop1$=lic_prop1$,line_tmp.contract$=snm01.contract$
+10280 do_recs:
+10290 line_tmp.quantity=line_tmp.quantity+1,serial_tmp.line_nbr$=line_tmp.line_nbr$
+10300 serial_tmp.serial_nbr$=snm01.serial_nbr$
+10310 serial_tmp$=field(serial_tmp$),line_tmp$=field(line_tmp$)
+10320 write record(line_tmp)line_tmp$
+10330 write record(serial_tmp)serial_tmp$
+10340 goto build_files
+10350 build_done:
+10370 return
+10400 get_order_number:
+10410 rem ' ARS10N - next order number
+10420 extract record (ars10n,key=firm_id$+"N",tim=5,err=get_ars10n_locked)ars10n$
+10430 order_number = ars10n.nxt_ord_nbr
+10440 ars10n.nxt_ord_nbr = ars10n.nxt_ord_nbr + 1
+10450 ars10n$ = field(ars10n$)
+10460 write record (ars10n,key=firm_id$+"N")ars10n$
+10470 order_num$ = str(order_number:"0000000")
+10480 return
+10490 get_ars10n_locked:
+10500 if err=0 then wait 1; retry else goto pgm_err
+10600 get_setup_info:
+10610 rem ' get inventory parameters (Warehouse ID) and current rev$
+10615 read record (csm04,key=firm_id$+"CUR")csm04$
+10617 cur_rev$=cvs(csm04.description$,1+2)
+10620 read record (ivs01,key=firm_id$+"IV00")ivs01$
+10630 rem ' Get A/R codes
+10640 read record (arm10,key=firm_id$+"E"+"S")arm10e$
+10645 read record (arm02,key=firm_id$+cust_nbr$+"  ")arm02$
+10650 terms$=arm02.terms_code$
+10655 read record (arm10,key=firm_id$+"I"+arm02.disc_code$)arm10i$
+10660 if pos(arm02.cust_type$(1,1)="APM") and firm_id$<>"01" then
+10665   k$=firm_id$+"I"+str(arm10i.disc_percent+5:"00")
+10670   read record (arm10,key=k$,dom=*next)arm10i$
+10675 fi
+10680 if pos(arm02.cust_type$(1,1)="AMP") and firm_id$="01" then
+10685   read record (arm10i,key=firm_id$+"I"+arm02.disc_code_a$,dom=*next)arm10i$
+10690 fi
+10695 precision 6
+10700 read record (arm10,key=firm_id$+"B"+arm02.tax_code$)arm10b$
+10702 read record (arm10,key=firm_id$+"F"+arm02.slspsn_code$)arm10f$
+10704 precision 2
+10705 return
+10710 update_contract:
+10715 if ctr_list$="" then goto update_done
+10720 contract$=ctr_list$(1,6),ctr_list$=ctr_list$(8)
+10735 extract record(smc01,key=contract$,knum=0)smc01$
+10755 days = num(smc01.disb_method$)
+10760 if days=0 then  days = 365
+10765 if pos(smc01.contr_type$(1,2)="RNDV",2) or smc01.customer_nbr$="007808" then
+10770    annual_yr = num(smc01.annual_dt$(1,4))
+10775    annual_mo = num(smc01.annual_dt$(5,2)) + int(days/30)
+10780    if annual_mo>12 then
+10785      annual_mo = annual_mo - 12
+10790      annual_yr = annual_yr + 1
+10795    fi
+10800    annual_jul = jul(annual_yr,annual_mo,num(smc01.annual_dt$(7,2)))
+10805    smc01.annual_dt$ = date(annual_jul:"%Yl%Mz%Dz")
+10810 fi
+10815 smc01.new_flag$=" "
+10820 smc01$=field(smc01$)
+10825 write record(smc01)smc01$
+10830 goto update_contract
+10840 update_done:
+10850 return
+12000 do_order:
+12005 taxable=0,tax=0,subtotal=0,total=0
+12010 rem ' ARE03 - order header
+12020 are03.firm_id$ = firm_id$
+12030 are03.ar_type$ = "  "
+12040 are03.customer_nbr$ = cust_nbr$
+12050 are03.order_number$ = order_num$
+12060 are03.sequence_000$ = "000"
+12070 are03.invoice_type$ = "S"
+12080 are03.ord_inv_flag$ = "O"
+12090 are03.backord_flag$ = " "
+12100 are03.invoice_date$ = fndate$(jul(0,0,0))
+12110 are03.ar_ship_date$ = fndate$(jul(0,0,0)+1)
+12120 are03.ar_ship_via$ = fill(10)
+12130 are03.ar_inv_nbr$ = fill(7)
+12135 read record(smc01,key=ctr_list$(1,6),knum=0)smc01$
+12137 days=num(cvs(smc01.disb_method$,1+2))
+12140 if days and smc01.customer_nbr$<>"007808" then are03.ar_po_number$=date(0:"%Ms")+" SAM" else are03.ar_po_number$ = "SAM Renew"
+12145 if smc01.contr_type$(1,2)="RN" then are03.ar_po_number$="Rental Inv"
+12147 if smc01.contr_type$(1,2)="DV" then are03.ar_po_number$="NFR Renew"
+12150 are03.slspsn_code$ = arm02.slspsn_code$
+12160 are03.terms_code$ = terms$
+12170 are03.rel_to_ship$ = "Y"
+12180 are03.reserved_str_2$=fill(9)
+12190 are03.disc_code$ = arm10i.disc_code$
+12200 are03.dist_code$ = arm02.dist_code$
+12210 are03.ord_prt_flag$ = "N"
+12220 are03.ord_lock$ = "Y"; rem ' lock until all related records are updated
+12230 are03.message_code$ = arm02.message_code$
+12240 are03.territory$ = arm02.territory$
+12250 are03.list_prc_cde$ = "  "
+12260 are03.date_ordered$ = fndate$(jul(0,0,0))
+12270 are03.tax_code$ = arm02.tax_code$
+12280 are03.pricing_code$ = arm02.pricing_code$
+12290 are03.ar_job_nbr$ = fill(10)
+12300 are03.ord_taken_by$ = uid$
+12310 are03.cash_sale$ = "N"
+12320 are03.reprint_flag$ = " "
+12330 are03.ord_cred_flg$ = " "; rem ' R=Release, C=Credit Hold
+12340 are03.shipto_nbr$ = fill(6)
+12350 are03.tax_amount = tax
+12360 are03.freight_amt = 0
+12370 are03.discount_amt = 0
+12380 are03.comm_percent = 0
+12390 are03.taxable_amt = taxable
+12400 are03.comm_amt = 0
+12410 are03.total_sales = total
+12420 are03.total_cost = 0
+12430 are03_key$ = are03.firm_id$+are03.ar_type$+are03.customer_nbr$+are03.order_number$+are03.sequence_000$
+12440 are03$ = field(are03$)
+12450 write record (are03,key=are03_key$)are03$
+12460 rem ' ARE04 - pick ticket
+12470 are04.firm_id$ = are03.firm_id$
+12480 are04.ord_inv_flag$ = are03.ord_inv_flag$
+12490 are04.ar_type$ = are03.ar_type$
+12500 are04.customer_nbr$ = are03.customer_nbr$
+12510 are04.order_number$ = are03.order_number$
+12520 are04_key$ = are04.firm_id$+are04.ord_inv_flag$+are04.ar_type$+are04.customer_nbr$+are04.order_number$
+12530 are04$ = field(are04$)
+12540 write record (are04,key=are04_key$)are04$
+12550 rem ' ARE43 = open orders
+12560 are43.firm_id$ = are03.firm_id$
+12570 are43.ar_type$ = are03.ar_type$
+12580 are43.customer_nbr$ = are03.customer_nbr$
+12590 are43.order_number$ = are03.order_number$
+12600 are43_key$ = are43.firm_id$+are43.ar_type$+are43.order_number$+are43.customer_nbr$
+12610 are43$ = field(are43$)
+12620 write record (are43,key=are43_key$)are43$
+12630 rem ' Now loop through the detail lines from the line temporary file
+12640 extract record(line_tmp,key="",knum=0,dom=line_loop)
+12650 line_loop:
+12670 read record(line_tmp,end=finish_order)line_tmp$
+12680 dim iv_item$(20),wx1$(40),wx[5]
+12685 read record(smc01,key=line_tmp.contract$,knum=0)smc01$
+12687 if smc01.contr_type$(1,2)="SM" then iv_item$(1)=line_tmp.prod_id$+"SAM"+smc01.contr_type$(3,1),wx1$(4,3)=smc01.contr_type$
+12690 days=num(cvs(smc01.disb_method$,1+2))
+12695 if smc01.contr_type$(1,2)="RN" and num(smc01.commit_perc$) then precision 3;commit_perc=num(smc01.commit_perc$)/100;precision 2 else commit_perc=1
+12697 if smc01.contr_type$(1,2)="RN" then iv_item$(1)="BASALL166"+cur_rev$+"RN1",wx1$(4,3)="NEW",wx1$(16,3)="RN1"
+12698 if smc01.contr_type$(1,2)="DV" then iv_item$(1)="BASALL166"+cur_rev$+"NFR",wx1$(4,3)="NEW",wx1$(16,3)="NFR"
+12700 wx[2]=num(line_tmp.users$),wx[3]=num(line_tmp.users1$)
+12704 wx1$(10,2)=line_tmp.lic_prop$,wx1$(12,2)=line_tmp.lic_prop1$
+12710 ORDQTY=line_tmp.quantity,SALECD$=are03.disc_code$,disc=arm10i.disc_percent
+12712 if smc01.customer_nbr$="007808" and smc01.contr_type$(1,2)="RN" then salecd$=""
+12715 if days then samfactor=days else samfactor=365
+12720 CALL "CSC.PC",channels[ALL],smc01.firm_id$,ivs01.warehouse_id$,iv_item$,are03.list_prc_cde$,smc01.customer_nbr$,are03.date_ordered$,are03.pricing_code$,ORDQTY,TYPEFLAG$,PRICE,DISC,NEWDISC,STATUS,WX1$,WX[ALL],SALECD$,LISTPRICE,SAMFACTOR
+12725 price=price*commit_perc
+12730 subtotal=subtotal+(price*line_tmp.quantity)
+12740 find record (ivm01,key=smc01.firm_id$+iv_item$,dom=*next)ivm01$;goto set_line_detail
+12742 if len(cvs(iv_item$,1+2))<15 or iv_item$(1,3)<>"BAS" then goto set_line_detail
+12744 dim hold_item$(20)
+12746 hold_item$(1)=iv_item$,iv_item$(10,3)="CUR",iv_item$(13,3)="EXP"
+12747 find record (ivm01,key=smc01.firm_id$+iv_item$)ivm01$
+12748 iv_item$(1)=hold_item$
+12750 rem ' ARE13 - Order Line Detail
+12755 set_line_detail:
+12760 are13.firm_id$ = are03.firm_id$
+12770 are13.ar_type$ = are03.ar_type$
+12780 are13.customer_nbr$ = are03.customer_nbr$
+12790 are13.order_number$ = are03.order_number$
+12800 are13.line_number$ = line_tmp.line_nbr$
+12810 are13.line_code$ = "S"
+12820 are13.man_price$ = "N"
+12830 are13.product_type$ = ivm01.product_type$
+12840 are13.pull_assmble$ = "P"
+12850 are13.warehouse_id$ = ivs01.warehouse_id$
+12860 are13.item_number$ = iv_item$
+12870 are13.order_memo$ = fill(40)
+12880 are13.est_shp_date$ = fndate$(jul(0,0,0)+1)
+12890 are13.commit_flag$ = "Y"
+12900 are13.pick_flag$ = " "
+12910 are13.reserved_str_2$=fill(19)
+12920 are13.unit_cost = 0
+12930 are13.unit_price = price
+12940 are13.qty_ordered = line_tmp.quantity
+12950 are13.qty_backord = 0
+12960 are13.qty_shipped = line_tmp.quantity
+12970 are13.std_list_prc = listprice
+12980 are13.ext_price = price*line_tmp.quantity
+12990 if arm10e.taxable_flag$="Y" and ivm01.taxable_flag$="Y" then are13.taxable_amt = are13.ext_price else are13.taxable_amt = 0
+13000 are13.disc_percent = disc
+13010 are13.comm_percent = 0
+13020 are13.comm_amt = 0
+13030 are13.spl_comm_pct = 0
+13040 are13.disc_cust = newdisc
+13050 are13_key$ = are13.firm_id$+are13.ar_type$+are13.customer_nbr$+are13.order_number$+are13.line_number$
+13060 are13$ = field(are13$)
+13070 write record (are13,key=are13_key$)are13$
+13080 rem ' ARE07 = open order lines (items)
+13090 are07.firm_id$ = are13.firm_id$
+13100 are07.warehouse_id$ = are13.warehouse_id$
+13110 are07.item_number$ = are13.item_number$
+13120 are07.ar_type$ = are13.ar_type$
+13130 are07.order_number$ = are13.order_number$
+13140 are07.line_number$ = are13.line_number$
+13150 are07.customer_nbr$ = are13.customer_nbr$
+13160 are07_key$ = are07.firm_id$+are07.warehouse_id$+are07.item_number$+are07.ar_type$+are07.order_number$+are07.line_number$+are07.customer_nbr$
+13170 are07$ = field(are07$)
+13180 write record (are07,key=are07_key$)are07$
+13190 rem ' ARE73 - order config record
+13200 are73.firm_id$ = are13.firm_id$
+13210 are73.ar_type$ = are13.ar_type$
+13220 are73.customer_nbr$ = are13.customer_nbr$
+13230 are73.order_number$ = are13.order_number$
+13240 are73.line_number$ = are13.line_number$
+13250 are73.media_type$ = "N/A"
+13260 are73.type_of_sale$ = wx1$(4,3)
+13290 are73.fixed_float$="F"
+13300 are73.lic_property1$ = line_tmp.lic_prop$
+13310 are73.lic_property2$ = line_tmp.lic_prop1$
+13315 are73.exp_type$ = wx1$(16,3)
+13320 are73.dealer_str$=fill(4)
+13330 are73.contract$=line_tmp.contract$
+13340 are73.media_qty = 0
+13360 are73.users = num(line_tmp.users$)
+13365 are73.users2 = num(line_tmp.users1$)
+13370 are73_key$ = are73.firm_id$+are73.ar_type$+are73.customer_nbr$+are73.order_number$+are73.line_number$
+13380 are73$ = field(are73$)
+13390 write record (are73,key=are73_key$)are73$
+13400 rem " loop thru serial nbrs temporary file
+13410 license_seq = 001; rem ' always 001
+13420 license_seq$ = str(license_seq:"000")
+13430 sequence_nbr = 000; rem ' increment for each serial number
+13440 extract record(serial_tmp,key=line_tmp.line_nbr$,dom=serial_loop)
+13450 serial_loop:
+13460 read record(serial_tmp,end=line_loop)serial_tmp$
+13470 if serial_tmp.line_nbr$<>line_tmp.line_nbr$ then goto line_loop
+13480 rem ' ARE83 - license activity record(s)
+13490 rem ' modify_snum
+13500 sequence_nbr = sequence_nbr + 1
+13510 sequence_nbr$ = str(sequence_nbr:"000")
+13520 are83.action$ = "M"
+13530 are83.auth_code$ = ""
+13540 are83.license_cnt = 0
+13550 gosub write_are83
+13560 goto serial_loop
+13570 finish_order:
+13575 gosub update_contract
+13580 taxable = subtotal
+13585 precision 6
+13590 tax=taxable*arm10b.tax_rate/100
+13595 precision 2
+13600 total = subtotal + tax
+13610 are03.tax_amount = tax
+13620 are03.taxable_amt = taxable
+13630 are03.total_sales = total
+13640 are03.ord_lock$ = "N"; rem ' unlock the order header
+13650 are03$ = field(are03$)
+13660 write record (are03,key=are03_key$)are03$
+13670 return
+16000 Write_are83:
+16010 Rem ' Called by create_order subroutine
+16020 are83.firm_id$ = are13.firm_id$
+16030 are83.ar_type$ = are13.ar_type$
+16040 are83.customer_nbr$ = are13.customer_nbr$
+16050 are83.order_number$ = are13.order_number$
+16060 are83.line_number$ = are13.line_number$
+16070 are83.license_seq$ = license_seq$
+16080 are83.sequence_nbr$ = sequence_nbr$
+16090 are83.snhist_flag$ = "N"
+16110 are83.contract$ = line_tmp.contract$
+16120 if smc01.contr_type$(1,2)="SM" then are83.sam_active$ = "Y"
+16130 are83.dealer_str$=fill(1)
+16140 are83.serial_nbr$ = serial_tmp.serial_nbr$
+16150 are83_key$ = are83.firm_id$+are83.ar_type$+are83.customer_nbr$+are83.order_number$+are83.line_number$+are83.license_seq$+are83.sequence_nbr$
+16160 are83$ = field(are83$)
+16170 write record (are83,key=are83_key$)are83$
+16180 return
+16800 create_message:
+16810 cnt=cnt+1
+16820 let outfile$=stbl("AON")+"tmp/samrenewnotice"+str(cnt)+".txt"
+16830 erase outfile$,err=no_file
+16840 goto create_mess_file
+16850 no_file:
+16860 if err<>12 then goto pgm_err
+16870 create_mess_file:
+16880 string outfile$
+16890 out_chn=unt;open(out_chn)outfile$
+16900 LET HEADER$="To: "+cvs(arm10f.slspsn_name$,1=2)+" <"+cvs(arm10f.e_mail$,1+2)+">"+$0A$
+16910 header$=header$+"From: customer-service@basis.cloud"+$0a$
+16920 header$=header$+"Reply-To: customer-service@basis.cloud"+$0A$
+16930 header$=header$+"Subject: SAM Renewal Notice"+$0A$+$0a$
+16940 HEADER$=HEADER$+"A SAM Renewal Order has been generated for Customer "+arm01.customer_nbr$
+16950 header$=header$+" "+cvs(arm01.cust_name$,1+2)+"."+$0a$+$0a$
+16960 header$=header$+"The annual date of this contract is "+smc01.annual_dt$(5,2)+"/"
+16970 header$=header$+smc01.annual_dt$(7,2)+"/"+smc01.annual_dt$(1,4)+"."+$0a$
+16980 WRITE RECORD (out_chn,siz=len(header$))HEADER$
+16990 close(out_chn)
+17000 return
+17010 send_message:
+17011 from$="customer-service@basis.cloud"; to$ = cvs(arm10f.e_mail$,35)
+17012 cc$ = ""; bcc$ = "kw5121151@gmail.com"; rem ' for monitoring
+17014 subj$ = "SAM Renewal Notice"; attachfile$ = ""
+17015 msgtxt$ = "A SAM Renewal Order has been generated for Customer "+arm01.customer_nbr$
+17016 msgtxt$ = msgtxt$ + " "+cvs(arm01.cust_name$,1+2)+"."+$0a$+$0a$
+17018 msgtxt$ = msgtxt$ + "The annual date of this contract is "+smc01.annual_dt$(5,2)+"/"+smc01.annual_dt$(7,2)+"/"+smc01.annual_dt$(1,4)+"." + $0A$ + $0A$ + "SMC.11"
+17019 call "sendEmail.src", from$, to$, cc$, bcc$, subj$, msgtxt$, attachfile$
+17020 rem ' a=scall("/usr/lib/send mail -t < "+outfile$)
+17021 rem ' send mail is no longer used
+17030 rem erase outfile$,err=message_sent
+17040 message_sent:
+17050 return
+

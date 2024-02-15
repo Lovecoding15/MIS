@@ -1,0 +1,158 @@
+rem ' roll the contract dates for SAM Renew, DVK Renew and RNT Renew serial number 
+rem ' when paid by credit card 
+rem ' runs as a schedule task through the day, to roll the dates as soon as possible 
+rem ' after payment entered
+
+seterr errmsg
+
+rem ' don't run between 1530 and 1730 on Monday thru Friday
+theTime$ = date(0:"%Hz%mz%")
+DofW$ = date(0:"%Ds")
+theMinute$ = theTime$(3,2)
+theHour$ = theTime$(1,2)
+
+if DofW$ <> "Sat" and DofW$ <> "Sun" then
+    if theTime$ > "1530" and theTime$ < "1730" then
+        release
+    fi
+fi
+
+call "ec_open::ARE11"
+call "ec_open::ART03"
+call "ec_open::ART73"
+
+call "ec_open::SMC01"
+call "ec_open::SNM01"
+
+firm_id$ = "01"
+
+msgtxt$ = ""
+msg$ = ""
+
+rem " check ARE11 for payments on invoices with the PO Number of SAM Renew, DVK Renew or RNT Renew"
+read record(are11, key = "", dom=*next)are11$
+while 1
+    read record(are11, end = *break)are11$
+    
+    if are11.firm_id$ > firm_id$ then break
+    rem ' misc cash receipt
+    if cvs(are11.ar_inv_nbr$,3) = "" then continue 
+    
+    read record(art03, key = are11.firm_id$ + are11.ar_type$ + are11.customer_nbr$ + are11.ar_inv_nbr$ + "000", err=*continue)art03$
+    if pos(cvs(art03.ar_po_number$,3) = "SAM Renew|RNT Renew|DVK Renew") = 0 then continue
+    
+    rem ' get the contract number'
+    read record(art73, key = are11.firm_id$ + are11.ar_type$ + are11.customer_nbr$ + are11.ar_inv_nbr$, dom = *next)art73$
+    
+    while 1
+        read record(art73, end = *break)art73$
+        
+        if art73.ar_inv_nbr$ <> are11.ar_inv_nbr$ then break
+        
+        rem print are11.ar_inv_nbr$," ",art03.ar_po_number$," ",art73.contract$
+
+        contract$ = art73.contract$
+        gosub rollTheDates
+        
+        rem ' if contract$ = "036971" then print "Stopping "; escape
+        
+    wend
+
+wend
+
+rem ' only email the report at the top of the hour on even hours, or if a contract's dates were rolled'
+rem ' if (theMinute$ = "00" and mod(num(theHour$),2) = 0) or theMinute$ = "OV" then
+rem '     from$ = "customer-service@basis.cloud"
+rem '     to$ = "misdev@basis.cloud"
+rem '     cc$ = ""
+rem '     bcc$ = ""
+rem '     subject$ = "Date Roll Report"
+rem '     
+rem '     if msgtxt$ = "" and msg$ = "" then 
+rem '         msgtxt$ = "No Payments"
+rem '     fi 
+rem '     msgtxt$ = msgtxt$ + $0a$ + msg$
+rem '     
+rem '     call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+rem ' fi
+
+release
+
+rollTheDates:
+
+	rem ' given the contract in contract$
+	
+	rem ' update the contract
+	extract record(smc01, key = contract$)smc01$
+
+	expDate$ = smc01.expire_on_dt$
+	
+	rem ' bump the year by 1
+	year$ = expDate$(1,4)
+	year$ = str(num(year$) + 1)
+	expDate$(1,4) = year$
+	
+	month$ = expDate$(5,2)
+	theDay$ = expDate$(7,2)
+		
+	rem 'test for reasonable expDate$ to avoid rolling date more than once by mistake
+	rem 'ex_jul is the julian of the new expiration date
+	ex_jul = jul(num(year$), num(month$), num(theDay$))
+	today_jul = jul(0,0,0)
+
+	if ex_jul - today_jul < 365 * 1.5 then 
+		rem ' less than a year and a half in the future, roll and update needed
+    	smc01.annual_dt$ = expDate$
+    	smc01.expire_on_dt$ = expDate$
+    	smc01.sam_active$ = "Y"
+    	smc01.invoiced_flag$ = " "
+    	smc01$ = field(smc01$)
+    	write record(smc01, key = contract$)smc01$
+    	msgtxt$ = msgtxt$ + smc01.contract$ + " " + smc01.customer_nbr$ + " " + smc01.expire_on_dt$ + " " + smc01.annual_dt$ + " " + " " + smc01.sam_active$ + " (" + smc01.invoiced_flag$ + ")" + $0a$
+    	rem print smc01$
+    	rem one rolled, override the 15 and 45 bypass of the reporting email
+    	theMinute$ = "OV"
+    	
+    	rem ' for all active serial numbers on this contact set avail_suppport and sam_active
+    	read record(snm01, knum = 3, key = contract$, dom=*next)snm01$
+	
+    	while 1
+    		SNKey$ = key(snm01,end=*break)
+    		extract record(snm01, key = SNKey$)snm01$
+    		
+    		if snm01.contract$ <> contract$ then 
+                    rem ' clear the extract'
+                    read record(snm01, key = SNKey$)snm01$
+    		        break
+    		fi
+    		
+    		if snm01.active_flag$ = "N" then 
+    			    rem ' clear the extract'
+    			    read record(snm01, key = SNKey$)snm01$
+    			    continue
+    	    fi
+    		
+    		snm01.sam_active$ = "Y"
+    		snm01.avail_support = 5
+    		snm01$ = field(snm01$)
+    		write record(snm01, key = rtd_sn$)snm01$
+    		msgtxt$ = msgtxt$ + "     " + snm01.serial_nbr$ + " " + str(snm01.avail_support) + " " + snm01.sam_active$ + $0a$
+    		rem print snm01$
+    	wend
+    else
+        msg$ = msg$ + "skipped: " + smc01.contract$ + " " + smc01.customer_nbr$ + " " + smc01.expire_on_dt$ + " " + smc01.annual_dt$ + " " + " " + smc01.sam_active$ + " (" + smc01.invoiced_flag$ + ")" + $0a$
+    fi
+   
+return
+
+errmsg:
+    from$ = "customer-service@basis.cloud"
+    to$ = "misdev@basis.cloud"
+    cc$ = ""
+    bcc$ = ""
+    subject$ = "rollDates.src Error" 
+    msgtxt$ = "Error " + str(err) + " in " + str(tcb(5)) + " in " + pgm(-1) + $0a$ + errmes(-1)
+    msgtxt$ = msgtxt$ + $0a$ + $0a$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$
+    call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+    release
+end

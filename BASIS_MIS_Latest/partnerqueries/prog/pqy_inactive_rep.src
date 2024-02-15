@@ -1,0 +1,355 @@
+rem Document Output Base
+rem Proprietary Software. BASIS International Ltd.
+rem Program ID: document_base.src  <Oct 14, 2007>
+
+rem	setesc std_error
+rem	seterr std_error
+
+rem --- Barista Presets
+
+rem	rd_task_val$ = Barista task ID sssigned from menu system
+rem	rd_table_chans$[] = Barista open table array
+	milestone=20,milestone=num(stbl("+MILESTONE",err=*next),err=*next)
+
+rem --- Document Initializations
+
+	outVect!=bbjAPI().makeVector()
+	hdrVect!=bbjAPI().makeVector()
+	brkVect!=bbjAPI().makeVector()
+	totVect!=bbjAPI().makeVector()
+	rep_date$=date(0:"%Mz/%Dz/%Yd")
+	rep_date_stamp$=date(0:"%Yd%Mz%Dz")
+	rep_time$=date(0:"%hz:%mz %p")
+	rep_time_stamp$=date(0:"%Hz%mz%sz")
+
+rem --- Retrieve SYSINFO Data
+
+    sysinfo_template$=stbl("+SYSINFO_TPL",err=*next)
+    dim sysinfo$:sysinfo_template$
+    sysinfo$=stbl("+SYSINFO",err=*next)
+    firm_id$=sysinfo.firm_id$
+    rd_task_val$=sysinfo.task_id$
+	
+rem --- Open Files
+
+	rem ' num_files=2
+	rem ' dim open_tables$[1:num_files],open_opts$[1:num_files],open_chans$[1:num_files],open_tpls$[1:num_files]
+	rem ' open_tables$[1]="TRN_CLASS_ATT",open_opts$[1]="OTA"
+	rem ' open_tables$[2]="TRN_DEVELOPERS",open_opts$[2]="OTA"
+
+	rem ' gosub open_tables
+
+	rem ' trn_class_att=num(open_chans$[1]);dim trn_class_att$:open_tpls$[1]
+	rem ' trn_developers=num(open_chans$[2]);dim trn_developers$:open_tpls$[2]
+	
+	rem ' open logextract
+	logextract = unt
+	open(logextract)stbl("PQY_SERVER_DATA")+"logextract.dat"
+	call stbl("PQY_SERVER_BAS")+"templates.pgm::LOGEXTRACT"
+
+rem --- Get Option Values
+
+	pqy_inactive_date$=callpoint!.getColumnData("PQY_INACTIVE_PAR.INACTIVE_DATE")
+	pqy_inactive_date$=pqy_inactive_date$(1,4)+"-"+pqy_inactive_date$(5,2)+"-"+pqy_inactive_date$(7,2)
+
+	pqy_part_types$=callpoint!.getColumnData("PQY_INACTIVE_PAR.PARTNER_TYPES")
+	use java.util.StringTokenizer
+	selectedTypes! = new StringTokenizer(pqy_part_types$, ",")
+
+        if selectedTypes!.countTokens() = 0 then
+            msg$="You must select at least one partner type."
+            title$="No Partner Type"
+            x = msgbox(msg$,0,title$)
+            goto eoj
+        fi
+
+	pqy_num_users=num(callpoint!.getColumnData("PQY_INACTIVE_PAR.NUM_USERS"))
+
+	rem ' trn_class_id$=option!.getOptionData("TRN_CLASS_ID")
+	rem ' trn_completed$=option!.getOptionData("TRN_COMPLETED")
+	rem ' trn_passed$=option!.getOptionData("TRN_PASSED")
+	rem ' trn_too_many$=option!.getOptionData("TRN_TOO_MANY")
+	rem ' trn_pmt_method$=option!.getOptionData("TRN_PMT_METHOD")
+	
+rem --- build the sql$
+
+	sql$="SELECT t1.CUSTOMER_NBR, t2.CUST_TYPE, t1.CUST_NAME, "
+        sql$=sql$+"DATE(t2.LASTINV_DATE, '%Mz/%Dz/%Y') as LAST_SALE, "
+        sql$=sql$+"t1.CONTACT_NAME, t2.SLSPSN_CODE, "
+        sql$=sql$+"CONCAT(CONCAT(CONCAT(CONCAT(LEFT(t1.PHONE_NUMBER,3),'-'),SUBSTRING(t1.PHONE_NUMBER,4,3)),'-'), RIGHT(t1.PHONE_NUMBER,4)) as PHONE, "
+	sql$=sql$+"t3.SERIAL_NBR, DATE(t3.ORIG_SALE_DATE, '%Mz/%Dz/%Y') as SALE_DATE, t3.USERS, t3.PORT_ID, "
+	sql$=sql$+"t4.DESCRIPTION, "
+	sql$=sql$+"CONCAT(CONCAT(CONCAT(CONCAT(SUBSTRING(t5.EXPIRE_ON_DT,5,2),'-'),SUBSTRING(t5.EXPIRE_ON_DT,7,2)),'-'),LEFT(t5.EXPIRE_ON_DT,4)) as SAM_EXPIRES "
+	sql$=sql$+"FROM ARM01 t1 "
+	sql$=sql$+"INNER JOIN ARM02 t2 on t1.FIRM_ID = t2.FIRM_ID and t1.CUSTOMER_NBR = t2.CUSTOMER_NBR "
+	sql$=sql$+"INNER JOIN SNM01 t3 on t1.FIRM_ID = t3.FIRM_ID and t1.CUSTOMER_NBR = t3.CUSTOMER_NBR "
+	sql$=sql$+"LEFT OUTER JOIN CSM03 t4 ON t1.FIRM_ID = t4.FIRM_ID AND t3.OS_LEVEL = t4.OS_LEVEL AND t3.PORT_ID = t4.PORT_ID "
+	sql$=sql$+"LEFT OUTER JOIN SMC01 t5 on t3.CONTRACT = t5.CONTRACT "
+	sql$=sql$+"WHERE t1.FIRM_ID = '01' AND "
+        sql$=sql$+"t2.LASTINV_DATE <= '"+pqy_inactive_date$+"' "
+	
+	sql1$=""
+	while selectedTypes!.hasMoreTokens()
+		pqyPartType$=selectedTypes!.nextToken()
+		if len(sql1$)=0 then
+			sql1$="t2.CUST_TYPE = '"+pqyPartType$+"' "
+		else
+			sql1$=sql1$+"OR t2.CUST_TYPE = '"+pqyPartType$+"' "
+		fi
+	wend
+	if len(sql1$) > 0 then
+		sql1$="("+cvs(sql1$,3)+") "
+		sql$=sql$+"AND "+sql1$
+	fi
+	
+	sql$ = sql$ + "AND t3.USERS >= " + STR(pqy_num_users) + " AND t3.ACTIVE_FLAG = 'Y' "
+	
+	sql$=sql$+"ORDER BY t2.CUST_TYPE, t2.LASTINV_DATE"
+
+	rem ' bambam2
+	rem connect_str$ = "jdbc:basis:bambam2:2001?DATABASE=Add on&USER=admin&PWD=admin123"
+	rem ' kazoo2
+	rem ' connect_str$ = "jdbc:basis:kazoo2-a:2001?DATABASE=AddOnData&USER=admin&PWD=newone"
+	connect_str$=stbl("PQY_CONNECT")
+	
+	pqyInactiveRS!=bbjapi().createSQLRecordSet(connect_str$,"",sql$)
+
+rem --- Report Headings
+
+	headings=3
+	dim headings$[headings]
+		headings$[0]=sysinfo.firm_name$
+		headings$[1]=sysinfo.task_desc$
+		rem headings$[2]="<Additional heading 1>"
+		rem headings$[3]="<Additional heading 2>"
+
+rem --- Column Headings
+
+    columns=7
+    dim columns$[columns,10]
+        columns$[0,0]="CUST NBR",columns$[0,1]="C",columns$[0,2]="6"
+        columns$[1,0]="TYPE",columns$[1,1]="C",columns$[1,2]="4"
+        columns$[2,0]="CUST NAME",columns$[2,1]="C",columns$[2,2]="25"
+        columns$[3,0]="LAST PUR",columns$[3,1]="C",columns$[3,2]="10"
+        columns$[4,0]="CONTACT",columns$[4,1]="C",columns$[4,2]="20"
+        columns$[5,0]="PHONE",columns$[5,1]="C",columns$[5,2]="12"
+        columns$[6,0]="SLS PSN",columns$[6,1]="C",columns$[6,2]="7"
+        columns$[7,0]="",columns$[7,1]="C",columns$[7,2]="20"
+        
+rem --- Start Progress Meter
+
+	
+	total_recs=pqyInactiveRS!.getRecordCount()
+	milestone = int(total_recs/10)
+	if milestone=0 then milestone=1
+	curr_rec=0
+
+	progress! = bbjAPI().getGroupNamespace()
+	progress!.setValue("+process_task",rd_task_val$+"^C^"+sysinfo.task_desc$+"^CNC^"+str(total_recs)+"^")
+
+rem --- Get Records
+	
+	doingCustNum$=""
+	custCount=0
+	firstTime = 1
+	while 1
+		rowData!= pqyInactiveRS!.getCurrentRecordData(err=*break)
+		
+		if str(rowData!.getFieldValue("CUSTOMER_NBR")) <> doingCustNum$ then gosub customerChange
+
+		rem Set Output Vector
+		outVect!.addItem("")
+		outVect!.addItem("")
+		outVect!.addItem(str(rowData!.getFieldValue("SERIAL_NBR")))
+		outVect!.addItem(str(rowData!.getFieldValue("SALE_DATE")))
+		outVect!.addItem(str(rowData!.getFieldValue("USERS")))
+		outVect!.addItem(str(rowData!.getFieldValue("SAM_EXPIRES")))
+		outVect!.addItem(str(rowData!.getFieldValue("PORT_ID")))
+		outVect!.addItem(str(rowData!.getFieldValue("DESCRIPTION")))
+		
+		rem ' any contact info
+		sql$="SELECT DISTINCT t1.COMPANY, t1.LASTNAME, t1.FIRSTNAME, t1.PHONE, t1.EMAIL "
+		sql$=sql$+"FROM LOGEXTRACT t1 "
+		sql$=sql$+"WHERE t1.SERIALNUM = '" + cvs(rowData!.getFieldValue("SERIAL_NBR"),3) + "'"
+
+		rem ' replacing the createSQLRecordset with standard read records
+		rem ' contactData!=bbjapi().createSQLRecordSet(connect_str$,"",sql$)
+		
+		read record(logextract,key = cvs(rowData!.getFieldValue("SERIAL_NBR"),3),dom=*next)logextract$
+		
+		while 1
+			read record(logextract,end=*break)logextract$
+			if cvs(logextract.serialnum$,3)<> cvs(rowData!.getFieldValue("SERIAL_NBR"),3) then break
+			
+			rem ' if !contactData!.isEmpty() then
+			
+			rem ' output the headers
+			outVect!.addItem("")
+			outVect!.addItem("")
+			outVect!.addItem("")
+			outVect!.addItem("")
+			outVect!.addItem("COMPANY")
+			outVect!.addItem("NAME")
+			outVect!.addItem("PHONE")
+			outVect!.addItem("EMAIL")
+			
+			while 1
+				rem ' rowContactData!=contactData!.getCurrentRecordData(err=*break)
+				
+				outVect!.addItem("")
+				outVect!.addItem("")
+				outVect!.addItem("")
+				outVect!.addItem("")
+				
+				rem ' outVect!.addItem(str(rowContactData!.getFieldValue("COMPANY")))
+				outVect!.addItem(logextract.COMPANY$)
+				
+				rem ' outVect!.addItem(cvs(cvs(str(rowContactData!.getFieldValue("FIRSTNAME")),3)+" "+cvs(str(rowContactData!.getFieldValue("LASTNAME")),3),3))
+				outVect!.addItem(cvs(cvs(logextract.FIRSTNAME$,3)+" "+cvs(logextract.LASTNAME$,3),3))
+				
+				rem ' outVect!.addItem(str(rowContactData!.getFieldValue("PHONE")))
+				outVect!.addItem(logextract.PHONE$)
+				
+				rem ' outVect!.addItem(str(rowContactData!.getFieldValue("EMAIL")))
+				outVect!.addItem(logextract.EMAIL$)
+				
+				rem 'contactData!.next(err=*break)
+
+				read record(logextract,end=*break)logextract$
+				if cvs(logextract.serialnum$,3)<> cvs(rowData!.getFieldValue("SERIAL_NBR"),3) then break
+			wend
+			
+			rem ' fi
+		wend
+		
+		rem ' contactData!.close()		
+
+		curr_rec=curr_rec+1
+		if mod(curr_rec,milestone)=0
+			progress!.setValue("+process_task",rd_task_val$+"^U^"+str(curr_rec)+"^")
+		endif
+		
+		pqyInactiveRS!.next(err=*break)
+	wend
+	pqyInactiveRS!.close()
+	close(logextract,err=*next)
+
+rem --- All done
+
+    outVect!.addItem(str(custCount)+" record(s) listed")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    goto std_exit
+                    
+open_tables:rem --- Open Tables
+
+	call stbl("+DIR_SYP")+"bac_open_tables.bbj",
+:		open_beg,
+:		open_end,
+:		open_tables$[all],
+:		open_opts$[all],
+:		open_chans$[all],
+:		open_tpls$[all],
+:		rd_table_chans$[all],
+:		open_batch,
+:		open_status$
+
+	if open_status$<>""
+		msg_id$="ENTRY_OPEN_ERROR"
+		dim msg_tokens$[1]
+			msg_tokens$[1]=open_status$
+		gosub disp_message
+		goto std_exit
+	endif
+
+	return
+
+disp_message:rem --- Display Message Dialog
+
+	call stbl("+DIR_SYP")+"bac_message.bbj",
+:		msg_id$,
+:		msg_tokens$[all],
+:		msg_opt$,
+:		rd_table_chans$[all]
+
+	return
+
+customerChange: rem --- Change in customer number
+
+	rem ' add a blank line
+	if firstTime then
+		firstTime = 0
+	else
+		outVect!.addItem("")
+		outVect!.addItem("")
+		outVect!.addItem("")
+		outVect!.addItem("")
+		outVect!.addItem("")
+		outVect!.addItem("")
+		outVect!.addItem("")
+		outVect!.addItem("")
+	fi
+	
+	rem Set Output Vector
+	outVect!.addItem(str(rowData!.getFieldValue("CUSTOMER_NBR")))
+	outVect!.addItem(str(rowData!.getFieldValue("CUST_TYPE")))
+	outVect!.addItem(str(rowData!.getFieldValue("CUST_NAME")))
+	outVect!.addItem(str(rowData!.getFieldValue("LAST_SALE")))
+	outVect!.addItem(str(rowData!.getFieldValue("CONTACT_NAME")))
+	outVect!.addItem(str(rowData!.getFieldValue("PHONE")))
+	outVect!.addItem(str(rowData!.getFieldValue("SLSPSN_CODE")))
+	outVect!.addItem("")
+
+	rem ' add the license headers
+	outVect!.addItem("")
+	outVect!.addItem("")
+	outVect!.addItem("SER NUM")
+	outVect!.addItem("SALE DATE")
+	outVect!.addItem("USERS")
+	outVect!.addItem("SAM EXP")
+	outVect!.addItem("PORT ID")
+	outVect!.addItem("DESCRIPTION")
+
+	custCount=custCount+1
+	doingCustNum$=str(rowData!.getFieldValue("CUSTOMER_NBR"))
+	
+	return
+
+std_error: rem --- Standard error handler (01Apr2006)
+
+	err_text$=""
+	if tcb(5)<>0 and pgm(-1)=pgm(-2) err_text$=pgm(tcb(5),err=*next)
+	call stbl("+DIR_SYP")+"bac_error.bbj",err=std_error_exit,pgm(-2),str(tcb(5)),str(err),err_text$,err_act$
+	if pos("EXIT"=err_act$) goto std_error_exit
+	if pos("ESCAPE"=err_act$) seterr 0;setesc 0
+	if pos("RETRY"=err_act$) retry
+
+std_error_exit:
+
+	master_user$=cvs(stbl("+MASTER_USER",err=std_error_release),2)
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=std_error_release)
+	if cvs(sysinfo.user_id$,2)=master_user$ escape
+
+std_error_release:
+
+	close(logextract,err=*next)
+	
+	status=999
+	if pgm(-1)<>pgm(-2) exit
+
+	release
+
+std_exit: rem --- Standard program end (01Mar2006)
+
+	progress!.setValue("+process_task",rd_task_val$+"^D^")
+
+	run stbl("+DIR_SYP")+"bas_process_end.bbj",err=*next
+
+	release

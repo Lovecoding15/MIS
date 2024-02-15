@@ -1,0 +1,147 @@
+0010 REM "SYC - PF Reports Display (List Processing)"
+0020 REM "Program SYC.QY"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "23Mar98 KJS: Can't copy a PF file in DOS/Windows (220,4130-4170,8500-8590)"
+0040 REM 
+0045 REM "D_STATUS   : SpeedSearch Status (0=No Error)"
+0050 REM "OPTION$[n] : Standard SpeedSearch Options Array"
+0055 REM "REPORTS$[n]: Reports to process"
+0060 REM "INFO$[n]   : String parameters (see SYC.QR)"
+0065 REM "INFO[n]    : Numeric parameters (see SYC.QR)"
+0070 REM "SIZES[n]   : Report sizes in bytes"
+0075 REM 
+0080 SETERR 9000
+0085 SETESC 9000
+0090 ENTER D_STATUS,OPTION$[ALL],REPORTS$[ALL],INFO$[ALL],INFO[ALL],SIZES[ALL]
+0200 REM " --- IOLIST's"
+0210 PFXXXA: IOLIST A0$(1),A1$(1)
+0220 SYS01S: IOLIST S0$,S1$,S2$,OS$,*,SHELL$
+0500 REM " --- Initializations"
+0510 DIM A0$(2),A1$(64)
+0550 LET PFNAME$=INFO$[1],PICKS$=INFO$[6],CHOICE$=INFO$[0],PAGES=INFO[11]
+0560 LET MAXROW=INFO[12],PRINTER=INFO[13],PFILE_DEV=INFO[14]
+0570 LET SYS01_DEV=INFO[16],REPORTS=INFO[0],SUBTASK$=FNP$(OPTION$[1])
+1000 REM " --- Process next report in REPORTS$"
+1010 FOR REPORT=1 TO REPORTS
+1020 IF REPORTS$[REPORT]<>"Y" THEN GOTO 3900
+1030 LET K$=STR(REPORT:"00"),FILENAME$=PFNAME$+STR(REPORT)
+1040 READ (PFILE_DEV,KEY=K$,DOM=3900)IOL=PFXXXA
+1050 LET REPORTNAME$=FNP$(A1$(1,40)),BYTES=SIZES[REPORT]
+1060 IF CHOICE$="D" THEN GOTO 3500
+1090 IF BYTES>0 THEN GOTO 3000
+2000 REM " --- File is empty"
+2010 DIM MESSAGE$[1]
+2020 LET MESSAGE$[0]="This Report Is Empty! (<Enter>=Continue)"
+2040 CALL "SYC.XA",2,MESSAGE$[ALL],0,-1,-1,V$,V3
+2090 GOTO 3900
+3000 REM " --- Call selected subroutine"
+3010 LET INFO$[7]=FILENAME$,INFO$[8]=REPORTNAME$
+3020 LET INFO[9]=REPORT,INFO[10]=BYTES
+3030 CALL SUBTASK$,D_STATUS,OPTION$[ALL],INFO$[ALL],INFO[ALL]
+3090 GOTO 3900
+3500 REM " --- Delete report"
+3510 GOSUB 6000
+3900 REM " --- Next report"
+3990 NEXT REPORT
+4000 REM " --- All selected reports processed"
+4010 CLOSE (PRINTER,ERR=4020)
+4020 IF CHOICE$="D" THEN GOTO 9900
+4090 IF CHOICE$<>"F" THEN GOTO 4900
+4100 REM " --- Build command for moving PF file"
+4120 FIND (SYS01_DEV,KEY="S",DOM=4130)IOL=SYS01S
+4130 IF OS$="D" THEN LET COMMAND$=SHELL$+" /C COPY",SLASH$="\",WRONG_SLASH$="/" ELSE LET COMMAND$="cp",SLASH$="/",WRONG_SLASH$="\"
+4140 CALL "SYC.UA",INFO$[9],PATHNAME$
+4141 rem ' support google docs
+4142 destPath$=pathname$
+4143 strip_loop: if destPath$(len(destPath$),1) <> "/" then destPath$=destPath$(1,len(destPath$)-1); goto strip_loop
+4145 rem ' IF OS$="D" THEN LET PATHNAME$=FNSLASH$(PATHNAME$)
+4150 rem ' LET COMMAND$=COMMAND$+" "+PATHNAME$+" ",DEST$=FNSLASH$(INFO$[10])
+4151 DEST$=FNSLASH$(INFO$[10]); dest$ = destPath$ + dest$
+4155 LET COMMAND$=COMMAND$+" "+PATHNAME$+" "
+4160 rem ' IF OS$="U" AND POS("/"=DEST$)=0 THEN LET DEST$="$HOME"+"/"+DEST$
+4170 LET COMMAND$=COMMAND$+DEST$
+4200 REM " --- Move PF file to home directory"
+4205 rem ' if os$="U" then command$=command$+";chmod 666 "+dest$
+4206 command$=command$+";chmod 666 "+dest$
+4210 CALL "SYC.WD",INFO$[5]
+4220 CALL "SYC.WB",INFO$[2],0
+4225 p=pos("$HOME/"=dest$);if p then p=7 else p=1
+4230 PRINT @(0,info[2]-4),'cl'," Creating ",dest$(p)," & .pdf ",
+4240 CALL "SYC.OS",COMMAND$
+4250 call "PDF.01",pathname$,dest$
+4255 gosub upload_gdocs
+4260 PRINT @(0,info[2]-4),'cl',
+4270 ERASE INFO$[9],ERR=4900
+4900 REM " --- Delete this report?"
+4910 IF PICKS$<>"N" THEN GOTO 9900
+4920 LET V4$="OK To Delete "+$22$+REPORTNAME$+$22$
+4930 CALL "SYC.YN",0,V4$,3,V$,V3
+4940 IF V$="Y" THEN GOSUB 6000
+4990 GOTO 9900
+6000 REM " --- Delete a report"
+6010 CALL "SYC.WB",INFO$[2],0
+6020 PRINT @(0,INFO[2]-4),'CL'," Deleting ",$22$,REPORTNAME$,$22$,
+6030 ERASE FILENAME$,ERR=6040
+6040 REMOVE (PFILE_DEV,KEY=K$,DOM=6050)
+6050 PRINT @(0,INFO[2]-4),'CL',
+6090 RETURN 
+7100 upload_gdocs:
+7110 rem ' get username, password, folder and log in
+7120 rem '
+7130 while 1
+7140 	call "gDocs_auth.bbj",windowTitle$,username$,password$,folder$, quiet
+7150 	pdfFile$ = dest$
+7160 	p = pos("." = pdfFile$)
+7170 	if p <> 0 then pdfFile$ = pdfFile$(1,p) + "pdf" else pdfFile$ = ""
+7180 	gdocTitle$ = info$[10]
+7190 	p = pos("." = gdocTitle$)
+7200 	if p <> 0 then gdocTitle$ = gdocTitle$(1,p-1)
+7210 	rem '
+7230	rem ' attempt the upload - no longer do the txt file
+7240	rem ' call "gDocs_upload.bbj", username$, password$, folder$, dest$, gdocTitle$ + ".txt", status
+7250	rem ' if status = 1 then
+7260	rem ' 	continue
+7270	rem ' else
+7280	rem '	rem ' if status > 1 then try again later
+7290	rem '	if status > 1 then break
+7300	rem ' endif
+7310	if pdfFile$ <> "" then call "gDocs_upload.bbj", username$, password$, folder$, pdfFile$, gdocTitle$ + ".pdf", status, quiet
+7320	break
+7330 wend
+7340 erase dest$, err=*next
+7350 erase pdfFile$, err=*next
+7360 return
+8000 REM " --- Functions"
+8025 DEF FNC(Q$,Q)=INT((Q-LEN(Q$))/2)
+8090 DEF FNP$(Q$)=CVS(Q$,2)
+8500 REM " --- Convert to correct slash for OS"
+8510 DEF FNSLASH$(Q$)
+8520 WHILE POS(WRONG_SLASH$=Q$)
+8530 LET Q$(POS(WRONG_SLASH$=Q$),1)=SLASH$
+8540 WEND
+8580 RETURN Q$
+8590 FNEND
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 REM " --- Return to calling program"
+9950 EXIT 
+9999 END

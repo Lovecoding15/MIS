@@ -1,0 +1,1865 @@
+M1:
+EN
+{
+Incorrect Login~
+Unknown account or incorrect password.~
+}
+DE
+{
+Ungültiger Login~
+Unbekannter Account oder falsches Passwort.~
+}
+FR
+{
+Login non valide~
+Compte inconnu ou mot de passe incorrect.~
+}
+ES
+{
+Login Incorrecto~
+Cuenta desconocida o contraseña inválida.~
+}
+IT
+{
+LOGIN errato~
+Account sconosciuto o password sbagliato.~
+}
+
+M2:
+EN
+{
+Not On File~
+Serial number not found: <>~
+}
+DE
+{
+~
+Seriennummer nicht gefunden: <>~
+}
+FR
+{
+~
+Numéro de série pas trouvé: <>~
+}
+ES
+{
+No se encuentra~
+Número de serie no encontrado: <>~
+}
+IT
+{
+No sul file~
+Numero di serie non trovato: <>~
+}
+
+M3:
+EN
+{
+Not Licensed To You~
+<> not available.~
+}
+DE
+{
+Nicht auf Sie lizensiert~
+<> nicht verfügbar.~
+}
+FR
+{
+Non licencié à vous~
+<> pas disponible.~
+}
+ES
+{
+No licenciado a Usted~
+<> no disponible.~
+}
+IT
+{
+La licenza non è a nome suo~
+<> non disponibile.~
+}
+
+M4:
+EN
+{
+Not Available~
+Select a serial number.~
+}
+DE
+{
+~
+Bitte wählen Sie eine Seriennummer.~
+}
+FR
+{
+~
+Veuillez sélectionner un numéro de série.~
+}
+ES
+{
+No disponible~
+Seleccione un número de serie.~
+}
+IT
+{
+Non disponibile.~
+Scieglere un numero di serie.~
+}
+
+M5:
+EN
+{
+Can't update Cart~
+Incomplete or invalid information.~
+}
+DE
+{
+Warenkorb kann nicht aktualisiert werden~
+Unvollständige oder falsche Information.~
+}	
+FR
+{
+Le panier ne peut pas être actualisé~
+Information incomplète ou non valide.~
+}
+ES
+{
+El carrito de compras no se puede actualizar~
+Información incompleta o inválida.~
+}
+IT
+{
+Il carrello d`acquisto non si può aggiornare
+Informazioni sbaglate o incomplete.~
+}
+	
+M6:
+EN
+{
+Reselect Date~
+Date must be <> through <>~
+}
+DE
+{
+Datum nochmals auswählen~
+Datum muss zwischen <> und <> liegen.~
+}
+FR
+{
+Resélectionner la date~
+La date doit être entre le <> et le <>~
+}
+ES
+{
+Vuelva a seleccionar la fecha~
+La fecha debe ser de <> a <>~
+}
+IT
+{
+Selezionare di nuovo la data~
+La data deve essere tra <> e <>.~
+}
+
+M7:
+EN
+{
+Confirm Deletion~
+Delete item <> <> from your shopping cart?~
+}
+DE
+{
+Löschen bestätigen~
+<> <> aus Ihrem Warenkorb löschen?~
+}
+FR
+{
+Confirmez l´annulation~
+Voulez-vous annuler l´article <> <> de votre panier?~
+}
+ES
+{
+Confirme eliminación
+Elimine artículo <> <> de su carrito de compras?~
+}
+IT
+{
+Conferma cancellazione~
+<> <> cancellare dal carrello d`acquisto?~
+}
+
+M8:
+EN
+{
+Nothing To Check Out~
+Your shopping cart is empty!~
+}
+DE
+{
+~
+Ihr Warenkorb ist leer!~
+}
+FR
+{
+~
+Votre panier est vide!~
+}
+ES
+{
+Nada para comprar~
+Su cesta de compras está vacía!~
+}
+IT
+{
+~
+Il carrello d`acquisto è vuoto!~
+}
+
+M9:
+EN
+{
+Purchase Order Information~
+You have selected to check out the entire cart. This process will lose the multiple purchase order numbers you have in the cart. You can attach a single PO number to this purchase during the check out phase if you select OK. If you wish to maintain the PO numbers you have in the cart, select Cancel and check out each PO number separately.~
+}
+DE
+{
+~    
+Sie haben die Vorbereitung zum Kauf des kompletten Warenkorbes ausgewählt. Durch diesen Vorgang Gehen die einzelnen Auftragsnummern, die vorher eingegeben wurden, verloren. Sie haben die Möglichkeit, während der Kaufabwicklung eine Auftragsnummer für den Gesamtkauf hinzuzufügen, wenn Sie jetzt o.k wählen. Sollten Sie die einzelnen Auftragsnummern benötigen, wählen Sie bitte abbrechen und behandeln jede Auftragsnummer separat.~
+}
+FR
+{
+~
+Vous avez choisi de vérifier le panier complet de votre achat. A travers ce processus, vous perdrez les différents numéros de bon de commande que vous avez dans le panier. Durant la phase de vérification de votre achat,, vous pouvez insérer un seul numéro de bon de commande pour cette commande, si vous sélectionner OK. Si vous aviez besoin d´un numéro par bon de commande, sélectionnez Annuler et traitez chaque bon de commande séparément.~
+}
+ES
+{
+Información de la orden de compra~
+Usted seleccionó salirse de su orden de compra. Con éste proceso se perderán los diferentes números de órdenes de compra que ya  tiene en el carrito. Usted puede añadir un solo número de orden de compra para ésta compra durante la fase de salida, si selecciona OK. Si desea mantener los números de órdenes de compra que tiene en el carrito, seleccione Cancelar y procese cada orden de compra por separado.~
+}
+IT
+{~
+Lei ha scelto di verificare il carrello. Con questa procedura gli singoli numero d`ordine inserite saranno perduti. Lei ha la possibilità di aggiungere un unico numero d`ordine su questo acquisto, premendo adesso OK. Se necessita le singoli numero d`ordine scegliere "cancella" e trattare ogni numero d`ordine separato.~
+}
+
+M10:
+EN
+{
+Enter Contact Name~
+Please enter your Contact's Name.~
+}
+DE
+{
+~
+Bitte geben Sie einen Kontaktnamen ein.~
+}
+FR
+{
+~
+Veuillez entrer un nom de contact.~
+}
+ES
+{
+Intruduzaca el nombre del contacto~
+Por favor introduzca su nombre de contacto.~
+}
+IT
+{
+~
+Si prega di inserire il nome del contatto.~
+}
+
+M11:
+EN
+{
+Order Is Complete~
+Generated order number <>.~
+}
+DE
+{
+Bestellung ist vollständig~
+Auftragsnummer <> erstellt.~
+}
+FR
+{
+La commande est complète~
+Numéro de commande <> généré.~
+}
+ES
+{
+La orden está completa~
+Número de orden generada <>.~
+}
+IT
+{
+L`ordine è completo~
+Creazione numero d`ordine <>.~
+}
+M12:
+EN
+{
+~
+Couldn't Send Acknowledgement Mail~
+}
+DE
+{
+~
+Bestätigungsmail kann nicht gesendet werden~
+}
+FR
+{
+~
+Un email de confirmation ne pouvait être envoyé~
+}
+ES
+{
+~
+No se pudo enviar e-mail de confirmación~
+}
+IT
+{
+~
+Email di conferma non è possibile inviare~
+}
+M13:
+EN
+{
+Upgrade to BASIS Product~
+Upgrades to BASIS Product licenses are not processed here. Do you want to change to the upgrade area now?~
+}
+DE
+{
+Upgrade auf BASIS Produkt~
+Upgrade auf BASIS Produkt Lizenz kann hier nicht durchgeführt werden. Möchten Sie in den Upgradebereich wechseln?~
+}
+FR
+{
+Mise à jour du produit BASIS~
+Des mises à jour vers les licences produits BASIS ne peuvent pas être ici exécutées. Voulez-vous maintenant changer dans la zone pour les mises à jour?~
+}
+ES
+{
+Actualización a un producto BASIS~
+Las actualizaciones a licencias de productos de BASIS no son procesadas aquí. Desea ir al área de actualizaciones ahora?~
+}
+IT
+{
+Upgrade sul Prodotto BASIS~
+Upgrade sul Prodotto BASIS non è possibile esuigire. Vuole cambiare la zona del Upgrade?~
+}
+M14:
+EN
+{
+Can't Update Cart~
+Serial number <> is already in your shopping cart.~
+}
+DE
+{
+Warenkorb kann nicht aktualisiert werden~
+Seriennummer <> befindet sich bereits in Ihrem Warenkorb.~
+}
+FR
+{
+Le panier ne peut pas être actualisé~
+Le numéro de série <> se trouve déjà dans le panier.~
+}
+ES
+{
+No se puede actualizar el carrito de compra~
+Número de serie <> ya está en su carrito de compras.~
+}
+IT
+{
+Il carrello d`acquisto non si può aggiornare~
+Il numero di serie <> è gia nel carrello.~
+}
+M15:
+EN
+{
+Can't Update Cart~
+Your shopping cart is full.~
+}
+DE
+{
+Warenkorb kann nicht aktualisiert werden~
+Ihr Warenkorb ist voll.~
+}
+FR
+{
+Le panier ne peut pas être actualisé~
+Votre panier est plein.~
+}
+ES
+{
+No se puede actualizar el carrito de compra~
+Su carrito de compras está lleno.~
+}
+IT
+{
+Il carrello d`acquisto non si può aggiornare~
+Il carrello è pieno.~
+}
+M16:
+EN
+{
+Credit Hold~
+Please contact BASIS customer service.~
+}
+DE
+{
+Liefersperre~
+Bitte setzen Sie sich mit dem Kundenservice von BASIS in Verbindung.~
+}
+FR
+{
+Livraison stoppée~
+Veuillez vous mettre en relation avec le service clientèle de BASIS.~
+}
+ES
+{
+Crédito detenido~
+Por favor contacte a servicios al cliente de BASIS.~
+}
+IT
+{
+Consegna bloccato~
+Si prega di contattare l`assistenza clienti di BASIS.~
+}
+M17:
+EN
+{
+License Address or CD-ROM Required~
+Enter a license delivery address or at least one CD-ROM.~
+}
+DE
+{
+Lizenzadresse oder CD-ROM muß angegeben werden~
+Bitte geben Sie eine Lieferadresse ein, oder wählen mindestens eine CD-ROM.~
+}
+FR
+{
+Veuillez entrer l´adresse de la licence ou CD-ROM~
+Veuillez entrer l´adresse de livraison de la licence ou choisissez au moins un CD-ROM.~
+}
+ES
+{
+Dirección para la licencia o CD-ROM requerido~
+Introduzca la dirección para envío de la licencia o al menos un CD-ROM.~
+}
+IT
+{
+Inserire l`indirizzo di consegna oppure CD-ROM~
+Per favore inserisca un indirizzo di consegna oppure scelga minimo un CD-ROM.~
+}
+M18:
+EN
+{
+~
+Shipping address is not complete or not valid.~
+}
+DE
+{
+~
+Lieferadresse ist nicht komplett oder ungültig.~
+}
+FR
+{
+~
+L´adresse de livraison n´est pas complète ou n´est pas valide.~
+}
+ES
+{
+~
+La dirección de envío está incompleta o es inválida.~
+}
+IT
+{
+~
+L`indirizzo di consegna è sbagliato o incopleto.~
+}
+M19:
+EN
+{
+Limit Exceeded~
+No more than 10 CDROMs may be ordered.~
+}
+DE
+{
+Maximalanzahl überschritten~
+Es können max. 10 CD-ROM bestellt werden.~
+}
+FR
+{
+Nombre maximal excédé~
+10 CD-ROM au maximum peuvent être commandés.~
+}
+ES
+{
+Límite excedido~
+No más de 10 CD-ROMs pueden ser ordenados.~
+}
+IT
+{
+Numero massimale superato~
+Solo un massimo di 10 CD-ROM si può ordinare.~
+}
+M20:
+EN
+{
+Can't Update Cart~
+<>~
+}
+DE
+{
+Warenkorb kann nicht aktualisiert werden~
+<>~
+}
+FR
+{
+Le panier ne peut pas être actualisé~
+<>~
+}
+ES
+{
+No se puede actualizar el carrito de compra~
+<>~
+}
+IT
+{
+Il carrello d`acquisto non si può aggiornare~
+<>~
+}
+M21:
+EN
+{
+Country Is Required~
+Please select a country.~
+}
+DE
+{
+Bitte Land angeben~
+Bitte Land auswählen.~
+}
+FR
+{
+Veuillez entrer le pays~
+Veuillez sélectionner un pays.~
+}
+ES
+{
+El país es requerido~
+Por favor seleccione un país.~
+}
+IT
+{
+Inserire il paese~
+Selezioni un paese.~
+}
+
+M22:
+EN
+{
+Expired~
+Must be renewed within 45 days of expiration.~
+}
+DE
+{
+Ablaufdatum überschritten~
+Muss innerhalb von 45 Tagen nach Ablauf erneuert werden.~
+}
+FR
+{
+Echéance dépassée~
+Doit être renouvelé dans les 45 jours après expiration.~
+}
+ES
+{
+Expirado~
+Debe ser renovado dentro de los 45 días de expiración.~
+}
+IT
+{
+Data di scadenza superato~
+Si deve rinnovare entro 45 giorni dopo la scadenza.~
+}
+
+M23:
+EN
+{
+Credit Card Type~
+Please select Visa, MasterCard, or American Express.~
+}
+DE
+{
+Kreditkartentyp~
+Bitte wählen Sie Visa, MasterCard oder American Express.~
+}
+FR
+{
+Type de carte de crédit~
+Veuillez sélectionner Visa, MasterCard ou American Express.~
+}
+ES
+{
+Tipo de tarjeta de crédito~
+Por favor seleccione Visa, MasterCard o American Express.~
+}
+IT
+{
+Tipo della carta di credito~
+Scegliere tra Visa, MasterCard o American Express.~
+}
+
+M24:
+EN
+{
+~
+Invalid credit card number.~
+}
+DE
+{
+~
+Falsche Kreditkartennummer.~
+}
+FR
+{
+~
+Numéro de carte de crédit non valide.~
+}
+ES
+{
+~
+Número de tarjeta de crédito inválido.~
+}
+IT
+{
+~
+Numero della carta di credito sbagliato.~
+}
+
+M25:
+EN
+{
+Incorrect Type~
+This is not a valid <> card number.~
+}
+DE
+{
+Ungültiger Kreditkartentyp~
+Dies ist keine für <> gültige Kreditkartennummer.~
+}
+FR
+{
+Carte de crédit non valide.~
+Celui-ci n´est pas un numéro de carte de crédit de <>.~
+}
+{
+Tipo incorrecto~
+Éste no es un número de tarjeta válido <>.~
+}
+IT
+{
+Tipo della carta di credito non valido~
+Questo non è un numero della carta di credito valido per <>~
+}
+
+M26:
+EN
+{
+Credit Card Name~
+Please enter the name.~
+}
+DE
+{
+Name auf Kreditkarte~
+Bitte geben Sie den Namen ein.~
+}
+FR
+{
+Nom sur la carte de crédit~
+Veuillez entrer le nom.~
+}
+ES
+{
+Nombre en la tarjeta de crédito~
+Por favor introduzca el nombre.~
+}
+IT
+{
+Nome sulla carta di credito~
+Inserisca il nome.~
+}
+
+M27:
+EN
+{
+~
+Expiration month is required.~
+}
+DE
+{
+~
+Ablaufmonat muss angegeben werden.~
+}
+FR
+{
+~
+Le mois d´expiration doit être donné.~
+}
+ES
+{
+~
+El mes de expiración es requerido.~
+}
+IT
+{
+~
+Inserire il mese di scadenza è obligatorio.~
+}
+
+M28:
+EN
+{
+~
+Expiration year is required.~
+}
+DE
+{
+~
+Ablaufjahr muss angegeben werden.~
+}
+FR
+{
+~
+L´année d´expiration doit être donnée.~
+}
+ES
+{
+~
+El año de expiración es requerido.~
+}
+IT
+{
+~
+Inserire l`anno di scadenza è obligatorio.~
+}
+
+M29:
+EN
+{
+Select Payment Method~
+Please select On Account or Credit Card.~
+}
+DE
+{
+Zahlungsmethode auswählen~
+Bitte wählen Sie zwischen Lieferung auf Rechnung und Kreditkarte.~
+}
+FR
+{
+Sélectionnez la méthode de paiement~
+Veuillez sélectionner paiement par facture ou par carte de crédit.~
+}
+ES
+{
+Seleccione el método de pago~
+Por favor seleccione la cuenta o tarjeta de crédito.~
+}
+IT
+{
+Scegliere metodo di pagamento~
+Per favore, scelga tra consegna a fattura oppure con carta di credito.~
+}
+
+M30:
+EN
+{
+~
+Please enter credit card number.~
+}
+DE
+{
+~
+Bitte geben Sie Ihre Kreditkartennummer ein.~
+}
+FR
+{
+~
+Veuillez entrer votre numéro de carte de crédit.~
+}
+ES
+{
+~
+Por favor introduzca el número de tarjeta de crédito.~
+}
+IT
+{
+~
+Per favore, inserisca il numero della carta di credito.~
+}
+
+M31:
+EN
+{
+Incorrect Credit Card~
+Please re-enter the credit card number.~
+}
+DE
+{
+Ungültige Kreditkarte~
+Bitte geben Sie Ihre Kreditkartennummer erneut ein.~
+}
+FR
+{
+Carte de crédit incorrecte~
+Veuillez réentrer votre numéro de carte de crédit.~
+}
+ES
+{
+Tarjeta de crédito incorrecta~
+Por favor vuelva a introducir el número de tarjeta de crédito.~
+}
+IT
+{
+La carta di credito non è valido.~
+Per favore, inserisca nuovamente il numero della carta di credito.~
+}
+
+M32:
+EN
+{
+Credit Card Transaction Failed~
+Couldn't process credit card transaction~
+}
+DE
+{
+Kreditkartentransaktion ist fehlgeschlagen~
+Kreditkartentransaktion kann nicht durchgeführt werden.~
+}
+FR
+{
+Transaction de la carte de crédit échouée~
+La transaction de la carte de crédit ne pouvait être procédée.~
+}
+ES
+{
+Falló transacción de tarjeta de crédito~
+No se pudo procesar la tarjeta de crédito.~
+}
+IT
+{
+La transazione della carta di credito è fallito.~
+La transazione della carta di credito non si può procedere.~
+}
+
+M33:
+EN
+{
+~
+Can't modify <> online.  Please contact BASIS sales for assistance~
+}
+DE
+{
+~
+<> kann nicht online geändert werden. Bitte setzen Sie sich mit BASIS in Verbindung.~
+}
+FR
+{
+~
+<> ne peut pas être modifié en ligne. Veuillez prendre contact avec BASIS.~
+}
+ES
+{
+~
+<> No se puede modificar el línea. Por favor contacte a ventas de BASIS para ayuda.~
+}
+IT
+{
+~
+<> non si può cambiare online. Contattare l`assistenza BASIS.~
+}
+
+M34:
+EN
+{
+Reset <>~
+Please select a reason for this reset from the list box.~
+}
+DE
+{
+Reset <>~
+Bitte wählen Sie einen Grund für diesen Reset.~
+}
+FR
+{
+Réactivation <>~
+Veuillez choisir de la liste une raison pour cette réactivation~
+}
+ES
+{
+Reseteo <>~
+Por favor seleccione de la lista una razón para éste reseteo.~
+}
+IT
+{
+Reset <>~
+Si prega di scegliere un motivo per questo reset.~
+}
+
+M35:
+EN
+{
+~
+Please select a report.~
+}
+DE
+{
+~
+Bitte wählen Sie einen Bericht aus.~
+}
+FR
+{
+~
+Veuillez sélectionner un rapport.~
+}
+ES
+{
+~
+Por favor seleccione un reporte.~
+}
+IT
+{
+~
+Si prega di scegliere un rapporto.~
+}
+
+M36:
+EN
+{
+~
+Please enter an E-mail address.~
+}
+DE
+{
+~
+Bitte geben Sie eine E-Mailadresse ein.~
+}
+FR
+{
+~
+Veuillez entrer une adresse E-mail.~
+}
+ES
+{
+~
+Por favor introduzca una dirección de E-mail.~
+}
+IT
+{
+~
+Si prega di inserire un indirizzo E-mail.~
+}
+
+M37:
+EN
+{
+~
+Report has been queued. It will be processed and sent in a few minutes.~
+}
+DE
+{
+~
+Report wurde gestartet. Sie erhalten das Ergebnis in wenigen Minuten.~
+}
+FR
+{
+~
+Le rapport a été accordé. Vous allez recevoir le résultat dans quelques minutes.~
+}
+ES
+{
+~
+El reporte ha sido procesado. Éste será enviado en unos minutos.~
+}
+IT
+{
+~
+Rapporto è avviato. Riceverà l`esito in poche minuti.~
+}
+
+M38:
+EN
+{
+Confirm Deletion~
+Delete credit card number <>?~
+}
+DE
+{
+Löschen bestätigen~
+Kreditkarte <> löschen?~
+}
+FR
+{
+Confirmer l´annulation~
+Annuler la carte de crédit <>?~
+}
+ES
+{
+Confirme eliminación~
+Elimine tarjeta de crédito <>?~
+}
+IT
+{
+Confirm Deletion~
+Delete credit card number <>?~
+}
+
+M39:
+EN
+{
+Can't update~
+Password is required~
+}
+DE
+{
+Update nicht möglich~
+Passwort fehlt~
+}
+FR
+{
+Mise à jour impossible~
+Le mot de passe manque~
+}
+ES
+{
+No se puede actualizar~
+La contraseña es requerida.~
+}
+IT
+{
+Can't update~
+Password is required~
+}
+
+M40:
+EN
+{
+Can't update~
+Passwords don't match.~
+}
+DE
+{
+Update nicht möglich~
+Passwörter stimmen nicht überein.~
+}
+FR
+{
+Mise à jour impossible~
+Les mots de passe ne sont pas conformes.~
+}
+ES
+{
+No se puede actualizar~
+Las contraseñas no coinciden.~
+}
+IT
+{
+Aggiornamento non è possibile~
+Le Password non sono identico.~
+}
+
+M41:
+EN
+{
+Can't update~
+Invalid password length.~
+}
+DE
+{
+Update nicht möglich~
+Ungültige Passwortlänge.~
+}
+FR
+{
+Mise à jour impossible~
+Longueur du mot de passe non valide.~
+}
+ES
+{
+No se puede actualizar~
+Longitud de contraseña inválida.~
+}
+IT
+{
+Aggiornamento non è possibile~
+Lunghezza della Password sbagliato.~
+}
+
+M42:
+EN
+{
+Can't update~
+Invalid password.~
+}
+DE
+{
+Update nicht möglich~
+Ungültiges Passwort.~
+}
+FR
+{
+Mise à jour impossible~
+Mot de passe non valide.~
+}
+ES
+{
+No se puede actualizar~
+Contraseña inválida.~
+}
+IT
+{
+Aggiornamento non è possibile~
+Password sbagliato.~
+}
+
+M43:
+EN
+{
+~
+OK To Update?~
+}
+DE
+{
+~
+OK zum Update?~
+}
+FR
+{
+~
+OK pour la mise à jour?~
+}
+ES
+{
+~
+OK para la actualización?~
+}
+IT
+{
+~
+Ok per l`aggiornamento?~
+}
+
+M44:
+EN
+{
+~
+Customer is already logged in to system.~
+}
+DE
+{
+~
+Kunde ist bereits im System angemeldet.~
+}
+FR
+{
+~
+Le client est déjà connecté dans le système.~
+}
+ES
+{
+~
+El cliente ya está conectado en el sistema.~
+}
+IT
+{
+~
+Il cliente è già connesso al sistema.~
+}
+
+M45:
+EN
+{
+~
+Remaining support will be <>.  Please confirm: Do you want to reset the status now?~
+}
+DE
+{
+~
+Noch <> verbleibende Supportanfragen / Resets. Bitte Bestätigen: Möchten Sie den Reset nun durchführen?~
+}
+FR
+{
+~
+Encore des demandes de support / réactivations restantes <>. Veuillez confirmer: Voulez-vous effectuer la réactivation?~
+}
+ES
+{
+~
+El soporte remanente será <>.  Por favor confirme: Desea efectuar el reseteo ahora?~
+}
+IT
+{
+~
+Remaining support will be <>.  Please confirm: Do you want to reset the status now?~
+}
+
+M46:
+EN
+{
+Can't Upgrade~
+SAM can't be renewed on one or more serial numbers.~
+}
+DE
+{
+Upgrade nicht möglich~
+SAM kann für eine oder mehrere Seriennummern nicht erneuert werden.~
+}
+FR
+{
+Mise à jour impossible~
+Le SAM ne peut pas être renouvelé pour un ou plusieurs numéros de série.~
+}
+ES
+{
+Can't Upgrade~
+SAM can't be renewed on one or more serial numbers.~
+}
+IT
+{
+Can't Upgrade~
+SAM can't be renewed on one or more serial numbers.~
+}
+
+M47:
+EN
+{
+You selected Annual License.~
+The Annual License option converts this serial number to a\n renewable license, including SAM software maintenance, and\n waives the reinstatement fee. If the associated SAM coverage\n is not renewed, the expired annual license reverts to the\n serial number's original configuration/revision prior to the\n conversion to a renewable license. \n\nDo you accept these terms?~
+}
+DE
+{
+Sie haben Annual License ausgewählt~
+Die Annual License - Option wandelt diese Seriennummer in eine\n erneuerbare Lizenz um, die unter SAM gewartet wird. Der SAM\n reinstatement fee wird in diesem Fall erlassen. Sollte der SAM\n einmal nicht erneuert werden, wird die Lizenz wieder in die\n ursprüngliche Konfiguration und Version vor der Umwandlung in\n die Jahreslizenz zurückgesetzt.\n\nAkzeptieren Sie diese Bedingung?~
+}
+FR
+{
+Vous avez choisi Annual License~
+L'option annuelle Annual License convertira ce numéro de série\n en une licence renouvelable, y compris l'entretien de logiciel\n SAM, et écarte les frais de rétablissement. Au moment où le plan\nSAM ne sera plus renouvelé, la licence retournera à la\n configuration/version originale du numéro de série avant sa\n conversion en licence renouvelable.\n\nAcceptez-vous ces conditions?~
+}
+ES
+{
+Seleccionó una Licencia Anual.~
+La opción de licencia anual convierte a éste número de serie en una\n licencia renovable, incluyendo el SAM plan para el mantenimiento del software, y\n permite también el costo por reinstalación. Si la cobertura del SAM plan\n no es renovada, la licencia anual que expiró se revierte a la\n configuración/versión del número de serie original antes de que ésta fuese convertida\n a una licencia renovable.\n\nAcepta Usted estos términos?~
+}
+IT
+{
+Lei ha scelto licenza annuale~
+L`opzione licenza annuale converte questo numero di serie in una\n licenza rinnovabile, che rientra nello SAM. Il costo di rienserimento\n SAM non viene applicata. Se qualche volta non si rinnova lo SAM,\n la licenza ritornerà nella configurazione e versione originale prima\n della conversione della licenza annuale.\n\n Accetta queste condizioni?~
+}
+M48:
+EN
+{~
+Closed until <>~
+}
+DE
+{~
+Geschlossen bis <>~
+}
+FR
+{~
+Fermé jusqu'à <>~
+}
+ES
+{~
+Cerrado hasta <>~
+}
+IT
+{~
+Chiuso fino <>~
+}
+M49:
+EN
+{
+Confirm~
+Do you want to deactivate the automatic SAM renewal invoice?~
+}
+DE
+{
+Confirm~
+Möchten Sie die automatische SAM-Erneuerung ausschalten?~
+}
+FR
+{
+Confirm~
+Voulez-vous désactiver votre facture automatique du renouvellement SAM?~
+}
+ES
+{
+Confirmar~
+¿Desea desactivar la renovación automática de factura SAM?~
+}
+IT
+{
+Conferma~
+Vuole disattivare il rinnovo automatico SAM?~
+}
+M50:
+EN
+{
+Invoice credited~
+<> has been credited. Credit will be applied on the next business day.~
+}
+DE
+{
+Invoice credited~
+<> has been credited. Credit will be applied on the next business day.~
+}
+FR
+{
+Invoice credited~
+<> has been credited. Credit will be applied on the next business day.~
+}
+ES
+{
+Invoice credited~
+<> has been credited. Credit will be applied on the next business day.~
+}
+IT
+{
+Invoice credited~
+<> has been credited. Credit will be applied on the next business day.~
+}
+M51:
+EN
+{
+Confirm~
+Credit Invoice <>?~
+}
+DE
+{
+Confirm~
+Credit Invoice <>?~
+}
+FR
+{
+Confirm~
+Credit Invoice <>?~
+}
+ES
+{
+Confirm~
+Credit Invoice <>?~
+}
+IT
+{
+Confirm~
+Credit Invoice <>?~
+}
+M52:
+EN
+{
+Confirm payment~
+Charge <> to <>?~
+}
+DE
+{
+Confirm payment~
+Charge <> to <>?~
+}
+FR
+{
+Confirm payment~
+Charge <> to <>?~
+}
+ES
+{
+Confirm payment~
+Charge <> to <>?~
+}
+IT
+{
+Confirm payment~
+Charge <> to <>?~
+}
+M53:
+EN
+{~
+Transaction complete~
+}
+DE
+{~
+Transaction complete~
+}
+FR
+{~
+Transaction complete~
+}
+ES
+{~
+Transaction complete~
+}
+IT
+{~
+Transaction complete~
+}
+M54:
+EN
+{
+Send Invoice~
+Enter an email address~
+}
+DE
+{
+Send Invoice~
+Enter an email address~
+}
+FR
+{
+Send Invoice~
+Enter an email address~
+}
+ES
+{
+Send Invoice~
+Enter an email address~
+}
+IT
+{
+Send Invoice~
+Enter an email address~
+}
+M55:
+EN
+{~
+Invoice has been queued & will be sent in a few minutes.~
+}
+DE
+{~
+Invoice has been queued & will be sent in a few minutes.~
+}
+FR
+{~
+Invoice has been queued & will be sent in a few minutes.~
+}
+ES
+{~
+Invoice has been queued & will be sent in a few minutes.~
+}
+IT
+{~
+Invoice has been queued & will be sent in a few minutes.~
+}
+
+T1:
+EN
+{
+~
+Kreditkartenzahlungen sind nicht möch. Bitte setzen Sie sich, zum Abschließn Ihrer Bestellung, mit BASIS Europe Distribution GmbH unter +49 - 611 - 714 66 82 in Verbindung.~
+}
+DE
+{
+~
+Kreditkartenzahlungen sind nicht möch. Btte setzen Sie sich, zum Abschließn Ihrer Bestellung, mit BASIS Europe Distribution GmbH unter +49 - 611 - 714 66 82 in Verbindung.~
+}
+FR
+{
+~
+Kreditkartenzahlungen sind nicht möch. Btte setzen Sie sich, zum Abschließn Ihrer Bestellung, mit BASIS Europe Distribution GmbH unter +49 - 611 - 714 66 82 in Verbindung.~
+}
+ES
+{
+~
+Kreditkartenzahlungen sind nicht möch. Bitte setzen Sie sich, zum Abschließn Ihrer Bestellung, mit BASIS Europe Distribution GmbH unter +49 - 611 - 714 66 82 in Verbindung.~
+}
+IT
+{
+~
+Pagamento con la carta di credito non è possibile. Per completare l`acquisto si prega di contattare BASIS Europe Distribution GmbH unter +49 - 611 - 714 66 82.~
+}
+
+C1:
+EN
+{
+**Enter users.~
+}
+DE
+{
+**Bitte User eingeben.~
+}
+FR
+{
+**Veuillez entrer le nombre d´utilisateurs.~
+}
+ES
+{
+**Introduzca usuarios.~
+}
+IT
+{
+** Inserire qui utente.~
+}
+
+C2:
+EN
+{
+**Quantity must be greater than zero.~
+}
+DE
+{
+**Menge muss größer Null sein.~
+}
+FR
+{
+**La quantité doit être plus grand que zéro.~
+}
+ES
+{
+**La cantidad debe ser mayor que cero.~
+}
+IT
+{
+**Quantità deve essere piú grande di zero.~
+}
+
+C3:
+EN
+{
+**Call BASIS sales at 505.938.6120 for changes to this item.~
+}
+DE
+{
+**Bitte setzen Sie sich für Änderungen an diesem Artikel mit BASIS Europe Distribution GmbH unter +49 - 611 - 714 66 82 in Verbindung.~
+}
+FR
+{
+**Pour toute modification de cet article, veuillez prendre contact avec la BASIS Europe Distribution GmbH au numéro suivant +49 - 611 -711 94 55.~
+}
+ES
+{
+**Llame a ventas de BASIS al 01.505.938.6120 para cambios en éste artículo.~
+}
+IT
+{
+**Bitte setzen Sie sich für Änderungen an diesem Artikel mit BASIS Europe Distribution GmbH unter +49 - 611 - 714 66 82 in Verbindung.~
+}
+
+C4:
+EN
+{
+**Upgrading or adding users are the only options available.~
+}
+DE
+{
+**Nur Upgrade oder zusätzliche User sind möglich.~
+}
+FR
+{
+**Seules les options mise à jour ou utilisateurs supplémentaires sont ici possibles.~
+}
+ES
+{
+**Actualizar o añadir usuarios son las únicas opciones disponibles.~
+}
+IT
+{
+** Solo upgrade o aggiungere utente è possibile.~
+}
+
+C5:
+EN
+{
+**Continue~
+}
+DE
+{
+**Fortsetzen~
+}
+FR
+{
+**Continuer~
+}
+ES
+{
+**Continuar~
+}
+IT
+{
+** Continuare~
+}
+
+C6:
+EN
+{
+**SAM required.~
+}
+DE
+{
+**SAM erforderlich.~
+}
+FR
+{
+**SAM nécessaire.~
+}
+ES
+{
+**SAM plan requerido.~
+}
+IT
+{
+** Necessario SAM.~
+}
+
+C7:
+EN
+{
+**Price can't be calculated for this item.~
+}
+DE
+{
+**Für diesen Artikel kann kein Preis kalkuliert werden.~
+}
+FR
+{
+**Le prix ne peut pas être calculé pour cet article.~
+}
+ES
+{
+**El precio no puede ser calculado para éste artículo.~
+}
+IT
+{
+** Per questo articolo non è possibile calcolare un prezzo.~
+}
+
+C8:
+EN
+{
+**Can't change product <> to <>.~
+}
+DE
+{
+**Eine Änderung von <> nach <> ist nicht möglich.~
+}
+FR
+{
+**Le changement du produit de <> vers <> ne peut être effectué.~
+}
+ES
+{
+**No puede cambiar el producto <> por <>.~
+}
+IT
+{
+** Un cambiamento da <> al <> non è possibile.~
+}
+
+C9:
+EN
+{
+**Can't change revision <> to <>.~
+}
+DE
+{
+**Eine Änderung der Revision von <> nach <> ist nicht möglich.~
+}
+FR
+{
+**Le changement de révision de <> vers <> ne peut être effectué.~
+}
+ES
+{
+**No puede cambiar de revisión <> a <>.~
+}
+IT
+{
+** Un cambiamento della revisione da <> al <> non è possibile.~
+}
+
+C10:
+EN
+{
+**-Current item <>~
+}
+DE
+{
+**-aktueller Artikel <>~
+}
+FR
+{
+**-Article actuel <>~
+}
+ES
+{
+**-Artículo actual <>~
+}
+IT
+{
+**-articolo attuale <>~
+}
+
+C11:
+EN
+{
+**Select Product~
+}
+DE
+{
+**Produkt auswählen~
+}
+FR
+{
+**Sélectionner le produit~
+}
+ES
+{
+**Seleccione producto~
+}
+IT
+{
+** Scegliere prodotto~
+}
+
+C12:
+EN
+{
+**Program error~
+}
+DE
+{
+**Programmfehler~
+}
+FR
+{
+**Erreur de programme~
+}
+ES
+{
+**Error en el programa~
+}
+IT
+{
+**Errore del programma~
+}
+
+R1:
+EN
+{
+(SAM renewal date may be changed to a date between <> and <>.SAM plan price will be prorated to the new date)~
+}
+DE
+{
+(SAM Erneuerungsdatum kann zwischen <> und <> gewählt werden. Der SAM Preis wird dann für das neue Datum berechnet)~ 
+}
+FR
+{
+(La date du renouvellement du SAM peut être changée à la date entre le <> et le <>. Le prix du plan SAM va être calculé pour cette nouvelle date)~
+}
+ES
+{
+(La fecha de renovación del SAM plan puede ser cambiada a una fecha entre <> y <>. El precio del SAM plan será prorrateado a la nueva fecha)~
+}
+IT
+{
+(La data di rinnovo del piano SAM può essere tra <> e <>. Il prezzo del piano SAM verrà calcolato con la nuova data.)~
+}
+
+R2:
+EN
+{
+Renew <>:~
+Expiration date:~
+}
+DE
+{
+Renew <>:~
+Ablaufdatum:~
+}
+FR
+{
+Renew <>:~
+date d'expiration:~
+}
+ES
+{
+Renovar <>:~
+Fecha de expiración:~
+}
+IT
+{
+Rinnovo <>:~
+data di scadenza:~
+}
+
+R3:
+EN
+{
+(Renewal date may be changed to a date between <> and <>. Price will be prorated to the new date)~
+}
+DE
+{
+(Erneuerungsdatum kann zwischen <> und <> gewählt werden. Der Preis wird dann für das neue Datum berechnet)~ 
+}
+FR
+{
+(La date du renouvellement peut être changée à la date entre le <> et le <>. Le prix va être calculé pour cette nouvelle date)~
+}
+ES
+{
+(La fecha de renovación puede ser cambiada a una fecha entre <> y <>. El precio será prorrateado a la nueva fecha)~
+}
+IT
+{
+(La data di rinnovo può essere tra <> e <>. Il prezzo verrà calcolato con la nuova data.)~
+}
+
+R4:
+EN
+{
+Toggles automatic SAM Renewal invoice status to Inactive.~
+Toggles automatic SAM Renewal invoice status to Active.~
+}
+DE
+{
+Deaktivieren Sie die automatische Rechnung zur SAM Verlängerung~
+Aktivieren Sie die automatische Rechnung zur SAM Verlängerung~
+}
+FR
+{
+Désactivez la facturation automatique du renouvellement de votre plan SAM~
+Activez la facturation automatique du renouvellement de votre plan SAM~
+}
+ES
+{
+Habilita el estado Renovación automática de factura SAM como Inactiva~co
+Habilita el estado Renovación automática de factura SAM como Activa~
+}
+IT
+{
+Disattiva fattura automatico per rinnovo piano SAM~
+Attiva fattura automatico per rinnovo piano SAM~
+}
+
+R5:
+EN
+{
+Auto SAM renewal Active~
+Auto SAM renewal Inactive~
+}
+DE
+{
+Automatische Rechnung aktiv~
+Automatische Rechnung inaktiv~
+}
+FR
+{
+Facturation automatique activée~
+Facturation automatique désactivée~
+}
+ES
+{
+Renovación Auto SAM Activa~
+Renovación Auto SAM Inactiva~
+}
+IT
+{
+Fattura automatico attivo~
+Fattura automatico inattivo~
+}

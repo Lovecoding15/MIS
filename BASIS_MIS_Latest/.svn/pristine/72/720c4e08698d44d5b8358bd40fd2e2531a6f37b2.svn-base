@@ -1,0 +1,63 @@
+window.title=Edition données client
+advantage.label=Envoyer Advantage-Magazine
+announcements.label=Devrait recevoir les annonces marketing BASIS 
+save.button=Sauvegarder 
+comp.name.label=Société:
+contact.name.label=Contact
+addr.one.label=Adresse ligne 1:
+addr.two.label=Adresse ligne 2:
+addr.three.label=Adresse ligne 3:
+city.label=Ville:
+state.label=Région
+postal.code.label=Postale Code\:
+country.label=Pays:
+email.address.label=E-Mail:
+phone.number.label=Téléphone:
+industry.label=Secteur:
+other.desc.label=Autre / Description:
+basis.prod.label=Produit BASIS utilisé:
+app.mod.used.label=Module utilisé:
+select.end.user=Selectionnez un utilisateur existant\:
+end.user.nbr.label=Numéro client:
+ref.nbr.label=Référence # :
+end.user.ser.nbr.label=Numéro de série des clients
+unlinked.ser.nbr.label=Vos numéros de série sans liens
+clear.button=Effacer formulaire
+req.label=Requis
+toggle.button=Trier la liste dans un ordre différent
+toggle.button.tooltip=Cliquez ici pour changer l'ordre de sélection des enregistrements entre alphanumérique et numérique
+menu.file=Fichier
+menu.save.cur.eu=Sauvegarder client courant 
+menu.exit=Fermer
+menu.edit=Edition
+menu.actions=Actions
+
+save.question=Vous avez modifié cet enregistrement. Voulez-vous les sauvegrader.
+
+save.quesiton.title=Sauvegarder données client
+
+required.fields=Certains champs sont manquant. Ces champs sont marqués avec un label rouge ‘Requis’. Veuillez les corriger avant de pouvoir sauvegarder.
+
+required.fields.title=Champs requis manquant
+
+serial.number.input=Trouver le num\u00E9ro de s\u00E9rie\:
+
+get.Button=Trouver
+
+nonexistant.serialNbr=Le num\u00E9ro de s\u00E9rie demand\u00E9 par vous n'existe pas dans vos enregistrements.
+
+nonexistant.serialNbr.title=Pas trouv\u00E9
+
+unlinked.serialNbr=Le num\u00E9ro de s\u00E9rie saisi\u00E9 est valable, mais pas li\u00E9 \u00E0 un utilisateur final. Est-ce que vous d\u00E9sirez cr\u00E9er un enregistrement d'un nouveau utilisateur final?
+
+unlinked.serialNbr.title=Num\u00E9ro de s\u00E9rie pas li\u00E9
+
+back.button=Retour
+
+download.button=T\u00E9l\u00E9chargement
+
+merge.serialNbrs.question=Vous avez ajout\u00E9 un ou plusieurs num\u00E9ros de s\u00E9rie \u00E0 la liste des num\u00E9ros de s\u00E9rie \u00E0 lier. Voulez vous lier ces num\u00E9ros de s\u00E9rie \u00E0 l'utilisateur que vous avez s\u00E9lectionn\u00E9?
+
+merge.serialNbrs.quesiton.title=Fusionner les num\u00E9ro de s\u00E9rie
+
+contact.phone.label=T\u00E9l\u00E9phone Interlocuteur\:

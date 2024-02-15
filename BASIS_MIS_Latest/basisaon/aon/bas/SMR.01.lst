@@ -1,0 +1,132 @@
+0010 REM "SMR - Generate SAM Rebate Report"
+0020 REM "Program SMR.01"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| November 2006                                            |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0060 BEGIN 
+0080 SETERR 9000
+0090 SETESC 9000
+0100 REM " --- Open/Lock Files"
+0110 LET FILES=4
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 LET FILES$[1]="ARM-01",FILES$[2]="ARM-02",FILES$[3]="TMM-01"
+0140 LET FILES$[4]="SYS-01"
+0150 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0160 IF STATUS>0 THEN GOTO 9900
+0170 ARM01_DEV=CHANNELS[1],ARM02_DEV=CHANNELS[2],TMM01_DEV=CHANNELS[3]
+0180 SYS01_DEV=CHANNELS[4]
+0200 REM " --- IOLIST's"
+0210 call "templates.pgm::ARM01"
+0220 call "templates.pgm::ARM02"
+0270 call "templates.pgm::TMM01"
+0300 rem ' set dates
+0305 todayDate$ = date(0:"%Y%Mz%Dz")
+0310 yearEnd = num(todayDate$(1,4)) - 1
+0315 yearEnd$ = date(jul(yearEnd,12,31):"%Y%Mz%Dz")
+0320 pYearEnd = num(todayDate$(1,4)) - 2
+0325 pYearEnd$ = date(jul(pYearEnd,12,31):"%Y%Mz%Dz")
+0390 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET firm$=F0$(16,2)
+0500 REM " --- Initializations"
+0530 LET TITLE$="SAM Rebate Report CSV File"
+0700 REM " --- Background"
+0720 PRINT 'SB',@(3,4),"Customer:",@(3,5),"Email to:",'SF'
+1000 REM " --- Customer #"
+1005 customer:
+1010 PRINT 'CF'
+1020 LET V2$=""
+1040 LET V0$="S",V1$="EKC",V3$="",V0=6,V1=14,V2=4,V4$="Enter Customer#, Leave Blank for all Partners, or 999999 for Special Report "
+1050 GOSUB 7000
+1060 IF V3=4 THEN GOTO finish_up
+1065 cust$=cvs(v$,3) 
+1070 if cust$<>"" and cust$<> "999999" then 
+1080   cust$=STR(NUM(V$,ERR=customer):"000000")
+1090   READ RECORD(tmm01_dev,KEY=firm$+cust$+"000000",DOM=customer)tmm01$
+1100 fi
+1110 print @(v1,v2),cust$,
+1500 rem " --- Email"
+1510 email:
+1520 LET V2$=""
+1540 LET V0$="S",V1$="EKC",V3$="",V0=64,V1=14,V2=5,V4$="Enter Recipient Email Address"
+1550 GOSUB 7000
+1560 IF V3=4 THEN GOTO finish_up
+1570 email$=cvs(v$,3)
+1580 if email$="" or pos("@"=email$)=0 then goto email
+1590 input @(3,6),"Run report as of year end, as of today, or Prior year? Y/T/P ", repType$; repType$ = CVS(repType$,7)
+1600 if repType$ = "T" then
+1601   reportDate$ = todayDate$
+1602 else
+1603   if repType$ = "Y" then
+1604       reportDate$ = yearEnd$
+1605   else
+1606       reportDate$ = pYearEnd$
+1607   fi
+1608 fi
+1609 print @(0,6),'CL',@(3,6),"Report as of: " + reportDate$
+
+1610 input @(3,7),"With the (W)ide customer type list, (N) narrow or (A)ll customers? W/N/A ",custlist$
+1615 if custlist$="W" then
+1620    wide = 1
+1625 else
+1626    if custlist$ = "A" then
+1627        wide = 10
+1628    else
+1629        wide = 0
+1630    endif
+1635 endif
+
+1650 print @(v1,v2+4),"Working..."
+
+3000 if cust$="999999" then
+3005    call "sam_rebate_rpt_spec.pgm",firm$,cust$,email$,reportDate$, 0, wide
+3010 else
+3015    call "sam_rebate_rpt.pgm",firm$,cust$,email$,reportDate$, 0, wide
+3020 fi
+
+4500 finish_up:
+4560 goto 9900
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8500 def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9220 GOTO 0900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 REM " --- Return to menu"
+9950 RUN "SYS.AA"
+9999 END

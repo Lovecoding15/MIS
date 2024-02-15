@@ -1,0 +1,155 @@
+0010 seterr errlog
+0020 CALL "utaddr.wbb"
+0030 CALL "utcgi.wbb",ENV$,CGI$,HTML$
+0040 LET A$=OPTS; LET A$(4,1)=IOR($20$,A$(4,1)); SETOPTS A$
+0050 LET APP$=STBL("DATA_SERVER")+STBL("ADIR")
+0060 LET APPD$=STBL("APPDIRHOME")
+0070 rem LET TRACELOG$="/home/basis/pro5/appdir/trace.log",DEBUG=UNT; OPEN (DE
+0070:BUG)TRACELOG$; SETTRACE (DEBUG)
+0075 rem LET TRACELOG$="/home/basis/pro5/appdir/trace.log",DEBUG=UNT; OPEN (DE
+0075:BUG)TRACELOG$
+0080 seterr country_end
+0090 country$="US",country$=cvs(CGI.ctry$,7)
+0100 country_end: seterr errlog
+0110 SELECTION$=cvs(CGI.SEARCHTEXT$,7)
+0120 header$="{include eng_header.txt}"
+0130 txt1$="BASIS International Application/Service Directory."
+0140 txt2$="The following are the results of your query:"
+0150 txt3$="Select an entry"
+0160 footer$="{include eng_footer.txt}"
+0170 btn$="Retrieve"
+0180 ttl$="BASIS Intl Application/Service Directory"
+0190 if country$="DE" then header$="{include ger_header.txt}",footer$="{includ
+0190:e ger_footer.txt}"
+0200 if country$="FR" then header$="{include fra_header.txt}",footer$="{includ
+0200:e fra_footer.txt}"
+0205 gosub get_translation
+0207 rem print(debug)fattr(cgi$);print(debug)cgi$
+0210 if country$<>"US" then goto end_state
+0220 LET STATECHN=UNT
+0230 OPEN (STATECHN,ERR=end_state)APP$+"state"
+0240 read_state:
+0250 READ (STATECHN,END=end_state)NAME$
+0260 IF POS(SELECTION$=NAME$)=1 THEN SELECTION$=NAME$(1,2) ELSE GOTO read_stat
+0260:e
+0270 CLOSE (STATECHN)
+0280 end_state:
+0290 LET HTML$=header$
+0300 CALL "uttags.wbb","H2",txt1$,HTML$
+0310 CALL "uttags.wbb","H2",txt2$,HTML$
+0320 CALL "uttags.wbb","H2",txt3$,HTML$
+0330 REM define the template
+0340 LET DATA_RECP$="FIRM:C(2),CUSTID:C(8*=10),NAME:C(36*=10),ADDRESS1:C(32*=1
+0340:0),ADDRESS2:C(32*=10),CITY:C(32*=10),STATE:C(20*=10),POSTALCODE:C(10*=10)
+0340:,COUNTRY:C(16*=10),CONTACT:C(32*=10),PHONE:C(18*=10),FAX:C(18*=10),EMAIL:
+0340:C(50*=10),WEBSITE:C(50*=10),CAT1:C(32),CAT2:C(32),CAT3:C(32),CAT4:C(32),C
+0340:AT5:C(32),TEXT1:C(36*=10),TEXT2:C(36*=10),GRAPHIC1:C(36*=10),GRAPHIC2:C(3
+0340:6*=10),HTML:C(36*=10),LANGUAGE:C(1*=10),SHOW:C(1*=10),KEYWORDS:C(36*=10)"
+0350 gosub dimrs
+0360 DIM DATARECP$:DATA_RECP$
+0370 DIM DATARECR$:DATA_RES$
+0380 REM open the datafile
+0390 LET RSL=UNT; OPEN (RSL)STBL("DATA_SERVER")+STBL("PDIR")+"reseller"
+0400 LET PROD=UNT; OPEN (PROD)APP$+"PRODUCTS"
+0410 REM loop the file and build the option entries for the select control
+0420 EXTRACT (RSL,KEY="",KNUM=1,DOM=main_loop)
+0430 MAIN_LOOP: 
+0440 READ RECORD(RSL,END=END_LOOP)DATARECR$
+0450 if country$="US" then
+0460   if DATARECR.STATE$<>SELECTION$ THEN GOTO main_loop
+0470 else
+0480   if pos(selection$=cvs(DATARECR.country$,7))<>1 THEN GOTO main_loop
+0490 fi
+0500 K$=DATARECR.FIRM$+DATARECR.CUST_NUM$
+0510 READ (PROD,KEY=K$+"00",DOM=MAIN_LOOP)
+0520 LET TYPE$=DATARECR.COMPANY$
+0530 LET X=POS(TYPE$+$0A$=LIST$)
+0540 IF X=0 THEN LET LIST$=LIST$+"<option value="+K$+">"+TYPE$+$0D0A$
+0550 GOTO MAIN_LOOP
+0560 END_LOOP: 
+0570 ENDTRACE
+0580 IF LIST$="" THEN LET LIST$="No items found"+"<option>"+TYPE$+$0D0A$
+0590 REM create the hidden control
+0600 CALL "uttags.wbb","hidden style","COMPANYNAME",HIDDEN$
+0610 REM create the select control
+0620 LET LIST$=HIDDEN$+"<SELECT NAME="+CHR(34)+"searchtext"+CHR(34)+" SIZE=8>"
+0620:+LIST$+"</SELECT>"
+0630 REM add the submit / search button
+0640 CALL "uttags.wbb","br","",LIST$
+0650 CALL "uttags.wbb","br","",LIST$
+0660 CALL "uttags.wbb","submit choice",btn$,LIST$
+0670 CALL "uttags.wbb","br","",LIST$; CALL "uttags.wbb","br","",LIST$
+0680 REM " "uttags.wbb","href appdir-state.sh","Return to State Selection",LIS
+0680:T$
+0690 REM " "uttags.wbb","br","",LIST$
+0700 REM CALL "uttags.wbb","href appdir.sh","Return to the Menu",LIST$
+0710 CALL "uttags.wbb","br","",LIST$
+0720 REM wrap the form tags around the form with the post url
+0730 CALL "uttags.wbb","form appdir-show.sh",LIST$,HTML$
+0740 LET HTML$=HTML$+footer$
+0750 CALL "uttags.wbb","HTML",HTML$,FINALHTML$
+0810 CALL "uthtmout.wbb",ENV$,FINALHTML$+"",FINALHTML$,""
+0820 CALL "utsend.wbb",FINALHTML$
+0830 CALL "utexit.wbb",CGI$
+0835 rem gosub save_html
+0840 RELEASE 
+0850 errlog:
+0860 LET TRACELOG$="/home/basis/pro5/appdir/trace.log",DEBUG=UNT
+0870 OPEN (DEBUG)TRACELOG$
+0880 print(debug)"Err "+str(err)+" in "+str(tcb(5))
+0890 close(debug)
+0900 seterr 0
+0910 retry
+0920 dimrs:
+0930 x1$="firm:c(2),cust_num:c(6),password:c(6*),"
+0940 xx$="company:c(30*),addr1:c(30),addr2:c(30),addr3:c(30),addr4:c(30),city:
+0940:c(25),state:c(2),zip:c(9),country:c(15),phone:c(14),fax:c(14)"
+0950 xx$=xx$+",contact1:c(30),cont1_title:c(18),cont1_same:c(1),cont1_email:c(
+0950:80),cont1_addr1:c(30),cont1_addr2:c(30),cont1_city:c(25),cont1_state:c(2)
+0950:,cont1_zip:c(9),cont1_country:c(24),cont1_phone:c(14),cont1_ext:c(6),cont
+0950:1_ap:c(1)"
+0960 xx$=xx$+",contact2:c(30),cont2_title:c(18),cont2_same:c(1),cont2_email:c(
+0960:80),cont2_addr1:c(30),cont2_addr2:c(30),cont2_city:c(25),cont2_state:c(2)
+0960:,cont2_zip:c(9),cont2_country:c(24),cont2_phone:c(14),cont2_ext:c(6),cont
+0960:2_adv:c(1),cont2_ann:c(1),cont2_ap:c(1)"
+0970 xx$=xx$+",contact3:c(30),cont3_title:c(18),cont3_same:c(1),cont3_email:c(
+0970:80),cont3_addr1:c(30),cont3_addr2:c(30),cont3_city:c(25),cont3_state:c(2)
+0970:,cont3_zip:c(9),cont3_country:c(24),cont3_phone:c(14),cont3_ext:c(6),cont
+0970:3_adv:c(1),cont3_ann:c(1),cont3_ap:c(1)"
+0980 xx$=xx$+",contact4:c(30),cont4_title:c(18),cont4_same:c(1),cont4_email:c(
+0980:80),cont4_addr1:c(30),cont4_addr2:c(30),cont4_city:c(25),cont4_state:c(2)
+0980:,cont4_zip:c(9),cont4_country:c(24),cont4_phone:c(14),cont4_ext:c(6),cont
+0980:4_adv:c(1),cont4_ann:c(1),cont4_ap:c(1)"
+0990 data_res$=x1$+xx$+",cust_type:c(3)"
+1000 return
+1750 get_translation:
+1770 ttx=unt
+1780 open(ttx,err=end_get_translation)"appdir_translation.txt"
+1790 fin$=fin(ttx)
+1800 sz=dec(fin$(1,4))
+1810 readrecord(ttx,siz=sz)trans$
+1820 srch$=country$+"1";gosub translation;if temp$<>"" then txt1$=temp$
+1830 srch$=country$+"2";gosub translation;if temp$<>"" then txt2$=temp$
+1840 srch$=country$+"3";gosub translation;if temp$<>"" then txt3$=temp$
+1850 srch$=country$+"4";gosub translation;if temp$<>"" then btn$=temp$
+1890 end_get_translation:
+1900 return
+1910 translation:
+1920 temp$=""
+1930 p=pos(srch$+":"=trans$)
+1940 if p=0 then return
+1950 temp$=trans$(p+len(srch$))
+1960 p=pos("{"=temp$);if p=0 then temp$="";return
+1970 temp$=temp$(p+1)
+1980 p=pos("}"=temp$);if p<2 then temp$="";return
+1990 temp$=temp$(1,p-1)
+2000 return
+
+2500 save_html:
+2510 sv$="/home/basis/pro5/appdir/saved_showstate.html"
+2520 erase sv$,err=*next
+2530 string sv$,err=*next
+2540 sv=unt,ok=0
+2550 open(sv,err=*next)sv$;ok=1
+2560 if ok then print(sv)html$;close(sv)
+2590 return

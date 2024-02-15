@@ -1,0 +1,192 @@
+// Unlink clients and ODBCs from data servers manually  <aon_misc8>
+
+if pos(info(3,2)="cdinkel  gparra   sportwo  gcorcor  thines   ")=0 then
+{ pause/message="Restricted to customer service."; exit; }
+
+loop:
+set display term();
+display/form="MAS_HEAD" firm_name=""
+	screen_desc="Unlink Clients from Server";
+snt02.data_server=fill(20);
+prompt for
+	/prompt="Data server serial number"
+	/notitle
+	/imask="ZZZNNNNNN"
+	/drop
+	/search=sn_head_src
+	/help="(#F7)=search (#F6)=exit"
+snt02.data_server;
+
+serial$=snt02.data_server+fill(20);ds_serial$=serial$(1,20);
+
+find/next/noerror snt02 using ds_serial$;
+if available(snt02)=0 or snt02.data_server<>ds_serial$ then
+	{
+	pause/message="No serial numbers linked to "+ds_serial$;
+	goto loop;
+	}
+
+display/form="MAS_HEAD" firm_name=""
+	screen_desc="Unlink from D/S "+ds_serial$;
+
+create temporary table dslist
+    serial_num char(20)/unique     
+    port char(5)       
+    cust_name char(30)      
+    selected char(1) ;       
+
+for each snt02 where data_server=ds_serial$
+	{
+	serial$=snt02.serial_nbr;
+	gosub find_header;
+	dslist.serial_num=serial$;
+	dslist.cust_name=cust$;
+	dslist.port=port$;
+	dslist.selected=" ";
+	insert dslist;
+	}
+
+find/first/noerror dslist;
+if available(dslist)=0 then
+	{
+	pause/message="No serial numbers linked to "+ds_serial$;
+	goto loop;
+	}
+
+do_selection:
+choose/record
+	/rewind
+	/upper
+	/ctl(0)=toggle_one
+	/ctl(53)=toggle_all
+	/title="@Serial#|Port|Customer|Select?"
+	/display=dslist.serial_num+"|"+port+"|"+cust_name+"|"+
+		"   "+selected+"   "
+	/help="(#F0)=select/deselect  (#F53)=select/deselect all  (#F2)=done  (#F6)=cancel"
+	/colchar="|"
+	/rows=10
+	/nobreak
+	/secure
+	/drop
+	dslist;
+if ctl(6) then goto loop;
+
+if sn_selected=0 then
+	{
+	pause/message="No serial#'s selected";
+	goto loop;
+	}
+get_action:
+action$="Y";
+prompt for
+    /nobox
+    /row=23
+    /imask="A"
+    /prompt="Is the above correct? (Yes, No, End)"
+    /drop
+    action$;
+if ctl(6) then goto loop;
+
+switch action$
+    	{
+    	case "Y": {}
+    	case "N": goto do_selection;
+    	case "E": exit;
+    	default:  goto get_action;
+	}
+
+display $$;
+for each dslist where selected="Y"
+	{
+	find/next/noerror snt01 using dslist.serial_num;
+	nxt_snt01:
+	if available(snt01) and snt01.serial_nbr=dslist.serial_num then
+		{ snt01.server_nbr=fill(20);
+		update snt01;
+		find/next/noerror snt01; goto nxt_snt01;}
+	find/next/noerror/index=indx2 snt02 using dslist.serial_num;
+	nxt_snt02:
+	if available(snt02) and snt02.serial_nbr=dslist.serial_num then
+		{
+		display "Deleted link:" cvs(snt02.data_server,2)+" "+sn_serv_seq+" "+serial_nbr/len=45;
+		delete snt02;
+		find/next/noerror/index=indx2 snt02;
+		goto nxt_snt02;
+		}
+	}
+goto loop;
+
+subroutine sn_head_src
+{
+choose/record
+	/rewind
+	/upper
+	/title="@D/S Serial# | Client/ODBC"
+	/display=snt02.data_server+" | "+serial_nbr
+	/help="Select a serial number  (#F6)=exit"
+	/colchar="|"
+	/rows=15
+	/nobreak
+	/secure
+	/drop
+	snt02 where cvs(data_server,2)>" ";
+}
+
+subroutine find_header
+{
+port$="????";
+find/noerror snm01 using serial$;
+if available(snm01) then port$=snm01.port_id;
+cust$="**NOT ON FILE**";
+find/noerror arm01 using snm01.firm_id+customer_nbr;
+if available(arm01) then cust$=arm01.cust_name;
+}
+
+subroutine toggle_one
+{
+if dslist.selected=" " then
+	{
+	dslist.selected="Y";
+	sn_selected=sn_selected+1;
+	}
+else
+	{
+	dslist.selected=" ";
+	sn_selected=sn_selected-1;
+	}
+update dslist;
+}
+
+subroutine toggle_all
+{
+choose/traditional
+	/row=15
+	/secure
+	toggle from
+	"Select all serial#'s"
+	"Deselect all serial#'s";
+
+for each dslist
+    {
+    if toggle=0
+        {
+        if dslist.selected<>"Y" then
+            {
+            sn_selected=sn_selected+1;
+            dslist.selected="Y";
+            }
+        }
+    else                                                                
+        {                                                               
+        if dslist.selected="Y" then 
+            {                                                           
+            sn_selected=sn_selected-1;                        
+            dslist.selected=" "; 
+            }                                                           
+        }                                                               
+    update dslist;
+    }                                                                   
+find/first dslist;
+}
+
+//

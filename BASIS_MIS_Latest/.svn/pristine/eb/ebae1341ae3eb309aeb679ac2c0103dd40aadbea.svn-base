@@ -1,0 +1,63 @@
+window.title=Modifica dati dell`utente finale
+advantage.label=Invio della rivista Advantage
+announcements.label=Annunci di BASIS Marketing
+save.button=Salva 
+comp.name.label=Nome della compagnia\:
+contact.name.label=Nome del contatto\:
+addr.one.label=Indirizzo riga 1\:
+addr.two.label=Indirizzo riga 2\:
+addr.three.label=Indirizzo riga 3\:
+city.label=Citt\u00E0\:
+state.label=Regione\:
+postal.code.label=C.A.P.\:
+country.label=Paese\:
+email.address.label=Indirizzo Email\:
+phone.number.label=No. telefonico
+industry.label=Settore\:
+other.desc.label=Altro\:
+basis.prod.label=Utilizzo del prodotto BASIS\:
+app.mod.used.label=Utilizzo dei moduli\:
+select.end.user=Selezionare un utente finale esistente\:
+end.user.nbr.label=Codice utente finale\:
+ref.nbr.label=No. di referenza\#\:
+end.user.ser.nbr.label=Numeri di serie dell`utente finale
+unlinked.ser.nbr.label=Vostre numeri di serie non sono collegati
+clear.button=Cancella formulario
+req.label=Richiesto
+toggle.button=Cambiare ordine di successione
+toggle.button.tooltip=Clicca qui per cambiare l`ordine di successione tra alfanumerico e numerico
+menu.file=File
+menu.save.cur.eu=Salva dati dell`utente finale
+menu.exit=Uscita
+menu.edit=Editare
+menu.actions=Azione
+
+save.question=Salvare le modifiche? 
+
+save.quesiton.title=Salva dati dell`utente finale
+
+required.fields=Alcuni campi necessari mancano. Questi sono marchati in rosso. Si prega di completare questi campi prima di salvare.
+
+required.fields.title=Mancano i dati richieste
+
+serial.number.input=Trova numero di serie\:
+
+get.Button=Trova
+
+nonexistant.serialNbr=Il numero di serie da Lei richiesto non esiste nel record.
+
+nonexistant.serialNbr.title=Non trovato
+
+unlinked.serialNbr=Il numero di serie inserito \u00E8 valido, ma non \u00E8 collegato a un utente finale.Vuole creare un nuovo record di un utente finale?
+
+unlinked.serialNbr.title=Numero di serie non collegato 
+
+back.button=Indietro
+
+download.button=Downloads
+
+merge.serialNbrs.question=Lei ha aggiunto uno o pi\u00F9 numeri di serie sulla lista di associazione delle numeri di serie.Vuole aggiungere questi con i numeri di serie dell`utente selezionato?
+
+merge.serialNbrs.quesiton.title=Unire numeri di serie 
+
+contact.phone.label=No.di telefono del contatto\:

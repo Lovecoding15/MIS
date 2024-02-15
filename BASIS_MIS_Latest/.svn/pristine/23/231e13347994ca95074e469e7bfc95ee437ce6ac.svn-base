@@ -1,0 +1,132 @@
+begin
+filnam$="/mnt/data/basisaon/aon/ADATA/emxref.dat"
+a=scall("mv "+filnam$+" "+filnam$+".bak")
+XKEYED filnam$,[1:1:94],[1:81:14],0,150
+call "ec_open::emxref"
+call "ec_open::tmm01"
+tmm05:
+call "ec_open::tmm05"
+f$="tmm05"
+while 1
+  readrecord(tmm05,end=*break)tmm05$
+  email$=tmm05.email$
+  k$=tmm05.firm_id$+tmm05.customer_nbr$+tmm05.tm_number$
+  gosub process_email
+wend
+close(tmm05)
+
+tmm03:
+call "ec_open::tmm03"
+f$="tmm03"
+while 1
+  readrecord(tmm03,end=*break)tmm03$
+  k$=tmm03.firm_id$+tmm03.customer_nbr$+tmm03.tm_number$
+  email$=tmm03.e_mail$
+  gosub process_email
+wend
+close(tmm03)
+
+ecm01:
+call "ec_open::ecm01"
+f$="ecm01"
+while 1
+  readrecord(ecm01,end=*break)ecm01$
+  k$=ecm01.firm_id$+ecm01.customer_nbr$+"000000"
+  email$=ecm01.e_mail$
+  gosub process_email
+  email$=ecm01.e_mail2$
+  gosub process_email
+wend
+close(ecm01)
+
+smc01:
+call "ec_open::smc01"
+f$="smc01"
+while 1
+  readrecord(smc01,end=*break)smc01$
+  k$=smc01.firm_id$+smc01.customer_nbr$+"000000"
+  email$=smc01.e_mail$
+  gosub process_email
+wend
+close(smc01)
+close(emxref)
+goto end_pgm
+
+process_email:
+email$=cvs(email$,11)
+while 1
+  p=pos(","=email$)
+  if p then email$(p,1)=";"
+  p1=pos("<"=email$)
+  if p1 then 
+    if p1=1 then email$=email$(2) else email$=email$(1,p1-1)+email$(p1+1)
+  fi
+  p2=pos(">"=email$)
+  if p2 then 
+    if p2=1 then email$=email$(2) else email$=email$(1,p2-1)+email$(p2+1)
+  fi
+  if p+p1+p2=0 then break
+wend
+while 1
+  if email$="" then break
+  x$=cvs(email$,3)
+  p=pos(";"=email$)
+  if p then 
+    x$=cvs(email$(1,p-1),3)
+    email$=email$(p+1)
+  else
+    email$=""
+  fi
+  l1=len(x$)
+  p=pos("@"=x$)
+  if p<2 or p>l1-2 then continue
+  dim emxref$:fattr(emxref$)
+  emxref.email$=x$
+  emxref.firm_id$=k$(1,2)
+  emxref.customer_nbr$=k$(3,6)
+  emxref.tm_number$=k$(9,6)
+  readrecord(emxref,key=emxref$(1,94),dom=*next)emxref$
+  if f$="tmm03" then 
+    emxref.tmm03_yn$="Y"
+    emxref.primary_contact$=tmm03.primary_contact$
+    emxref.ap_contact$=tmm03.ap_contact$
+    emxref.sam_contact$=tmm03.sam_contact$
+    emxref.advantage$=tmm03.send_lit$
+    emxref.announcements$=tmm03.announcements$
+  fi
+  if f$="tmm05" then emxref.tmm05_yn$="Y"
+  if f$="ecm01" then emxref.ecm01_yn$="Y"
+  if f$="smc01" then emxref.smc01_yn$="Y"
+  tmm01.cust_type$="   "
+  readrecord(tmm01,key=k$,dom=*next)tmm01$
+  emxref.cust_type$=tmm01.cust_type$
+  emxref.available$=fill(42)
+  emxref$=field(emxref$)
+  writerecord(emxref)emxref$
+wend
+return
+
+end_pgm:
+subj$="Email xref rebuilt",msg$=""
+goto send_msg
+err_msg:
+subj$="Email xref error"
+msg$="Error "+str(err)+" in "+str(tcb(5))+" of "+pgm(-2)
+send_msg:
+rem 'stop sending daily status email - send only err msg
+if msg$<>"" then
+  to$="mis@basis.cloud",from$="customer-service@basis.cloud"
+  clock$=date(0:"%Hz%mz%sz")
+  hdr$="To: "+to$+$0A$+"From: "+from$+$0A$+"Subject: "+Subj$+$0A$+$0A$
+  hdr$=hdr$+msg$+$0a$
+  tmpfile$=stbl("TEMP")+clock$+"emxref.txt"
+  erase tmpfile$,err=*next
+  string tmpfile$
+  tmp=unt
+  open(tmp)tmpfile$
+  writerecord(tmp)hdr$
+  close(tmp)
+  a=scall("/usr/lib/sendmail -t < "+tmpfile$)
+  erase tmpfile$,err=*next
+fi
+release

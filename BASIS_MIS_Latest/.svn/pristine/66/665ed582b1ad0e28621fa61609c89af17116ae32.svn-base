@@ -1,0 +1,20 @@
+[smtp]
+key=demo
+
+# server is used by smtpcall.exe
+server=mail
+
+# from is default 'from' address included in mail
+from=customer-service@basis.cloud
+
+# mailer is a system executable command line to submit a mail file to.
+# Must be command line to automatically submit mail, given that %
+# will be substituted for rfc822 mail data file.  For mmdf installations,
+# use submit.  For Windows, use mailcall.exe.
+mailer=/usr/bin/sendmail -t <%
+# mailer=mailcall.exe %
+# mailer=echo $LOGNAME >%2; cat % >>%2; /usr/mmdf/bin/submit -uxto,cc* <%2; rm %2
+
+# time zone is only for Windows.  Unix systems get this from date command.
+timezone=MDT
+

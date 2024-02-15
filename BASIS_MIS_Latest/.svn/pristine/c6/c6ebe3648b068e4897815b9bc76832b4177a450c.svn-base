@@ -1,0 +1,43 @@
+Table Definition Module
+FUT_SNT01 - Serial Number Detail
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SNT01^/mnt/data/aon_prod/apps/fileutil/;^BSHO;^^^Serial Number Detail^Serial Number Detail^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+SERIAL_NBR^FUT_SNT01^001^C^^3001^ine_serial_nbr^0^^^1^^Y^^^^^FUT_SERIAL_NBR^Serial Number (Basis)^Serial Number (Basis)^Serial Number (Basis)^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Serial Number (Basis)^^^^^^^N^
+TRANS_DATE^FUT_SNT01^002^C^^^^^^^2^^Y^^^^^FUT_TRANS_DATE^Transaction Date^Transaction Date^Transaction Date^C^^H^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Transaction Date^^^^^^^N^
+SN_DET_SEQ^FUT_SNT01^003^C^^3002^ine_sn_det_seq^0^^^3^^Y^^^^^FUT_SN_DET_SEQ^Serial Number Detail Sequence^Serial NBr Detail Seq^Serial Number Detail Sequence^C^^E^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^Enter Serial Number Detail Seq^^^^^^^Y^
+CUSTOMER_NBR^FUT_SNT01^004^C^^3003^dis_customer_nbr^0^^^4^^N^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^Enter Customer Number^^^0^^^^N^
+AR_INV_NBR^FUT_SNT01^005^C^^3004^ine_ar_inv_nbr^0^^^5^^N^^^^^FUT_AR_INV_NBR^A/R Invoice Number^A/R Invoice Number^A/R Invoice Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^0^Enter A/R Invoice Number^^^^^^^N^
+SEQUENCE_NBR^FUT_SNT01^006^C^^3005^ine_sequence_nbr^0^^^6^^N^^^^^FUT_SEQUENCE_NBR^Sequence Number^Sequence Number^Sequence Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Sequence Number^^^^^^^N^
+TYPE_OF_SALE^FUT_SNT01^007^C^^3006^ine_type_of_sale^0^^^7^^N^^^^^FUT_TYPE_OF_SALE^Configurator Type of Sale ID^Configurator Type of Sale Id^Configurator Type of Sale Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Configurator Type of Sal^^^^^^^N^
+PRODUCT_REV^FUT_SNT01^008^C^^3007^ine_product_rev^0^^^8^^N^^^^^FUT_PRODUCT_REV^Product Revision ID^Product Revision Id^Product Revision Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Product Revision ID^^^^^^^N^
+AUTH_CODE^FUT_SNT01^009^C^^3008^ine_auth_code^0^^^9^^N^^^^^FUT_AUTH_CODE^Authorization Code^Authorization Code^Authorization Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^15^^^^^^^^^^^0^Enter Authorization Code^^^^^^^N^
+SERVER_NBR^FUT_SNT01^010^C^^3009^ine_server_nbr^0^^^10^^N^^^^^FUT_SERVER_NBR^Server Serial Number^Server Serial Number^Server Serial Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Server Serial Number^^^^^^^Y^
+FIRM_ID^FUT_SNT01^011^C^^3010^ine_firm_id^0^^^11^^N^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Firm ID^^^^^^^N^
+ACTION^FUT_SNT01^012^C^^3011^ine_action^0^^^12^^N^^^^^FUT_ACTION^Modify, Activate, Deactivate^Mod, Act, Deact^Modify, Activate, Deactivate^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Modify, Activate, Deacti^^^^^^^N^
+FIXED_FLOAT^FUT_SNT01^013^C^^3012^ine_fixed_float^0^^^13^^N^^^^^FUT_FIXED_FLOAT^Fixed or Floating License^Fixed or Floating License^Fixed or Floating License^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Fixed or Floating Licens^^^^^^^N^
+CONTRACT^FUT_SNT01^014^C^^3013^ine_contract^0^^^14^^N^^^^^FUT_CONTRACT^SAM/Developer Contract^SAM/Developer Contract^SAM/Developer Contract^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^2^^^^^^^^N^
+SAM_ACTIVE^FUT_SNT01^015^C^^3014^ine_sam_active^0^^^15^^N^^^^^FUT_SAM_ACTIVE^SAM Contract Active^SAM Contract Active^SAM Contract Active^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+ITEM^FUT_SNT01^016^C^^3015^ine_item^0^^^16^^N^^^^^FUT_ITEM^Item^Item^Item^C^^E^^^^^^^^^^^^^^^^^^^^^^^15^^^^^^^^^^^2^^^^^^^^N^
+DEALER_STR^FUT_SNT01^017^C^^3016^ine_dealer_str^0^^^17^^N^^^^^FUT_DEALER_STR^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^C^^E^^^^0^^^^^^^^^^^^^^^^^^^14^^^^^^^^^^^0^Enter Reserved For Dealer Use^^^^^^^Y^
+USERS^FUT_SNT01^018^C^^3017^inn_users^0^^^18^^N^^^^^FUT_USERS^Number of users^Number of users^Number of users^N^^N^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^Enter Number of users^^^^^^^Y^
+EXT_PRICE^FUT_SNT01^019^C^^3018^inn_ext_price^0^^^19^^N^^^^^FUT_EXT_PRICE^Extended Price^Extended Price^Extended Price^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Extended Price^^^^^^^Y^
+LICENSE_CNT^FUT_SNT01^020^C^^3019^inn_license_cnt^0^^^20^^N^^^^^FUT_LICENSE_CNT^License Count^License Count^License Count^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter License Count^^^^^^^Y^
+DEALER_NUM_1^FUT_SNT01^021^C^^3020^inn_dealer_num_1^0^^^21^^N^^^^^FUT_DEALER_NUM_1^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^Enter Reserved For Dealer Use^^^^^^^Y^
+DEALER_NUM_2^FUT_SNT01^022^C^^3021^inn_dealer_num_2^0^^^22^^N^^^^^FUT_DEALER_NUM_2^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^Enter Reserved For Dealer Use^^^^^^^Y^
+DEALER_NUM_3^FUT_SNT01^023^C^^3022^inn_dealer_num_3^0^^^23^^N^^^^^FUT_DEALER_NUM_3^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^Enter Reserved For Dealer Use^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SNT01^PRIMARY^FUT_SNT01.SERIAL_NBR                    FUT_SNT01.TRANS_DATE                    FUT_SNT01.SN_DET_SEQ                    ^FUT_SNT01.SERIAL_NBR$+FUT_SNT01.TRANS_DATE$+FUT_SNT01.SN_DET_SEQ$^RD_REC_DATA.SERIAL_NBR$+RD_REC_DATA.TRANS_DATE$+RD_REC_DATA.SN_DET_SEQ$^RD_REC_DATA.SERIAL_NBR$                 RD_REC_DATA.TRANS_DATE$                 RD_REC_DATA.SN_DET_SEQ$                 
+{KeyDefsEnd}
+{GridCols}
+001FUT_SNT01.SERIAL_NBR                    ;003FUT_SNT01.SN_DET_SEQ                    ;004FUT_SNT01.CUSTOMER_NBR                  ;005FUT_SNT01.AR_INV_NBR                    ;006FUT_SNT01.SEQUENCE_NBR                  ;007FUT_SNT01.TYPE_OF_SALE                  ;008FUT_SNT01.PRODUCT_REV                   ;009FUT_SNT01.AUTH_CODE                     ;010FUT_SNT01.SERVER_NBR                    ;011FUT_SNT01.FIRM_ID                       ;012FUT_SNT01.ACTION                        ;013FUT_SNT01.FIXED_FLOAT                   ;014FUT_SNT01.CONTRACT                      ;015FUT_SNT01.SAM_ACTIVE                    ;016FUT_SNT01.ITEM                          ;017FUT_SNT01.DEALER_STR                    ;018FUT_SNT01.USERS                         ;019FUT_SNT01.EXT_PRICE                     ;020FUT_SNT01.LICENSE_CNT                   ;021FUT_SNT01.DEALER_NUM_1                  ;022FUT_SNT01.DEALER_NUM_2                  ;023FUT_SNT01.DEALER_NUM_3                  ;
+{GridColsEnd}

@@ -1,0 +1,378 @@
+rem ' custom object to hold an open invoice and return information about it
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+
+class public OpenInvoice
+
+	field private BBjString firmId$
+	field private BBjString customerNbr$
+	field private BBjString invoiceNbr$
+	field private BBjInt isOpenInvoice%
+	field private BBjInt isSAMRenew%
+        field private BBjInt isSAMRebate%
+        field private BBjInt isSAMRebateEligible%
+        field private BBjNumber eligibleRebateAmount
+	field private BBjNumber invoiceBalance
+        
+	method public OpenInvoice(BBjString firmId$, BBjString customerNbr$, BBjString invoiceNbr$)
+	
+		checkARE11 = 1
+		#InitInvoice(firmId$, customerNbr$, invoiceNbr$, checkARE11 = 1)
+		
+	methodend
+	
+	method public OpenInvoice(BBjString firmId$, BBjString customerNbr$, BBjString invoiceNbr$, BBjNumber checkARE11)
+                
+                #InitInvoice(firmId$, customerNbr$, invoiceNbr$, checkARE11)
+                
+        methodend
+
+	method private void InitInvoice(BBjString firmId$, BBjString customerNbr$, BBjString invoiceNbr$, BBjNumber checkARE11)
+	
+                DECLARE BBjRecordSet invoiceRecordSet!
+                DECLARE BBjRecordSet detailRecordSet!
+                DECLARE BBjRecordSet cashReceiptsDetail!
+                DECLARE BBjRecordSet invoiceHistRecordSet!
+                DECLARE BBjRecordSet lineItemDetailRecordSet!
+                DECLARE BBjRecordData invoiceRecordData!
+                DECLARE BBjRecordData detailRecordData!
+                DECLARE BBjRecordData cashReceiptsRecordData!
+                DECLARE BBjRecordData invoiceHistRecordData!
+                DECLARE BBjRecordData lineItemDetailRecordData!
+                		
+		#firmId$ = firmId$
+		#customerNbr$ = customerNbr$
+		#invoiceNbr$ = invoiceNbr$
+		
+		sql_1$ = "SELECT * FROM ART01 WHERE FIRM_ID = '" + firmId$ + "' AND AR_TYPE = '  ' AND "
+		sql_1$ = sql_1$ + " CUSTOMER_NBR = '" + customerNbr$ + "' AND AR_INV_NBR = '" + invoiceNbr$ + "' AND SEQUENCE_00 = '00'"
+		
+		sqlURL$ = #getSQLURL()
+		
+		precision 8
+		invoiceRecordSet! = BBjAPI().createSQLRecordSet(sqlURL$,"",sql_1$)
+                
+                if invoiceRecordSet!.isEmpty() then
+                    
+                    rem ' not an open invoice
+                    #isOpenInvoice% = 0
+
+		else
+                    
+                    invoiceRecordSet!.first()
+                    invoiceRecordData! = invoiceRecordSet!.getCurrentRecordData()
+                    
+                    balance = num(invoiceRecordData!.getFieldValue("INVOICE_AMT"))
+
+                    rem ' is it a SAM Rebate credit
+                    sql_3$ = "SELECT * FROM ART03 WHERE FIRM_ID = '" + firmId$ + "' AND AR_TYPE = '  ' AND "
+                    sql_3$ = sql_3$ + " CUSTOMER_NBR = '" + customerNbr$ + "' AND AR_INV_NBR = '" + invoiceNbr$ + "' AND SEQUENCE_000 = '000'"
+
+                    
+                    invoiceHistRecordSet! = BBjAPI().createSQLRecordSet(sqlURL$,"",sql_3$)
+                                        
+                    if invoiceHistRecordSet!.isEmpty() then
+                        
+                        #isSAMRebate% = 0 
+                        #isSAMRenew% = 0
+
+                    else
+
+                        invoiceHistRecordData! = invoiceHistRecordSet!.getCurrentRecordData()
+                        
+                        discountPercentage$ = invoiceHistRecordData!.getFieldValue("DISC_CODE")
+                        
+                        poNumber$ = invoiceHistRecordData!.getFieldValue("AR_PO_NUMBER")
+                        if cvs(poNumber$,3) = "Incentive" then
+                            #isSAMRebate% = 1
+                        else
+                            #isSAMRebate% = 0
+                        fi
+                        if cvs(poNumber$,3) = "SAM Renew" then
+                            #isSAMRenew% = 1
+                        else
+                            #isSAMRenew% = 0
+                        fi
+                    fi
+
+                    rem ' get the detail on this invoice to detirmine the balance
+                    sql_2$ = "SELECT * FROM ART11 WHERE FIRM_ID = '" + firmId$ + "' AND AR_TYPE = '  ' AND "
+                    sql_2$ = sql_2$ + " CUSTOMER_NBR = '" + customerNbr$ + "' AND AR_INV_NBR = '" + invoiceNbr$ + "'"
+
+		    sql_5$ = "SELECT * FROM ARE11 WHERE FIRM_ID = '" + firmId$ + "' AND CUSTOMER_NBR = '" + customerNbr$ + "' "
+		    sql_5$ = sql_5$ + "AND AR_INV_NBR = '" + invoiceNbr$ + "'"
+		    
+		    rem ' has any incentive credit been applied to this invoice
+		    incentiveCreditUsed = 0
+		    
+                    detailRecordSet! = BBjAPI().createSQLRecordSet(sqlURL$, "", sql_2$)
+
+		    if checkARE11 then
+			cashReceiptsDetail! = BBjAPI().createSQLRecordSet(sqlURL$, "", sql_5$, err=*next)
+		    fi
+
+                    if detailRecordSet!.isEmpty() and (cashReceiptesDetial! = null() or cashReceiptsDetail!.isEmpty()) then
+
+                        rem ' no detail on this invoice
+                        #invoiceBalance = balance
+                        if balance <> 0 then #isOpenInvoice% = 1
+
+                    else
+                        
+                        rem ' run the balance
+
+                        rem ' first the ART11 detail
+			if !(detailRecordSet!.isEmpty()) then
+				detailRecordSet!.first()
+				while 1
+
+				    detailRecordData! = detailRecordSet!.getCurrentRecordData()
+				    transAmt = num(detailRecordData!.getFieldValue("TRANS_AMT"))
+				    balance = balance + transAmt
+			
+				    rem ' is this an incentive credit applied?
+				    ref_chk_nbr$ = detailRecordData!.getFieldValue("REF_CHK_NBR")
+				    ref_chk_nbr$ = cvs(ref_chk_nbr$,3)
+				    if ref_chk_nbr$ = "GWI Reb" then
+				    	incentiveCreditUsed = incentiveCreditUsed + transAmt
+				    fi
+
+				    detailRecordSet!.next(err=*break)
+
+				wend
+			fi
+		    fi
+		    
+		    rem ' now the cash receipts detail
+		    if !(cashReceiptsDetail! = null()) and !(cashReceiptsDetail!.isEmpty()) then
+		    	cashReceiptsDetail!.first()
+			while 1
+			    cashReceiptsRecordData! = cashReceiptsDetail!.getCurrentRecordData()
+			    transAmt = num(cashReceiptsRecordData!.getFieldValue("APPLY_AMT"))
+			    balance = balance - transAmt
+
+			    rem ' is this an incentive credit applied?
+			    ref_chk_nbr$ = cashReceiptsRecordData!.getFieldValue("AR_CHECK_NBR")
+			    ref_chk_nbr$ = cvs(ref_chk_nbr$,3)
+			    if ref_chk_nbr$ = "GWI Reb" then
+				incentiveCreditUsed = incentiveCreditUsed - transAmt
+			    fi
+
+			    cashReceiptsDetail!.next(err=*break)
+
+			wend
+		    fi
+
+                    #invoiceBalance = balance
+                    if balance <> 0 then #isOpenInvoice% = 1
+
+                    rem ' is this invoice eligible to be paid for with a SAM Rebate
+
+                    if #isOpenInvoice% = 1 and #isSAMRebate% = 0 then
+                        rem ' must be an open invoice and must not be a SAM Rebate
+
+                        rem ' get the line item detail on this invoice
+                        sql_4$ = "SELECT * FROM ART13 WHERE FIRM_ID = '" + firmId$ + "' AND AR_TYPE = '  ' AND "
+                        sql_4$ = sql_4$ + " CUSTOMER_NBR = '" + customerNbr$ + "' AND AR_INV_NBR = '" + invoiceNbr$ + "'"
+
+                        lineItemDetailRecordSet! = BBjAPI().createSQLRecordSet(sqlURL$,"",sql_4$)
+                        
+                        if lineItemDetailRecordSet!.isEmpty() then
+                            
+                            #isSAMRebateEligible% = 0
+                            #eligibleRebateAmount = 0
+
+                        else
+
+                            rem ' invoice lines must be for new product or add users and associated SAM
+                            rem ' anything else on the invoice means the SAM rebate can not be used to pay for it
+			    
+                            lineItemDetailRecordSet!.first()
+
+                            validItem% = 0
+                            eligibleRebate = 0
+                            
+                            while 1
+                                lineItemDetailRecordData! = lineItemDetailRecordSet!.getCurrentRecordData()
+                                linecode$ = lineItemDetailRecordData!.getFieldValue("LINE_CODE")
+                                
+                                rem ' skip message lines
+                                if linecode$ = "M" then 
+                                    lineItemDetailRecordSet!.next(err=*break)
+	                            continue
+				fi
+				
+                                rem ' if the line code is <> S then it is not eligible
+                                if linecode$ <> "S" then 
+                                    validItem% = 0
+                                    break
+                                fi
+
+				rem ' modified this test to inlcude the extended price check to avoid blocking invoices
+				rem ' that have other lines on them that are not eligible if the extended price is 0
+				rem ' 8/27/2012 kew
+				
+                                rem ' if it is not BAS, PR5, VP5 or DS5 and the extended price is <> 0 then it is not eligible
+                                itemnumber$ = lineItemDetailRecordData!.getFieldValue("ITEM_NUMBER")
+                                extprice = num(lineItemDetailRecordData!.getFieldValue("EXT_PRICE"))
+                                if itemnumber$(1,3) <> "BAS" and itemnumber$(1,3) <> "PR5" and itemnumber$(1,3) <> "VP5" and itemnumber$(1,3) <> "DS5" and itemnumber$(1,3) <> "BAR" and extprice <> 0 then
+                                    validItem% = 0
+                                    break
+                                fi
+
+                                rem ' of what's left everything is eligible except SAM lines and DVKs
+                                if itemnumber$(1,6) <> "BASSAM" and itemnumber$(1,6) <> "PR5SAM" and itemnumber$(1,6) <> "DS5SAM" and itemnumber$(1,6) <> "BARSAM" and pos("KIT" = itemnumber$) = 0 and pos("NFR" = itemnumber$) = 0 then
+				    rem ' we have a NEW or ADD user line itme
+				    if extprice <> 0 then 
+                                    	    validItem% = 1
+                                    
+					    rem ' calculate the eligible amount
+					    rem ' discountPercentage$ is the discount from the invoice header
+					    discountPercentage = 0
+					    discountPercentage = num(discountPercentage$,err=*next) / 100
+					    if discountPercentage <> 0 
+						ext_price$ = lineItemDetailRecordData!.getFieldValue("EXT_PRICE")
+						ext_price = 0
+						ext_price = num(ext_price$,err=*next)
+						if ext_price <> 0 then
+							rem ' calculate 60% discount
+							listPrice = round(ext_price / (1 - discountPercentage),2)
+							lowestPrice = round(listPrice * (1 - .60),2)
+							maxCredit = extPrice - lowestPrice
+							if maxCredit > 0 then
+								eligibleRebate = eligibleRebate + maxCredit
+							fi
+						fi
+
+					    fi
+				    fi
+                                fi
+                                
+				rem ' only SAM lines are left and they are eligible if there is a previous NEW or ADD user line
+                                if validItem% AND (itemnumber$(1,6) = "BASSAM" or itemnumber$(1,6) = "PR5SAM" or itemnumber$(1,6) = "DS5SAM" or itemnumber$(1,6) = "BARSAM") then
+                                    
+                                    rem ' calculate the eligible amount
+                                    rem ' discountPercentage$ is the discount from the invoice header
+                                    discountPercentage = 0
+                                    discountPercentage = num(discountPercentage$,err=*next) / 100
+                                    if discountPercentage <> 0 
+	                            	ext_price$ = lineItemDetailRecordData!.getFieldValue("EXT_PRICE")
+                                        ext_price = 0
+                                        ext_price = num(ext_price$,err=*next)
+                                        if ext_price <> 0 then
+                                        	rem ' calculate 60% discount
+                                        	listPrice = round(ext_price / (1 - discountPercentage),2)
+                                        	lowestPrice = round(listPrice * (1 - .60),2)
+                                        	maxCredit = extPrice - lowestPrice
+                                        	if maxCredit > 0 then
+                         				eligibleRebate = eligibleRebate + maxCredit
+                         			fi
+                         		fi
+                         		
+                         	    fi
+                                fi
+
+                                lineItemDetailRecordSet!.next(err=*break)
+                                
+                            wend
+                            
+                            if validItem% then #isSAMRebateEligible% = 1
+
+                            rem ' any credit already used
+                            eligibleRebate = eligibleRebate + incentiveCreditUsed
+
+                            if eligibleRebate > 0 then 
+                            	#eligibleRebateAmount = eligibleRebate
+                            else
+                            	#eligibleRebateAmount = 0
+                            fi
+                        fi
+                    
+                    else
+
+                        #isSAMRebateEligible% = 0
+                        #eligibleRebateAmount = 0
+
+                    fi
+                fi
+
+	methodend
+		
+	method public BBjString getSQLURL()
+
+		DECLARE File file!
+		DECLARE FileInputStream fis!
+		DECLARE BufferedInputStream bis!
+		DECLARE Properties props!
+		DECLARE StringBuffer sqlBuilder!
+		
+		rem ' locate the properties file
+		props=unt
+		open(props)"ec_sql.properties"
+		props$=fid(props), props$=props$(9)
+		close(props)
+
+		file!= new java.io.File(props$)
+		fis!=new java.io.FileInputStream(file!)
+		bis!=new java.io.BufferedInputStream(fis!)
+		props!=new java.util.Properties()
+		props!.load(bis!)
+		
+		sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+		sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+		sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+		sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+		ourDbUrl! = sqlBuilder!.toString()
+		
+		methodret ourDbUrl!
+		
+	methodend
+	
+	method public BBjString getInvoiceNumber()
+	
+	    methodret #invoiceNbr$
+	    
+	methodend
+	
+        method public BBjNumber getInvoiceBalance()
+
+            methodret #invoiceBalance
+
+        methodend
+
+        method public BBjInt isOpenInvoice()
+            
+            methodret #isOpenInvoice%
+        
+        methodend
+        
+        method public BBjInt isSAMRenew()
+        
+            methodret #isSAMRenew%
+            
+        methodend
+
+        method public BBjInt isSAMRebate()
+
+            methodret #isSAMRebate%
+
+        methodend
+
+        method public BBjInt isSAMRebateEligible()
+
+            methodret #isSAMRebateEligible%
+
+        methodend
+
+        method public BBjNumber getEligibleRebateAmount()
+
+            methodret #eligibleRebateAmount
+
+        methodend
+
+classend
+

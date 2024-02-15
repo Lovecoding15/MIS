@@ -1,0 +1,32 @@
+#This is the configuration data needed to process a credit card transation
+#via the CreditCardAuthorization class
+
+
+HostAddress=payflowpro.paypal.com
+HostPort=443
+Timeout=30
+ProxyAddress=
+ProxyPort=0
+ProxyLogon=
+ProxyPassword=
+
+# no longer needed
+#CertificatePath=/usr/local/ec/
+
+# TRXTYPE=S  = Sale transaction
+TRXTYPE=S
+# for the Authorization step used when getting address and csc verifications
+TRXTYPE_VERIFICATION=A
+
+# TENDER=C = Credit card
+TENDER=C
+
+PWD=basisacct1
+USER=basisinternational
+VENDOR=basisinternational
+PARTNER=PayPal
+
+VERBOSITY=MEDIUM
+
+# log file
+logfile=/mnt/data/ec/ccLogs/ccTransLog

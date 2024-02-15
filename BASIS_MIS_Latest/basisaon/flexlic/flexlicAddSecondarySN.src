@@ -1,0 +1,116 @@
+rem ' <flexlicAddSecondarySN.bbx>
+
+seterr errmsg 
+
+enter snlist$, secondaryFeatures$
+
+call "ec_open::SNM01"
+call "ec_open::SMC01"
+call "ec_open::CSM04"
+
+temp$ = snlist$
+while len(temp$)
+	
+	p = pos($0A$ = temp$)
+	thissn$ = temp$(1, p-1)
+	temp$ = temp$(p+1)
+	
+	rem ' serial number
+	thissn$ = thissn$(1,20)
+	sn$ = "SN=" + cvs(thissn$(1,20),3)
+	
+	rem ' feature string
+	read record(snm01, key = thissn$)snm01$
+	prod$ = snm01.product$
+	lictype$ = snm01.license_type$
+	users = snm01.users
+	
+	rem ' mapping of feature strings to product / license type
+	rem ' PR5	PRO5_DEV
+	rem ' VP5	????????
+	rem ' DS5	PRO5DS
+	rem ' ODB STD	ODBC_RW
+	rem ' ODB ROO	ODBC_RO
+	
+	if prod$ = "PR5" then 
+		featureStr$ = "PRO5_DEV"
+	else
+		if prod$ = "VP5" then
+			featureStr$ = "PRO5_DEV"
+		else
+			if prod$ = "DS5" then
+				featureStr$ = "PRO5DS"
+			else
+				if prod$ = "ODB" then
+					if lictype$ = "STD" then
+						featureStr$ = "ODBC_RW"
+					else
+						featureStr$ = "ODBC_RO"
+					fi
+				else
+					featureStr$ = "NO_MATCH"
+				fi
+			fi
+		fi
+	fi
+	
+	rem ' revision
+	read record(csm04, key = snm01.firm_id$ + snm01.product_rev$)csm04$
+	revision$ = csm04.description$
+	while 1
+		p = pos("x" = revision$)
+		if p = 0 then break
+		revision$(p,1) = "0"
+	wend
+	while 1
+		p = pos("X" = revision$)
+		if p = 0 then break
+		revision$(p,1) = "0"
+	wend
+	revision$ = str(num(revision$))
+	
+	rem ' expire date
+	expire_dt$ = "", rent_or_kit = 0
+	if cvs(snm01.contract$, 3) <> "" then
+		rem ' we have a contract
+		read record(smc01, key = snm01.contract$)smc01$
+		rem ' is it an expiring license
+		rent_or_kit = pos(smc01.contr_type$(1,2) = "RN,DV")
+		if snm01.license_type$ = "EXP" and smc01.contr_type$ = "SM1" then rent_or_kit=1
+		if rent_or_kit then expire_dt$ = FNXDT$(smc01.expire_on_dt$)
+	fi
+
+	featureLine$ = featureStr$ + " " + revision$ + " " + str(users) + " " 
+	if expire_dt$ <> "" then
+		featureLine$ = featureLine$ + expire_dt$ + "," + sn$ + $0A$
+	else
+		featureLine$ = featureLine$ + sn$ + $0A$
+	fi
+	
+	secondaryFeatures$ = secondaryFeatures$ + featureLine$
+wend
+
+goto pgm_exit
+
+DEF FNXDT$(Q1$)
+  x_jul=0,x_dt$=""
+  yy=num(q1$(1,4),err=*next)
+  mm=num(q1$(5,2),err=*next)
+  dd=num(q1$(7,2),err=*next)
+  if yy*dd*mm then x_jul=jul(yy,mm,dd,err=*next)
+  if x_jul then x_dt$=cvs(date(x_jul:"%Dz-%Ms-%Y"),8)
+RETURN x_dt$
+FNEND
+
+
+errmsg:
+	msg$="(Err "+str(err)+" "+errmes(-1)+" at "+str(tcb(5))+" "+pgm(-2)+")"
+	throw msg$, 455
+	exit
+
+pgm_exit:
+	close(snm01, err=*next)
+	close(smc01, err=*next)
+	close(csm04, err=*next)
+	exit
+end

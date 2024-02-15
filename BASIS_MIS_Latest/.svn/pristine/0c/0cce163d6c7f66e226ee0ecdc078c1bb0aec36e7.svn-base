@@ -1,0 +1,219 @@
+rem ' report serial numbers with Barista Feature Lines
+
+rem --- Retrieve sysinfo data
+
+    sysinfo_template$=stbl("+SYSINFO_TPL",err=*next)
+    dim sysinfo$:sysinfo_template$
+    sysinfo$=stbl("+SYSINFO",err=*next)
+    firm_id$=sysinfo.firm_id$
+
+email_address$ = option!.getOptionData("EMAIL_ADDRESS")
+if cvs(email_address$,3) = "" then
+	resp = msgbox("Please enter an email address for use in delivering the report.",0,"Email Address)
+	release
+fi
+
+rem ' open files
+call "/mnt/data/ec/ec_open::SNM01"
+call "/mnt/data/ec/ec_open::SNT04"
+call "/mnt/data/ec/ec_open::ARM01"
+call "/mnt/data/ec/ec_open::ARM02"
+call "/mnt/data/ec/ec_open::SMC01"
+call "/mnt/data/ec/ec_open::SNMEL"
+call "/mnt/data/ec/ec_open::SNMEU"
+
+rem ' create output file
+outfilename$ = "/tmp/baristaSNReport" + " " + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".csv"
+erase outfilename$, err=*next
+string outfilename$
+outfile = unt
+open(outfile)outfilename$
+
+quote$ = chr(34)
+fieldsep$ = quote$+","+quote$
+
+rem ' write the header
+outline$ = quote$ + fieldsep$ + "Barista Licenses and Users Report" + quote$
+write(outfile)outline$
+outline$ = quote$ + fieldsep$ + "'" + date(0:"%Mz/%Dz%/%Y %Hz:%mz:%sz") + quote$
+write(outfile)outline$
+outline$ = quote$ + "Cust Nbr" + fieldsep$ + "Customer Name" + fieldsep$ + "Cust Type" + quote$
+write(outfile)outline$
+outline$ = quote$ + "Serial Nbr" + fieldsep$ + "End User Name" + fieldsep$ + "Barista Features" + fieldsep$  
+outline$ = outline$ + "Barista Users" + fieldsep$ + "License Users" + fieldsep$
+outline$ = outline$ + "Has Addon" + fieldsep$ + "On SAM" + quote$
+write(outfile)outline$
+outline$ = quote$ + "          " + quote$
+write(outfile)outline$
+
+today$ = date(0:"%Y%Mz%Dz")
+
+firstone = 0
+
+currentCust$ = ""
+custLicCount = 0
+custLicUserCount = 0
+custBarUserCount = 0
+
+barista_feature$ = ""
+hasBarista = 0
+customerHasBarista = 0
+baristaUserCount = 0
+licUserCount = 0
+hasAddon = 0
+
+total_hasAddon = 0
+total_onSam = 0
+totalLicenseUserCount = 0
+totalLicenseCount = 0
+totalBaristaUserCount = 0
+
+read record(snm01, key = "01000000", knum = 1, dom = *next)snm01$
+
+while 1
+	read record(snm01,end=*break)snm01$
+	
+	if currentCust$ <> snm01.firm_id$ + snm01.customer_nbr$ then gosub customer_break
+	
+	if snm01.customer_nbr$ = "007514" or snm01.customer_nbr$ = "007808" then continue
+	if snm01.product$ <> "BAS" then continue
+	if snm01.active_flag$ <> "Y" then continue
+	
+	rem ' does it have a Barista Feature Line
+	
+	read record(snt04, key = snm01.serial_nbr$, dom=*next)snt04$
+	while 1
+		read record(snt04,end=*break)snt04$
+		if snm01.serial_nbr$ <> snt04.serial_nbr$ then break
+		if pos("BARISTA" = snt04.feature$) <> 0 and (cvs(snt04.expire_on_dt$,3) = "" or snt04.expire_on_dt$ > today$) then
+			barista_feature$ = barista_feature$ + cvs(snt04.feature$,3) + ", "
+			hasBarista = 1
+			customerHasBarista = 1
+			baristaUserCount = baristaUserCount + snt04.users
+		fi
+		if cvs(snt04.feature$,3) = "01007514AD" then 
+			hasAddon = 1
+		fi	
+	wend
+	
+	if !hasBarista then continue
+	
+	read record(arm01, key = snm01.firm_id$ + snm01.customer_nbr$)arm01$
+	read record(arm02, key = snm01.firm_id$ + snm01.customer_nbr$ + "  ")arm02$
+	
+	licUserCount = licUserCount + snm01.users
+	
+	custLicCount = custLicCount + 1
+	custLicUserCount = custLicUserCount + licUserCount 
+	custBarUserCount = custBarUserCount + baristaUserCount
+
+	totalLicenseCount = totalLicenseCount + 1
+	totalLicenseUserCount = licUserCount
+	totalBaristaUserCount = totalBaristaUserCount + baristaUserCount
+
+
+	if firstone then 
+		outline$ = quote$ + "'" +currentCust$ + fieldsep$ + cvs(arm01.cust_name$,3) + fieldsep$ + arm02.cust_type$ + quote$
+		rem ' print "writing header ", currentCust$," ",snm01.serial_nbr$
+		rem ' input *
+		write(outfile)outline$
+		firstone = 0
+	fi
+	
+	rem ' check for SAM
+	onSAM$ = "N"
+	if cvs(snm01.contract$,3) <> "" then
+		found = 0
+		read record(smc01,key = snm01.contract$,dom=*next)smc01$; found = 1
+		if found then
+			if smc01.sam_active$ = "Y" then
+				if smc01.expire_on_dt$ > today$ then onSAM$ = "Y"
+				total_onSam = total_onSam + baristaUserCount
+			fi
+		fi
+	fi
+	
+	rem ' check for End User
+	dim snmeu$:fattr(snmeu$)
+	found = 0
+	read record(snmel, key = snm01.serial_nbr$, dom = *next)snmel$; found = 1
+	if found then
+		read record(snmeu, key = snmel.end_user_nbr$)snmeu$
+	fi
+	
+	
+	if hasAddon then
+		hasAddon$ = "Y"
+		total_hasAddon = total_hasAddon + baristaUserCount
+	else
+		hasAddon$ = "N"
+	fi
+	
+	barista_feature$ = barista_feature$(1, len(barista_feature$) - 2)
+
+	outline$ = quote$ + cvs(snm01.serial_nbr$,3) + fieldsep$ + cvs(snmeu.company_name$, 3) + fieldsep$ + barista_feature$ + fieldsep$
+	outline$ = outline$ + str(baristaUserCount) + fieldsep$ + str(licUserCount) + fieldsep$
+	outline$ = outline$ + hasAddon$ + fieldsep$ + onSAM$ + quote$
+	
+	rem ' print "writing one ", currentCust$," ",snm01.serial_nbr$
+	rem ' input *
+	
+	write(outfile)outline$
+	
+	hasBarista = 0
+	baristaUserCount = 0
+	licUserCount = 0
+	hasAddon = 0
+	barista_feature$ = ""
+
+wend
+
+gosub customer_break
+
+rem ' write grand totals
+outline$ = quote$ + "          " + quote$
+write(outfile)outline$
+outline$ = quote$ + "Grand Totals:" + quote$
+write(outfile)outline$
+outline$ = quote$ + "User Counts:" + fieldsep$ + fieldsep$ + fieldsep$ + str(totalBaristaUserCount) + fieldsep$ + fieldsep$ + str(total_hasAddon) + fieldsep$ + str(total_onSam) + quote$
+write(outfile)outline$
+outline$ = quote$ + "License Count:" + fieldsep$ + fieldsep$ + fieldsep$ + str(totalLicenseCount) + quote$
+write(outfile)outline$
+
+
+close(outfile)
+from$ = "mis@basis.com"
+to$ = "bsanchez@basis.cloud"
+cc$ = ""
+bcc$ = "bsanchez@basis.cloud"
+subject$ = "Barista License User Counts Report"
+msgtxt$ = "Upload the addtached file and open it with Google Sheets"
+call "/mnt/data/basisaon/aon/bas/sendEmail.src", from$,to$,cc$, bcc$, subject$, msgtxt$, outfilename$
+
+resp = msgbox("The report has been created and emailed to " + email_address$ + ".",0,"Report Completed")
+
+release
+
+rem ' change of customer
+customer_break:
+	rem ' write the sub total lines	
+	if currentCust$ <> "" and customerHasBarista then
+		rem ' print "writing totals ", currentCust$," ",snm01.serial_nbr$
+		rem ' input *
+
+		outline$ = quote$ + "User Counts: " + fieldsep$ + fieldsep$ + fieldsep$ + str(custBarUserCount) + fieldsep$ + str(custLicUserCount) + quote$
+		write(outfile)outline$
+		outline$ = quote$ + "License Count: " + fieldsep$ + fieldsep$ + fieldsep$ + str(custLicCount) + quote$
+		write(outfile)outline$
+		outline$ = quote$ + "          " + quote$
+		write(outfile)outline$
+	fi
+
+	currentCust$ = snm01.firm_id$ + snm01.customer_nbr$
+	customerHasBarista = 0
+	custLicCount = 0
+	custLicUserCount = 0
+	custBarUserCount = 0
+	firstone = 1
+	
+return

@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_admin_record>
+	<barista_record_table>ADM_QUERY</barista_record_table>
+	<QUERY_ID>FUT_EZINE       </QUERY_ID>
+	<DESC>Advantage Electronic Delivery List</DESC>
+	<DD_TABLE_ALIAS>FUT_TMM03       </DD_TABLE_ALIAS>
+	<COLUMN_MOVE>Y</COLUMN_MOVE>
+	<QUERY_TYPE>M</QUERY_TYPE>
+	<USER_FILTERS>Y</USER_FILTERS>
+	<PRINT_RESULTS>Y</PRINT_RESULTS>
+	<CLIP_RESULTS>Y</CLIP_RESULTS>
+	<ASC_COMP_ID>01007514</ASC_COMP_ID>
+	<ASC_PROD_ID>FUT</ASC_PROD_ID>
+	<OVERRIDE_SQL>N</OVERRIDE_SQL>
+	<SQL_SELECT>SELECT fut_tmm03.firm_id, fut_tmm03.customer_nbr, fut_tmm03.tm_number, fut_tmm03.sequence_nbr, fut_tmm03.contact_name, fut_tmm03.e_mail, fut_tmm03.send_lit[$0a$]FROM fut_tmm03                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </SQL_SELECT>
+	<FULL_SEARCH>N</FULL_SEARCH>
+</barista_admin_record>

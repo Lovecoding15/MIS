@@ -1,0 +1,31 @@
+Table Definition Module
+FUT_SNT04 - SN Vendor Features
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SNT04^/mnt/data/aon_prod/apps/fileutil/;^BDEQ;BSHO;^^^SN Vendor Features^SN Vendor Features^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+SERIAL_NBR^FUT_SNT04^001^C^^3001^ine_serial_nbr^0^^^1^^Y^^^^^FUT_SERIAL_NBR^Serial Number (Basis)^Serial Number (Basis)^Serial Number (Basis)^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^^^^^^^^N^
+FEATURE^FUT_SNT04^002^C^^3002^ine_feature^0^^^2^^Y^^^^^FUT_FEATURE^Feature Name^Feature^Feature^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^2^^^^^^^^N^
+FEATURE_REV^FUT_SNT04^003^C^^3003^ine_feature_rev^0^^^3^^N^^^^^FUT_FEATURE_REV^Feature Revision^Feature Rev^Feature Rev^C^^E^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^2^^^^^^^^N^
+USER_BASED^FUT_SNT04^004^C^^3004^ine_user_based^0^^^4^^N^^^^^FUT_USER_BASED^User Based^User Based^User Based^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+PROD_CODE^FUT_SNT04^005^C^^3005^ine_prod_code^0^^^5^^N^^^^^FUT_PROD_CODE^Prod Code^Prod Code^Prod Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^N^
+TYPE_OF_SALE^FUT_SNT04^006^C^^3006^ine_type_of_sale^0^^^6^^N^^^^^FUT_TYPE_OF_SALE^Configurator Type of Sale ID^Configurator Type of Sale Id^Configurator Type of Sale Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^N^
+EXPIRE_ON_DT^FUT_SNT04^007^C^^3007^ine_expire_on_dt^0^^^7^^N^^^^^FUT_EXPIRE_ON_DT^Expire On Dt^Expire On Date^Expire On Dt^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^^^^^^^^N^
+FAX_FLAG^FUT_SNT04^008^C^^3008^ine_fax_flag^0^^^8^^N^^^^^FUT_FAX_FLAG^Fax Flag^Fax Flag^Fax Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+AVAILABLE^FUT_SNT04^009^C^^3009^ine_available^0^^^9^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^24^^^^^^^^^^^0^^^^^^^^Y^
+USERS^FUT_SNT04^010^C^^3010^inn_users^0^^^10^^N^^^^^FUT_USERS^Number of users^Number of users^Number of users^N^^N^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^^^^^^^^Y^
+AVAILABLE_NUM^FUT_SNT04^011^C^^3011^inn_available_num^0^^^11^^N^^^^^FUT_AVAILABLE_NU^Available Num^Available Num^Available Num^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SNT04^PRIMARY^FUT_SNT04.SERIAL_NBR                    FUT_SNT04.FEATURE                       ^FUT_SNT04.SERIAL_NBR$+FUT_SNT04.FEATURE$^RD_REC_DATA.SERIAL_NBR$+RD_REC_DATA.FEATURE$^RD_REC_DATA.SERIAL_NBR$                 RD_REC_DATA.FEATURE$                    
+{KeyDefsEnd}
+{GridCols}
+001FUT_SNT04.SERIAL_NBR                    ;002FUT_SNT04.FEATURE                       ;003FUT_SNT04.FEATURE_REV                   ;004FUT_SNT04.USER_BASED                    ;005FUT_SNT04.PROD_CODE                     ;006FUT_SNT04.TYPE_OF_SALE                  ;007FUT_SNT04.EXPIRE_ON_DT                  ;008FUT_SNT04.FAX_FLAG                      ;009FUT_SNT04.AVAILABLE                     ;010FUT_SNT04.USERS                         ;011FUT_SNT04.AVAILABLE_NUM                 ;
+{GridColsEnd}

@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADS_MESSAGES</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<MSG_ID>SYSTEM_FILE_ABORT   </MSG_ID>
+		<MSG_TITLE>Barista Administrator</MSG_TITLE>
+		<MSG_TYPE>0</MSG_TYPE>
+		<MSG_ICON>48</MSG_ICON>
+		<MSG_DEFAULT_BUT>000</MSG_DEFAULT_BUT>
+		<ASC_COMP_ID>00000000</ASC_COMP_ID>
+		<ASC_PROD_ID>DDB</ASC_PROD_ID>
+		<MSG_TEXT>Missing Field in %1[$0a$] Update Aborted![$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </MSG_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>SYSTEM_FILE_ALERT   </MSG_ID>
+		<MSG_TITLE>Barista Administrator</MSG_TITLE>
+		<MSG_TYPE>0</MSG_TYPE>
+		<MSG_ICON>48</MSG_ICON>
+		<MSG_DEFAULT_BUT>000</MSG_DEFAULT_BUT>
+		<ASC_COMP_ID>00000000</ASC_COMP_ID>
+		<ASC_PROD_ID>DDB</ASC_PROD_ID>
+		<MSG_TEXT>Warning the Following Fields were not found[$0a$]during the Update Process![$0a$]%1[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </MSG_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>SYSTEM_FILE_MADE    </MSG_ID>
+		<MSG_TITLE>Barista Administrator</MSG_TITLE>
+		<MSG_TYPE>0</MSG_TYPE>
+		<MSG_ICON>64</MSG_ICON>
+		<MSG_DEFAULT_BUT>000</MSG_DEFAULT_BUT>
+		<ASC_COMP_ID>00000000</ASC_COMP_ID>
+		<ASC_PROD_ID>DDB</ASC_PROD_ID>
+		<MSG_TEXT>The Following File was Created:[$0a$]%1[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             </MSG_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>SYSTEM_FILE_MISMATCH</MSG_ID>
+		<MSG_TITLE>Barista Administrator</MSG_TITLE>
+		<MSG_TYPE>0</MSG_TYPE>
+		<MSG_ICON>64</MSG_ICON>
+		<MSG_DEFAULT_BUT>000</MSG_DEFAULT_BUT>
+		<ASC_COMP_ID>00000000</ASC_COMP_ID>
+		<ASC_PROD_ID>DDB</ASC_PROD_ID>
+		<MSG_TEXT>XML File %1[$0a$]Contains Data for Table:  %2[$0a$]Not for Requested Table: %3[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </MSG_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>SYSTEM_FILE_NOTOPEN </MSG_ID>
+		<MSG_TITLE>Barista Administrator</MSG_TITLE>
+		<MSG_TYPE>0</MSG_TYPE>
+		<MSG_ICON>64</MSG_ICON>
+		<MSG_DEFAULT_BUT>000</MSG_DEFAULT_BUT>
+		<ASC_COMP_ID>00000000</ASC_COMP_ID>
+		<ASC_PROD_ID>DDB</ASC_PROD_ID>
+		<MSG_TEXT>Unable to Read or Open the File:[$0a$]%1[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </MSG_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>SYSTEM_FILE_NOT_MADE</MSG_ID>
+		<MSG_TITLE>Barista Administrator</MSG_TITLE>
+		<MSG_TYPE>0</MSG_TYPE>
+		<MSG_ICON>64</MSG_ICON>
+		<MSG_DEFAULT_BUT>000</MSG_DEFAULT_BUT>
+		<ASC_COMP_ID>00000000</ASC_COMP_ID>
+		<ASC_PROD_ID>DDB</ASC_PROD_ID>
+		<MSG_TEXT>The Following file was not created:[$0a$]%1[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </MSG_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>SYSTEM_FILE_UPDATED </MSG_ID>
+		<MSG_TITLE>Barista Administration</MSG_TITLE>
+		<MSG_TYPE>0</MSG_TYPE>
+		<MSG_ICON>64</MSG_ICON>
+		<MSG_DEFAULT_BUT>000</MSG_DEFAULT_BUT>
+		<ASC_COMP_ID>00000000</ASC_COMP_ID>
+		<ASC_PROD_ID>DDB</ASC_PROD_ID>
+		<MSG_TEXT>Table %1  Update Completed[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </MSG_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

@@ -1,0 +1,81 @@
+# The context path for the Web application.  This is referenced in the URL as follows:
+# http://myserver.com/contextpath/webservicename
+context.path=BCommerceWS
+
+# Name of build directory
+build=build
+server.build.sub=WEB-INF
+server.build=${build}/${server.build.sub}
+client.build=${build}/client
+
+# Name of distribution directory
+dist=dist
+
+# Base directory of the server source
+server.src=./src/server
+
+# Name of the JAR containing server classes
+server.jar=${context.path}Server.jar
+
+# Name of client class to run
+server.class=com.basis.BCommerceWSImpl
+
+# Base directory of the client source
+client.src=./src/client
+
+# Name of the JAR containing client classes
+client.jar=${context.path}Client.jar
+
+# Name of client class to run
+client.class=com.basis.BCommerceWSClient
+
+
+# BBj home and lib
+bbj.home=/program files/basis
+bbj.lib=${bbj.home}/lib
+
+# URL to the server that the application will be deloyed on.  This is a Tomcat specific URL.
+#  url.base=http://servername:8080
+url.base=http\://localhost\:8084
+url=${url.base}/manager
+context.url=${url.base}/${context.path}
+
+# User name and password to be used when deploying the application
+username=tomcat
+password=tomcat
+
+# Name of the portable WAR file.  This file cannot be directly deployed.  It is used by wsdeploy to 
+# build a deployable WAR file.
+portable.war=portable.war
+
+# Name of the deployable WAR file.  Don't changed this, it should be the same as 
+# the context path
+deployable.war=${context.path}.war
+
+# Location of the JWSDP
+jwsdp.home=/sun/jwsdp-2.0
+
+# Location of the of related JWSDP tools
+jwsdp.shared=${jwsdp.home}/jwsdp-shared
+jaxrpc.home=${jwsdp.home}/jaxrpc
+saaj.home=${jwsdp.home}/saaj
+wscompile.path=${jaxrpc.home}/bin
+
+# Jar file Locations
+mail.jar=${jwsdp.shared}/lib/mail.jar
+activation.jar=${jwsdp.shared}/lib/activation.jar
+jaxrpc-api.jar=${jaxrpc.home}/lib/jaxrpc-api.jar
+jaxrpc-impl.jar=${jaxrpc.home}/lib/jaxrpc-impl.jar
+jaxrpc-spi.jar=${jaxrpc.home}/lib/jaxrpc-spi.jar
+saaj-api.jar=${saaj.home}/lib/saaj-api.jar
+saaj-impl.jar=${saaj.home}/lib/saaj-impl.jar
+fastinfoset.jar=${fastinfoset.home}/lib/FastInfoset.jar
+
+#fastinfoset home
+
+fastinfoset.home=${jwsdp.home}/fastinfoset
+
+#sjsxp home
+sjsxp.home=${jwsdp.home}/sjsxp
+
+jsr173_api.jar=${sjsxp.home}/lib/jsr173_api.jar

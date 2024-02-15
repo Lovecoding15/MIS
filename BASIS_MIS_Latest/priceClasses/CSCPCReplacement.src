@@ -1,0 +1,165 @@
+REM /**
+REM  * CSCPCReplacement.src
+REM  * @author kwilliams
+REM  * Replaces the CSC.PC program
+REM  */
+
+use ::TransactionBuilder.src::TransactionBuilder
+use ::SerialNumber.src::SerialNumber
+use ::CustomerDiscount.src::CustomerDiscount
+use ::BasisPriceEngine.src::PriceElement
+
+rem '-----------------------------------------------------------
+rem ' a product value of BAS is a Basis Product License
+rem '-----------------------------------------------------------
+
+class public CSCPCReplacement
+
+    field private BBjNumber canadian!
+    field private TransactionBuilder tb!
+
+    method public CSCPCReplacement(BBjNumber doCanadian)
+    
+        #canadian!= doCandian
+        #tb!= new TransactionBuilder(#canadian!)
+        
+    methodend
+
+    method public BBjVector callCSCPCReplacement(BBjString firm$, BBjString item$, BBjString customer$, BBjNumber orderquantity, 
+:           BBjString saleDetails$, BBjNumber users1, BBjNumber users2, BBjNumber samfactor, BBjString serialNumber$,
+:           BBjString feature$)
+  
+        lictype$ = item$(13,3), slstype$ = saleDetails$(4,3), oldrev$ = "", upg$ = "UPD,UG4,TRD"
+        
+        call "ec_open::SNM01"
+        call "ec_open::SNM02"
+        call "ec_open::SMC01"
+        call "ec_open::SNT04"
+        call "ec_open::ARM02"
+        call "ec_open::CSM04"
+
+        readrecord(snm01, key = sn$, dom=*next)snm01$; oldrev$ = snm01.product_rev$
+        read record(csm04, key = firm$ + item$(10,3), dom=*next)csm04$
+        if csm04.key_or_licen$="K" then upg$=upg$+",PLX"
+        dim csm04$:fattr(csm04$); read record(csm04,key = firm$ + oldrev$, dom=*next)csm04$
+        
+        rem 'check for user price level on add users & SAM on add users
+        u1 = 0, ad = pos(slstype$(1,2) = "AD,SM"), on_sam = 0, samtype$ = ""
+        if ad then lictype$ = snm01.license_type$; rem 'Set lictype for ADD,SAM trans since it's not in those items
+
+        if snm01.sam_active$ = "Y" and len(cvs(snm01.contract$,3)) = 6 then 
+            rem ' If SM trans and contracts in are73 and snm01 don't match, it's not SAM for an add
+            readrecord(smc01, key = snm01.contract$, dom=*next)smc01$
+            if smc01.sam_active$ = "Y" and smc01.annual_dt$ >= DATE(0:"%Yl%Mz%Dz") then 
+                on_sam = 1, u1 = snm01.users, samtype$ = smc01.contr_type$
+            endif
+        endif
+  
+        type_price$ = "N", price = 0, disc = 0, status = 0, user_level = users1
+        digits = tcb(14); REM "Get current precision
+        dim pt[29]
+        if samfactor = 30 or samfactor = 90 or samfactor = 180 then year = 360 else year = 365
+
+        REM " --- Customer Pricing Level"
+        readrecord (arm02, KEY = firm$ + customer$+"  ", DOM = *next)ARM02$;c7 = arm02.pricing_level
+        if c7 then user_level = c7, hold_u1 = u1, u1 = 0
+        
+        rem 'If adduser w/SAM, can't get price level if no SN or user price level, so return 0
+        saleDetails$(8,1) = "T"; rem 'indicates total new users were entered for an add
+        if cvs(feature$,3) = "" and ad = 1 and cvs(snm01.serial_nbr$,3) = "" and c7 = 0 then price = 0; rem ' goto 1000 WHAT TO DO HERE
+
+        use_price_pgm:
+        cd! = new CustomerDiscount(firm$, customer$)
+        readrecord(snm02, key = snm01.serial_nbr$, dom = *next)snm02$
+        dim cur_users[1], new_users[1], cur_prop$[1], new_prop$[1]
+        cur_users[0] = snm02.users1, cur_users[1] = snm02.users2
+        new_users[0] = users1, new_users[1] = users2
+        cur_prop$[0] = snm02.lic_property1$, cur_prop$[1] = snm02.lic_property2$
+        new_prop$[0] = saleDetails$(10,2), new_prop$[1] =saleDetails$(12,2)
+        if saleDetails$(10,4) = fill(4) then new_prop$[0] = item$(1,3)
+        if cvs(cur_prop$[0],3) = "" and slstype$ <> "TRD" then cur_prop$[0]=snm01.product$, cur_users[0] = snm01.users
+        if slstype$ = "TRD" then cur_users[0] = new_users[0], cur_users[1] = new_users[1]
+        if pos("S" = slstype$) = 1 then samtype$ = slstype$
+        
+        check_feature:
+        if saleDetails$(10,4) = fill(4) and cvs(feature$,3) <> "" then
+            cur_users[0] = 0, cur_users[1] = 0,cur_prop$[0] = item$(1,3)
+            read(snt04,key = snm01.serial_nbr$, dom=*next)
+            while 1
+                readrecord(snt04,end = *break)snt04$
+                if snt04.serial_nbr$ <> snm01.serial_nbr$ then break
+                if item$(1,3) <> snt04.prod_code$ then continue
+                cur_users[0] = max(cur_users[0],snt04.users)
+            wend
+            if smc01.contract$ <> saleDetails$(31,6) then 
+                found = 0
+                readrecord(smc01, key=saleDetails$(31,6), dom = *next)smc01$; found = 1
+                if found then
+                    if smc01.annual_dt$ >= DATE(0:"%Yl%Mz%Dz") then
+                        jul_x = jul(num(smc02.annual_dt$(1,4)), num(smc01.annual_dt$(5,2)), num(smc01.annual_dt$(7,2)))
+                        if pos(slstype$="RN1,SM1") then samfactor=max(1, jul_x-jul(0, 0, 0)-1)
+                    endif
+                endif
+            endif 
+        endif
+
+        returnValues! = BBjAPI().makeVector()
+        
+        if item$(1,3) = "BAS" then
+            sn! = new SerialNumber(item$(1,3), item$(4,3), item$(7,3), item$(10,3), item$(13,3), firm$, customer$)
+            sn!.addNewUserPropsCounts(new_prop$[0], new_users[0])
+            sn!.addNewUserPropsCounts(new_prop$[1], new_users[1])
+            
+            if slstype$ = "NEW" then
+                sn! = new SerialNumber(item$(1,3), item$(4,3), item$(7,3), item$(10,3), item$(13,3), firm$, customer$)
+                sn!.addNewUserPropsCounts(new_prop$[0], new_users[0])
+                sn!.addNewUserPropsCounts(new_prop$[1], new_users[1])
+                priceElements! = #tb!.priceNewSerialNumberSplitSAM(sn!, 0)
+                if priceElements!.size() > 0 then 
+                    pe! = cast(PriceElement, priceElements!.getItem(0))
+                    discount = pe!.getDiscountUsed()
+                endif
+            else
+                if slstype$ = "SM1" then
+                    sn! = new SerialNumber(item$(1,3), "", "", "", "STD", firm$, customer$)
+                    sn!.addNewUserPropsCounts(new_prop$[0], new_users[0])
+                    sn!.addNewUserPropsCounts(new_prop$[1], new_users[1])
+                    priceElements! = #tb!.priceNewSerialNumberSplitSAM(sn!, 1)
+                    
+                    rem ' this is a new transaction re-discount this item
+                    if priceElements!.size() > 0 then
+                        for x = 0 to priceElements!.size() - 1
+                            pe! = cast(PriceElement, priceElements!.getItem(x))
+                            pe! = cd!.calculateSAMDiscountforNewAndAdd(pe!)
+                            priceElements!.setItem(x, pe!)
+                            discount = pe!.getDiscountUsed()
+                        next x
+                    endif
+                endif
+            endif
+            returnValues!.addItem(#tb!.sumDiscountedPrice(priceElements!))
+            returnValues!.addItem(0)
+            returnValues!.addItem(discount)
+            returnValues!.addItem(saleDetails$)
+        endif
+
+        methodret returnValues!
+        
+    methodend
+
+    method public BBjNumber isCanadian()
+        
+        methodret #canadian!
+        
+    methodend
+    
+    method public void setCanadian(BBjNumber doCanadian)
+        
+        rem ' change the canadian status of the TransactionBuilder
+        #canadian! = doCanadian
+        #tb!.setCanadian(#canadian!)
+        
+    methodend
+
+
+classend

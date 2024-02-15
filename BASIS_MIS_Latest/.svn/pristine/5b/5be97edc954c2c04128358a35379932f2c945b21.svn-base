@@ -1,0 +1,28 @@
+0010 BEGIN
+
+0030 LET APM01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/APM-01"; OPEN (APM01)XF$
+
+0040 LET txtfile$="vendor.txt"
+0050 ERASE txtfile$,ERR=*NEXT
+0060 STRING txtfile$
+0070 LET txt=UNT; OPEN (txt)txtfile$
+
+0080 LET ctr=0
+0090 LET txt1$=FILL(85)
+0100 LET txt2$=FILL(85)
+0110 main_loop: 
+0120 LET k$=KEY(APM01,END=end_pgm)
+
+0130 IF k$(1,2)<>"01" THEN GOTO end_pgm
+
+0140 READ RECORD (APM01,KEY=k$)A$
+
+0160 LET txt1$(28*ctr+1,26)=A$(10,26)
+0170 LET txt2$(28*ctr+1,26)=a$(3,6)+"      2008"
+0175 print (txt)a$(3,6),"  ",a$(10,30)
+0180 IF ctr=2 THEN PRINT (txt)$0A$+txt1$+$0A$+txt2$+$0A$+$0A$+$0A$; LET ctr=-1
+0190 LET ctr=ctr+1
+0200 GOTO main_loop
+
+0210 end_pgm: 
+0220 END

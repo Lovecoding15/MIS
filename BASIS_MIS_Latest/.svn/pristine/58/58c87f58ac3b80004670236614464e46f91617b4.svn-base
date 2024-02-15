@@ -1,0 +1,13 @@
+0010 REM "ADC - Bridge - Window Shape Called Routine"
+0020 REM "Program: ADC.WC"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0050 SETERR 9900
+0060 ENTER TYPE,DIRECTION,WIDTH,HEIGHT,COLUMN,ROW,ATTRIBUTE
+4020 CALL "SYC.WC",TYPE,DIRECTION,WIDTH,HEIGHT,COLUMN,ROW,ATTRIBUTE
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

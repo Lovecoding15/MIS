@@ -1,0 +1,1403 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2022-11-10
+Last Build Time=11:32:0
+Precision=99
+Program Name=ccCustServInterface
+Remarks=Yes
+Resource File=ccCustServInterface.arc
+Show Forms=All
+
+[EOJ]
+close(ARM01,err=*next)
+close(ART01,err=*next)
+close(ART11,err=*next)
+close(ARE01,err=*next)
+close(ARE11,err=*next)
+close(ECM02,err=*next)
+
+[Init]
+ourAPI!=BBjAPI()
+ourSysGui!=ourAPI!.getSysGui()
+ourSystemMetrics!=ourSysGui!.getSystemMetrics()
+scrDimension!=ourSystemMetrics!.getScreenSize()
+ourContext=ourSysGui!.getContext()
+ourWindow!=ourSysGui!.getWindow(ourContext)
+topLevelWindow!=cast(BBjTopLevelWindow, ourSysGui!.getWindow(ourContext))
+
+ourWindow!.setCursor(3)
+
+gosub center_window
+gosub get_objects
+gosub openFiles
+gosub loadExpiration
+payInvoices!.setSelected(1)
+gosub payingInvoices
+gosub resetVerification
+
+ourWindow!.setCursor(0)
+ourWindow!.setVisible(1)
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+gosub closeFiles
+goto gb__eoj
+
+[Event Win=101 ID=101 Code=B <PUSH_BUTTON> (W101_C101_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+custNum$ = custNumber!.getText()
+
+isNumeric = 0
+custNum = num(custNum$,err=*next); isNumeric = 1
+if !isNumeric then
+    custNumber!.focus()
+else
+    if len(custNum$) > 8 then
+        custNumber!.focus()
+    else
+        while len(custNum$) < 6
+            custNum$ = "0" + custNum$
+        wend
+        if len(custNum$) = 6 then custNum$ = "01" + custNum$
+        if len(custNum$) = 7 then custNum$ = "0" + custNum$ 
+
+        gosub clearForm
+        custNumber!.setText(custNum$)
+        firm$=custNum$(1,2)
+        cust$=custNum$(3)
+        gosub loadCustomer
+
+    fi
+fi
+
+[Event Win=101 ID=103 Code=N2:19 <LIST_SELECT> (W101_C103_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+if creditCardList!.getItemCount() > 0 then
+
+    index = creditCardList!.getSelectedIndex()
+    wrkList$ = ccNumberList$
+    while 1
+        for x = 0 to index
+            ppos = pos($0A$ = wrkList$)
+            selection$ = wrkList$(1, ppos - 1)
+            wrkList$ = wrkList$(ppos + 1)
+        next x
+        break
+    wend
+
+    type$ = selection$(1,1)
+    expire_month$ = selection$(2,2)
+    expire_year$ = selection$(4,4)
+    ccName$ = cvs(selection$(8,30),3)
+    ccNumSelected$ = selection$(38)
+
+    if type$ = "V" then
+        visa!.setSelected(1)
+        mastercard!.setSelected(0)
+        amex!.setSelected(0)
+    else
+        if type$ = "M" then
+            visa!.setSelected(0)
+            mastercard!.setSelected(1)
+            amex!.setSelected(0)
+        else
+            visa!.setSelected(0)
+            mastercard!.setSelected(0)
+            amex!.setSelected(1)
+        fi
+    fi
+
+    month!.setText(expire_month$)
+    year!.setText(expire_year$)
+    name!.setText(ccName$)
+    creditCardNumber!.setText(fnobscure_cc$(ccNumSelected$))
+
+fi
+
+[Event Win=101 ID=108 Code=c0 <CHECK_OFF> (W101_C108_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+mastercard!.setSelected(1)
+amex!.setSelected(0)
+
+[Event Win=101 ID=108 Code=c1 <CHECK_ON> (W101_C108_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+mastercard!.setSelected(0)
+amex!.setSelected(0)
+
+[Event Win=101 ID=109 Code=c0 <CHECK_OFF> (W101_C109_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+visa!.setSelected(0)
+amex!.setSelected(1)
+
+[Event Win=101 ID=109 Code=c1 <CHECK_ON> (W101_C109_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+visa!.setSelected(0)
+amex!.setSelected(0)
+
+[Event Win=101 ID=110 Code=c0 <CHECK_OFF> (W101_C110_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+visa!.setSelected(1)
+mastercard!.setSelected(0)
+
+[Event Win=101 ID=110 Code=c1 <CHECK_ON> (W101_C110_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+visa!.setSelected(0)
+mastercard!.setSelected(0)
+
+[Event Win=101 ID=111 Code=c0 <CHECK_OFF> (W101_C111_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+payOrder!.setSelected(1)
+gosub payingOrder
+
+[Event Win=101 ID=111 Code=c1 <CHECK_ON> (W101_C111_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+payOrder!.setSelected(0)
+gosub payingInvoices
+
+[Event Win=101 ID=112 Code=c0 <CHECK_OFF> (W101_C112_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+payInvoices!.setSelected(1)
+gosub payingInvoices
+
+[Event Win=101 ID=112 Code=c1 <CHECK_ON> (W101_C112_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+payInvoices!.setSelected(0)
+gosub payingOrder
+
+[Event Win=101 ID=113 Code=l0 <LIST_CLICK> (W101_C113_LIST_CLICK)]
+rem ' Click in list box
+rem ' gb__event! = cast(BBjListClickEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+payment = 0
+
+selection = selectAnInvoice!.getSelectedIndex()
+invoices! = selectAnInvoice!.getAllItems()
+
+if invoices!.size() >0 then
+      for x = 0 to invoices!.size() - 1
+              
+          invLine$ = invoices!.get(x)
+      
+          if x = selection then
+              if invLine$(len(invLine$)-3) = " Pay" then
+                  invLine$ = invLine$(1, len(invLine$)-4)
+                  invoices!.set(x, invLine$)
+              else
+                  invLine$ = invLine$ + " Pay"
+                  invoices!.set(x, invLine$)
+                  invAmount! = cast(BBjString, invList!.get(x))
+                  payment = payment + num(invAmount!)
+              fi
+          else
+              if invLine$(len(invLine$)-3) = " Pay" then
+                  invAmount! = cast(BBjString, invList!.get(x))
+                  payment = payment + num(invAmount!)
+              fi
+          fi
+      next x
+
+else
+      payment = 0
+fi
+
+selectAnInvoice!.deselectAll()
+selectAnInvoice!.removeAllItems()
+selectAnInvoice!.insertItems(0, invoices!)
+
+if payment <> 0 then
+    payment!.setText(str(payment:"($###,##0.00)"))
+else
+    payment!.setText("")
+fi
+
+[Event Win=101 ID=117 Code=c0 <CHECK_OFF> (W101_C117_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub turnOffVerification
+
+[Event Win=101 ID=117 Code=c1 <CHECK_ON> (W101_C117_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub resetVerification
+
+[Event Win=101 ID=122 Code=B <PUSH_BUTTON> (W101_C122_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub closeFiles
+goto gb__eoj
+
+[Event Win=101 ID=123 Code=B <PUSH_BUTTON> (W101_C123_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub clearForm
+
+[Event Win=101 ID=124 Code=B <PUSH_BUTTON> (W101_C124_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub processTransaction
+
+
+[Function (center_window)]
+rem ' -----------------------------------------------------------------
+rem ' center_window
+rem ' -----------------------------------------------------------------
+
+center_window:
+
+rem running as an applet
+if info(3,6)="2" then
+    topLevelWindow!.setTitleBarVisible(0)
+    applet!=ourAPI!.getAppletProxy()
+    applet!.setBounds(0,0,100,500)
+else
+    width = scrDimension!.width
+    height = scrDimension!.height
+    winWidth = ourWindow!.getWidth()
+    winHeight = ourWindow!.getHeight()
+
+    x = int((width-winWidth)/2)
+    y = int((height-winHeight)/2)
+
+    ourWindow!.setLocation(x,y)
+fi
+
+return
+
+[Function (clearForm)]
+rem ' -----------------------------------------------------------------
+rem ' clearForm
+rem ' -----------------------------------------------------------------
+
+clearForm:
+
+custNumber!.setText("")
+custName!.setText("")
+
+creditCardList!.removeAllItems()
+
+creditCardNumber!.setText("")
+name!.setText("")
+month!.selectIndex(0)
+year!.selectIndex(0)
+visa!.setSelected(0)
+mastercard!.setSelected(0)
+amex!.setSelected(0)
+
+payInvoices!.setSelected(1)
+payOrder!.setSelected(0)
+
+selectAnInvoice!.removeAllItems()
+selectAnInvoice!.setEnabled(1)
+
+orderReference!.setText("")
+orderReference!.setEditable(0)
+
+balance!.setText("")
+balance!.setEditable(0)
+
+payment!.setText("")
+payment!.setEditable(0)
+
+gosub resetVerification
+avsAddress!.setText("")
+avsZipCode!.setText("")
+cardSecCode!.setText("")
+
+return
+
+[Function (closeARE01)]
+rem ' -----------------------------------------------------------------
+rem ' closeARE01
+rem ' -----------------------------------------------------------------
+
+closeARE01:
+
+close(ARE01,err=*next)
+
+return
+
+[Function (closeFiles)]
+rem ' -----------------------------------------------------------------
+rem ' closeFiles
+rem ' -----------------------------------------------------------------
+
+closeFiles:
+
+close(ARM01,err=*next)
+close(ART01,err=*next)
+close(ART11,err=*next)
+close(ARE01,err=*next)
+close(ARE11,err=*next)
+close(ECM02,err=*next)
+
+return
+
+[Function (declarations)]
+rem ' -----------------------------------------------------------------
+rem ' declarations
+rem ' -----------------------------------------------------------------
+
+declarations:
+
+USE java.awt.Dimension
+USE com.basis.creditCard.CreditCardAuthorization
+
+DECLARE BBjAPI ourAPI!
+DECLARE BBjSysGui ourSysGui!
+DECLARE BBjSystemMetrics ourSystemMetrics!
+DECLARE Dimension scrDimension!
+DECLARE BBjWindow ourWindow!
+DECLARE BBjTopLevelWindow topLevelWindow!
+
+DECLARE BBjVector ourControlVector!
+DECLARE BBjControl control!
+DECLARE BBjEditBox custNumber!
+DECLARE BBjEditBox custName!
+DECLARE BBjEditBox emailAddress!
+DECLARE BBjListBox selectAnInvoice!
+DECLARE BBjEditBox orderReference!
+DECLARE BBjEditBox balance!
+DECLARE BBjEditBox payment!
+DECLARE BBjListButton creditCardList!
+DECLARE BBjEditBox creditCardNumber!
+DECLARE BBjEditBox name!
+DECLARE BBjListButton month!
+DECLARE BBjListButton year!
+DECLARE BBjRadioButton visa!
+DECLARE BBjRadioButton mastercard!
+DECLARE BBjRadioButton amex!
+
+DECLARE BBjRadioButton verification!
+DECLARE BBjEditBox avsAddress!
+DECLARE BBjEditBox avsZipCode!
+DECLARE BBjEditBox cardSecCode!
+DECLARE BBjRadioButton payInvoices!
+DECLARE BBjRadioButton payOrder!
+
+DECLARE BBjVector invoices!
+DECLARE BBjVector invList!
+DECLARE BBjString invAmount!
+
+DECLARE BBjFileInfo fileInfo!
+DECLARE BBjString fileLocation!
+
+DECLARE CreditCardAuthorization ccAuth!
+DECLARE BBjString response!
+DECLARE BBjString tempDef!
+
+DECLARE BBjString cardNumber!
+DECLARE BBjString expDate!
+DECLARE BBjString amount!
+DECLARE BBjString ccName!
+DECLARE BBjString uniqueID!
+DECLARE BBjString cvv2!
+DECLARE BBjString ccType!
+DECLARE BBjString ccStreet!
+DECLARE BBjString ccZip!
+DECLARE BBjString comment1!
+
+
+return
+
+[Function (deselectInvoices)]
+rem ' -----------------------------------------------------------------
+rem ' deselectInvoices
+rem ' -----------------------------------------------------------------
+
+deselectInvoices:
+
+if invoices! <> null() and  invoices!.size() > 0
+    for x = 0 to invoices!.size() - 1
+
+        invLine$ = invoices!.get(x)
+
+        if invLine$(len(invLine$)-3) = " Pay" then
+           invLine$ = invLine$(1, len(invLine$)-4)
+           invoices!.set(x, invLine$)
+        fi
+
+    next x
+
+    selectAnInvoice!.deselectAll()
+    selectAnInvoice!.removeAllItems()
+    selectAnInvoice!.insertItems(0, invoices!)
+fi
+
+return
+
+[Function (getAuthorization)]
+rem ' -----------------------------------------------------------------
+rem ' getAuthorization
+rem ' -----------------------------------------------------------------
+
+getAuthorization:
+
+rem '----<get the properties file location>----
+propfile = unt
+open(propfile)"ec_creditcardProcessing.properties"
+fileInfo! = bbjapi().getFileSystem().getFileInfo(propfile)
+fileLocation! = fileInfo!.getFilename()
+close(propfile)
+
+rem '----<prep data>----
+cardNumber! = str(useCCNum$)
+
+if visa!.isSelected() then
+    ccType! = "V"
+else
+    if mastercard!.isSelected() then
+        ccType! = "M"
+    else
+        ccType! = "A"
+    fi
+fi
+
+expDate! = month!.getText() + str(year!.getText())(3,2)
+paymentAmt = fngetNumber(payment!.getText())
+amount! = str(paymentAmt)
+ccName! = name!.getText()
+
+if payInvoices!.isSelected() then
+     uniqueID! = date(0:"%Y%Mz%Dz%Hz%mz%sz") + cust$ + "B"
+else
+    rem ' prepay an order
+    reference$ = orderReference!.getText()
+    reference$ = reference$ + "0000000"
+    uniqueID! = date(0:"%Y%Mz%Dz%Hz%mz%sz") + reference$(1,7)
+fi
+
+if verification!.isSelected() then
+    cvv2! = cvs(cardSecCode!.getText(), 3)
+    ccStreet! = cvs(avsAddress!.getText(), 3)
+    ccZip! = cvs(avsZipCode!.getText(), 3)
+fi
+
+if payInvoices!.isSelected() then
+    comment1! = firm$ + cust$ +"/" + commentInv$
+else
+    comment1! = firm$ + cust$ +"/" + orderReference!.getText()
+fi
+
+rem '----<get the authorization object>----
+ccAuth! = new CreditCardAuthorization(fileLocation!)
+
+if verification!.isSelected()
+    response! = ccAuth!.processAuthorization(cardNumber!, ccType!, expDate!, amount!, ccName!, uniqueID! ,cvv2!, ccStreet!, ccZip!, comment1!)
+else
+    response! = ccAuth!.processAuthorizationWithoutAVSandCSC(cardNumber!, ccType!, expDate!, amount!, ccName!, uniqueID!, comment1!)
+fi
+
+rem '----<prep the results >----
+tempDef! = ccAuth!.getReponseStringTemplateDefinition()
+dim auth$:tempDef!
+auth$=response!
+
+return
+
+[Function (getConfirmation)]
+rem ' -----------------------------------------------------------------
+rem ' getConfirmation
+rem ' -----------------------------------------------------------------
+
+getConfirmation:
+
+ccConfirmed = 0
+invNumber$ = ""
+commentInv$ = ""
+payList$ = ""
+
+rem ' build the message
+msg$ = "Please confirm that you are charging " + cvs(str(fngetNumber(payment!.getText()):"($###,##0.00)"),3)
+msg$ = msg$ + " to the card " + creditCardNumber!.getText()
+
+if payOrder!.isSelected() then
+    msg$ = msg$ + " to prepay an order."
+else
+    msg$ = msg$ + " to pay invoice(s) "
+
+    invoices! = selectAnInvoice!.getAllItems()
+
+    for x = 0 to invoices!.size() - 1
+        
+        invLine$ = invoices!.get(x)
+
+        if invLine$(len(invLine$)-3) = " Pay" then
+            ppos = pos(" " = invLine$)
+            invNumber$ = invNumber$ + invLine$(1, ppos - 1) + ", "
+            commentInv$ = commentInv$ + invLine$(1, ppos - 1) + "-"
+            invAmount! = cast(BBjString, invList!.get(x))
+            payAmount = num(invAmount!)
+            payList$ = payList$ + invLine$(1, ppos - 1) + ":" + str(payAmount) + $0A$
+        fi
+            
+    next x
+    invNumber$ = cvs(invNumber$,3)
+    invNumber$ = invNumber$(1, len(invNumber$)-1)
+    commentInv$ = commentInv$(1, len(commentInv$)-1)
+
+    msg$ = msg$ + invNumber$ + "."
+
+fi
+
+title$ = "Confirmation"
+
+resp = msgbox(msg$, 4 + 32, title$)
+
+if resp = 6 then
+    ccConfirmed = 1
+fi
+
+return
+
+[Function (getEmailAddress)]
+rem ' -----------------------------------------------------------------
+rem ' getEmailAddress
+rem ' -----------------------------------------------------------------
+
+getEmailAddress:
+
+read record(tmm03, key = custNum$, err=*next)tmm03$
+
+email_add$ = ""
+while 1
+    read record(tmm03, end=*break)tmm03$
+    if pos(custNum$ = tmm03$) <> 1 then break
+    
+    if tmm03.ap_contact$ = "Y" then 
+        email_add$ = cvs(tmm03.e_mail$,3)
+        break
+    fi
+    
+    if tmm03.primary_contact$ = "Y" then
+        email_add$ = cvs(tmm03.e_mail$,3)
+    fi
+    
+wend
+if cvs(email_add$,3) = "" then 
+    email_add$ = "customer-service@basis.cloud"
+fi
+
+emailAddress!.setText(email_add$)
+
+return
+
+[Function (get_objects)]
+rem ' -----------------------------------------------------------------
+rem ' get_objects
+rem ' -----------------------------------------------------------------
+
+get_objects:
+
+ourControlVector! = ourWindow!.getAllControls()
+
+for i=0 to ourControlVector!.size() - 1
+    control!= cast(BBjControl, ourControlVector!.getItem(i))
+
+    if control!.getName().equals("custNumber") then custNumber! = cast(BBjEditBox, control!)
+    if control!.getName().equals("custName") then custName! = cast(BBjEditBox, control!)
+
+    if control!.getName().equals("creditCardList") then creditCardList! = cast(BBjListButton, control!)
+
+    if control!.getName().equals("creditCardNumber") then creditCardNumber! = cast(BBjEditBox, control!)
+    if control!.getName().equals("name") then name! = cast(BBjEditBox, control!)
+    if control!.getName().equals("month") then month! = cast(BBjListButton, control!)
+    if control!.getName().equals("year") then year! = cast(BBjListButton, control!)
+    if control!.getName().equals("visa") then visa! = cast(BBjRadioButton, control!)
+    if control!.getName().equals("mastercard") then mastercard! = cast(BBjRadioButton, control!)
+    if control!.getName().equals("amex") then amex! = cast(BBjRadioButton, control!)
+
+    if control!.getName().equals("payInvoices") then payInvoices! = cast(BBjRadioButton, control!)
+    if control!.getName().equals("payOrder") then payOrder! = cast(BBjRadioButton, control!)
+
+    if control!.getName().equals("selectAnInvoice") then selectAnInvoice! = cast(BBjListBox, control!)
+    if control!.getName().equals("orderReference") then orderReference! = cast(BBjEditBox, control!)
+
+    if control!.getName().equals("balance") then balance! = cast(BBjEditBox, control!)
+    if control!.getName().equals("payment") then payment! = cast(BBjEditBox, control!)
+
+    if control!.getName().equals("verification") then verification! = cast(BBjRadioButton, control!)
+
+    if control!.getName().equals("avsAddress") then avsAddress! = cast(BBjEditBox, control!)
+    if control!.getName().equals("avsZipCode") then avsZipCode! = cast(BBjEditBox, control!)
+    if control!.getName().equals("cardSecCode") then cardSecCode! = cast(BBjEditBox, control!)
+    if control!.getName().equals("emailAddress") then emailAddress! = cast(BBjEditBox, control!)
+    
+next i
+
+return
+
+[Function (loadCreditCards)]
+rem ' -----------------------------------------------------------------
+rem ' loadCreditCards
+rem ' -----------------------------------------------------------------
+
+loadCreditCards:
+
+ourWindow!.setCursor(3)
+
+year$=date(0:"%Y")
+month$=date(0:"%Mz")
+
+creditCardList$=""
+ccNumberList$=""
+
+READ (ecm02,KEY=firm$+cust$,DOM=*next)
+
+while 1
+  READ RECORD (ecm02,END=*break)ecm02$
+
+  if ecm02.firm_id$<>firm$ OR ecm02.customer_nbr$<>cust$ then break
+
+  if ecm02.cc_expires_yr$ < year$ then continue
+  if ecm02.cc_expires_yr$ = year$ and ecm02.cc_expires_mo$ < month$ then continue
+  if ecm02.user_code$="**" continue
+
+  ccu$="",cce$=CVS(ecm02.credit_card_num$,3)
+  CALL "BCC.11",ccu$,cce$
+
+  if cce$="" THEN ccu$ = cce$
+
+  creditCardList$ = creditCardList$ + fnobscure_cc$(ccu$) + " " + ecm02.cc_expires_mo$ + " " + ecm02.cc_expires_yr$ + $0A$
+  ccNumberList$ = ccNumberList$ + CVS(ecm02.cc_type$,7) + ecm02.cc_expires_mo$ + ecm02.cc_expires_yr$ + ecm02.cc_name$ + ccu$ + $0a$
+wend
+
+if len(creditCardList$) > 0
+    creditCardList!.insertItems(0, creditCardList$)
+    creditCardList!.deselect()
+fi
+
+ourWindow!.setCursor(0)
+
+return
+
+[Function (loadCustomer)]
+rem ' -----------------------------------------------------------------
+rem ' loadCustomer
+rem ' -----------------------------------------------------------------
+
+loadCustomer:
+
+found = 0
+read record(ARM01, key=custNum$, err=*next)arm01$; found = 1
+
+if !found then
+    msg$ = "There is no customer on file with that customer number."
+    title$ = "Customer Not Found"
+    resp = msgbox(msg$,16,title$)
+else
+    custName!.setText(cvs(arm01.CUST_NAME$,3))
+    avsAddress!.setText(cvs(arm01.ADDR_LINE_1$,3))
+    avsZipCode!.setText(cvs(arm01.ZIP_CODE$,3))
+
+    gosub loadInvoiceList
+    gosub loadCreditCards
+    gosub getEmailAddress
+fi
+
+return
+
+[Function (loadExpiration)]
+rem ' -----------------------------------------------------------------
+rem ' loadExpiration
+rem ' -----------------------------------------------------------------
+
+loadExpiration:
+
+rem ' month
+
+month$ = $0A$
+for x = 1 to 12
+    month$ = month$ + str(x:"00") + $0A$
+next x
+month!.removeAllItems()
+month!.insertItems(0, month$)
+
+rem ' year
+
+thisYear = num(date(0:"%Y"))
+year$ = $0A$
+for x = thisYear to thisYear + 20
+    year$ = year$ + str(x) + $0A$
+next x
+year!.removeAllItems()
+year!.insertItems(0, year$)
+
+return
+
+[Function (loadInvoiceList)]
+rem ' -----------------------------------------------------------------
+rem ' loadInvoiceList
+rem ' -----------------------------------------------------------------
+
+loadInvoiceList:
+
+ourWindow!.setCursor(3)
+
+startKey$=custNum$(1,2) + "  " + custNum$(3)
+invList$=""
+invList! = ourAPI!.makeVector()
+selectAnInvoice!.removeAllItems()
+
+read(art01,key=startKey$,err=*next)
+
+rem ' we will only look at invoices within the last year
+today = jul(0,0,0)
+oneYear = today - 365
+
+balance = 0
+
+while 1
+    rem ' open invoice header
+    read record(art01, end=*break)art01$
+
+    if pos(startKey$=art01$)<>1 then break
+
+    rem ' invoice older than one year skip it
+    if fnaonjul(art01.invoice_date$) < oneYear then continue
+
+    invAmount = art01.invoice_amt
+    invBalance = 0
+    pmt = 0
+
+    rem ' sum any payments
+    read(art11,key=art01$(1,17),dom=*next)
+    while 2
+        read record(art11,end=*break)art11$
+        if pos(art01$(1,17)=art11$)<>1 then break
+        if art11.AR_TRAN_CODE$="C" then
+            pmt=pmt+art11.trans_amt
+
+        fi
+    wend
+    invBalance = invAmount + pmt
+
+    rem ' sum any unposted payments
+    pmt = 0
+    read(are11,key=firm$,dom=*next)
+    while invBalance
+        read record(are11,end=*break)are11$
+        if firm$<>are11.firm_id$ then break
+        if cust$<>are11.customer_nbr$ or art01.ar_inv_nbr$<>are11.ar_inv_nbr$ then continue
+        pmt = pmt + (are11.apply_amt * (-1))
+    wend
+    invBalance = invBalance + pmt   
+    
+    if invBalance <> 0 then
+        invBalance$ = str(invBalance:"($###,##0.00)")
+        while len(invBalance$) < 11
+            invBalance$ = " " + invBalance$
+         wend
+        invList$ = invList$ + art01.ar_inv_nbr$ + "  " + fnaondate$(art01.invoice_date$) + " " + invBalance$ + $0a$
+        invList!.add(str(invBalance))
+        balance = balance + invBalance
+    fi
+
+wend
+
+if invList$<>"" then
+    selectAnInvoice!.insertItems(0, invList$)
+    balance!.setText(str(balance:"($###,##0.00)"))
+fi
+
+ourWindow!.setCursor(0)
+
+return
+
+[Function (maskCCNbr)]
+rem ' -----------------------------------------------------------------
+rem ' maskCCNbr
+rem ' -----------------------------------------------------------------
+
+maskCCNbr:
+
+maskedCCNbr$ = cvs(creditCardNumber!.getText(),3)
+
+for x = 1 to len(maskedCCNbr$) - 4
+    maskedCCNbr$(x,1) = "X"
+next x
+
+return
+
+[Function (openARE01)]
+rem ' -----------------------------------------------------------------
+rem ' openARE01
+rem ' -----------------------------------------------------------------
+
+openARE01:
+
+call "templates.pgm::ARE01"
+ARE01 = unt
+OPEN(ARE01)"ARE-01"
+
+return
+
+[Function (openFiles)]
+rem ' -----------------------------------------------------------------
+rem ' openFiles
+rem ' -----------------------------------------------------------------
+
+openFiles:
+
+call "templates.pgm::ARM01"
+ARM01 = unt
+OPEN(ARM01)"ARM-01"
+
+call "templates.pgm::ART01"
+ART01 = unt
+OPEN(ART01)"ART-01"
+
+call "templates.pgm::ART11"
+ART11 = unt
+OPEN(ART11)"ART-11"
+
+call "templates.pgm::ARE11"
+ARE11 = unt
+OPEN(ARE11)"ARE-11"
+
+call "ec_open::TMM03"
+
+rem ' ecm02 is encrypted
+call "ec_open::ECM02"
+
+return
+
+[Function (payingInvoices)]
+rem ' -----------------------------------------------------------------
+rem ' payingInvoices
+rem ' -----------------------------------------------------------------
+
+payingInvoices:
+
+orderReference!.setText("")
+orderReference!.setEditable(0)
+
+selectAnInvoice!.setEnabled(1)
+payment!.setText("")
+payment!.setEditable(0)
+
+return
+
+[Function (payingOrder)]
+rem ' -----------------------------------------------------------------
+rem ' payingOrder
+rem ' -----------------------------------------------------------------
+
+payingOrder:
+
+selectAnInvoice!.setEnabled(0)
+gosub deselectInvoices
+
+payment!.setText("")
+payment!.setEditable(1)
+
+orderReference!.setEditable(1)
+
+return
+
+[Function (postCashReceipts)]
+rem ' -----------------------------------------------------------------
+rem ' postCashReceipts
+rem ' -----------------------------------------------------------------
+
+postCashReceipts:
+
+while 1
+
+    rem ' the list of invoices an amount is contained in paylist$
+    rem ' in the form of invoice_nbr$ + ":" + invoice_amt$ + $0A$
+
+    rem ' open the cash receipts header file
+    gosub openARE01
+
+    p=pos($0a$=paylist$)
+    if p=0 then break
+
+    invoice$=paylist$(1,p-1)
+    paylist$=paylist$(p+1)
+
+    p=pos(":"=invoice$)
+    payment=num(invoice$(p+1))
+    invoice$=invoice$(1,p-1)  
+
+    dim are01$:fattr(are01$)
+
+    are01.firm_id$=firm$
+    are01.customer_nbr$=cust$
+    are01.receipt_date$=fndate$(today_jul)
+    are01.cash_rec_cd$ = "WF "
+    are01.cash_or_chk$="C"
+
+    are01.ar_check_nbr$="CC"+date(today_jul:"%M/%D")
+    if payment<=0 then are01.ar_check_nbr$="APPLY C"
+
+    are01.RESERVED_STR_3$=fill(4)
+    are01.payment_amt=0
+
+    readrecord(are01,key=are01$(1,25),dom=*next)are01$
+    are01.payment_amt=are01.payment_amt+payment
+    are01$=field(are01$)
+    writerecord(are01,key=are01$(1,25))are01$
+
+    rem ' close the cash receipts header file
+    gosub closeARE01
+
+    dim are11$:fattr(are11$)
+
+    are11.firm_id$=firm$
+    are11.customer_nbr$=cust$
+    are11.receipt_date$=are01.receipt_date$
+    are11.cash_rec_cd$ = "WF "
+    are11.ar_check_nbr$=are01.ar_check_nbr$
+    are11.ar_inv_nbr$=invoice$
+    are11.apply_amt=0
+
+    readrecord(are11,key=are11$(1,32),dom=*next)are11$
+    are11.apply_amt=are11.apply_amt+payment
+    are11$=field(are11$)
+    writerecord(are11,key=are11$(1,32))are11$
+
+wend
+
+return
+
+[Function (processTransaction)]
+rem ' -----------------------------------------------------------------
+rem ' processTransaction
+rem ' -----------------------------------------------------------------
+
+processTransaction:
+
+gosub validateCreditCard
+
+if ccValid then
+
+    rem ' validate type and amount of payment
+    gosub validatePaymentTypeAndAmount
+
+    if payValid then
+
+        rem ' validate avs and card security code data
+        gosub validateAvsCsc
+
+        if avsCscValid then
+                
+            rem ' present the transaction details confirmation message
+            gosub getConfirmation
+        
+            if ccConfirmed then
+
+                rem ' process the credit card
+                gosub getAuthorization
+                if !auth.is_Approved then
+
+                    msg$ = "The charge was declined." + $0A$ + auth.message$ + "."
+                    title$ = "Charge Declined"
+                    resp = msgbox(msg$, 16, title$)
+
+                else
+                    gosub updateFiles
+                    
+                    msg$ = "The transaction was approved."
+                    if payInvoices!.isSelected() then
+                        msg$ = msg$ + " The data has been written to cash receipts."
+                    else
+                        msg$ = msg$ + " You must post the payment to cash receipts once an invoice has been created."
+                    fi
+                    title$ = "Transaction Complete"
+                    resp = msgbox(msg$, 64, title$)
+                    
+                    gosub sendEmail
+                    
+                    gosub clearForm
+                    custNumber!.setText(firm$ + cust$)
+                    gosub loadCustomer
+
+                fi
+            fi
+        fi
+    fi
+fi
+
+return
+
+[Function (resetVerification)]
+rem ' -----------------------------------------------------------------
+rem ' resetVerification
+rem ' -----------------------------------------------------------------
+
+resetVerification:
+
+verification!.setSelected(1)
+avsAddress!.setEditable(1)
+avsZipCode!.setEditable(1)
+cardSecCode!.setEditable(1)
+
+return
+
+[Function (sendEmail)]
+rem ' -----------------------------------------------------------------
+rem ' sendEmail
+rem ' -----------------------------------------------------------------
+
+sendEmail:
+
+from$ = "customer-service@basis.cloud"
+
+rem ' live email addresses
+to$ = cvs(emailAddress!.getText(),3)
+if to$ = "" then 
+    to$ = "customer-service@basis.cloud"
+    cc$ = ""
+else
+    cc$ = "customer-service@basis.cloud"
+fi
+bcc$ = "kw5121151@gmail.com"
+
+subject$ = "Payment Receipt"
+
+gosub maskCCNbr
+
+if payOrder!.isSelected()
+    msgtxt$ = "Order # " + cvs(orderReference!.getText() ,3) + " in the amount of " + payment!.getText() + " paid by credit card # " + maskedCCNbr$
+else
+    msgtxt$ = "Invoice Number(s) " + invNumber$ + " in the amount of " + payment!.getText() + " paid by credit card # " + maskedCCNbr$
+fi
+
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+xresp = msgbox("Receipt sent via email to " + to$, 0, "Email Sent")
+
+return
+
+[Function (turnOffVerification)]
+rem ' -----------------------------------------------------------------
+rem ' turnOffVerification
+rem ' -----------------------------------------------------------------
+
+turnOffVerification:
+
+verification!.setSelected(0)
+avsAddress!.setEditable(0)
+avsZipCode!.setEditable(0)
+cardSecCode!.setEditable(0)
+
+return
+
+[Function (updateFiles)]
+rem ' -----------------------------------------------------------------
+rem ' updateFiles
+rem ' -----------------------------------------------------------------
+
+updateFiles:
+
+if payInvoices!.isSelected() then
+    gosub postCashReceipts
+fi
+
+return
+
+[Function (userDefinedFunctions)]
+rem ' -----------------------------------------------------------------
+rem ' userDefinedFunctions
+rem ' -----------------------------------------------------------------
+
+userDefinedFunctions:
+
+def fnaonjul(ymd$)
+  y=1900+asc(ymd$(1))-32,m=asc(ymd$(2))-32,d=asc(ymd$(3))-32
+  IF m<1 OR d<1 THEN LET jd=0 ELSE LET jd=JUL(y,m,d)
+  return jd
+fnend
+
+def fnaondate$(ymd$)
+    y=1900+asc(ymd$(1))-32,m=asc(ymd$(2))-32,d=asc(ymd$(3))-32
+    if m<1 or d<1 then d$="Unknown" else d$=date(jul(y,m,d):"%Mz/%Dz/%Y")
+    return d$
+fnend
+
+DEF fnobscure_cc$(temp_cc$)
+    IF LEN(temp_cc$)=16 THEN
+        temp_cc$=STR(temp_cc$:"XXXX XXXX XXXX XXXX")
+        temp_cc$(1,15)="**** **** ****" 
+    ELSE
+        IF LEN(temp_cc$)=15 THEN
+            temp_cc$=STR(temp_cc$:"XXXX XXXXXX XXXXX")
+            temp_cc$(1,11)="**** ******"
+        ELSE 
+            IF LEN(temp_cc$)=13 THEN 
+                temp_cc$=STR(temp_cc$:"XXXX XXX XXX XXX")
+                temp_cc$(1,12)="******* ***"
+            fi
+        fi  
+    fi
+    RETURN temp_cc$
+FNEND
+
+def fndate$(julian)
+    d$=chr(asc(date(julian:"%Yp"))+32) + chr(asc(date(julian:"%Mp"))+32) + chr(asc(date(julian:"%Dp"))+32)
+    return d$
+fnend
+
+def fngetNumber(num$)
+    wrk$ = num$
+    if len(wrk$) = 0 then
+        number = 0
+    else
+        number$ = ""
+        for x = 1 to len(wrk$)
+            if pos(wrk$(x,1) = "0123456789.-") <> 0 then
+                number$ = number$ + wrk$(x,1)
+            fi
+        next x
+        isNumeric = 0
+        number = num(number$, err=*next); isNumeric = 1
+        if !isNumeric then
+            number = 0
+        fi
+    return number
+fnend
+return
+
+[Function (validateAvsCsc)]
+rem ' -----------------------------------------------------------------
+rem ' validateAvsCsc
+rem ' -----------------------------------------------------------------
+
+validateAvsCsc:
+
+avsCscValid = 0
+
+if verification!.isSelected()
+    if avsAddress!.getText() = "" or avsZipCode!.getText() = "" or cardSecCode!.getText() = "" then
+        msg$ = "To use AVS and Card Security Code checkin you must enter a street address, a zip code and the card security code."
+        title$ = "Verification Data"
+        resp = msgbox(msg$, 16, title$)
+    else
+        avsCscValid = 1
+    fi
+else
+    rem ' not used avs and csc
+    avsCscValid = 1
+fi
+
+return
+
+[Function (validateCreditCard)]
+rem ' -----------------------------------------------------------------
+rem ' validateCreditCard
+rem ' -----------------------------------------------------------------
+
+validateCreditCard:
+
+rem ' for valid cards ccValid will be set to 1 and useCCNum$ will contain the
+rem ' credit card number
+
+ccValid = 0
+useCCNum$ = ""
+
+if visa!.isSelected() then
+    cc_type$ = "V"
+else
+    if mastercard!.isSelected()
+        cc_type$ = "M"
+    else
+        if amex!.isSelected()
+            cc_type$ = "A"
+        else
+            msg$ = "You must select a credit card type."
+            title$ = "Credit Card Type"
+            resp = msgbox(msg$, 16, title$)
+            return
+        fi
+    fi
+fi
+
+wrkCC$ = creditCardNumber!.getText() 
+if wrkCC$ = "" then
+    msg$ = "You must enter a credit card number."
+    title$ = "Credit Card Number"
+    resp = msgbox(msg$, 16, title$)
+    return
+else
+    if wrkCC$(1,1) = "*" then
+        useCCNum$ = ccNumSelected$
+    else
+        useCCNum$ = creditCardNumber!.getText()
+    fi
+fi
+
+cclen=LEN(useCCNum$)
+
+ccFailed = 0
+if cclen = 0 OR cclen > 16 then
+    ccFailed = 1
+else
+    if useCCNum$(1,1) <> "2" and useCCNum$(1,1) <> "3" and useCCNum$(1,1) <> "4" and useCCNum$(1,1) <> "5" then
+        ccFailed = 1
+        rem ' not Amex (3), Visa (4), or MasterCard (5 and 2)
+    else
+        if useCCNum$(1,1) = "3" and (cclen <> 15 or cc_type$ <> "A") then
+            ccFailed = 1
+            rem ' Invalid Amex
+        else
+            if useCCNum$(1,1) = "4" and cclen <> 16 and cclen <> 13 then
+                ccFailed = 1
+                rem ' Invalid Visa
+            else
+                if useCCNum$(1,1) = "4" and cc_type$ <> "V" then
+                    ccFailed = 1
+                    rem ' invalid Visa
+                else
+                    if (useCCNum$(1,1) = "2" or useCCNum$(1,1) = "5") and (cclen <> 16 or cc_type$ <> "M") then
+                        ccFailed = 1
+                        rem ' Invalid MasterCard
+                    else
+                        for x = 1 to cclen
+                            numeric = 0
+                            let text=NUM(useCCNum$(x, 1),err=*next); numeric = 1
+                            if !numeric then
+                                ccFailed = 1
+                                break
+                            fi
+                        next x
+                        if !ccFailed then
+                            rem ' Luhn Formula
+                            let sum = num(useCCNum$(cclen, 1))
+                            for c = cclen - 1 TO 1 STEP -1
+                                let digit=num(useCCNum$(c,1))
+                                if mod(cclen - c, 2) = 1 then 
+                                    double = digit * 2
+                                    sum = sum + int(double/10) + mod(double,10) 
+                                else
+                                    sum = sum + digit
+                                fi
+                            next c
+                            let valid = (mod(sum,10) = 0)
+                            if !valid then
+                                ccFailed = 1
+                            fi
+                        fi
+                    fi
+                fi
+            fi
+        fi
+    fi
+fi
+
+if ccFailed then
+    msg$ = "The credit card number enterd is invalid."
+    title$ = "Invalid Number"
+    resp = msgbox(msg$, 16, title$)
+    return
+fi
+
+if month!.getText() = "" or year!.getText() = "" then
+    msg$ = "You must select an expiration date."
+    title$ = "Expiration Date"
+    resp = msgbox(msg$, 16, title$)
+    return
+fi
+    
+if name!.getText() = "" then
+    msg$ = "You must enter a name for the credit card."
+    title$ = "Credit Card Name"
+    resp = msgbox(msg$, 16, title$)
+    return
+fi
+
+rem ' we are valid
+ccValid = 1
+return
+
+[Function (validatePaymentTypeAndAmount)]
+rem ' -----------------------------------------------------------------
+rem ' validatePaymentTypeAndAmount
+rem ' -----------------------------------------------------------------
+
+validatePaymentTypeAndAmount:
+
+payValid = 0
+
+if payInvoices!.isSelected() and payment!.getText() = "" then
+    msg$ = "You must selected one or more invoices for payment."
+    title$ = "Select Invoices"
+    resp = msgbox(msg$, 16, title$)
+else
+    if payOrder!.isSelected() and payment!.getText() = "" then
+        msg$ = "You must enter the amount of the prepayment."
+        title$ = "Enter Payment Amount"
+        resp = msgbox(msg$, 16, title$)
+    else
+        if payOrder!.isSelected() then
+            paymentAmt$ = payment!.getText()
+            isNumeric = 0
+            paymentAmt = num(paymentAmt$,err=*next); isNumeric = 1
+            if !isNumeric then
+                msg$ = "The payment amount must be numeric."
+                title$ = "Payment Amount"
+                resp = msgbox(msg$, 16, title$)
+            else
+                payValid = 1
+            fi
+        else
+            payValid = 1
+        fi
+    fi
+fi
+
+return
+

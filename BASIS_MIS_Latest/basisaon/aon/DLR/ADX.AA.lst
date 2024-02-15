@@ -1,0 +1,93 @@
+0010 REM "ADX - Copy SYM-07/17 Printer Records To ADS-01"
+0020 REM "Program: ADX.AA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0040 REM 
+0041 REM "KJS|10/16/96|Version 6.0
+0048 REM 
+0049 SETERR 9000
+0050 ON O0 GOTO 0051,0051,0051,0051,0051,0051,0051,0051,0051,0500
+0060 BEGIN 
+0100 REM "----  Open/Lock Files"
+0110 OPEN (1)"ADS-01"; REM "--- ADministator Parameter File"
+0120 OPEN (2)"SYM-07"; REM "--- ADD+ON Printer Header"
+0130 OPEN (3)"SYM-17"; REM "--- ADD+ON Printer Detail
+0200 REM "----  IOlists"
+0210 ADS01P: IOLIST A0$(1),A1$(1),A2$(1),A3$(1),A4$(1),A5$(1),A6$(1),A[ALL]
+0220 SYM07: IOLIST B0$(1),B1$(1)
+0230 SYM17: IOLIST C0$(1),C1$(1),C2$(1),C3$(1)
+0400 REM "----  Parameters"
+0420 REM LET PGM$=PGM(-2); RUN "ADS.01"
+0500 REM "----  System Parameter Check"
+0510 IF STATUS<>0 THEN GOTO 9900
+0600 REM "---- Local Variables"
+0620 DIM A0$(8),A1$(30),A2$(30),A3$(30),A4$(50*3),A5$(50*3),A6$(30),A[4]
+0630 DIM B0$(2),B1$(48),C0$(3),C1$(30),C2$(60),C3$(16)
+0700 REM "---- Background"
+0720 PRINT 'SB',
+0740 CALL "ADC.WC",1,0,80,0,0,4,0; CALL "ADC.WC",1,0,80,0,0,6,0
+0790 PRINT 'SF',
+0900 REM "---- User Confirmation"
+0920 LET MSG$="Copy ADD+ON Printer Records To The ADministrator System? <YES/NO>: ",V0$="S",V1$="",V2$="",V3$="",V4$="",V0=3,V1=40+INT(LEN(MSG$)/2)+2,V2=3; PRINT @(40-INT(LEN(MSG$)/2),3),MSG$,; GOSUB 7000; LET V$=FNU$(V$)
+0940 IF V$<>"YES" THEN GOTO 9900
+0960 PRINT @(28,5),'SB',"Converting:",'SF',
+1000 REM " --- Position file"
+1020 READ (2,KEY="",DOM=1021)
+1100 REM " --- Main loop"
+1101 REM "Header
+1110 READ (2,END=4000)IOL=SYM07
+1120 PRINT @(40,5),B0$(1,2)," ",B1$(1,30),'CL',
+1130 LET A0$(1,1)="P",A0$(2,2)=B0$(1,2),A0$(7,1)=" ",A1$(1,30)=B1$(1,30),A2$(1,1)=B1$(31,1)
+1150 WRITE (1,KEY=A0$)IOL=ADS01P
+1190 READ (3,KEY=B0$,DOM=1191)
+1200 REM "Detail loop"
+1210 READ (3,END=1900)IOL=SYM17
+1220 IF C0$(1,2)<>B0$(1,2) THEN GOTO 1900
+1230 LET A0$(7,1)=C0$(3,1),A1$(1,30)=C1$(1,30),A4$(1)=C2$
+1250 WRITE (1,KEY=A0$)IOL=ADS01P
+1290 GOTO 1200
+1900 REM "Next printer
+1990 GOTO 1100
+4000 REM " --- End of file"
+4090 GOTO 9900
+7000 REM " --- User Input Routine"
+7020 CALL "ADC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-1),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7040 IF V3=5 THEN GOTO 7100
+7050 IF V3=6 THEN GOTO 7200
+7085 LET I$=V$
+7090 RETURN 
+7100 REM " --- Error During Input"
+7200 REM " --- Escape Requested"
+7210 PRINT @(0,22),'CL','CURSOR'("ON"),
+7220 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR((ASC(Q$)-32)*POS(" "<>Q2$(2,1)):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8030 DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+8040 DEF FND$(Q$)=CHR(NUM(Q$(5,2))+32)+CHR(NUM(Q$(1,2))+32)+CHR(NUM(Q$(3,2))+32)
+8050 DEF FNE$(Q$)=STR(INT(TIM):"00")+":"+STR(FPT(TIM)*60:"00")
+8060 DEF FNF$(Q$,Q1$)=STR(-NUM(Q$):Q1$)
+8070 DEF FNG$(Q$)=STR((ASC(Q$)-32)*POS(" "<>Q$):"000")
+8090 DEF FNP$(Q$)=CVS(Q$,2)
+8180 DEF FNU$(Q$)=CVS(Q$,4)
+9000 REM "---- Errors"
+9010 LET ER0$=LST(PGM(TCB(5))),ER1$=STR(TCB(5)),ER2$=PGM(-1),ER0=ERR,ER1=0
+9020 IF ER0=0 AND POS(" (PTR"=ER0$)>0 THEN GOTO 9600
+9040 CALL "ADC.EA",ERR=9080,ER0$,ER1$,ER2$,ER0,ER1
+9050 IF ER1=1 THEN GOTO 9100
+9060 IF ER1=3 THEN GOTO 9800
+9080 PRINT @(0,22),'CL',ER0$,'LF','LF',; ESCAPE
+9100 REM "---- Retry"
+9120 RETRY
+9200 REM "---- Printer Offline"
+9220 CALL "ADS.EB",V3
+9230 IF V3=4 THEN GOTO 9900
+9240 IF V3=6 THEN ESCAPE
+9290 RETRY
+9900 REM "---- Exit"
+9990 RUN "ADS.AA"
+9999 END

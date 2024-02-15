@@ -1,0 +1,97 @@
+// Quarterly reconciliation for Add+On reseller purchases <serr_19>
+// produces a file that can be imported into Excel, Access, etc.
+
+host$=info(3,4);
+if pos("kazoo"=host$)<>0 then fpath$="/u/docfiles/pub/";
+	else fpath$=stbl("TEMP");
+txtfil$=fpath$+info(3,2)+"_addon.txt";
+sdate$="";
+edate$=sdate$;
+
+display/form="MAS_HEAD" screen_desc="AddOn Reseller Reconciliation";
+
+do_form:
+prompt for/form="serr_19"
+	/noborder
+	/row=3
+	sdate=sdate$,edate=edate$,txtfil=txtfil$;
+
+txtfil$=cvs(txtfil$,3);
+
+get_action:
+action$="Y";
+prompt for
+	/nobox
+	/row=23
+	/imask="A"
+	/prompt="Is the Above Correct? (Yes, No, End)" 
+	/drop
+	action$;
+if ctl(2) then exit;
+switch action$
+	{
+	case "Y": {}
+	case "N": goto do_form;
+	case "E": exit;
+	default:  goto get_action;
+	}
+set display/rows=1/cols=130/trim txtfil$;
+if txtfil$="V" then set display term();
+first_time=1;
+
+pause/message/blink "Working . . . ";
+
+for each snt01 where trans_date between sdate$ and edate$
+and firm_id="01"
+sort by customer_nbr+ar_inv_nbr
+//group by ar_inv_nbr
+{
+find/noerror snm01 of snt01;
+if available(snm01)=0 
+//then {pause/message=snt01.serial_nbr+" Not found";continue;}
+then continue;
+pause/message "Checking invoice "+snt01.ar_inv_nbr;
+
+find/next/noerror/index=indx3 tmm01 using snm01.firm_id+customer_nbr;
+if available(tmm01)=0 or 
+tmm01.firm_id+customer_nbr<>snm01.firm_id+customer_nbr 
+then continue;
+//pause/message=snm01.firm_id+customer_nbr+" "+serial_nbr+" Not found";
+if len(tmm01.usr_def_y_n)>1 then 
+	if tmm01.usr_def_y_n(2,1)="Y" then gosub build_line;
+}
+
+subroutine build_line
+{
+if first_time then display "Cust#"/col=0 "Name"/col=7 "Invoice"/col=38
+		"Date"/col=46 "TranType"/col=57 "LicType"/col=86
+		"Serial#"/col=94 "TranUsr"/col=104 "TotUsr"/col=112
+		"InvoiceAmt"/col=118;
+first_time=0;
+find/noerror csm07 using snt01.firm_id+type_of_sale;
+if available(csm07) then
+	print_type$=cvs(csm07.description,3);
+	else print_type$="Unknown";
+
+invoice_total$=" not found";
+invtot=0;
+find/noerror art03 using snt01.firm_id+"  "+snt01.customer_nbr+snt01.ar_inv_nbr+"000";
+if available(art03)
+	{
+	invtot=art03.total_sales;
+	invoice_total$=str(invtot:"#####0.00-");
+	}
+call/nowindow "(BBX)aondate.bbx",snt01.trans_date,dt$,"U";
+display/notitle snt01.customer_nbr/col=0 
+	tmm01.cont_firm/col=7
+	snt01.ar_inv_nbr/col=38
+	dt$/col=46
+	print_type$/col=57/len=28
+	snm01.license_type/col=86
+	snt01.serial_nbr/col=94
+	str(snt01.users:"######0")/col=104
+	str(snm01.users:"#####0")/col=112
+	invoice_total$/col=118;
+}
+
+//

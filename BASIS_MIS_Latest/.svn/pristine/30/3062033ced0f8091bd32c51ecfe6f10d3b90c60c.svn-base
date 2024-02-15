@@ -1,0 +1,10 @@
+ns!=BBjAPI(). getGlobalNamespace()
+print ns!.getValue("document_queue_processor")
+print "removing Lock"
+ns!.removeLock("document_queue_processor")
+print "lock removed"
+
+print "program done "
+input *
+
+release

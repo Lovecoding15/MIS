@@ -1,0 +1,41 @@
+rem ' program to launch the Historical Invoice Query Bui
+begin
+
+use java.net.URLDecoder
+
+declare BBjString firmCust!
+declare URLDecoder decoder!
+
+rem ' do settrace
+rem ' trace = unt
+rem ' open(trace,mode="O_TRUNC")"c:/zwork/basis/goldmine/connection/triggertrace.log"
+rem ' settrace(trace)
+
+firmCust! = clientenv("sourcekey",err=*next)
+rem ' firmCust! = "01000100"
+if (firmCust! <> null()) then
+	decoder! = new URLDecoder()
+	firmCust$ = decoder!.decode(firmCust!, "UTF-8")
+	firmCust$ = firmCust$(1,2) + "  " + firmCust$(3)
+	rem ' resp = msgbox(firmCust$,0,"debug")
+
+	rem ' run barista query
+	barista$ = "c:/program files/basis/barista/"
+	rem ' bbjhome$ = System.getProperty("basis.bbjhome") +"/"
+	bbjhome$ = "c:/program files/basis/bin/"
+	pid$ = hta(info(3,0)); ns_name$ = "query_result" + pid$
+	uName$ = "admin"
+	uPwd$ = "admin123"
+	cmdline$ = bbjhome$ + "bbj -tTMINI -q -WD""" + barista$ + """ -c""" + barista$ + "sys/config/enu/barista.cfg"" sys/prog/bax_launch_task.bbj " + "- -yT -u" + uName$ + " -p" + uPwd$ + " -tOPT_INVHDR -k""" +firmcust$ + """ -n" + ns_name$ + " -w"
+	rem ' resp = msgbox(cmdline$,0,"debug")
+	a = scall(cmdline$)
+	rem ' selectedKey$ = cast(BBjString, BBjAPI().getGroupNamespace().getValue(ns_name$, err=*next))
+	rem ' resp = msgbox(selectedKey$,0,"check")
+endif
+
+rem ' endtrace
+rem ' close(trace)
+release
+
+
+	

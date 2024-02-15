@@ -1,0 +1,49 @@
+// look up linked client/server SN's in snt02 xref <aon_csxref.rwi>
+
+repeat 
+{
+screen_desc$="Client/Server Links";
+display/form="MAS_HEAD" screen_desc=screen_desc$ firm_name="";
+
+insn$="";
+prompt for /prompt="Serial Number? "
+	/imask="ZZZZZZZZZ"/row=8/len=9/help="(Enter=exit)"
+	insn$;
+if ctl(2) or insn$="" then goto the_end;
+found=0;
+
+find/next/noerror snt02 using insn$;
+new_ds:
+if available(snt02) and insn$=cvs(snt02.data_server,2) then
+	{ 
+	sn$=snt02.data_server;
+	if found=0 then display/notitle "Data Server SN:"/col=0 sn$
+		 "Clients:"/col=33 snt02.serial_nbr/col=43;
+	else display/notitle snt02.serial_nbr/col=43;
+	found=found+1;
+	find/next/noerror snt02;
+	goto new_ds;
+	}
+
+if found=0 then
+	{
+	find/next/noerror/index=indx2 snt02 using insn$;
+	new_sn:
+	if available(snt02) and insn$=cvs(snt02.serial_nbr,2) then
+		{ 
+		display/notitle "Client SN:"/col=0 snt02.serial_nbr
+		"Data Server SN:" snt02.data_server;
+		found=found+1;
+		find/next/noerror/index=indx2 snt02;
+		goto new_sn;
+		}
+	}
+
+if found=0 then pause/message=insn$+" Not Found";
+	else display/newpage;
+}
+
+the_end:
+exit ;
+
+//

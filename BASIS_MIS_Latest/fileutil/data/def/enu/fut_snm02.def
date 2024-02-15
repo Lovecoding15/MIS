@@ -1,0 +1,35 @@
+Table Definition Module
+FUT_SNM02 - Serial Nbr Registration Info
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SNM02^/mnt/data/aon_prod/apps/fileutil/;^BSHO;^^^Serial Nbr Registration Info^Serial Nbr Registration Info^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+SERIAL_NBR^FUT_SNM02^001^C^^3001^ine_serial_nbr^0^^^1^^Y^^^^^FUT_SERIAL_NBR^Serial Number (Basis)^Serial Number (Basis)^Serial Number (Basis)^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Serial Number (Basis)^^^^^^^N^
+UPG_TO_PRODUCT^FUT_SNM02^002^C^^3002^ine_upg_to_product^0^^^2^^N^^^^^FUT_UPG_TO_PRODU^Upg To Product^Upg To Product^Upg To Product^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^3^Enter Firm ID^^^^^^^N^
+UPG_TO_REV^FUT_SNM02^003^C^^3003^ine_upg_to_rev^0^^^3^^N^^^^^FUT_UPG_TO_REV^Upg To Rev^Upg To Rev^Upg To Rev^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^3^Enter Telemaster Contact ID^^^^^^^N^
+LIC_PROPERTY1^FUT_SNM02^004^C^^3004^ine_lic_property1^0^^^4^^N^^^^^FUT_LIC_PROPERTY^Lic Property3^Register to Customer^Register to Customer^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Registration Date^^^^^^^N^
+LIC_PROPERTY2^FUT_SNM02^005^C^^3005^ine_lic_property2^0^^^5^^N^^^^^FUT_LIC_PROPERTY^Lic Property3^Register to Customer^Register to Customer^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Domestic or Internationa^^^^^^^N^
+LIC_PROPERTY3^FUT_SNM02^006^C^^3006^ine_lic_property3^0^^^6^^N^^^^^FUT_LIC_PROPERTY^Lic Property3^Register to Customer^Register to Customer^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Register to Customer^^^^^^^N^
+ODBC_RW^FUT_SNM02^007^C^^3007^ine_odbc_rw^0^^^7^^N^^^^^FUT_ODBC_RW^Odbc Rw^Reserved For Dealer Use^Reserved For Dealer Use^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Reserved For Dealer Use^^^^^^^N^
+EXP_DAYS_DT^FUT_SNM02^008^C^^3008^ine_exp_days_dt^0^^^8^^N^^^^^FUT_EXP_DAYS_DT^Exp Days Dt^Exp Days Dt^Exp Days Dt^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^2^^^^^^^^N^
+AVAILABLE^FUT_SNM02^009^C^^3009^ine_available^0^^^9^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^56^^^^^^^^^^^0^^^^^^^^N^
+SEP1^FUT_SNM02^010^C^^3010^ine_sep1^0^^^10^^N^^^^^FUT_SEP1^Sep1^Sep1^Sep1^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^Y^
+USERS1^FUT_SNM02^011^C^^3011^inn_users1^0^^^11^^N^^^^^FUT_USERS1^Users1^Users1^Users1^N^^N^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^^^^^^^^Y^
+USERS2^FUT_SNM02^012^C^^3012^inn_users2^0^^^12^^N^^^^^FUT_USERS2^Users2^Users2^Users2^N^^N^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^^^^^^^^Y^
+USERS3^FUT_SNM02^013^C^^3013^inn_users3^0^^^13^^N^^^^^FUT_USERS3^Users3^Users3^Users3^N^^N^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^^^^^^^^Y^
+NUM_1^FUT_SNM02^014^C^^3014^inn_num_1^0^^^14^^N^^^^^FUT_NUM_1^Num 1^Reserved Num 1^Reserved For Dealer Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^Enter Reserved For Dealer Use^^^^^^^Y^
+NUM_2^FUT_SNM02^015^C^^3015^inn_num_2^0^^^15^^N^^^^^FUT_NUM_2^Num 2^Reserved Num 2^Reserved For Dealer Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^Enter Reserved For Dealer Use^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SNM02^PRIMARY^FUT_SNM02.SERIAL_NBR                    ^FUT_SNM02.SERIAL_NBR$^RD_REC_DATA.SERIAL_NBR$^RD_REC_DATA.SERIAL_NBR$                 
+{KeyDefsEnd}
+{GridCols}
+001FUT_SNM02.SERIAL_NBR                    ;002FUT_SNM02.UPG_TO_PRODUCT                ;003FUT_SNM02.UPG_TO_REV                    ;004FUT_SNM02.LIC_PROPERTY1                 ;005FUT_SNM02.LIC_PROPERTY2                 ;006FUT_SNM02.LIC_PROPERTY3                 ;007FUT_SNM02.ODBC_RW                       ;008FUT_SNM02.EXP_DAYS_DT                   ;009FUT_SNM02.AVAILABLE                     ;010FUT_SNM02.SEP1                          ;011FUT_SNM02.USERS1                        ;012FUT_SNM02.USERS2                        ;013FUT_SNM02.USERS3                        ;014FUT_SNM02.NUM_1                         ;015FUT_SNM02.NUM_2                         ;
+{GridColsEnd}

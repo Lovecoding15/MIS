@@ -1,0 +1,159 @@
+rem --- notify the apparovers --- notifiy_approvers.src
+
+rem	setesc std_error
+rem	seterr std_error
+
+enter ape_invoicehdr, ape_invoicehdr$, sysinfo$
+
+rem --- Retrieve SYSINFO Data
+
+    rem ' sysinfo_template$=stbl("+SYSINFO_TPL",err=*next)
+    rem ' dim sysinfo$:sysinfo_template$
+    rem ' sysinfo$=stbl("+SYSINFO",err=*next)
+    firm_id$=sysinfo.firm_id$
+    user_id$=sysinfo.user_id$
+
+rem --- Open Files
+
+	num_files=3
+	dim open_tables$[1:num_files],open_opts$[1:num_files],open_chans$[1:num_files],open_tpls$[1:num_files]
+	rem ' open_tables$[1]="APE_INVOICEHDR",open_opts$[1]="OTA"
+	open_tables$[1]="APM_APPROVERS",open_opts$[1]="OTA"
+	open_tables$[2]="ADM_USER",open_opts$[2]="OTA"
+	open_tables$[3]="APM_VENDMAST",open_opts$[3]="OTA"
+	gosub open_tables
+
+	rem ' ape_invoicehdr=num(open_chans$[1]);dim ape_invoicehdr$:open_tpls$[1]
+	apm_approvers=num(open_chans$[1]);dim apm_approvers$:open_tpls$[1]
+	adm_user=num(open_chans$[2]);dim adm_user$:open_tpls$[2]
+	apm_vendmast=num(open_chans$[3]);dim apm_vendmast$:open_tpls$[3]
+
+rem --- set up
+
+msgtxt$ = "Hello, " + $0A$ + $0A$
+msgtxt$ = msgtxt$ + "There are Accounts Payable invoices awaiting your approval. Please log into Barista Addon and review the following invoices: " + $0A$ + $0A$
+
+subject$ = "Accounts Payable Invoices awaiting approval."
+
+from$ = "customer-service@basis.com"
+
+found=0
+read record(adm_user,key=user_id$,dom=*next)adm_user$; found=1
+if found then
+	cc$=cvs(adm_user.email_address$,3)
+else
+	cc$ = ""
+endif
+
+to$ = ""
+file$ = ""
+
+while 1
+	read record(apm_approvers,end = *break)apm_approvers$
+	read record(adm_user, key=apm_approvers.user_id$)adm_user$
+	if len(to$) = 0 then
+		to$ = adm_user.email_address$
+	else
+		to$ = to$ + ", " + adm_user.email_address$
+	endif
+wend
+
+rem --- main loop
+
+invoices_found = 0
+
+while 1
+	read record(ape_invoicehdr, end=*break)ape_invoicehdr$
+	
+	if ape_invoicehdr.approved$ = "N" or cvs(ape_invoicehdr.approved$,3) = "" then
+		line$ = "(" + ape_invoicehdr.ap_inv_no$ + ") "
+		line$ = line$ + ape_invoicehdr.vendor_id$ + " "
+		
+		read record(apm_vendmast, key = ape_invoicehdr.firm_id$ + ape_invoicehdr.vendor_id$)apm_vendmast$
+		
+		line$ = line$ + apm_vendmast.vendor_name$
+		
+		msgtxt$ = msgtxt$ + line$ + $0A$
+		
+		invoices_found = 1
+	endif
+	
+wend
+
+rem --- no invoices found needing approval continue on
+if !invoices_found then 
+	exit
+	rem ' run stbl("+DIR_PGM") + "apr_invoiceentry.aon"
+endif
+
+rem --- send the email
+
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+msg_id$="GENERIC_OK"
+dim msg_tokens$[1]
+msg_tokens$[1]="The Approvers have been notified via email. The Invoice Register and Update will be completed when all approvals have been made."
+gosub disp_message
+
+goto std_exit	
+
+open_tables:rem --- Open Tables
+
+	call stbl("+DIR_SYP")+"bac_open_tables.bbj",
+:		open_beg,
+:		open_end,
+:		open_tables$[all],
+:		open_opts$[all],
+:		open_chans$[all],
+:		open_tpls$[all],
+:		rd_table_chans$[all],
+:		open_batch,
+:		open_status$
+
+	if open_status$<>""
+		msg_id$="ENTRY_OPEN_ERROR"
+		dim msg_tokens$[1]
+			msg_tokens$[1]=open_status$
+		gosub disp_message
+		goto std_exit
+	endif
+
+	return
+
+disp_message:rem --- Display Message Dialog
+
+	call stbl("+DIR_SYP")+"bac_message.bbj",
+:		msg_id$,
+:		msg_tokens$[all],
+:		msg_opt$,
+:		rd_table_chans$[all]
+
+	return
+
+std_error: rem --- Standard error handler (01Apr2006)
+
+	err_text$=""
+	if tcb(5)<>0 and pgm(-1)=pgm(-2) err_text$=pgm(tcb(5),err=*next)
+	call stbl("+DIR_SYP")+"bac_error.bbj",err=std_error_exit,pgm(-2),str(tcb(5)),str(err),err_text$,err_act$
+	if pos("EXIT"=err_act$) goto std_error_exit
+	if pos("ESCAPE"=err_act$) seterr 0;setesc 0
+	if pos("RETRY"=err_act$) retry
+
+std_error_exit:
+
+	master_user$=cvs(stbl("+MASTER_USER",err=std_error_release),2)
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=std_error_release)
+	if cvs(sysinfo.user_id$,2)=master_user$ escape
+
+std_error_release:
+
+	status=999
+	if pgm(-1)<>pgm(-2) exit
+
+	release
+
+std_exit: rem --- Standard program end (01Mar2006)
+
+	release

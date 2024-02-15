@@ -1,0 +1,35 @@
+Accounts Receivable 6.0^ARMENU60^M^^^im_menua_accts_receivable.png^N^00000000^XTR^^1.0^^^^^^^^
+	Maintenance^AR60MAINT^G^^^im_node_col.png^N^00000000^XTR^^1.0^^^^^^^^
+		Customer Maintenance^AR60CUSTMNT^A^^adx_v6leadin.aon -- ARM.MA^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+		Order/Invoice History Lookup^AR60INVHIST^A^^adx_v6leadin.aon -- BOI.01^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+		Terms Code Maintenance^AR60TERMS^A^^adx_v6leadin.aon -- ARM.AA^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+		Tax Code Maintenance^AR60TAXCD^A^^adx_v6leadin.aon -- ARM.JA^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	Cash Receipts Entry^AR60CRE^A^^adx_v6leadin.aon -- ARE.AA^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	Cash Receipts Register^AR60CRR^A^^adx_v6leadin.aon -- ARR.AA^im_menui_report.png^N^00000000^XTR^^1.0^^^^^^^^
+	Aging Report^AR60AGREP^A^^adx_v6leadin.aon -- ARR.4A^im_menui_report.png^N^00000000^XTR^^1.0^^^^^^^^
+	Print to File Report Retrieval^AR60REPRET^A^^adx_v6leadin.aon -- SYC.QRleadin.src^im_menui_report.png^N^00000000^XTR^^1.0^^^^^^^^
+	Period End Processing^AR60PEREND^G^^^im_node_col.png^N^00000000^XTR^^1.0^^^^^^^^
+		Customer Statements^AR60CUSTST^A^^adx_v6leadin.aon - ARR.CA^im_menui_report.png^^00000000^XTR^^1.0^^^^^^^^
+		Monthly Cash Receipts Journal^AR60MCRJ^A^^adx_v6leadin.aon -- ARR.GA^im_menui_report.png^N^00000000^XTR^^1.0^^^^^^^^
+		Customer Ranking Report^AR60CUSTRR^A^^adx_v6leadin.aon -- ARR.KA^im_menui_report.png^N^00000000^XTR^^1.0^^^^^^^^
+		Period End Update^AR60PEUPDATE^A^^adx_v6leadin.aon -- ARU.BA^im_menui_update.png^N^00000000^XTR^^1.0^^^^^^^^
+Serial Number System^SERNBRSYS^M^^^im_menua_licensing.png^N^00000000^XTR^^1.0^^^^^^^^
+	Serial Number Maintenance^SNSSERNBRM^A^^adx_v6leadin.aon -- SNM.MA^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	Additional Serial Number Options^SNSADDSER^A^^adx_v6leadin.aon -- BSN.10^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	Reprint License/Key from SN History^SNSRLK^A^^adx_v6leadin.aon -- BLK.18^im_menui_table.png^^00000000^XTR^^1.0^^^^^^^^
+	OEM Serial Numbers^SNSOEMSN^A^^adx_v6leadin.aon -- BOE.01^im_menui_table.png^^00000000^XTR^^1.0^^^^^^^^
+	Serial Number Customer Change^SERNBRCUSTCHG^A^^adx_v6leadin.aon -- SNM.MH^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	SAM/Developer Contracts^SERNBRSAM^A^^adx_v6leadin.aon -- SMC.01^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	SAM Disbursement File Maintenance^SNSSAMDISM^A^^adx_v6leadin.aon -- SMC.02^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	SAM Report for BSG^SNSSAMBSG^A^^adx_v6leadin.aon -- BSG.MO^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	P3 Inquiry^SNSP3SERIAL^A^^/mnt/data/bbprogs/menu.pgm^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+BASIS GUI Functions^AON61^M^^^im_menua_releases.png^N^00000000^XTR^^1.0^^^^^^^^
+	New Menu Description^0000003130^P^^clearDPQLock.src^im_menui_table.png^^00000000^XTR^^1.0^^^^^^^^
+	BASIS GUI Add+On^AON60GUIADDON^A^^basis2.bbj^im_menui_utility.png^N^00000000^XTR^^1.0^^^^^^^^
+	BASIS B-COMM^AON60BCOMM^A^^ec.bbj^im_menui_utility.png^N^00000000^XTR^^1.0^^^^^^^^
+	Digital Dashboard^AON60DIGITALDASH^A^^digitalDashboard.bbj^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	Graphic Sales Reports^AON60SALESREP^A^^graphicSalesReport.src^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	Drill Down Sales Report^AON60DRILDWN^A^^runDrillDownReport.src^im_menui_table.png^N^00000000^XTR^^1.0^^^^^^^^
+	Sales Summary by Sales Type/Price Tier^AON60SALESRES^A^^runSalesResearch.src^im_menui_table.png^^00000000^XTR^^1.0^^^^^^^^
+	License Counts by User Type and SAM Status within Customer^LICCOUNTSAM^A^^licenseSAMStatusGUI.src^im_menui_table.png^^00000000^XTR^^1.0^^^^^^^^
+	Active Serial Number Report^0000003060^A^^runActiveSerialNbrRpt.src^im_menui_table.png^^00000000^XTR^^1.0^^^^^^^^

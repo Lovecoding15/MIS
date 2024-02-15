@@ -1,0 +1,13 @@
+0010 REM "ADC - Bridge - Window Select"
+0020 REM "Program: ADC.WB"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0090 SETERR 9900
+0100 ENTER NAME$,NOUPDATE
+1020 CALL "SYC.WB",NAME$,NOUPDATE
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

@@ -1,0 +1,32 @@
+rem ' temporary program to test OpenInvoice
+
+USE ::OpenInvoice.src::OpenInvoice
+
+DECLARE OpenInvoice openInvoice!
+
+rem ' 004459 - list$ = "0172466/0172424/0172328/0172327/0171891/0171887/0171846/0170936/"
+rem ' 003522 - list$ = "0207267/0207280/"
+rem ' 001078 - list$ = "0207278/0206926/"
+rem ' 009089 - list$ = "0207284/"
+list$ = "0207284/"
+
+while len(list$) > 0
+
+	p = pos("/" = list$)
+	invoice$ = list$(1,p-1)
+	list$ = list$(p+1)
+	
+	print "Invoice: ", invoice$
+
+	openInvoice! = new OpenInvoice("01","009089",invoice$)
+
+	print "Open Invoice " , openInvoice!.isOpenInvoice()
+
+	print "SAM Rebate? ", openInvoice!.isSAMRebate()
+
+	print "SAM Rebate Eligible? ", openInvoice!.isSAMRebateEligible()
+
+	print "Invoice Balance ", openInvoice!.getInvoiceBalance()
+wend
+
+end

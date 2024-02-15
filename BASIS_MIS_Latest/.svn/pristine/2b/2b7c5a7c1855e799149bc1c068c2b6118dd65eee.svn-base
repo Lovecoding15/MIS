@@ -1,0 +1,28 @@
+0010 REM "ADC - Bridge - Open A Printer"
+0020 REM "Program: ADC.GB"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0040 REM 
+0045 REM "PRINTER  : Printer Channel"
+0050 REM "MESSAGE  : Message Flag (1=<F4> to Interrupt.../0=No Message)"
+0055 REM "PFDESC$  : Override PF Report Description (no user input)"
+0060 REM "SELECTPR$: Specified Printer (override terminal default)"
+0062 REM "         :  May be in ADS (PR___m_) format or SYS (PRm) format
+0065 REM "STATUS   : Return status (0=No error)"
+0070 REM 
+0080 SETERR 9000
+0090 ENTER PRINTER,MESSAGE,PFDESC$,SELECTPR$,STATUS
+0500 REM "Convert from ADS to SYS?
+0510 LET PRTR$=SELECTPR$
+0520 IF LEN(PRTR$)<7 THEN GOTO 0600
+0540 LET PRTR$=SELECTPR$(1,2)+SELECTPR$(6,1)
+0600 IF POS(" "<>PRTR$)=0 THEN GOTO 9000
+1020 CALL "SYC.GB",PRINTER,MESSAGE,PFDESC$,PRTR$,STATUS
+4990 GOTO 9900
+9020 LET STATUS=1
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

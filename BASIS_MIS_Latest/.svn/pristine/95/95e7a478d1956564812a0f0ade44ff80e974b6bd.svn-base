@@ -1,0 +1,63 @@
+seterr errmsg
+
+open$=""
+errmsg$=""
+
+call "ec_open::smc01"
+open$=open$+str(smc01:"000")
+call "ec_open::snm01"
+open$=open$+str(snm01:"000")
+call "ec_open::sn_select"
+open$=open$+str(sn_select:"000")
+
+read (sn_select,key="",dom=*next)
+while 1
+  read record(sn_select,end=*break)sn_select$
+  if cvs(sn_select.selected$,7)<>"Y" then continue
+  temp$="Serial# "+cvs(sn_select.serial_nbr$,3)
+  read record(snm01,key=sn_select.serial_nbr$,err=log_err)snm01$
+  if snm01.active_flag$<>"Y" then continue
+  temp$=temp$+" Contract# "+snm01.contract$
+  read record(smc01,key=snm01.contract$,err=log_err)smc01$
+  if smc01.expire_on_dt$=sn_select.new_date$ then continue
+  if smc01.contr_type$="SM1" and smc01.sam_active$="N" then continue
+  extract record(smc01,key=snm01.contract$,err=log_err)smc01$
+  smc01.expire_on_dt$=sn_select.new_date$ 
+  smc01.annual_dt$=sn_select.new_date$ 
+  smc01.invoiced_flag$=" "
+  if smc01.contr_type$="SM1" then smc01.sam_active$="Y"
+  smc01$=field(smc01$)
+  writerecord(smc01,key=smc01.contract$)smc01$
+  renew$=renew$+temp$+$0a$
+  continue
+  log_err:
+  errmsg$=errmsg$+temp$+errmes(-1)+$0a$
+wend
+
+pgm_exit:
+while len(open$)>1
+  f=num(open$(1,3))
+  open$=open$(4)
+  close(f,err=*next)
+wend
+
+call "renew_kits.pgm"
+
+if errmsg$="" then end
+
+from$="customer-service@basis.cloud"
+to$="mis@basis.cloud"
+subj$="Audev Rental/SAM Renewal Errors"
+cc$=""
+bcc$=""
+
+call "sendEmail.src", from$, to$, cc$, bcc$, subj$, errmsg$, ""
+
+seterr 0
+end
+
+errmsg:
+errmsg$=errmsg$+"Error "+str(err)+" in "+str(tcb(5))+" of "+pgm(-2)+$0a$+errmes(-1)+$0a$
+goto pgm_exit
+
+END

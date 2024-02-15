@@ -1,0 +1,163 @@
+rem Uses
+use com.basis.BCommerceWSResponse
+use com.basis.CustomerInfoResponse
+use com.basis.CustomerInfo
+
+rem Declares
+declare BCommerceWS         bcommerceWS!
+declare BCommerceWSResponse bcommerceWSResponse!
+
+rem Create an instance of the BCommerceWS object
+bcommerceWS! = new BCommerceWS()
+seterr ProcessRequestError
+rem Process the request
+bcommerceWSResponse!= bcommerceWS!.processRequest()
+rem bcommerceWSResponse!= bcommerceWS!.getCustomerInfo("003611","be2007")
+release
+ProcessRequestError:
+print "Make sure the BCommerceWSServer.jar is specified in the BBjServices Classpath. Err = " + str(err) + " ErrMes = " + errmes(-1)
+end
+
+rem BCommerceWS Class definition
+class public BCommerceWS
+    field private BBjNumber BridgeChannel=-1
+    field private BBjString CustomerNumber$
+    field private BBjString CustomerPassword$
+
+    field private static BBjString BRIDGE_ALIAS$="J0"
+
+    field private static BBjString SQL_SERVER$="kazoo2-a"
+    field private static BBjString SQL_PORT$="2001"
+    field private static BBjString SQL_DATABASE$="BASIS AddOn"
+    field private static BBjString SQL_USER$="webmastr"
+    field private static BBjString SQL_PASSWORD$="caryn1s"
+
+    rem Default Constructor
+    method public BCommerceWS()
+        rem open the bridge 
+        #BridgeChannel=unt
+        open (#BridgeChannel,err=BridgeError) #BRIDGE_ALIAS$
+        methodret
+    BridgeError:
+        #BridgeChannel=-1
+    methodend
+
+    rem Processes the web service request
+    method public BCommerceWSResponse processRequest()
+        declare BBjString methodToInvoke!
+        declare BBjString response!
+        declare BCommerceWSResponse bcommerceWSResponse!
+        declare BBjString responseString$
+
+        rem Create a response object
+        bcommerceWSResponse! = new BCommerceWSResponse()
+        rem Make sure the method to invoke was passed in as an argument
+        if (argc > 1)
+            rem The first arg is the method to invoke
+            methodToInvoke! = argv(1)
+            rem Get method arguments from the hash map passed in from the Java application
+            if (#BridgeChannel <> -1)
+                switch (BBjAPI().TRUE)
+                    case methodToInvoke!.equals("getCustomerInfo")
+                        declare BBjString customerNumber$
+                        declare BBjString customerPassword$
+                        read record(#BridgeChannel,key="CustomerNumber",err=*next) customerNumber$   
+                        read record(#BridgeChannel,key="CustomerPassword",err=*next) customerPassword$   
+                        if (customerNumber$ <> "" and customerPassword$ <> "")
+                            bcommerceWSResponse! = #getCustomerInfo(customerNumber$, customerPassword$)
+                        else
+                            bcommerceWSResponse!.setErrorMessage("Invalid parameters specified for method: " + methodToInvoke$)
+                        endif
+
+                        break
+                    case default
+                        bcommerceWSResponse!.setErrorMessage("Invalid method specified: " + methodToInvoke$)
+                        break
+                swend
+            else
+                bcommerceWSResponse!.setErrorMessage("Bridge Channel could not be opened: Make sure that following line is in the config.bbx file: ALIAS " + #BRIDGE_ALIAS$ + " com.basis.bbj.bridge.BBjBridgeOpenPlugin")
+            endif
+        else
+            bcommerceWSResponse!.setErrorMessage("Invalid usage: The method to invoke must be specified as the first argument")
+        endif
+
+        rem Write the response back to the client as a string
+        responseString$ = bcommerceWSResponse!.toByteString()
+        write record(#BridgeChannel,err=*next) responseString$
+
+        rem Return the response
+        methodret bcommerceWSResponse!
+
+    methodend
+
+    method public CustomerInfoResponse getCustomerInfo(BBjString p_customerNumber$, BBjString p_customerPassword$)
+        declare BBjNumber sqlChannel
+        declare BBjString jdbcConnectString$
+        declare BBjString sqlString$
+        declare BBjString response$
+        declare BBjString sqlResult$ 
+        declare CustomerInfo customerInfo!
+        declare CustomerInfoResponse customerInfoResponse!
+
+        rem Set the error handler
+        seterr getCustomerInfoError
+
+        rem Create the customer info response object
+        customerInfoResponse! = new CustomerInfoResponse()
+
+        rem Open a sql connection to the AddOn database
+        sqlchannel = sqlunt 
+        sqlString$ = "jdbc:basis:" + #SQL_SERVER$ + ":" + #SQL_PORT$
+        sqlString$ = sqlString$ + "?database=" + #SQL_DATABASE$
+        sqlString$ = sqlString$ + "&user=" +  #SQL_USER$
+        sqlString$ = sqlString$ + "&pwd=" + #SQL_PASSWORD$
+        sqlopen(sqlchannel) sqlString$
+
+        rem Validate the customer based off of the customer number and the bcommerce pwd
+        sqlString$ = "SELECT count(*) as valid FROM ECM01 where FIRM_ID = '02' and CUSTOMER_NBR = '" + p_customerNumber$ + "' and PASSWORD = '" + p_customerPassword$ + "'"
+        rem The above query will return a 0 or greater than 0 based off of the given customer number and password.
+        rem   =0 -> doesn't exist in our database, so it's an invalid combination
+        rem   >0 -> exists in our database, so it's valid
+        sqlprep(sqlChannel) sqlString$
+        sqlexec(sqlChannel)
+        dim sqlResult$:sqltmpl(sqlChannel)
+        sqlResult$ = sqlfetch(sqlChannel)
+        if (sqlResult.valid)
+            rem Get the Customer Information based off of a Customer Number
+            sqlString$ = "SELECT cont_name as contactName, cont_firm as companyName, address_1 as address1, address_2 as address2, city, state, zip_code as zipCode, country_code as countryCode, phone_number as phoneNumber, fax_num as faxNumber, cust_type as customerType FROM TMM01 where FIRM_ID = '02' and CUSTOMER_NBR = '" + p_customerNumber$ + "'"
+            sqlprep(sqlChannel) sqlString$
+            sqlexec(sqlChannel)
+            dim sqlResult$:sqltmpl(sqlChannel)
+            sqlResult$ = sqlfetch(sqlChannel)
+            rem Create a customer info objects from the sql result
+            customerInfo! = new CustomerInfo()
+            customerInfo!.setContactName(cvs(sqlResult.contactName$,3))
+            customerInfo!.setCompanyName(cvs(sqlResult.companyName$,3))
+            customerInfo!.setAddress1(cvs(sqlResult.address1$,3))
+            customerInfo!.setAddress2(cvs(sqlResult.address2$,3))
+            customerInfo!.setCity(cvs(sqlResult.city$,3))
+            customerInfo!.setState(cvs(sqlResult.state$,3))
+            customerInfo!.setZipCode(cvs(sqlResult.zipCode$,3))
+            customerInfo!.setCountryCode(cvs(sqlResult.countryCode$,3))
+            customerInfo!.setPhoneNumber(cvs(sqlResult.phoneNumber$,3))
+            customerInfo!.setFaxNumber(cvs(sqlResult.faxNumber$,3))
+            customerInfo!.setCustomerType(cvs(sqlResult.customerType$,3))
+            customerInfoResponse!.setCustomerInfo(customerInfo!)
+            customerInfoResponse!.setErrorCode(CustomerInfoResponse.SUCCESS)
+        else
+            customerInfoResponse!.setErrorMessage("Invalid login, user=" + p_customerNumber$ + " password=" + p_customerPassword$)
+        endif
+        
+        rem Return the customer info response
+        methodret customerInfoResponse!
+
+    getCustomerInfoError:
+        rem Return the customer info response
+        customerInfoResponse!.setErrorMessage("Error getting customer info, sql=" + sqlString$ + " err=" + str(err) + " sqlerr=" + str(sqlerr(0)))
+        methodret customerInfoResponse!
+    methodend
+
+classend
+
+
+

@@ -1,0 +1,162 @@
+SETERR errmsg
+REM ' Program name: auto_lic_updt.bbj
+REM ' Update to current rev when SN w/valid SAM gets current rev license from
+REM '   flexlic.bbx but isn't at current rev
+ENTER job_queue$
+sn$=cvs(job_queue.available$,3)
+sn$=pad(sn$,20)
+current_rev$=cvs(job_queue.job_date$,3)
+msg$=""
+
+rem IF sn$(1,3)="OSH" THEN GOTO exit
+
+LET files$="SNM01*SNT01*CSM01*CSM04*CSM13*SMC01*SNM04*IVM01*",p=POS("*"=files$)
+WHILE p
+LET f$=files$(1,p-1),files$=files$(p+1),p=POS("*"=files$)
+CALL "ec_open::"+f$
+WEND
+LET m$="00",chan$=STR(snm01:m$)+STR(snt01:m$)+STR(csm01:m$)+STR(csm04:m$)+STR(csm13:m$)+STR(smc01:m$)+STR(snm04:m$)+STR(ivm01:m$)
+
+LET msg$="Serial number not found"
+EXTRACT RECORD (snm01,KEY=sn$,ERR=*NEXT)snm01$; LET msg$=""
+IF snm01.active_flag$="N" THEN LET msg$="Inactive serial number"
+IF msg$<>"" THEN GOTO errmsg
+LET firm$=snm01.firm_id$
+rem if firm$="01" and snm01.customer_nbr$="007808" then msg$=""; GOTO exit
+LET days_expired=0,sam_active$=""
+FIND RECORD (smc01,KEY=snm01.contract$,DOM=end_sam)smc01$
+LET days_expired=NUM(fnxdays$(smc01.annual_dt$))
+LET sam_active$=snm01.sam_active$
+IF smc01.sam_active$="N" OR days_expired THEN LET sam_active$="N"
+IF sam_active$<>"N" and POS(smc01.contr_type$(1,2)="DV,SM") THEN sam_active$="Y"
+End_sam: 
+if sam_active$<>"Y" then msg$="Inactive SAM"; goto errmsg
+
+item$=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$
+
+valid_rev=0
+readrecord(csm04,key=firm$+current_rev$,dom=*next)csm04$;valid_rev=1
+
+if valid_rev=0 then
+  READ (csm13,KEY=firm$+"C"+item$(7,3),DOM=*next)
+  while 1 
+    READ RECORD (csm13,END=*break)csm13$
+    IF csm13.firm_id$<>firm$ OR csm13.cm_file_type$<>"C" OR csm13.cm_id_1$<>item$(7,3) THEN break
+    READ RECORD (csm04,KEY=firm$+csm13.cm_id_2$,DOM=*next)csm04$
+    IF pos("CUR"=csm04.product_rev$) then current_rev$=cvs(csm04.description$,3);break
+  wend
+fi
+
+if len(current_rev$)<>3 then msg$="No current rev";goto errmsg
+if fnConvertRevToNumber(current_rev$) <= fnConvertRevToNumber(snm01.product_rev$) THEN GOTO EXIT
+
+auth$=fill(10),count=0
+DIM snt01tmp$:FATTR(snt01$)
+READ (snt01,KEY=sn$,ERR=*next)
+while 1
+  k$=KEY(snt01,END=*break)
+  IF POS(sn$=k$)<>1 THEN break
+  READ RECORD (snt01,KEY=k$)snt01$
+  LET snt01tmp$=FIELD(snt01$)
+  if cvs(snt01.auth_code$,3)<>"" then auth$=snt01.auth_code$,count=snt01.license_cnt
+wend
+
+IF snt01tmp.serial_nbr$<>sn$ THEN 
+  msg$="No transactions found for this serial number."
+  GOTO errmsg
+fi
+
+today=JUL(0,0,0)
+
+d$=CHR(ASC(DATE(today:"%Yp"))+32)+CHR(ASC(DATE(today:"%Mp"))+32)+CHR(ASC(DATE(today:"%Dp"))+32)
+
+item$(10,3)=current_rev$
+
+ivm_item$=item$+FILL(5)
+ivmok=0
+FIND RECORD (ivm01,KEY=firm$+ivm_item$,ERR=*next)ivm01$;ivmok=1
+if ivmok=0 then
+ ivm_item$(10,3)="CUR"
+ if ivm_item$(13,3)<>"STD" and ivm_item$(1,3)="BAS" then ivm_item$(13,3)="EXP"
+ FIND RECORD (ivm01,KEY=firm$+ivm_item$,ERR=*next)ivm01$;ivmok=1
+fi
+LET snm01.serial_desc$=ivm01.item_desc$
+LET snm01.avail_expire$=FILL(8)
+LET snm01.product_rev$=current_rev$
+
+LET snt01$=field(snt01tmp$)
+LET snt01.trans_date$=d$
+LET snt01.sn_det_seq$="00001"
+IF d$=snt01tmp.trans_date$ THEN LET snt01.sn_det_seq$=STR(NUM(snt01tmp.sn_det_seq$)+1:"00000")
+LET snt01.ar_inv_nbr$="0000000"
+LET snt01.sequence_nbr$="000"
+LET snt01.type_of_sale$="UNC"
+LET snt01.product_rev$=current_rev$
+LET snt01.action$="M"
+if pos("0"=auth$,-1)=10 then auth$(10,1)="1"
+LET snt01.auth_code$=auth$
+snt01.license_cnt=count
+LET snt01.item$=item$
+LET snt01.ext_price=0
+LET snt01.users=snm01.users
+LET snt01$=FIELD(snt01$)
+WRITE RECORD (snt01,KEY=snt01$(1,28))snt01$
+
+LET snm01$=FIELD(snm01$)
+WRITE RECORD (snm01,KEY=snm01$(1,20))snm01$
+
+LET seq=1,com$="Licensing update to current rev "
+LET com$=com$+DATE(0:"%Mz/%Dz/%Y")
+IF LEN(com$)>48 THEN LET com$=com$(1,48)
+READ (snm04,KEY=sn$,DOM=*NEXT)
+WHILE seq<100
+READ RECORD (snm04,END=*break)snm04$
+IF snm04.serial_nbr$=sn$ THEN LET seq=NUM(snm04.comments_seq$)+1; CONTINUE
+LET snm04.serial_nbr$=sn$
+LET snm04.comments_seq$=STR(seq:"00"),seq=100
+LET snm04.cmt_line$=com$
+LET snm04$=FIELD(snm04$)
+WRITE RECORD (snm04,KEY=snm04$(1,22))snm04$
+WEND
+msg$=current_rev$
+GOTO EXIT
+
+errmsg: 
+IF msg$="" THEN LET msg$=STR(ERR)+" in "+STR(TCB(5))
+
+exit: 
+SETERR exit2
+WHILE LEN(chan$)>1
+LET f$=chan$(1,2),chan$=chan$(3)
+CLOSE (NUM(f$),ERR=*NEXT)
+WEND
+
+exit2: 
+if msg$="" then exit
+
+rem LET logfile$=STBL("AON")+"ADATA/auto_update.log"
+rem LET log$=$22$+cvs(sn$,3)+" lic updt => "+msg$+" "+DATE(0:"%Mz/%Dz/%Y")+$22$
+rem LET a=SCALL("echo "+log$+" >> "+logfile$)
+EXIT
+
+def fnConvertRevToNumber(xrev$)
+	xNumRev = 0, newxrev$=""
+	if len(xrev$) > 0 then
+		for xrev = 1 to len(xrev$)
+			xchar$=xrev$(xrev,1)
+			if pos(xchar$="0123456789.")<>0 then newxrev$=newxrev$+xchar$
+		next xrev
+		xNumRev = num(newxrev$)
+	endif
+	return xNumRev
+fnend
+
+DEF fnxdays$(xdt$)
+LET xdays=0
+LET xy=NUM(xdt$(1,4),ERR=xdays_end)
+LET xm=NUM(xdt$(5,2),ERR=xdays_end)
+LET xd=NUM(xdt$(7,2),ERR=xdays_end)
+LET xdays=MAX(0,JUL(0,0,0)-JUL(xy,xm,xd,ERR=xdays_end))
+xdays_end: 
+RETURN STR(xdays)
+

@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADS_FILTER_COLS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<USER_ID>                </USER_ID>
+		<DD_TABLE_ALIAS>APM_VENDMAST    </DD_TABLE_ALIAS>
+		<FILTER_ID>TEMPORARY VENDORS             </FILTER_ID>
+		<DD_DATA_NAME>TEMP_VEND       </DD_DATA_NAME>
+		<FILTER_TEXT>='Y'</FILTER_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>ADMIN           </USER_ID>
+		<DD_TABLE_ALIAS>BUI_CUSTOMER    </DD_TABLE_ALIAS>
+		<FILTER_ID>TEST1                         </FILTER_ID>
+		<DD_DATA_NAME>FIRST_NAME      </DD_DATA_NAME>
+		<FILTER_TEXT> LIKE 'Car%'</FILTER_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BARISTA         </USER_ID>
+		<DD_TABLE_ALIAS>APM_VENDMAST    </DD_TABLE_ALIAS>
+		<FILTER_ID>TEMPORARY VENDORS             </FILTER_ID>
+		<DD_DATA_NAME>TEMP_VEND       </DD_DATA_NAME>
+		<FILTER_TEXT>='Y'</FILTER_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<DD_TABLE_ALIAS>ADS_DOCUMENTS   </DD_TABLE_ALIAS>
+		<FILTER_ID>GEORGE'S REPORTS              </FILTER_ID>
+		<DD_DATA_NAME>USER_ID         </DD_DATA_NAME>
+		<FILTER_TEXT>='GEORGEP'</FILTER_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PEGGYL          </USER_ID>
+		<DD_TABLE_ALIAS>APM_VENDMAST    </DD_TABLE_ALIAS>
+		<FILTER_ID>HIGHT                         </FILTER_ID>
+		<DD_DATA_NAME>VENDOR_NAME     </DD_DATA_NAME>
+		<FILTER_TEXT> LIKE '%Hight%'</FILTER_TEXT>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

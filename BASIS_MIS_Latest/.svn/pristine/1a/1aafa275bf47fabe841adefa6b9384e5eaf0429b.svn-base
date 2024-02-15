@@ -1,0 +1,81 @@
+// Quick report of active serial numbers for a customer,
+// sorted by port
+// <serr_13>
+dev$="VIDEO";
+device_name$=term();
+sdesc$="Active SN's for a Customer";
+display/form="MAS_HEAD" screen_desc=sdesc$ printer=dev$;
+
+display/header
+"Active Serial Numbers for Cust# "+arm01.customer_nbr/center/len=38;
+display/header
+	cvs(arm01.cust_name,3)/center/len=30;
+display/header/skip=1/after
+	item_line$/center;
+display/header
+	"Serial Number         Users   Rev";
+display/header
+	fill(36,"-");
+
+do_form:
+prompt for/form="serr_13"/noborder/row=3
+	start_port=start_port$,end_port=end_port$,
+	in_cust_num=in_cust_num$;
+if ctl(2) or cvs(start_port$,2)="" or cvs(end_port$,2)="" then exit;
+
+get_action:
+action$="Y";
+prompt for /nobox /row=23 /imask="A"
+	/prompt="Is the above correct? (Yes, No, Printer, End)" 
+	action$;
+
+switch action$
+	{
+	case "Y": {}
+	case "N": goto do_form;
+	case "P": {gosub select_device; 
+		if device_type$="F" then dev$="FILE";
+		if device_type$="P" dev$="PRINTER "+device_name$;
+		if device_type$="T" then dev$="VIDEO";
+		display/form="MAS_HEAD" screen_desc=sdesc$ printer=dev$;
+		goto get_action;}
+	case "E": exit;
+	default:  goto get_action;
+	}
+set display device_name$;
+
+item_line$="Ports "+start_port$+" through "+end_port$;
+
+get_customer:
+firm$="01";
+find_arm01:
+find/noerror arm01 using firm$+in_cust_num$;
+if available(arm01)=0 and firm$="01" then
+	{ firm$="02"; goto find_arm01;}
+if available(arm01) then gosub display_serials;
+
+#include (LIBRARY)syseldev.h
+
+subroutine display_serials
+{
+pause/message "Searching ...";
+for each snm01 of arm01
+	where port_id between start_port$ and end_port$
+	and active_flag="Y"
+	group by port_id
+	group by serial_nbr
+	{
+	if first_of(port_id) then
+		display/notitle/skip=1/before "Port: "+port_id;
+	rev$=snm01.product_rev;
+	find/noerror csm04 using snm01.firm_id+product_rev;
+	if available(csm04) then rev$=csm04.description(1,4);
+	display/notitle serial_nbr/col=2
+		users/col=24/mask="###0"
+		rev$/col=31;
+	}
+
+//display/newpage;
+}
+
+//

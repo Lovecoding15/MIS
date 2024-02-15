@@ -1,0 +1,560 @@
+CANSAM_EN:
+{Subject: Your SAM cancellation request
+
+The BASIS SAM Plan software maintenance for serial number <sn>, which will expire on <date>, has been cancelled via the <bcomm> b-commerce account.
+
+If this SAM coverage was cancelled in error or if you want to renew the SAM coverage, please log on to the b-commerce® at www.poweredbybbj.com and order a SAM renewal that provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+
+Please note that reinstating expired SAM coverage at a later date or updating a license will cost a reinstatement fee (12% of the cost of a new license) plus SAM coverage for the lapsed period of time.
+
+If you have any questions, please contact BASIS Sales at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+CANSAM_ES:
+{
+Subject: Su solicitud de cancelación SAM
+
+El Plan de mantenimiento de software BASIS SAM para el número de serie <sn>, que expirará el <date>, fue cancelado por medio de la cuenta b-commerce <bcomm>.
+
+ En caso que esta cobertura SAM hubiera sido cancelada por error, o si desea renovar su cobertura SAM, por favor entre a b-commerce® en www.poweredbybbj.com y ordene una renovación de SAM que le ofrece
+   + optimizaciones de producto gratis
+  + soporte técnico gratis (aplican determinadas limitantes)
+  + restablecimientos de licencia gratis
+  + sin cargo por reinstalación (12% del costo de una licencia nueva)
+  + descuentos por usuarios adicionales
+  + descuentos en capacitación BASIS
+  + licencia redundante para soluciones seguras en caso de falla
+
+Observe por favor que reinstalar en el futuro una cobertura SAM expirada o actualizar una licencia tendrá un cargo por reinstalación (12% del costo de una licencia nueva) más la cobertura SAM del periodo transcurrido.
+
+Si tiene alguna pregunta, por favor póngase en contacto con Ventas de BASIS en sales@basis.cloud o por teléfono al 1.505.938.6120 (EUA.) o al +1.505.338.4188 (Internacional).
+
+Saludos,
+
+Departamento BASIS de Servicio al Cliente
+customer-service@basis.cloud
+1.505.938.6121
+}
+CANSAM_IT:
+{
+Subject: Vostra disdetta dello SAM
+Il contratto per l`assistenza Software SAM con il numero die serie <sn> termina in data <date> ed è stato disdetto da Lei o da un suo collega.
+Se questo è successo per sbaglio oppure vuole continuare lo SAM, si prega di contattare il ns. b-commerce® a www.poweredbybbj.com e prenota un rinnovo SAM che offre:
+    + Upgrades gratuito
+    + assistenza tecnica gratuito (con particolare condizioni)
+    + Reset licenza gratuito
+    + Nessun costo per riattivare lo SAM (12% dal costo di una nuova licenza )
+    + Sconti sul prezzo per aggiungere utenti
+    + Sconti sul prezzo dei formazioni BASIS
+    + Licenze ridondante per una disponibilità sicura
+
+Nota: Per attivare nuovamente un contratto SAM, viene applicato un prezzo pari al 12% dal costo di una nuova licenza più il costo per la copertura dei SAM precedenti.
+
+Per informazioni, si prega di contattare il ns. ufficio commerciale BASIS via 
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+Cordiali saluti
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+CANSAM_DE:
+{Subject: Ihre SAM-Kündigung
+
+Ihr SAM-Softwarewartungsvertrag für Serien-Nummer <sn> (Auslaufdatum: <date>) wurde von Ihnen oder Ihrem Kollegen gekündigt.
+
+Wenn dies irrtümlich geschehen sein sollte oder wenn Sie Ihren SAM-Schutz verlängern wollen, melden Sie sich bitte unter b-commerce® at www.poweredbybbj.com an und bestellen Sie eine SAM-Verlängerung. Dann stehen Ihnen folgende Services zur Verfügung: 
+  + kostenlose Upgrades
+  + kostenlosen technischen Support (unter bestimmten Voraussetzungen)
+  + Kostenlose Lizenz-Resets
+  + Keine SAM-Reaktivierungsgebühren (12% der Kosten einer neuen Lizenz)
+  + Rabatte für zusätzliche Nutzer
+  + Rabatte für BASIS Trainings
+  + Redundante Lizenzen für Ausfallsichere Lösungen
+
+Beachten Sie bitte: Einen erloschenen SAM-Vertrag später wieder zu aktivieren, ist mit einer Aktivierungsgebühr in Höhe von 12% der Kosten einer neuen Lizenz verbunden. Ferner muss der SAM-Schutz für die Zwischenzeit erworben werden. 
+
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren BASIS Vertrieb.
+ Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+
+Herzliche Grüße
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+CANSAM_FR:
+{Subject: Vous avez demandé l’annulation de votre contrat SAM
+
+Vous ou quelqu’un de votre entreprise a annulé le plan de maintenance SAM de BASIS pour le numéro de série <sn>, qui expire le <date>.
+
+Si la couverture SAM a été annulée par erreur, ou si vous souhaitez la renouveler, loggez-vous sur le site b-commerce® www.poweredbybbj.com et demandez le renouvellement de votre contrat SAM qui offre
++ mise à jour gratuite des produits
++ maintenance technique gratuite (sauf quelques exceptions)
++ réinitialisation gratuite des licences
++ absence de frais de réinstallation (à hauteur de 12% du prix d’une nouvelle licence)
++ remises pour utilisateurs supplémentaires
++ remises sur le prix des formations BASIS
++ license redondante pour vos solutions high availability
+
+Nous vous rappelons que la réinstallation ultérieure d’un contrat SAM expiré, ou la mise à jour d’une licence, comprennent des frais de réinstallation (à hauteur de 12% du prix d’une nouvelle licence) ainsi que les coûts de la couverture SAM durant la période écoulée.
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +49 681 96814-0
+
+Cordialement,
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 681 96814-0
+}
+CANSAM_NL:
+{Subject: uw verzoek tot beeindiging SAM
+
+U of iemand in uw organisatie heeft de BASIS SAM-onderhoudsovereenkomst voor de licentie met serienummer <sn>, die expireert op <date>, opgezegd.
+
+Als deze SAM software-onderhoudsovereenkomst per ongeluk is opgezegd of als u deze SAM wilt vernieuwen, dient u zich in te loggen bij b-commerce® op www.poweredbybbj.com en een vernieuwing van de SAM te bestellen, die voorziet in het volgende:
+
+  + gratis produkt upgrades
+  + gratis technisch support voor BASIS producten
+  + gratis licentie resets
+  + geen heraktiveringskosten (normaal 12% van de licentieprijs)
+  + korting op extra gebruikers
+  + korting op BASIS trainingen
+  + redundant licentie voor fail safe solutions
+
+Als de SAM geexpireerd is, houdt u er dan rekening mee, dat er voor het heraktiveren van de SAM of de upgrade van een licentie in de toekomst een SAM-overeenkomst vereist is van de expiratiedatum tot de toekomstige datum, met een minimum van 1 jaar, plus heraktiveringskosten ter hoogte van 12% van een nieuwe licentie.
+
+Voor nadere informatie of vragen kunt u kontakt opnemen met BASIS Europe:
+
+E-mail 	eu.sales@basis.cloud
+Telefoon	+49(0)681-968140 ( Europa ) 
+
+
+BASIS Europe
+}
+RNWSAM_EN:
+{Subject: SAM benefits have been reinstated/updated.
+ 
+Thank you for renewing your SAM Plan software maintenance on the following license(s):
+ 
+  Serial #            
+  <sn>               
+ 
+SAM Plan benefits include: 
+ 
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees
+  + price advantages for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+
+To download the latest version of BASIS Products, go to http://www.basis.cloud/products/downloads.html 
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International). 
+
+Thank you for your continued use of BASIS products.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+RNWSAM_ES:
+{
+Subject: Los beneficios de SAM se reinstalaron/actualizaron.
+ 
+Gracias por renovar su Plan de mantenimiento de software SAM para la siguiente licencia o licencias:
+ 
+  No. de Serie            
+  <sn>              
+ 
+Los beneficios del Plan SAM incluyen: 
+ 
+  + optimizaciones de producto gratis
+  + soporte técnico gratis (aplican determinadas limitantes)
+  + restablecimientos de licencia gratis
+  + sin cargo por reinstalación 
+  + ventajas en precio por usuarios adicionales
+  + descuentos en capacitación BASIS
+  + licencia redundante para soluciones seguras en caso de falla
+
+Para descargar la última versión de Productos BASIS visite http://www.basis.cloud/products/downloads.html 
+
+Si desea más información, por favor póngase en contacto con Ventas de Basis por correo electrónico en sales@basis.cloud o por teléfono al 1.505.938.6120 (EUA) o al +1.505.338.4188 (Internacional). 
+
+Gracias por su uso continuo de los productos BASIS.
+
+Saludos,
+
+Departamento BASIS de Servicio al Cliente
+customer-service@basis.cloud
+1.505.938.6121
+}
+RNWSAM_IT:
+{Subject: Riattivazione/Aggiornamento SAM
+
+Grazie di aver scelto di continuare assistenza Software SAM per le seguente numeri di serie:
+    <sn>
+
+I vantaggi di una copertura SAM sono:
+
+    + Upgrades gratuito
+    + assistenza tecnica gratuito (con particolare condizioni)
+    + Reset licenza gratuito
+    + Nessun costo per riattivare lo SAM (12% dal costo di una nuova licenza )
+    + Sconti sul prezzo per aggiungere utenti
+    + Sconti sul prezzo dei formazioni BASIS
+    + Licenze ridondante per una disponibilità sicura
+
+La versione attuale del suo prodotto BASIS è scaricaibile dal sito http://www.basis.cloud/products/downloads.html
+
+Per informazioni, si prega di contattare il ns. ufficio commerciale BASIS via 
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+Grazie per la continua utilizzo dei prodotti BASIS.
+
+
+Cordiali saluti
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+RNWSAM_DE:
+{Subject: SAM Wartungsplan reaktiviert/aktualisiert
+
+Danke, dass Sie Ihren SAM-Softwarewartungsvertrag für die folgenden Lizenzen verlängert haben: 
+
+  Serien-Nr.
+  <sn>               
+ 
+Durch den SAM-Wartungsplan genießen Sie folgende Vorteile: 
+ 
+  + kostenlose Upgrades
+  + kostenlosen technischen Support (unter bestimmten Voraussetzungen)
+  + Kostenlose Lizenz-Resets
+  + Keine SAM-Reaktivierungsgebühren (12% der Kosten einer neuen Lizenz)
+  + Rabatte für zusätzliche Nutzer
+  + Rabatte für BASIS Trainings
+  + Redundante Lizenzen für Ausfallsichere Lösungen
+
+Die aktuelle Version Ihres BASIS-Produkts steht zum Download unter http://www.basis.cloud/products/downloads.html für Sie bereit.
+
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren BASIS Vertrieb.
+ Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+Danke, dass Sie mit BASIS-Produkten arbeiten!
+
+Herzliche Grüße,
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+RNWSAM_FR:
+{Subject: Les prestations SAM ont été réactivés / mises à jour
+
+Merci d’avoir renouvelé le plan de maintenance SAM pour la (les) licence(s) suivante(s) :
+
+  Série #            
+  <sn>               
+ 
+Les avantages du plan SAM comprennent :
++ mise à jour gratuite des produits
++ maintenance technique gratuite (sauf quelques exceptions)
++ réinitialisation gratuite des licences
++ absence de frais de réinstallation (à hauteur de 12% du prix d’une nouvelle licence)
++ remises pour utilisateurs supplémentaires
++ remises sur le prix des formations BASIS
++ license redondante pour vos solutions high availability
+
+Vous pouvez télécharger la dernière version des produits BASIS sur le site :
+http://www.basis.cloud/products/downloads.html 
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +49 681 96814-0 
+
+Nous vous remercions de continuer à utiliser les produits BASIS.
+
+Cordialement
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 681 96814-0
+}
+RNWSAM_NL:
+{Subject: SAM weer geaktiveerd/geactualiseert
+
+Dank u voor het vernieuwen van uw SAM Plan software-onderhoudsovereenkomst voor de volgende licenties:
+ 
+  Serienummer
+            
+  <sn>               
+ 
+SAM Plan biedt u de volgende voordelen: 
+ 
+  + gratis produkt upgrades
+  + gratis technisch support voor BASIS producten
+  + gratis licentie resets
+  + geen heraktiveringskosten (normaal 12% van de licentieprijs)
+  + korting op extra gebruikers
+  + korting op BASIS trainingen
+  + redundant licentie voor fail safe solutions
+
+Om de laatste versie van BASIS Produkten te downloaden gaat u naar http://www.basis.cloud/products/downloads.html 
+
+Voor meer informatie kunt u kontakt opnemen met BASIS Europe:
+
+E-mail 	eu.sales@basis.cloud
+Telefoon	+49(0)681-968140 ( Europa ) 
+
+
+BASIS Europe
+}
+CRDSAM_EN:
+{Subject: SAM renewal invoice credited
+
+BASIS credited your SAM renewal invoice number <invoice>. 
+
+To reinstate the SAM benefits listed below, please log on to b-commerce® at www.poweredbybbj.com : 
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+ 
+For more information, contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International). 
+ 
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+CRDSAM_ES:
+{
+Subject: Factura Acreditada para Renovación de Sam
+
+BASIS acreditó su renovación SAM con factura número <invoice>. 
+
+Para reinstalar los beneficios SAM que se listan a continuación, por favor entre a b-commerce® en www.poweredbybbj.com : 
+  + optimizaciones de producto gratis
+  + soporte técnico gratis (aplican determinadas limitantes)
+  + restablecimientos de licencia gratis
+  + sin cargo por reinstalación (12% del costo de una licencia nueva)
+  + descuentos por usuarios adicionales
+  + descuentos en capacitación BASIS
+  + licencia redundante para soluciones seguras en caso de falla
+ 
+Si desea más información, por favor póngase en contacto con Ventas de Basis por correo electrónico en sales@basis.cloud o por teléfono al 1.505.938.6120 (EUA) o al +1.505.338.4188 (Internacional). 
+ 
+Departamento BASIS de Servicio al Cliente
+customer-service@basis.cloud
+1.505.938.6121
+}
+CRDSAM_IT:
+{Subject: Nota di credito della tariffa SAM
+
+BASIS ha registrato il pagamento della fattura con numero <invoice> per il rinnovo del contratto SAM.
+
+    + Upgrades gratuito
+    + assistenza tecnica gratuito (con particolare condizioni)
+    + Reset licenza gratuito
+    + Nessun costo per riattivare lo SAM (12% dal costo di una nuova licenza )
+    + Sconti sul prezzo per aggiungere utenti
+    + Sconti sul prezzo dei formazioni BASIS
+    + Licenze ridondante per una disponibilità sicura
+
+
+Per informazioni, si prega di contattare il ns. ufficio commerciale BASIS via 
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+CRDSAM_DE:
+{Subject: Berechnete SAM-Gebühr wurde gutgeschrieben
+
+BASIS hat heute den Zahlungseingang für Ihre SAM-Verlängerung (Re.-Nr. <invoice>) verbucht. 
+
+  + kostenlose Upgrades
+  + kostenlosen technischen Support (unter bestimmten Voraussetzungen)
+  + Kostenlose Lizenz-Resets
+  + Keine SAM-Reaktivierungsgebühren (12% der Kosten einer neuen Lizenz)
+  + Rabatte für zusätzliche Nutzer
+  + Rabatte für BASIS Trainings
+  + Redundante Lizenzen für Ausfallsichere Lösungen
+
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren BASIS Vertrieb.
+ Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+ 
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+CRDSAM_FR:
+{Subject: Plan SAM crédité
+
+BASIS a enregistré le paiement de la facture N° <invoice> pour le renouvellement de votre contrat SAM.
+
+Pour réinstaller les avantages SAM énumérés ci-dessous, merci de vous logger sur le site b-commerce® www.poweredbybbj.com :
++ mise à jour gratuite des produits
++ maintenance technique gratuite (sauf quelques exceptions)
++ réinitialisation gratuite des licences
++ absence de frais de réinstallation (à hauteur de 12% du prix d’une nouvelle licence)
++ remises pour utilisateurs supplémentaires
++ remises sur le prix des formations BASIS
++ license redondante pour vos solutions high availability
+
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +49 681 96814-0 
+ 
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 681 96814-0
+}
+CRDSAM_NL:
+{Subject: SAM gecrediteerd
+
+BASIS heeft uw SAM-vernieuwings faktuur met nummer <invoice> gecrediteerd. 
+
+Om onderstaande SAM voordelen te heraktiveren, kunt u zich aanmelden bij 
+b-commerce® op www.poweredbybbj.com :
+ 
+  + gratis produkt upgrades
+  + gratis technisch support voor BASIS producten
+  + gratis licentie resets
+  + geen heraktiveringskosten (normaal 12% van de licentieprijs)
+  + korting op extra gebruikers
+  + korting op BASIS trainingen
+  + redundant licentie voor fail safe solutions
+ 
+Voor meer informatie kunt u kontakt opnemen met BASIS Europe:
+
+E-mail 	eu.sales@basis.cloud
+Telefoon	+49(0)681-968140 ( Europa ) 
+
+
+BASIS Europe
+}
+RNWDV1_EN:
+{Subject: Confirmation of BASIS Developer Kit renewal
+ 
+Thank you for renewing the following BASIS Developer Kit license(s):
+ 
+  Serial #            
+  <sn>                
+ 
+Your Developer Kit license benefits include: 
+  + Free product upgrades
+  + Free Technical Support (up to 5 incidents per license per year)
+  + Free license resets + price advantages for additional users
+  + Discounts on BASIS training
+
+To download the latest version of BASIS products, go to http://www.basis.cloud/products/downloads.html 
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International). 
+
+Thank you for your continued use of BASIS products.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+RNWDV1_ES:
+{
+Subject: Confirmación de Renovación del Paquete para el Desarrollador Basis
+ 
+Gracias por renovar la licencia o licencias del siguiente Paquete para el Desarrollador BASIS:
+ 
+  No. de Serie #            
+  <sn>                
+ 
+Los beneficios de su licencia del Paquete para el Desarrollador incluyen: 
+  + optimizaciones de producto gratis
+  + Soporte técnico gratis (hasta 5 incidentes por licencia al año)
+  + restablecimientos de licencia gratis + ventajas en precio por usuarios adicionales
+  + descuentos en capacitación BASIS
+
+Para descargar la última versión de Productos BASIS visite http://www.basis.cloud/products/downloads.html 
+
+Si desea más información, por favor póngase en contacto con Ventas de Basis por correo electrónico en sales@basis.cloud o por teléfono al 1.505.938.6120 (EUA) o al +1.505.338.4188 (Internacional). 
+
+Gracias por su uso continuo de los productos BASIS.
+
+Saludos,
+
+Departamento BASIS de Servicio al Cliente
+customer-service@basis.cloud
+1.505.938.6121
+}
+CRDRN1_EN:
+{Subject: Rental License renewal invoice credited
+
+BASIS credited your Rental License renewal invoice number <invoice>. 
+
+To reinstate the Rental License benefits listed below, please log on to b-commerce® at www.poweredbybbj.com : 
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+ 
+For more information, contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International). 
+ 
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+CRDDV1_EN:
+{Subject: Developer Kit License renewal invoice credited
+
+BASIS credited your Developer Kit License renewal invoice number <invoice>. 
+
+To reinstate the Developer Kit benefits listed below, please log on to b-commerce® at www.poweredbybbj.com : 
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+ 
+For more information, contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International). 
+ 
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}

@@ -1,0 +1,1084 @@
+REM ========================================================================
+REM USE and Declares
+REM ========================================================================
+    use ::../Common/BBjAreaChart.bbj::BBjAreaChart
+    use ::../Common/BBjDialChart.bbj::BBjDialChart
+    use ::../Common/BBjGaugeChart.bbj::BBjGaugeChart
+    rem use ::../Common/BBjImageManipulator.bbj::BBjImageManipulator
+    rem use ::../Workbench/UIManager.bbj::UIManager
+    
+    use org.jfree.data.category.DefaultCategoryDataset
+    use org.jfree.chart.JFreeChart
+    use java.util.HashMap
+    use java.util.TreeMap
+    use java.util.ArrayList
+    use java.util.Set
+    use java.util.Iterator
+
+    rem declare UIManager uiManager!
+    rem declare BBjImageManipulator imageManip!
+    declare BBjSysGui sysgui!
+    declare BBjTopLevelWindow win!
+    declare JFreeChart@ jFreeChart!
+    declare BBjGenericChart BBjGenericAreaChart!
+    declare TreeMap salesperson!
+    declare TreeMap salespersonCode!
+    declare Set setSalesperson!
+    declare Iterator iteratorSalesperson!
+    declare TreeMap salesData!
+    declare HashMap salespersonData!
+    declare HashMap salespersonTotalSales!
+    declare Set setSalesData!
+    declare Iterator iteratorSalesData!
+    declare Set setSalespersonData!
+    declare Iterator iteratorSalespersonData!
+
+    declare BBjChildWindow AreaChartWindow! 
+    declare BBjChildWindow DialChartWindow! 
+
+
+
+REM ========================================================================
+REM Common information
+REM ========================================================================
+
+    REM set environment
+    chdir stbl("E_COMM")
+    addPrefix$=stbl("BBJHOME")+"demos/Common/"
+    oldPrefix$=pfx
+    newPrefix$=oldPrefix$+" "+addPrefix$
+    prefix newPrefix$
+    
+    REM Open the BBj SysGUI Channel
+    sysgui!=BBjAPI().openSysGui("X0") 
+
+    REM ' Initialization
+    server$="localhost"
+    uid$ = "ec"
+    pwd$ = "rEd|4pHhxFWrf6BK$^"
+    dbName$ = "AddOnData"
+
+    REM ' get firm and firm name
+    sysinfo_template$=stbl("+SYSINFO_TPL",err=*next)
+    dim sysinfo$:sysinfo_template$
+    sysinfo$=stbl("+SYSINFO",err=*next)
+    firm_id$=sysinfo.firm_id$
+    firm_name$=sysinfo.firm_name$
+    
+    REM set start and end date
+    year = num(date(0:"%Y"))
+    month = num(date(0:"%M"))
+    startDay = 1
+
+    endDay = 31
+    if month = 4 or month = 6 or month = 9 or month = 11 then
+    	endDay = 30
+    endif
+    if month = 2 then
+          endDay = 28
+    endif
+    if month = 2 and mod(year,4)=0 then
+         endDay = 28
+    endif
+    
+    REM Database connection string
+    chan = sqlunt
+    sqlopen(chan)"jdbc:basis:" + server$ + ":2001?database=" + dbName$ + "&user=" + uid$ + "&pwd=" + pwd$ + "&ssl=true"
+
+    REM TreeMap to hold the salespersons and the SQL WHERE Clause criteria
+    BUILD_TREEMAP:
+    REM salesperson! = new TreeMap()
+    REM salesperson!.put("Robert Smith", "1")
+    REM salesperson!.put("Karen Adamson", "2")
+    REM salesperson!.put("Mark Russell", "3")
+    REM salesperson!.put("Julie Knoxville", "4")
+    REM salesperson!.put("Steve Wentworth", "5")
+    REM salesperson!.put("Sarah Conners", "6")
+
+    declare HashMap months!
+    months! = new HashMap()
+    months!.put(1, 31)
+    months!.put(2, 28)
+    months!.put(3, 31)
+    months!.put(4, 30)
+    months!.put(5, 31)
+    months!.put(6, 30)
+    months!.put(7, 31)
+    months!.put(8, 31)
+    months!.put(9, 30)
+    months!.put(10, 31)
+    months!.put(11, 30)
+    months!.put(12, 31)
+
+
+REM ========================================================================
+REM Create the Window for the program
+REM ========================================================================
+    winWidth = 900
+    winHeight = 500
+
+    win!=sysgui!.addWindow(50, 150, winWidth, winHeight, firm_name$ + " Sales Results",$12$)
+    font! = sysgui!.makeFont("Ariel", 10, sysgui!.BOLD)
+
+    label! = win!.addStaticText(win!.getAvailableControlID(), 10,10,100,20,"Starting Date:")
+    label!.setFont(font!)
+    inputDStart! = win!.addInputD(win!.getAvailableControlID(), 105, 10, 80, 20, $$, "%Yl-%Mz-%Dz", "", jul(year,month,startDay), jul(year,month,startDay))
+    inputDStart!.setFont(font!)
+    buttonStartLookup! = win!.addButton(win!.getAvailableControlID(), 190, 7, 26, 26, "BITMAP=" + dsk("")+ dir("") + "images/binoculars.png")
+    buttonStartLookup!.setFont(font!)
+    buttonStartLookup!.setCallback(buttonStartLookup!.ON_BUTTON_PUSH, "SELECT_START_DATE")
+
+    label! = win!.addStaticText(win!.getAvailableControlID(), 240,10,100,20,"Ending Date:")
+    label!.setFont(font!)
+    inputDFinish! = win!.addInputD(win!.getAvailableControlID(), 330, 10, 80, 20, $$, "%Yl-%Mz-%Dz", "", 0, jul(year,month,endDay))
+    inputDFinish!.setFont(font!)
+    buttonFinishLookup! = win!.addButton(win!.getAvailableControlID(), 415, 7, 26, 26, "BITMAP=" + dsk("")+ dir("") + "images/binoculars.png")
+    buttonFinishLookup!.setFont(font!)
+    buttonFinishLookup!.setCallback(buttonFinishLookup!.ON_BUTTON_PUSH, "SELECT_FINISH_DATE")
+
+    sliderDateRange! = win!.addHorizontalSlider(win!.getAvailableControlID(), 7, 35, 435, 30)
+    sliderDateRange!.setCallback(sliderDateRange!.ON_CONTROL_SCROLL, "SELECT_DATES")
+    sliderDateRange!.setMajorTickSpacing(4)
+    sliderDateRange!.setMinorTickSpacing(1)
+    sliderDateRange!.setPaintTicks(1)
+    sliderDateRange!.setSnapToTicks(1)
+    sliderDateRange!.setValue(month)
+    sliderDateRange!.setMinimum(1)
+    sliderDateRange!.setMaximum(12)
+
+    REM Set the images on the buttons
+    buttonQueryDatabase! = win!.addButton(win!.getAvailableControlID(), winWidth - 185, 5, 175, 65, "Query DB")
+    imageScaleFactor = .9
+    imageSize = int(imageScaleFactor * buttonQueryDatabase!.getHeight())
+    rem imageManip! = new BBjImageManipulator(dsk("")+ dir("") + "images/querydatabase.png")
+    rem buttonQueryDatabase!.setImage(imageManip!.getScaledImagePreserveAspectRatio(imageSize,0))
+    buttonQueryDatabase!.setFont(font!)
+    buttonQueryDatabase!.setCallback(buttonQueryDatabase!.ON_BUTTON_PUSH, "QUERY_DATABASE")
+ 
+    buttonChartPie! = win!.addButton(win!.getAvailableControlID(), 495, 5, 50, 30, "BITMAP=" + dsk("")+ dir("") + "images/piechart0.png")
+    buttonChartPie!.setName("piechart")
+    buttonChartPie!.setCallback(buttonChartPie!.ON_MOUSE_ENTER, "MOUSE_ENTER")
+    buttonChartPie!.setCallback(buttonChartPie!.ON_MOUSE_EXIT, "MOUSE_EXIT")
+    buttonChartPie!.setCallback(buttonChartPie!.ON_BUTTON_PUSH, "MOUSE_CLICK")
+    buttonChartLine! = win!.addButton(win!.getAvailableControlID(), 555, 5, 50, 30, "BITMAP=" + dsk("")+ dir("") + "images/linechart0.png")
+    buttonChartLine!.setName("linechart")
+    buttonChartLine!.setCallback(buttonChartLine!.ON_MOUSE_ENTER, "MOUSE_ENTER")
+    buttonChartLine!.setCallback(buttonChartLine!.ON_MOUSE_EXIT, "MOUSE_EXIT")
+    buttonChartLine!.setCallback(buttonChartLine!.ON_BUTTON_PUSH, "MOUSE_CLICK")
+    buttonChartBar! = win!.addButton(win!.getAvailableControlID(), 615, 5, 50, 30, "BITMAP=" + dsk("")+ dir("") + "images/barchart0.png")
+    buttonChartBar!.setName("barchart")
+    buttonChartBar!.setCallback(buttonChartBar!.ON_MOUSE_ENTER, "MOUSE_ENTER")
+    buttonChartBar!.setCallback(buttonChartBar!.ON_MOUSE_EXIT, "MOUSE_EXIT")
+    buttonChartBar!.setCallback(buttonChartBar!.ON_BUTTON_PUSH, "MOUSE_CLICK")
+    buttonChartDial! = win!.addButton(win!.getAvailableControlID(), 495, 40, 50, 30, "BITMAP=" + dsk("")+ dir("") + "images/dialchart0.png")
+    buttonChartDial!.setName("dialchart")
+    buttonChartDial!.setCallback(buttonChartDial!.ON_MOUSE_ENTER, "MOUSE_ENTER")
+    buttonChartDial!.setCallback(buttonChartDial!.ON_MOUSE_EXIT, "MOUSE_EXIT")
+    buttonChartDial!.setCallback(buttonChartDial!.ON_BUTTON_PUSH, "MOUSE_CLICK")
+    buttonChartGauge! = win!.addButton(win!.getAvailableControlID(), 555, 40, 50, 30, "BITMAP=" + dsk("")+ dir("") + "images/gaugechart0.png")
+    buttonChartGauge!.setName("gaugechart")
+    buttonChartGauge!.setCallback(buttonChartGauge!.ON_MOUSE_ENTER, "MOUSE_ENTER")
+    buttonChartGauge!.setCallback(buttonChartGauge!.ON_MOUSE_EXIT, "MOUSE_EXIT")
+    buttonChartGauge!.setCallback(buttonChartGauge!.ON_BUTTON_PUSH, "MOUSE_CLICK")
+    buttonChartArea! = win!.addButton(win!.getAvailableControlID(), 615, 40, 50, 30, "BITMAP=" + dsk("")+ dir("") + "images/areachart0.png")
+    buttonChartArea!.setName("areachart")
+    buttonChartArea!.setCallback(buttonChartArea!.ON_MOUSE_ENTER, "MOUSE_ENTER")
+    buttonChartArea!.setCallback(buttonChartArea!.ON_MOUSE_EXIT, "MOUSE_EXIT")
+    buttonChartArea!.setCallback(buttonChartArea!.ON_BUTTON_PUSH, "MOUSE_CLICK")
+    win!.setCallback(win!.ON_CLOSE,"EXIT")
+
+
+    REM Register with the UIManager
+    rem uiManager! = UIManager.getInstance()
+    rem uiManager!.registerWindow(win!)
+    win!.setVisible(1)
+
+
+    REM Current chart type
+    currentChartType$ = "piechart"
+    gosub SET_CHART_TYPE
+
+    process_events 
+
+
+
+EXIT: 
+    release
+
+
+SELECT_DATES:
+    month = sliderDateRange!.getValue()
+    endDay = months!.get(month)
+    inputDStart!.setValue(jul(year,month, startDay))
+    inputDFinish!.setValue(jul(year, month, endDay))
+    return
+
+
+MOUSE_ENTER:
+    declare BBjServerEvent e!
+    e! = sysgui!.getLastEvent()
+    control! = e!.getControl()
+    control!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + control!.getName() + "1.png"))
+    return
+
+
+MOUSE_EXIT:
+    declare BBjServerEvent e!
+    e! = sysgui!.getLastEvent()
+    control! = e!.getControl()
+    if currentChartType$ <> control!.getName() then
+        control!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + control!.getName() + "0.png"))
+    endif
+    return
+
+
+MOUSE_CLICK:
+    declare BBjServerEvent e!
+    e! = sysgui!.getLastEvent()
+    control! = e!.getControl()
+    currentChartType$ = control!.getName()
+    gosub SET_CHART_TYPE
+    return
+
+
+SET_CHART_TYPE:
+    buttonChartLine!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartLine!.getName() + "0.png"))
+    buttonChartBar!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartBar!.getName() + "0.png"))
+    buttonChartPie!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartPie!.getName() + "0.png"))
+    buttonChartDial!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartDial!.getName() + "0.png"))
+    buttonChartArea!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartArea!.getName() + "0.png"))
+    buttonChartGauge!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartGauge!.getName() + "0.png"))
+    DialChartWindow!.setVisible(0,err=*NEXT)
+    AreaChartWindow!.setVisible(0,err=*NEXT)
+    BarChartWindow!.setVisible(0,err=*NEXT)
+    LineChartWindow!.setVisible(0,err=*NEXT)
+    PieChartWindow!.setVisible(0,err=*NEXT)
+    GaugeChartWindow!.setVisible(0,err=*NEXT)
+
+    if currentChartType$ = "linechart" then
+        buttonChartLine!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartLine!.getName() + "1.png"))
+        LineChartWindow!.setVisible(1,err=*NEXT)
+    endif
+
+    if currentChartType$ = "barchart" then
+        buttonChartBar!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartBar!.getName() + "1.png"))
+        BarChartWindow!.setVisible(1,err=*NEXT)
+    endif 
+    
+    if currentChartType$ = "piechart" then
+        buttonChartPie!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartPie!.getName() + "1.png"))
+        PieChartWindow!.setVisible(1,err=*NEXT)
+    endif
+
+    if currentChartType$ = "dialchart" then
+        buttonChartDial!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartDial!.getName() + "1.png"))
+        DialChartWindow!.setVisible(1,err=*NEXT)
+    endif
+
+    if currentChartType$ = "areachart" then
+        buttonChartArea!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartArea!.getName() + "1.png"))
+        AreaChartWindow!.setVisible(1,err=*NEXT)
+    endif
+
+    if currentChartType$ = "gaugechart" then
+        buttonChartGauge!.setImage(sysgui!.getImageManager().loadImageFromFile(dsk("")+ dir("") + "images/" + buttonChartGauge!.getName() + "1.png"))
+        GaugeChartWindow!.setVisible(1,err=*NEXT)
+    endif
+
+    return
+
+
+SELECT_START_DATE:
+    inputDStart!.calendar()
+    return
+
+
+SELECT_FINISH_DATE:
+    inputDFinish!.calendar()
+    return
+
+
+QUERY_DATABASE:
+REM ========================================================================
+REM Get all of the daily sales information for each salesrep.  All of the 
+REM information will go into a TreeMap, which is a sorted hash.  The key
+REM for the TreeMap will be the sales date (invoice_date).  The value
+REM associated with that date will be a HashMap.  This HashMap will contain
+REM the salesperson's name and sales for that day.  Since we're using a 
+REM HashMap we're not limited to the number of salespersons.
+REM ========================================================================
+
+    REM Set a wait cursor
+    win!.setCursor(3)
+ 
+    rem ' load the salepserson list for the given period
+    sql$ = "SELECT t1.slspsn_code, t2.slspsn_name, round(sum(t1.total_sales),0) as TOTAL_SALES "
+    sql$ = sql$ + "FROM ART03 t1 "
+    sql$ = sql$ + "INNER JOIN (SELECT * FROM ARM10F WHERE record_id_f = 'F' and firm_id = '" + firm_id$ + "') t2 ON t1.firm_id = t2.firm_id and t1.slspsn_code = t2.slspsn_code "
+    sql$ = sql$ + "WHERE t1.firm_id = '" + firm_id$ + "' and (t1.invoice_date between '" + inputDStart!.getText() + "' AND '" + inputDFinish!.getText() + "') "
+    sql$ = sql$ + "GROUP BY t1.slspsn_code, t2.slspsn_name"
+
+    sqlprep(chan)sql$
+    sqlexec(chan)
+    dim salesperson$:sqltmpl(chan)
+
+    rem ' create a new treemap to hold the saleman
+    salesperson! = new TreeMap()
+    salespersonCode! = new TreeMap()
+    
+    REM Iterate over the result set for salespersons with sales in the period
+    counter = 1
+    while 1
+
+        salesperson$ = sqlfetch(chan,err=*BREAK)
+      
+        if (salesperson.total_sales <> 0)
+   		salesperson!.put(cvs(salesperson.slspsn_name$,3), str(counter))
+   		salespersonCode!.put(cvs(salesperson.slspsn_name$,3)+"_code", salesperson.slspsn_code$)
+   		counter = counter + 1
+        endif
+            
+    wend
+
+
+    REM Create a new hashmap for the salespersons and their totals
+    salespersonTotalSales! = new HashMap()
+    salesData! = new TreeMap()
+
+    REM Iterate over the salesperson
+    setSalesperson! = salesperson!.keySet()
+    iteratorSalesperson! = setSalesperson!.iterator()
+    while iteratorSalesperson!.hasNext()
+
+        salespersonTotalSales = 0 
+        salesperson$ = iteratorSalesperson!.next()
+
+        REM Contstruct an SQL Query that retrieves total sales for the specified salesperson by date
+        sql$ = "SELECT cast(invoice_date as SQL_CHAR) as invdate, sum(total_sales) as TOTAL_SALES "
+        sql$ = sql$ + "FROM ART03 "
+        sql$ = sql$ + "WHERE "
+        sql$ = sql$ + "firm_id = '" + firm_id$ + "' "
+        sql$ = sql$ + "and "
+        sql$ = sql$ + "(invoice_date between '" + inputDStart!.getText() + "' AND '" + inputDFinish!.getText() + "') "
+        sql$ = sql$ + "and "
+        sql$ = sql$ + "slspsn_code = '" + salespersonCode!.get(salesperson$+"_code") + "' "
+        sql$ = sql$ + "GROUP BY invoice_date "
+
+        sqlprep(chan)sql$
+        sqlexec(chan)
+        dim t2$:sqltmpl(chan)
+
+        REM Iterate over the result set of daily sales for the specified salesperson
+        while 1
+
+            t2$ = sqlfetch(chan,err=*BREAK)
+      
+            REM Get the HashMap associated with the date.  If one doesn't exist yet, then create it
+            if (salesData!.containsKey(t2.invdate$))
+                salespersonData! = cast(HashMap, salesData!.get(t2.invdate$))
+            else
+                salespersonData! = new HashMap()
+            endif
+
+            REM Add the sales data to the HashMap, then put the HashMap in the TreeMapd
+            salespersonData!.put(salesperson$,t2.TOTAL_SALES)
+            salesData!.put(t2.invdate$, salespersonData!)
+            salespersonTotalSales = salespersonTotalSales + t2.TOTAL_SALES
+
+        wend
+
+        REM Store the total sales for the date range for the salesperson
+        salespersonTotalSales!.put(salesperson$, salespersonTotalSales)
+    wend
+
+    gosub GENERATE_DATASETS
+    
+    gosub CREATE_AREACHART
+    gosub CREATE_DIALCHART
+    gosub CREATE_BARCHART
+    gosub CREATE_LINECHART
+    gosub CREATE_PIECHART
+    gosub CREATE_GAUGECHART
+
+    if salesperson!.size() = 0 then
+    	currentChartType$ = "piechart"
+     endif
+
+    gosub SET_CHART_TYPE
+    win!.setCursor(0)
+
+    return
+
+
+GENERATE_DATASETS:
+REM ========================================================================
+REM Generate the datasets for the various charts
+REM ========================================================================
+
+    REM Construct a CategoryDataset for an AreaChart based on the sales information
+    defaultDataset! = new DefaultCategoryDataset@()
+
+    REM Iterate over the sales dates TreeMap
+    setSalesData! = salesData!.keySet()
+    iteratorSalesData! = setSalesData!.iterator()
+    while iteratorSalesData!.hasNext()
+
+        REM Get the date and salesperson HashMap for this element
+        invoiceDate$ = iteratorSalesData!.next()
+        salespersonData! = cast(HashMap, salesData!.get(invoiceDate$))
+
+        REM Iterate over the salesperson data in the HashMap
+        setSalespersonData! = salespersonData!.keySet()
+        iteratorSalespersonData! = setSalespersonData!.iterator()
+        while iteratorSalespersonData!.hasNext()
+
+            REM Get the salesperson and their total sales
+            salesperson$ = iteratorSalespersonData!.next()
+            totalSales = salespersonData!.get(salesperson$)
+
+            REM The important part!  Getting all of the data and putting
+            REM it into the CategoryDataset.  This will then be used
+            REM to create the AreaChart
+            rem defaultDataset!.addValue(totalSales, salesperson$, invoiceDate$)
+            id$ = invoiceDate$(7)
+            defaultDataset!.addValue(totalSales, salesperson$ + " (" + salespersonCode!.get(salesperson$+"_code") + ")", id$)
+
+        wend
+    wend    
+
+    REM Iterate over the salespersonTotalSales data in the HashMap
+    REM to figure out what the maximum value is
+    maxTotalSales = 0
+    aveTotalSales = 0
+    set! = salespersonTotalSales!.keySet()
+    iterator! = set!.iterator()
+    while iterator!.hasNext()
+
+        REM Get the salesperson and their total sales
+        salesperson$ = iterator!.next()
+        if (salespersonTotalSales!.get(salesperson$) > maxTotalSales) then
+            maxTotalSales = salespersonTotalSales!.get(salesperson$)
+        endif
+        aveTotalSales = aveTotalSales + salespersonTotalSales!.get(salesperson$)
+
+    wend
+    if salesperson!.size() > 0 then
+         aveTotalSales = aveTotalSales / salesperson!.size()
+         maxTotalSales = int(maxTotalSales * 1.05)
+    else
+         aveTotalSales = 0
+         maxTotalSales = 0
+    endif
+
+CREATE_AREACHART:
+REM ========================================================================
+REM Create the AreaChart and customize it
+REM ========================================================================
+    REM Create an customize the BBjAreaChart
+    BBjGenericAreaChart!.destroy(err=*NEXT)
+    myBBjAreaChart! = new BBjAreaChart("Sales Information for " + inputDStart!.getText() + " to " + inputDFinish!.getText(), "Day", "Sales", defaultDataset!, 1)
+    myBBjAreaChart!.setBackgroundImage("/Program Files/basis/demos/DigitalDashboard/images/worldmap.png")
+    myBBjAreaChart!.setForegroundTransparency(.7)
+
+    REM Create the Generic Chart for the Area Chart
+    AreaChartWindow! = win!.addChildWindow(win!.getAvailableControlID(), 10, 80, winWidth - 20, winHeight - 90, "", $0810$, sysgui!.getAvailableContext())
+    BBjGenericAreaChart!=AreaChartWindow!.addGenericChart(AreaChartWindow!.getAvailableControlID(), 0, 0, AreaChartWindow!.getWidth(), AreaChartWindow!.getHeight()) 
+
+    REM Display the Area Chart inside the Generic Chart control on the window
+    BBjGenericAreaChart!.setClientChart(myBBjAreaChart!.getJFreeChart()) 
+
+    return
+
+
+CREATE_DIALCHART:
+REM ========================================================================
+REM Create the DialChart and customize it
+REM ========================================================================
+
+    REM Define colors and fonts
+    bgColor! = BBjAPI().makeColor(170,170,170)
+    font! = BBjAPI().getSysGui().makeFont("Arial", 10, BBjAPI().getSysGui().BOLD)
+    font2! = BBjAPI().getSysGui().makeFont("Arial", 12, BBjAPI().getSysGui().BOLD)
+    font3! = BBjAPI().getSysGui().makeFont("Arial", 14, BBjAPI().getSysGui().BOLD)
+    font4! = BBjAPI().getSysGui().makeFont("Arial", 16, BBjAPI().getSysGui().BOLD)
+
+    DialChartWindow! = win!.addChildWindow(win!.getAvailableControlID(), 10, 80, winWidth - 20, winHeight - 90, "", $0810$, sysgui!.getAvailableContext())
+
+    counter = 0
+    set! = salespersonTotalSales!.keySet()
+    iterator! = set!.iterator()
+    dialHeight = int((winHeight - 110)/2)
+    dialWidth = int((winHeight - 80)/2)
+    dialXSpacing = int( (winWidth - (dialWidth * (salesperson!.size() / 2))) /  ((salesperson!.size() / 2) + 2))
+    x = 15
+    y = 5
+    while iterator!.hasNext()
+
+        REM Get the salesperson and their total sales
+        salesperson$ = iterator!.next()
+        salespersonTotalSales = salespersonTotalSales!.get(salesperson$)
+
+        REM Create the Chart without any customizations
+        myBBjDialChart! = new BBjDialChart(BBjAPI().makeColor(225,0,0), 0)
+
+        REM Add the scale, background, and salesperson name
+        myBBjDialChart!.setScale(0, 0, maxTotalSales/1000, int(maxTotalSales/5000), -90, -270, .74, .05, font3!, .22, BBjAPI().makeColor(50,50,50), 10)
+        myBBjDialChart!.setBackgroundImageResized("/Program Files/basis/demos/DigitalDashboard/images/dialframe.png", dialWidth, dialHeight)
+        myBBjDialChart!.setAnnotation(salesperson$ + " (" + salespersonCode!.get(salesperson$+"_code") + ")", font4!, BBjAPI().makeColor(76,93,110), .30, -20)
+
+        REM Set the value indicator color based on the sales figures
+        valueFGColor! = BBjAPI().makeColor(93,115,135)
+        valueBGColor! = BBjAPI().makeColor(235,235,225)
+        valueBorderColor! = BBjAPI().makeColor(127,157,185)
+        if (salespersonTotalSales >= (maxTotalSales * .9)) then
+            valueFGColor! = BBjAPI().makeColor(50,175,50)
+        endif
+        if (salespersonTotalSales <= (maxTotalSales * .1)) then
+            valueFGColor! = BBjAPI().makeColor(175,50,50)
+        endif
+        myBBjDialChart!.setValueIndicator(0, font4!, valueFGColor!, valueBGColor!, valueBorderColor!, .50, -52)
+        myBBjDialChart!.setAnnotation("Sales in Thousands", font2!, BBjAPI().makeColor(160,160,160), .35, 90)
+
+        REM Add the dataset with the sales value
+        myBBjDialChart!.addDataset(0, salespersonTotalSales/1000, 0, .75)
+
+        REM Create the Generic Chart for the Dial Chart and display the Chart inside the Generic Chart control on the window
+        BBjGenericDialChart!=DialChartWindow!.addGenericChart(DialChartWindow!.getAvailableControlID(), x, y, dialWidth, dialHeight)
+        BBjGenericDialChart!.setClientChart(myBBjDialChart!.getJFreeChart()) 
+        counter = counter + 1
+
+        if counter = salesperson!.size()/2 then 
+            x = 15
+            y = dialHeight + 10
+        else
+            x = x + dialWidth + dialXSpacing
+        endif        
+
+    wend
+
+    return
+
+
+CREATE_GAUGECHART:
+REM ========================================================================
+REM Create the GaugeChart and customize it
+REM ========================================================================
+    GaugeChartWindow! = win!.addChildWindow(win!.getAvailableControlID(), 10, 80, winWidth - 20, winHeight - 90, "", $0810$, sysgui!.getAvailableContext())
+
+    counter = 0
+    set! = salespersonTotalSales!.keySet()
+    iterator! = set!.iterator()
+    dialWidth = int((winHeight - 20)/2)
+    dialXSpacing = int( (winWidth - (dialWidth * (salesperson!.size() / 2))) /  ((salesperson!.size() / 2) + 2))
+    x = 0
+    y = 0
+    while iterator!.hasNext()
+
+        REM Get the salesperson and their total sales
+        salesperson$ = iterator!.next()
+        salespersonTotalSales = salespersonTotalSales!.get(salesperson$)
+
+        REM Define the Scale parameters
+        scaleNumber = 0
+        visible = 1
+        rangeBottom = 0
+        rangeTop = maxTotalSales/1000
+        majorTickIncrement = int(maxTotalSales/4000)
+        scaleStartDegrees = 115
+        scaleRangeDegrees = -50
+        scaleRadius = .88
+        scaleLength = .025
+        font! = font2!
+        labelOffset = .05
+        tickColor! = BBjAPI().makeColor(50,50,50)
+        minorTickCount = 5
+ 
+
+        REM Create the Chart
+        value = salespersonTotalSales/1000
+        annotation$ = "Sales (k)"
+        myBBjGaugeChart! = new BBjGaugeChart(salesperson$ + " (" + salespersonCode!.get(salesperson$+"_code") + ")")
+        myBBjGaugeChart!.setScale(scaleNumber, visible, rangeBottom, rangeTop, majorTickIncrement, scaleStartDegrees, scaleRangeDegrees, scaleRadius, scaleLength, font!, labelOffset, tickColor!, minorTickCount)
+
+
+        myBBjGaugeChart!.setValueIndicator(0, font4!, BBjAPI().makeColor(50,50,150), BBjAPI().makeColor(225,225,225), BBjAPI().makeColor(50,50,100), .66, 90)
+        myBBjGaugeChart!.setAnnotation(annotation$ , font3!, BBjAPI().makeColor(150,50,50), .77, 90)
+        myBBjGaugeChart!.setGradient(BBjAPI().makeColor(250,250,250), BBjAPI().makeColor(192,192,192), 1)
+        if (myBBjGaugeChart!.setBackgroundImage("/Program Files/basis/demos/DigitalDashboard/images/gaugeframe.png") = 0) then
+        	myBBjGaugeChart!.setBackgroundImage(dsk("") + dir("") + "images/gaugeframe.png")
+    	  endif
+
+
+        REM Add in the average
+        myBBjGaugeChart!.addDataset(0, value, 0, .85)
+        myBBjGaugeChart!.addDataset(1, aveTotalSales/1000, 1, .75)
+
+        if (salespersonTotalSales >= (maxTotalSales * .9)) then
+            myBBjGaugeChart!.setGradient(BBjAPI().makeColor(150,250,150), BBjAPI().makeColor(192,192,192), 1)
+        endif
+
+        if (salespersonTotalSales <= (maxTotalSales * .1)) then
+            myBBjGaugeChart!.setGradient(BBjAPI().makeColor(255,150,150), BBjAPI().makeColor(192,192,192), 1)
+        endif
+
+
+        REM Create the Generic Chart for the Dial Chart and display the Chart inside the Generic Chart control on the window
+        BBjGenericGaugeChart!=GaugeChartWindow!.addGenericChart(GaugeChartWindow!.getAvailableControlID(), x, y, dialWidth, int(dialWidth *.7)) 
+        BBjGenericGaugeChart!.setClientChart(myBBjGaugeChart!.getJFreeChart()) 
+        counter = counter + 1
+
+        if counter = salesperson!.size()/2 then 
+            x = 0
+            y = dialWidth
+        else
+            x = x + dialWidth + dialXSpacing
+        endif  
+
+    wend
+
+    return
+
+
+CREATE_BARCHART:
+REM ========================================================================
+REM Create the BarChart and customize it
+REM ========================================================================
+    REM Create the barchart
+    BarChartWindow! = win!.addChildWindow(win!.getAvailableControlID(), 10, 80, winWidth - 20, winHeight - 90, "", $0810$, sysgui!.getAvailableContext())
+    myBBjBarChart! = BarChartWindow!.addBarChart(BarChartWindow!.getAvailableControlID(), 0, 0, BarChartWindow!.getWidth(), BarChartWindow!.getHeight(), "Days", "Sales", salesperson!.size(), salesData!.size(), 1, 1, 0)
+
+    REM Iterate over the salesperson hash and set the series name for each salesperson
+    set! = salesperson!.keySet()
+    iterator! = set!.iterator()
+
+    while iterator!.hasNext()
+
+        REM Get the salesperson and their total sales
+        salesperson$ = iterator!.next()
+        myBBjBarChart!.setSeriesName(num(salesperson!.get(salesperson$))-1, salesperson$ + " (" + salespersonCode!.get(salesperson$+"_code") + ")")
+
+    wend
+
+    REM Iterate over the salesData TreeMap and set the series name for each date
+    counter = 0 
+    set! = salesData!.keySet()
+    iterator! = set!.iterator()
+    while iterator!.hasNext()
+
+        REM Get the date for the category
+        invoicedate$ = iterator!.next()
+        myBBjBarChart!.setCategoryName(counter, invoicedate$)
+        counter = counter + 1
+
+    wend
+
+    REM Iterate over the sales dates TreeMap
+    counterDate = 0 
+    setSalesData! = salesData!.keySet()
+    iteratorSalesData! = setSalesData!.iterator()
+    while iteratorSalesData!.hasNext()
+
+        REM Get the date and salesperson HashMap for this element
+        invoiceDate$ = iteratorSalesData!.next()
+        salespersonData! = cast(HashMap, salesData!.get(invoiceDate$))
+
+        REM Iterate over the salesperson data in the HashMap
+        setSalespersonData! = salespersonData!.keySet()
+        iteratorSalespersonData! = setSalespersonData!.iterator()
+        while iteratorSalespersonData!.hasNext()
+
+            REM Get the salesperson and their total sales
+            salesperson$ = iteratorSalespersonData!.next()
+            totalSales = salespersonData!.get(salesperson$)
+
+            REM Set the barchart value
+            myBBjBarChart!.setBarValue(num(salesperson!.get(salesperson$))-1, counterDate, totalSales)
+            
+        wend
+
+        counterDate = counterDate + 1
+
+    wend   
+
+    return
+
+
+CREATE_LINECHART:
+REM ========================================================================
+REM Create the LineChart and customize it
+REM ========================================================================
+    REM Create the linechart
+    LineChartWindow! = win!.addChildWindow(win!.getAvailableControlID(), 10, 80, winWidth - 20, winHeight - 90, "", $0810$, sysgui!.getAvailableContext())
+    myBBjLineChart! = LineChartWindow!.addLineChart(LineChartWindow!.getAvailableControlID(), 0, 0, LineChartWindow!.getWidth(), LineChartWindow!.getHeight(), "Days", "Sales", salesperson!.size(), 1)
+
+    REM Iterate over the salesperson hash and set the series name for each salesperson
+    set! = salesperson!.keySet()
+    iterator! = set!.iterator()
+    while iterator!.hasNext()
+
+        REM Get the salesperson and their total sales
+        salesperson$ = iterator!.next()
+        myBBjLineChart!.setSeriesName(num(salesperson!.get(salesperson$))-1, salesperson$ + " (" + salespersonCode!.get(salesperson$+"_code") + ")")
+
+    wend
+    REM Iterate over the salesperson hash and set the series name for each salesperson
+
+    REM Iterate over the sales dates TreeMap
+    counterDate = 0 
+    setSalesData! = salesData!.keySet()
+    iteratorSalesData! = setSalesData!.iterator()
+    while iteratorSalesData!.hasNext()
+
+        REM Get the date and salesperson HashMap for this element
+        invoiceDate$ = iteratorSalesData!.next()
+        salespersonData! = cast(HashMap, salesData!.get(invoiceDate$))
+
+        REM Iterate over the salesperson data in the HashMap
+        setSalespersonData! = salespersonData!.keySet()
+        iteratorSalespersonData! = setSalespersonData!.iterator()
+        while iteratorSalespersonData!.hasNext()
+
+            REM Get the salesperson and their total sales
+            salesperson$ = iteratorSalespersonData!.next()
+            totalSales = salespersonData!.get(salesperson$)
+
+            REM Set the barchart value
+            myBBjLineChart!.setXYValue(num(salesperson!.get(salesperson$))-1, counterDate, totalSales)
+
+        wend
+
+        counterDate = counterDate + 1
+
+    wend   
+
+    return
+
+
+CREATE_PIECHART:
+REM ========================================================================
+REM Create the PieChart and customize it
+REM ========================================================================
+    REM Create the PieChart
+    PieChartWindow! = win!.addChildWindow(win!.getAvailableControlID(), 10, 80, winWidth - 20, winHeight - 90, "", $0810$, sysgui!.getAvailableContext())
+    myBBjPieChart! = PieChartWindow!.addPieChart(PieChartWindow!.getAvailableControlID(), 0, 0, PieChartWindow!.getWidth(), PieChartWindow!.getHeight(), 1, 1)
+
+
+    counter = 0
+    set! = salesperson!.keySet()
+    iterator! = set!.iterator()
+    while iterator!.hasNext()
+
+        REM Get the salesperson and their total sales
+        salesperson$ = iterator!.next()
+        salespersonTotalSales = salespersonTotalSales!.get(salesperson$)
+
+        myBBjPieChart!.setSliceValue(salesperson$ + " (" + salespersonCode!.get(salesperson$+"_code") + ")", salespersonTotalSales)
+
+    wend
+
+    return
+
+
+
+
+CREATE_SALES_DATABASE:
+REM ========================================================================
+REM Create a sample database with Sales data for reporting purposes
+REM ========================================================================
+    tmp = msgbox("Because this is the first time this demo has been run, the Sales Demo Database must be created and populated.  This may take a minute or two to complete.")
+
+    ProgressBarWindowWidth = 400
+    ProgressBarWindowHeight = 65
+
+    REM Center the window on the client's desktop
+    screenSize!=Toolkit@.getDefaultToolkit(err=*next).getScreenSize(err=*next)
+    if (screenSize! = null())
+        REM BBj way
+
+        REM Get screen resolution
+        LET mySystemMetrics! = sysgui!.getSystemMetrics()
+        LET myScreenSize! = mySystemMetrics!.getScreenSize()
+
+        REM Report screen size
+        desktopWidth = myScreenSize!.width
+        desktopHeight = myScreenSize!.height
+
+    else
+        screenConfiguration! = GraphicsEnvironment@.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration(err=*next)
+        if (screenConfiguration! <> null())
+            screenInsets! = Toolkit@.getDefaultToolkit().getScreenInsets(screenConfiguration!)
+            desktopWidth = (int(screenSize!.width) - int(screenInsets!.left) - int(screenInsets!.right))
+            desktopHeight = (int(screenSize!.height) - int(screenInsets!.top) - int(screenInsets!.bottom))
+        else
+            desktopWidth = int(screenSize!.width)
+            desktopHeight = int(screenSize!.height)
+        endif
+    endif
+
+    windowX = ((desktopWidth - ProgressBarWindowWidth) / 2)
+    windowY = ((desktopHeight - ProgressBarWindowHeight) / 2)
+
+declare BBjWindow progressBarWindow!
+declare BBjStaticText statusLabel!
+
+    progressBarWindow! = sysgui!.addWindow(sysgui!.getAvailableContext(),windowX,windowY,ProgressBarWindowWidth,ProgressBarWindowHeight,"Creating Demo Database",$10$)
+    progressBar! = progressBarWindow!.addProgressBar(100,5,5,390,25)
+    statusLabel! = progressBarWindow!.addStaticText(101,5,40,390,25,"",$4000$)
+    progressBar!.setText(" ")
+    progressBar!.setIndeterminate(BBjAPI().TRUE)
+    progressBarWindow!.setVisible(BBjAPI().TRUE)
+
+
+    REM Initialization
+        statusLabel!.setText("Creating Database...")
+        uid$ = "admin"
+        pwd$ = "admin123"
+        dbName$ = "AONSalesDatabase"
+        dataPath$ = dsk("") + dir("") + "data/"
+        dictPath$ = dsk("") + dir("") + "bbdict/"
+
+    REM Connect to the BBJSYS database and create the new database
+        chan = sqlunt
+        sqlopen(chan)"jdbc:basis:localhost:2001?database=BBJSYS&user=" + uid$ + "&pwd=" + pwd$
+
+        REM Setup all of the parameters for the new DB
+        fileType$ = "ESQL "
+        dateType$ = "'Julian' "
+        dateSuff$ = "'_DATE'"
+
+        REM Drop the Database in case it already exists
+        sql$ = "Drop Database '" + dbName$ + "' DELETE"
+        sqlprep(chan) sql$
+        sqlexec(chan,err=*Next)
+
+        REM Create the new DB
+        sql$ = "Create Database '" + dbName$ + "' '" + dataPath$ + "' '" + dictPath$ + "' " + fileType$; REM - not used with ESQL + dateType$ + dateSuff$
+        sqlprep(chan) sql$
+        sqlexec(chan)
+
+        REM Disconnect from the BBJSYS database and connect to the newly created one
+        sqlclose(chan)
+        chan = sqlunt
+        sqlopen(chan)"jdbc:basis:localhost:2001?database=" + dbName$ + "&user=" + uid$ + "&pwd=" + pwd$
+
+    REM =================================================================================
+    REM Create the Sales and Customer tables via an SQL Create Table statement
+    REM =================================================================================
+        statusLabel!.setText("Creating Tables...")
+        dbTableName$ = "ART03"
+        template$ = "FIRM_ID:C(2),AR_TYPE:C(2),CUSTOMER_NBR:C(6),AR_INV_NBR:C(7),SEQUENCE_000:C(3),INVOICE_TYPE:C(1),ORD_INV_FLAG:C(1),BACKORD_FLAG:C(1),INVOICE_DATE:C(3),AR_SHIP_DATE:C(3),RESERVED_STR_1:C(2),AR_SHIP_VIA:C(10),ORDER_NUMBER:C(7),AR_PO_NUMBER:C(10),SLSPSN_CODE:C(3),TERMS_CODE:C(2),DISC_CODE:C(2),DIST_CODE:C(2),ORD_PRT_FLAG:C(1),ORD_LOCK:C(1),MESSAGE_CODE:C(2),TERRITORY:C(3),LIST_PRC_CDE:C(2),ORDER_DATE:C(3),TAX_CODE:C(2),PRICING_CODE:C(4),AR_JOB_NBR:C(10),ORD_TAKEN_BY:C(3),CASH_SALE:C(1),REPRINT_FLAG:C(1),ORD_CRED_FLG:C(1),SHIPTO_NBR:C(6),RESERVED_STR_2:C(10*=10),TAX_AMOUNT:N(7*=10),FREIGHT_AMT:N(7*=10),DISCOUNT_AMT:N(7*=10),COMM_PERCENT:N(7*=10),TAXABLE_AMT:N(7*=10),COMM_AMT:N(7*=10),TOTAL_SALES:N(7*=10),TOTAL_COST:N(7*=10),RESERVED_NUM_1:N(1*=10),RESERVED_NUM_2:N(1*=10),RESERVED_NUM_3:N(1*=10)"
+        gosub CREATE_TABLE_VIA_STRING_TEMPLATE
+
+        REM Index the table for faster queries
+        sqlprep(chan)"Create index index_CUSTOMER_NBR on ART03 (CUSTOMER_NBR)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_INVOICE_DATE on ART03 (INVOICE_DATE)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_SLSPSN_CODE on ART03 (SLSPSN_CODE)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_FIRM_ID on ART03 (FIRM_ID)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_COMB1 on ART03 (FIRM_ID, SLSPSN_CODE, INVOICE_DATE)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_COMB2 on ART03 (SLSPSN_CODE, FIRM_ID, INVOICE_DATE)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_COMB3 on ART03 (FIRM_ID, INVOICE_DATE)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_COMB4 on ART03 (SLSPSN_CODE, INVOICE_DATE)"
+        sqlexec(chan)
+
+        dbTableName$ = "TMM01"
+        template$ = "FIRM_ID:C(2),NAME_SORT:C(20),CONTACT_SORT:C(15),PHONE_NUMBER:C(14),CONT_NAME:C(30),CONT_TITLE:C(30),CONT_FIRM:C(30),ADDRESS_1:C(30),ADDRESS_2:C(30),CITY:C(25),STATE:C(2),ZIP_CODE:C(9),AVAILABLE:C(15),CUSTOMER_NBR:C(6),RECORD_ID_L:C(1),CUST_TYPE:C(3),RECORD_ID_I:C(1),DISC_CODE:C(2),RECORD_ID_A:C(1),TERMS_CODE:C(2),TM_NUMBER:C(6),COUNTRY_CODE:C(2),AVAILABLE0:C(8),TERRITORY:C(3),APDIR_DT:C(8),SLSPERSON:C(3),PLAN_DT:C(8),GOALS_DT:C(8),UST_ID:C(16),QSTNR_DT:C(8),AVAILABLE1:C(21),SEND_LIT:C(1),QUOTE_DT:C(8),APDIR_FLAG:C(1),PLAN_FLAG:C(1),GOALS_FLAG:C(1),QSTNR_FLAG:C(1),LINK_FLAG:C(1),BBLIST_FLAG:C(1),FAX_NUM:C(14),ADDRESS_3:C(30),ADDRESS_4:C(30),DEALER_STR:C(1*=10),USR_DEF_MEMO:C(50*=10),USR_DEF_DT:C(8*=10),OSAS_RSL_YN:C(1),ADDON_RSL_YN:C(1),MAK_EU_YN:C(1),SSI_RSL_YN:C(1),RICHTER_EU_YN:C(1),CLS_EU_YN:C(1),HSD_EU_YN:C(1),SSI_EU_YN:C(1*=10),USR_DEF_NUM:N(10*=10)"
+        gosub CREATE_TABLE_VIA_STRING_TEMPLATE
+        sqlprep(chan)"Create index index_CUSTOMER_NBR on TMM01 (CUSTOMER_NBR)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_STATE on TMM01 (STATE)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_COUNTRY_CODE on TMM01 (COUNTRY_CODE)"
+        sqlexec(chan)
+        sqlprep(chan)"Create index index_COMB1 on TMM01 (COUNTRY_CODE, CUSTOMER_NBR)"
+        sqlexec(chan)
+
+
+    REM =================================================================================
+    REM Populate the Invoice History Header file (ART03)
+    REM =================================================================================
+        for month = 1 to 12
+            statusLabel!.setText("Populating Invoice Table for Month " + str(month:"00") + "...")
+            for sale = 1 to rnd(15) + 50
+
+                REM Determine the sales figures, give a slight chance of a negative number
+                totalsales = rnd(1000) + 500
+                if (rnd(100) < 5) then totalsales = rnd(500) * (-1)
+
+                REM Determine salesperson, biased towards the first 3
+                salesperson = rnd(6)+1
+                if (rnd(10) > 5) then salesperson = rnd(3)+1
+
+                sql$ = "insert into ART03 "
+                sql$ = sql$ + "(FIRM_ID, CUSTOMER_NBR, INVOICE_DATE, SLSPSN_CODE, TOTAL_SALES) "
+                sql$ = sql$ + "Values "
+                sql$ = sql$ + "('01', '" + str(rnd(100):"000000") + "', " 
+                sql$ = sql$ + "'2006-" + str(month:"00") + "-" + str(rnd(28):"00") + "', "
+                sql$ = sql$ + str(salesperson:"0") + ", " + str(totalsales) + ")"
+
+                sqlprep(chan) sql$
+                sqlexec(chan)
+
+            next
+        next
+
+    REM =================================================================================
+    REM Populate the Telemaster Master file (TMM01)
+    REM =================================================================================
+
+        REM Load up the states into a vector
+        statusLabel!.setText("Populating Telemaster Master Table...")
+        declare BBjVector myVector!
+        myVector! = new BBjVector()
+        counter = 0 
+        while 1
+            dread state$,name$,err=*BREAK
+            myVector!.add(counter, state$)
+            counter = counter + 1
+        wend    
+
+        for customer = 1 to 100
+
+            sql$ = "insert into TMM01 "
+            sql$ = sql$ + "(FIRM_ID, CUSTOMER_NBR, STATE, COUNTRY_CODE) "
+            sql$ = sql$ + "Values "
+            sql$ = sql$ + "('01', '" + str(customer:"000000") + "', " 
+            sql$ = sql$ + "'" + cast(BBjString,myVector!.getItem(rnd(53))) + "', 'US')"
+
+            sqlprep(chan) sql$
+            sqlexec(chan)
+
+        next
+
+    REM =================================================================================
+    REM Now that the database has been created, continue with the rest of the demo program
+    REM =================================================================================
+    progressBarWindow!.destroy()
+    return
+
+
+
+REM =================================================================================
+REM Create a table via SQL given a string template
+REM =================================================================================
+CREATE_TABLE_VIA_STRING_TEMPLATE:
+    tableTemplate$ = template$ + ","
+    sql$ = "create table " + dbTableName$ + " ("
+
+    fieldCounter = 0
+    while 1 
+        let fPos=pos(","=tableTemplate$)
+        if fPos <> 0 then
+            fieldCounter = fieldCounter + 1
+
+            let fldDesc$ = tableTemplate$(1,fPos-1)
+            let tableTemplate$ = tableTemplate$(fPos+1)
+
+            let fPos=pos(":"=fldDesc$)
+            let fldName$ = fldDesc$(1,fPos-1)
+            let fldTypeDesc$ = fldDesc$(fPos+1)
+
+            REM Determine the field type
+            fldType$ = fldTypeDesc$(1,1)
+            if fldType$ = "C" then fldType$ = "varchar"
+            if fldType$ = "N" then fldType$ = "numeric"
+            if fldType$ = "U" then fldType$ = "numeric"
+            if fldType$ = "I" then fldType$ = "numeric"
+            if fldType$ = "O" then fldType$ = "varbinary"
+            if fldType$ = "B" then fldType$ = "numeric"; fldTypeDesc$ = "B(10)"
+
+            REM Turn the Date fields into real dates
+            if (len(fldName$) > 4) then
+                if (cvs(fldName$(len(fldName$)-4),3) = "_DATE") then
+                    fldType$ = "date"
+                endif
+            endif                    
+
+            REM Determine the length of the field
+            fldLen$ = fldTypeDesc$(3,len(fldTypeDesc$)-3)
+
+            REM Remove *= syntax from field description
+            let fPos=pos("*"=fldLen$)
+            if fPos<> 0 then fldLen$ = fldLen$(1,fPos-1)
+
+            REM Add the field and type to the Create Table SQL statement
+            sql$ = sql$ + fldName$ + " " + fldType$ + "(" + fldLen$ + ")"
+
+            REM Add key information to optimize the first few fields
+            if (fieldCounter > 1) and (fieldCounter < 4) then sql$ = sql$ + " foreign key"
+            sql$ = sql$ + ","
+
+        else
+            BREAK
+        endif
+    wend
+
+    REM Finish off building the sql statement and execute it
+    sql$ = sql$(1,len(sql$)-1) + ")"
+    sqlprep(chan)sql$
+    sqlexec(chan)
+    return
+    
+REM =================================================================================
+REM State information for the customer table
+REM =================================================================================
+DATA "AK","Alaska"
+DATA "AL","Alabama"
+DATA "AR","Arkansas"
+DATA "AZ","Arizona"
+DATA "CA","California"
+DATA "CO","Colorado"
+DATA "CT","Connecticut"
+DATA "DC","District of Columbia"
+DATA "DE","Delaware"
+DATA "FL","Florida"
+DATA "GA","Georgia"
+DATA "GU","Guam"
+DATA "HI","Hawaii"
+DATA "IA","Iowa"
+DATA "ID","Idaho"
+DATA "IL","Illinois"
+DATA "IN","Indiana"
+DATA "KS","Kansas"
+DATA "KY","Kentucky"
+DATA "LA","Louisiana"
+DATA "MA","Massachusetts"
+DATA "MD","Maryland"
+DATA "ME","Maine"
+DATA "MI","Michigan"
+DATA "MN","Minnesota"
+DATA "MO","Missouri"
+DATA "MS","Mississippi"
+DATA "MT","Montana"
+DATA "NC","North Carolina"
+DATA "ND","North Dakota"
+DATA "NE","Nebraska"
+DATA "NH","New Hampshire"
+DATA "NJ","New Jersey"
+DATA "NM","New Mexico"
+DATA "NV","Nevada"
+DATA "NY","New York"
+DATA "OH","Ohio"
+DATA "OK","Oklahoma"
+DATA "OR","Oregon"
+DATA "PA","Pennsylvania"
+DATA "PR","Puerto Rico"
+DATA "RI","Rhode Island"
+DATA "SC","South Carolina"
+DATA "SD","South Dakota"
+DATA "TN","Tennessee"
+DATA "TX","Texas"
+DATA "UT","Utah"
+DATA "VA","Virginia"
+DATA "VI","Virgin Islands"
+DATA "VT","Vermont"
+DATA "WA","Washington"
+DATA "WI","Wisconsin"
+DATA "WV","West Virginia"
+DATA "WY","Wyoming"

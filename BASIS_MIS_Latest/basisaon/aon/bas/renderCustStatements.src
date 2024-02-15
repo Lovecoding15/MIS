@@ -1,0 +1,294 @@
+REM ========================================================================
+REM Render Customer Statements via JasperReports - renderCustStatements.src
+REM ========================================================================
+
+seterr err_trap
+
+REM ========================================================================
+REM USE and Declares
+REM ========================================================================
+
+	use ::bbjasper.bbj::BBJasperReport
+	use ::bbjasper.bbj::BBJasperViewerWindow
+	use ::SQLProperties.bbj::SQLProperties
+
+	declare BBJasperReport BBjReport!
+	declare BBJasperViewerWindow BBjReportWindow!
+	declare SQLProperties props!
+	
+REM ========================================================================
+REM Enter the data
+REM ========================================================================
+
+	enter firm$, statement_date$, message$, aging_period$, age_on_date$, minimum_balance, print_serial_number_detail, option$, sequence$, start_cust$, statements_produced
+	
+	rem ' firm$ is the firm_id$ - either 01 or 02
+	
+	rem ' statement_date$ is the statement date in the form of YYYYMMDD
+	
+	rem ' is the message to be included on the statement
+	
+	rem ' aging_period$ A=All  1=30-Days  2=60-Days  3=90-Days  4=120-Days
+	rem ' initially age_period$ is only supported in All mode 'A'
+	
+	rem ' age_on_date$ = I for Invoice or D for Due Date
+	rem ' initially only I for Invoice Date is supported
+	
+	rem ' minimum_balance has no impact
+	
+	rem ' print_serial_number_detail is always false (0) for now
+	
+	rem ' option$ = R for restart, S for single, empty of all
+	
+	rem ' sequence$ = N for numeric, A for alpha
+	rem ' initially only N is supported
+	
+	rem ' start_cust$ = the single customer to produce, or the starting customer for the reprint
+	
+	rem ' ensure that start_cust$ if not empty is 6 bytes long
+	if len(start_cust$) = 0 then
+		start_cust = 0
+	else
+		start_cust = 1
+		while len(start_cust$) < 6
+			start_cust$ = "0" + start_cust$
+		wend
+	fi
+	
+	rem ' statement date for the email body and partial date for the email subject
+	stmt_dt$ = date(jul(num(statement_date$(1,4)), num(statement_date$(5,2)), num(statement_date$(7,2))):"%Dz %Ms %Y")
+	sub_dt$ = date(jul(num(statement_date$(1,4)), num(statement_date$(5,2)), num(statement_date$(7,2))):"%Ms %Y")
+	
+REM ========================================================================
+REM Configure Environment
+REM ========================================================================
+	
+	rem ' set the environment
+	bbjhome$ = System.getProperty("basis.BBjHome") + "/"
+	addPrefix$=bbjhome$ + "utils/reporting/bbjasper/"
+	oldPrefix$=pfx
+	newPrefix$=oldPrefix$+" "+addPrefix$
+	prefix newPrefix$
+	pdfLocation$ = stbl("TEMP")
+
+	REM Open the BBj SysGUI Channel
+	sysgui!=BBjAPI().openSysGui("X0") 
+	
+	rem ' set the connect str
+	props! = new SQLProperties()
+	connect_str$ = "jdbc:basis:bbjserver.basis.cloud:2001?database=AddOnData&user=" + props!.getProperty("sqlURL.user") + "&pwd=" + props!.getPassword() + "&ssl=true"
+
+	call "ec_open::ARM02"
+	call "ec_open::ART01"
+	call "ec_open::ART11"
+	call "ec_open::ARM02_CANADA"
+	call "ec_open::TMM01"
+	call "ec_open::TMM05"
+	call "ec_open::TMM03"
+	
+
+REM ========================================================================
+REM render report
+REM ========================================================================
+
+	statements_produced = 0
+	invoiceCnt = 0
+	custBalance = 0
+	
+	rem ' position key pointer based on the firm or firm + start cust
+	if start_cust then
+		read record(art01, key = firm$ + "  " + start_cust$, dom = *next)art01$
+	else
+		read record(art01, key = firm$, dom = *next)art01$
+	endif
+	
+	while 1
+		
+		read record(art01,end = *break)art01$
+		
+		if art01.firm_id$ <> firm$ then break
+		
+		if art01.customer_nbr$ <> current_cust$ then 
+
+			gosub customer_break
+		
+			rem ' single statement mode?
+			if option$ = "S" AND current_cust$ <> start_cust$ then
+				break
+			endif
+		
+		endif
+		
+		rem ' if doing singe and customer = AUDEV (7808) or BSG (7688) then statemens = 'Y'
+		if option$ = "S" AND (art01.customer_nbr$ = "007808" or art01.customer_nbr$ = "007688") then
+			arm02.statements$ = "S"
+		endif
+		
+		if arm02.statements$ = "N" then continue
+
+		call "expCompDate.src", art01.invoice_date$, invoice_date$
+		if invoice_date$ > statement_date$ then continue
+	
+		rem ' ****************************************************
+		rem ' * calc invoice balance
+		rem ' ****************************************************
+
+		read record(art11, key=art01.firm_id$ + art01.ar_type$ + art01.customer_nbr$ + art01.ar_inv_nbr$, dom=*next)art11$
+		trans_amt = 0
+		while 1
+			read record(art11,end=*break)art11$
+			if art01.firm_id$ + art01.ar_type$ + art01.customer_nbr$ + art01.ar_inv_nbr$ <> art11.firm_id$ + art11.ar_type$ + art11.customer_nbr$ + art11.ar_inv_nbr$ then break
+			call "expCompDate.src", art11.trans_date$, trans_date$
+			if trans_date$ <= statement_date$ then trans_amt = trans_amt + art11.trans_amt + art11.adj_disc_amt
+		wend
+		invBalance = art01.invoice_amt + trans_amt
+
+		if invBalance = 0 then continue	
+	
+		invoiceCnt = invoiceCnt + 1
+		custBalance = custBalance + invBalance
+		
+	wend
+
+	close(arm02)
+	close(art01)
+	close(art11)
+	close(arm02_canada)
+	close(tmm01)
+	close(tmm03)
+	close(tmm05)
+	
+	exit
+	
+	
+rem ' ****************************************************
+rem ' * customer break
+rem ' ****************************************************
+
+	customer_break:
+
+		if invoiceCnt > 0 AND custBalance > minimum_balance then
+
+			print @(53,22), current_cust$,
+			
+			reportName$ = "custStatement.jasper"
+			
+			BBjReport! = new BBJasperReport(reportName$, connect_str$)
+
+			BBjReport!.putParam("P_FIRM_ID",firm$)
+			BBjReport!.putParam("P_STATEMENT_DATE",statement_date$)
+			BBjReport!.putParam("P_CUSTOMER",current_cust$)
+			if canadian_customer then
+				BBjReport!.putParam("P_MESSAGE","All Dollar Amounts are CAD")
+			else
+				BBjReport!.putParam("P_MESSAGE",message$)
+			endif
+			BBjReport!.fill()
+			statementfile$ = pdfLocation$ + current_cust$ + "_statement_" + statement_date$ + ".pdf"
+			BBjReport!.exportToPDF(BBjAPI().FALSE, statementfile$)
+
+			gosub email_statement
+
+			rem ' to see the statemenst in a viewer window un-rem the statements below
+			rem ' BBjReportWindow! = new BBJasperViewerWindow(BBjReport!, 0, 0, 920, 700,"BASIS International, Ltd.", $93$)
+			rem ' BBjReportWindow!.center()
+			rem ' BBjReportWindow!.show(1)
+
+			rem ' BBjReportWindow!.destroy()
+			
+			BBjReport!.destroy()
+
+			statements_produced = statements_produced + 1
+			
+			erase statementfile$
+
+		endif
+
+		invoiceCnt = 0
+		current_cust$ = art01.customer_nbr$
+		
+		rem ' get additional customer data
+		read record(arm02,key=firm$ + current_cust$ + "  ")arm02$
+		rem ' is it a Canadian Customer
+		canadian_customer = 0
+		read record(arm02_canada,key=firm$ + current_cust$, dom=*next)arm02_canada$; canadian_customer = 1
+		
+		rem ' get the send to address
+		dim email$[4],tmm05$:fattr(tmm05$)
+		email$[4]="customer-service@basis.cloud",sendto$=""
+		
+		tmmkey$ = firm$ + current_cust$ + fill(6,"0")
+		read record(tmm01, key = tmmkey$)tmm01$
+		
+		find record(tmm05, key = tmmkey$, dom=*next)tmm05$
+		email$[1]=cvs(tmm05.email$,3)
+
+		read(tmm03, key=tmmkey$, dom=*next)
+		while 1
+			read record(tmm03, end=*break)tmm03$
+			if pos(tmmkey$ = tmm03$) <> 1 then break
+			addr$ = cvs(tmm03.e_mail$, 3)
+			if addr$ = "" then continue
+			if tmm03.ap_contact$ = "Y" then email$[0] = addr$; break
+			if cvs(tmm03.contact_name$, 7) = cvs(tmm01.cont_name$, 7) then
+				email$[2]=addr$
+			else
+				if email$[3] = "" then email$[3] = addr$
+			fi
+		wend
+		
+		i=0
+		while sendto$=""
+			sendto$=email$[i]
+			i=i+1
+		wend
+		rem --- invoices for 1081 still go to ap contact, statements and past due notice go to jodyf@osas.com
+		rem --- if firm$ = "01" and current_cust$ = "001081" then sendto$ = "jodyf@osas.com"
+		rem --- invoices for 8446 still go to ap contact, statements go to Statements.APInvoices@truckprous.onmicrosoft.com
+		if firm$ = "01" and current_cust$ = "008446" then sendto$ = "Statements.APInvoices@truckprous.onmicrosoft.com"
+	return
+
+rem ' ****************************************************
+rem ' * email customer statement
+rem ' ****************************************************
+email_statement:
+
+	ms$ = "Attached is your statement for the period ending " + stmt_dt$ + " in Adobe Portable Document Format (PDF) format. "
+	ms$ = ms$ + "Using PDF files requires the Adobe Acrobat Reader, available free at www.adobe.com."
+
+    from$ = "customer-service@basis.cloud"
+    to$ = CVS(sendto$,3)
+    cc$ = "customer-service@basis.cloud"
+    bcc$ = "kurt.e.williams@comcast.net"
+    subject$ = sub_dt$+" Statement " + current_cust$
+    
+    rem ' TESTING - remove for deploy
+    rem ' to$ = "kurt.e.williams@comcast.net"
+    rem ' cc$ = ""
+
+    rem ' msgtxt$ = "Attachment is in Adobe Portable Document Format (PDF). "
+    rem ' msgtxt$ = msgtxt$ + "Viewing and printing PDF files requires the Adobe Acrobat "
+    rem ' msgtxt$ = msgtxt$ + "Reader, available free at www.adobe.com."
+    
+    call "sendEmail.src", from$, to$, cc$, bcc$, subject$, ms$, statementfile$
+
+	rem ' call "mailcall.bbj",1,mailcall$,""
+	rem ' mailcall.from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+	rem ' mailcall.cc$ = "customer-service@basis.cloud"
+	rem ' mailcall.subject$ = sub_dt$+" Statement " + current_cust$
+	rem ' mailcall.attach$ = statementfile$
+	
+
+	rem ' mailcall.to$ = CVS(sendto$,3)
+	rem ' print mailcall$
+	rem ' input *
+	rem ' mailcall.msgtxt$=ms$
+	rem ' call "mailcall.bbj",0,mailcall$,""
+	
+return
+
+err_trap:
+	msg$ = "An error " + str(err) + " occurred in line " + str(tcb(5)) + " error message " + errmes(-1)
+	resp = msgbox(msg$,0,"Problem")
+	exit err
+end	

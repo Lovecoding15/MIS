@@ -1,0 +1,9 @@
+Invoice signing notes:
+
+in /basisaon there are two java files and their corresponding class files
+SignBASISPDFA4.java - Europe signing
+SignBASISPDF.java - US Signing
+
+They utilize certificates stored in the file BasisKeyStore.
+
+

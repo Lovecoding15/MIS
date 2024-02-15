@@ -1,0 +1,17 @@
+rem ' test rental pricing
+
+use ::BasisPriceEngine.src::PriceElement
+use ::TransactionBuilder.src::TransactionBuilder
+use ::SerialNumber.src::SerialNumber
+
+tb! = new TransactionBuilder(0)
+
+sn! = new SerialNumber("BBX622605")
+
+priceElements! = tb!.calcAnnualRental(sn!)
+
+price = tb!.sumListPrice(priceElements!)
+
+print price
+
+end

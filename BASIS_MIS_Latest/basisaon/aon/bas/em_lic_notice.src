@@ -1,0 +1,215 @@
+seterr errmsg
+if (argc > 2)
+    serialnbr$ = argv(1)
+    msg_code$ = argv(2)
+fi
+
+call "ec_open::snm01"
+call "ec_open::tmm01"
+call "ec_open::tmm03"
+call "ec_open::tmm05"
+call "ec_open::country"
+
+rem ' end user links and data
+call "ec_open::snmel"
+call "ec_open::snmeu"
+
+serialnbr$=pad(serialnbr$,20)
+readrecord(snm01,key=serialnbr$)snm01$
+if snm01.media_type$ = "VIR" then virtual$ = "Virtual License ", msg_code$ = "VIR" + msg_code$ else vitrual$ = ""
+
+rem ' get end user name if present
+endusername$=""
+read record(snmel,key=serialnbr$,dom=done_enduser)snmel$
+read record(snmeu,key=snmel.end_user_nbr$,dom=done_enduser)snmeu$
+endusername$=cvs(snmeu.company_name$,3)
+done_enduser:
+
+ap_contact$=""
+sam_contact$=""
+main_contact$=""
+if snm01.firm_id$ = "01" then
+	cc$ = "sales@basis.cloud, customer-service@basis.cloud"
+else
+	cc$ = "eu.sales@basis.cloud, customer-service@basis.cloud"
+fi
+recipient$=""
+
+k$=snm01.firm_id$+snm01.customer_nbr$
+
+read(tmm05,key=k$,dom=*next)
+while 1
+  readrecord(tmm05,end=*break)tmm05$
+  if pos(k$=tmm05$)<>1 then break
+  main_contact$=cvs(tmm05.email$,3)
+  break
+wend
+
+read(tmm03,key=k$,dom=*next)
+while 1
+  readrecord(tmm03,end=*break)tmm03$
+  if pos(k$=tmm03$)<>1 then break
+  if tmm03.sam_contact$="Y" then sam_contact$=cvs(tmm03.e_mail$,3)
+  if tmm03.primary_contact$="Y" and cvs(main_contact$,3) = "" then main_contact$=cvs(tmm03.e_mail$,3)
+  if tmm03.ap_contact$="Y" then ap_contact$=cvs(tmm03.e_mail$,3)
+wend
+
+while msg_code$(len(msg_code$),1)>"2"
+  date$="00000000"
+  call "ec_open::logextract"
+  read(logextract,key=cvs(serialnbr$,3),dom=*next)
+  while 1
+    readrecord(logextract,end=*break)logextract$
+    if pos(logextract.serialnum$=serialnbr$)=0 then break
+    if date$<logextract.date$ then
+      date$=logextract.date$
+      em$=cvs(logextract.email$,3)
+      if em$<>"" and pos("@"=em$) then recipient$=em$ 
+    fi
+  wend
+  close(logextract,err=*next)
+  if date$="00000000" or recipient$="" then break
+  jul_dt=jul(num(date$(1,4)),num(date$(5,2)),num(date$(7,2)))
+  today=jul(0,0,0)
+  rem 'if last reg. email is older than ??, don't use it
+  rem 'kew changed this from 45 days to 730 days (2 years) on 11/16/2009
+  if today-jul_dt>730 then recipient$=""
+  break
+wend
+
+txt_chan=unt
+open(txt_chan)"em_lic_notice.txt"
+sz=0
+file_text$=""
+f$=fin(txt_chan),sz=dec(f$(1,4))
+if sz then readrecord(txt_chan,siz=sz)file_text$
+close(txt_chan,err=*next)
+
+readrecord(tmm01,key=k$+"000000",dom=*next)tmm01$
+lang$=cvs(tmm01.lang_code$,7)
+readrecord(country,key=tmm01.country_code$,dom=*next)country$
+if lang$="" then lang$=cvs(country.lang_code$,7)
+if lang$="" then lang$="EN"
+
+while 1
+  emsg$=""
+  srch$=msg_code$+lang$+":"
+  while 2
+    p=pos(srch$=file_text$)
+    if p=0 then break
+    temp$=file_text$(p+1)
+    p=pos("{"=temp$)
+    if p=0 then break
+    temp$=temp$(p+1)
+    p=pos("}"=temp$)
+    if p=0 then break
+    emsg$=cvs(temp$(1,p-1),3)
+    break
+  wend
+  if emsg$<>"" or lang$="EN" then break
+  lang$="EN"
+wend
+while 1
+  p=pos("<sn>"=emsg$)
+  if p=0 then break
+  emsg$=emsg$(1,p-1)+virtual$+cvs(serialnbr$,3)+emsg$(p+4)
+wend
+while 1
+  p=pos("<users>"=emsg$)
+  if p=0 then break
+  emsg$=emsg$(1,p-1)+str(snm01.users)+emsg$(p+7)
+wend
+while 1
+  p=pos("<enduser>"=emsg$)
+  if p=0 then break
+  if cvs(endusername$,3) <> "" then
+  	emsg$ = emsg$(1,p-1) + ", " + cvs(endusername$,3) + emsg$(p+9)
+  else
+  	emsg$ = emsg$(1,p-1) + emsg$(p+9)
+  endif
+wend
+if pos("OSH" = serialnbr$) = 1 then
+	rem ' remove the reference to the direct renew app
+	if pos("If you have inadvertently forgotten" = emsg$) <> 0 then
+		startpoint = pos("If you have inadvertently forgotten" = emsg$)
+		endpoint = pos("<SNURL>" = emsg$)
+		if endpoint <> 0 then
+			endpoint = endpoint + 12
+			emsg$ = emsg$(1, startpoint - 1) + emsg$(endpoint)
+		fi
+	fi
+fi	
+while 1
+  p=pos("<SNURL>"=emsg$)
+  if p=0 then break
+  emsg$=emsg$(1,p-1)+cvs(serialnbr$,3)+emsg$(p+7)
+wend
+p=pos("SUBJECT:"=cvs(emsg$,4))
+if p then
+  txt$=emsg$(p),p1=pos($0a$=txt$)
+  if p1 then subject$=cvs(txt$(1,p1-2),3),emsg$=txt$(p1+1)
+fi
+
+lf$=$0d0a$
+boundary$="--==========_BASIS"
+rem ' 7/2014 decision to remove the ap contact from the to list of these emails
+rem ' addr$=main_contact$+","+ap_contact$+","+sam_contact$+","+recipient$+","
+addr$=main_contact$+","+sam_contact$+","+recipient$+","
+while 1
+  p=pos(";"=addr$)
+  if p=0 then break
+  addr$(p,1)=","
+wend
+addr$=cvs(addr$,43)
+eaddr$=""
+while 1
+  p=pos(","=addr$)
+  if p=0 then break
+  if p>1 then t1$=cvs(addr$(1,p-1),3) else t1$=""
+  addr$=addr$(p+1)
+  if pos(t1$=addr$)=0 and pos("@"=t1$) then eaddr$=eaddr$+","+t1$
+wend
+l=len(eaddr$)
+if l and eaddr$(l,1)="," then eaddr$(l,1)=" "
+if l and eaddr$(1,1)="," then eaddr$(1,1)=" "
+eaddr$=cvs(eaddr$,3)
+from$="customer-service@basis.cloud"
+if eaddr$="" then eaddr$=cc$,cc$=""
+if snm01.firm_id$="01" then 
+  emsg$=emsg$+"Rep #: "+tmm01.slsperson$+"  "
+  rem ' if cc$<>"" then cc$=cc$+","
+  rem ' cc$=cc$+"customer-service@basis.cloud"
+fi
+rem ' if snm01.firm_id$="02" then
+rem '  if cc$<>"" then cc$=cc$+","
+rem '  cc$=cc$+"eu.sales@basis.cloud"
+rem ' fi
+
+rem ********************************
+rem 'for testing, change eaddr$, cc$
+rem ********************************
+rem ' eaddr$="jaya@basis.cloud"
+rem ' cc$="misdev@basis.cloud"
+
+send_email:
+rem ' converted to sendEmail.bbj/email.bbj
+p = pos("SUBJECT:" = cvs(subject$,4))
+if p <> 0 then subject$=cvs(subject$(p+8),3)
+emsg$ = cvs(emsg$,3)
+if pos($0D0A$=emsg$) = 1 then emsg$ = emsg$(3)
+attachedfile$ = ""
+call "sendEmail.src", from$, eaddr$, cc$, "", subject$, emsg$, attachedfile$
+
+release
+
+errmsg:
+rem ' converted to sendEmail.bbj/email.bbj
+if serialnbr$="" then serialnbr$="Unknown"
+from$ = "customer-service@basis.cloud"
+eaddr$ = "mis@basis.cloud"
+cc$ = ""
+subject$ = "Emergency license notice error"
+emsg$ = "Error " + str(err) + " in " + str(tcb(5)) + " in " + pgm(-1) + $0a$ + errmes(err)
+emsg$=emsg$ + $0a$ + serialnbr$ + $0a$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$
+goto send_email
+

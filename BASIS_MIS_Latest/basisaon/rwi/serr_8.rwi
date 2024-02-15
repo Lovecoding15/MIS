@@ -1,0 +1,156 @@
+// Report active data servers and clients for a customer,
+// <serr_8>
+dev$="VIDEO";
+device_name$=term();
+sdesc$="Active DS/Client for a Customer";
+display/form="MAS_HEAD" screen_desc=sdesc$ printer=dev$;
+
+t1$="Active Data Servers/Clients for Cust# "+arm01.customer_nbr;
+
+display/header t1$/center/len=44;
+display/header cvs(arm01.cust_name,3)/center/len=30;
+display/header/skip
+	"Data Server SN      Client SN           Users   Port    Rev";
+display/header fill(68,"-");
+
+do_form:
+prompt for/form="serr_13"/noborder/row=3
+	// start_port=start_port$,end_port=end_port$,
+	in_cust_num=in_cust_num$;
+if ctl(2) or cvs(in_cust_num$,2)="" then exit;
+
+get_action:
+action$="Y";
+prompt for /nobox /row=23 /imask="A"
+	/prompt="Is the above correct? (Yes, No, Printer, End)" 
+	action$;
+
+switch action$
+	{
+	case "Y": {}
+	case "N": goto do_form;
+	case "P": {gosub select_device; 
+		if device_type$="F" then dev$="FILE";
+		if device_type$="P" dev$="PRINTER "+device_name$;
+		if device_type$="T" then dev$="VIDEO";
+		display/form="MAS_HEAD" screen_desc=sdesc$ printer=dev$;
+		goto get_action;}
+	case "E": exit;
+	default:  goto get_action;
+	}
+set display device_name$;
+
+get_customer:
+firm$="01";
+find_arm01:
+find/noerror arm01 using firm$+in_cust_num$;
+if available(arm01)=0 and firm$="01" then
+	{ firm$="02"; goto find_arm01;}
+if available(arm01)=0 then goto do_form;
+
+if dev$="VIDEO" then 
+{
+create temporary table cs_tbl
+	ix char(5)/index
+	sn char(20)/index
+	cs char(1)
+	us char(5)
+	po char(5)
+	rv char(4);
+icount=0;
+}
+
+pause/message "Searching ...";
+for each snt02 group by data_server
+{
+find/noerror snm01 using snt02.data_server;
+if available(snm01)=0 then continue;
+if snm01.customer_nbr<>in_cust_num$ or active_flag="N" then continue;
+if first_of(data_server) then
+	{
+	rev$=snm01.product_rev;
+	find/noerror csm04 using snm01.firm_id+product_rev;
+	if available(csm04) then rev$=csm04.description(1,4);
+	port$="????";
+	find/noerror csm03 using snm01.firm_id+os_level;
+	if available(csm03) then port$=csm03.port_id(1,4);
+	u$=str(snm01.users:"###0");
+	cs$="S";
+	if dev$<>"VIDEO" then
+		{
+		display "";
+		display/notitle snm01.serial_nbr/col=1 u$/col=41
+		port$/col=49 rev$/col=56;
+		}
+	else gosub updt_tbl;
+	}
+find/noerror snm01 using snt02.serial_nbr;
+if snm01.active_flag="N" then continue;
+rev$="????"; port$="????";u$="??";
+cs$="C";
+if available(snm01) then 
+	{
+	find/noerror csm04 using snm01.firm_id+product_rev;
+	if available(csm04) then rev$=csm04.description(1,4);
+	find/noerror csm03 using snm01.firm_id+os_level;
+	if available(csm03) then port$=csm03.port_id(1,4);
+	u$=str(users:"###0");
+	}
+if dev$<>"VIDEO" then
+display/notitle snm01.serial_nbr/col=21 u$/col=41
+	port$/col=49 rev$/col=56;
+else gosub updt_tbl;
+}
+
+if dev$<>"VIDEO" then exit;
+if icount=0 then exit;
+chooserec:
+choose/record/rewind/nowrap/gosub=lines/display=line$
+	/black/border/upper
+	/col=7/cols=60/row=0/rows=22/title="@"+t1$+arm01.customer_nbr+
+	"\Data Server SN      Client SN           Users  Port   Rev  "
+	/help="Scroll w/arrows <(#F7)>=Search for serial#  <(#F43)>=More info on serial# <(#F2)>=Done"
+	/update=sn_detail
+	/search=choosesn
+	cs_tbl;
+if ctl()=2 then exit;
+goto chooserec;
+
+#include (LIBRARY)syseldev.h
+
+subroutine choosesn
+{
+choose/record/rewind/nowrap
+	/border/upper/index=sn
+	/col=25/cols=20/row=0/rows=22
+	/title="Search for Serial Number"
+	cs_tbl;
+}
+
+subroutine updt_tbl
+{
+icount=icount+1;
+if icount<=99999 then 
+	{
+	cs_tbl.ix=str(icount:"00000");
+	cs_tbl.sn=snm01.serial_nbr;
+	cs_tbl.cs=cs$;
+	cs_tbl.po=port$;
+	cs_tbl.rv=rev$;
+	cs_tbl.us=u$;
+	insert cs_tbl;
+	}
+}
+
+subroutine lines
+{
+line$=cs_tbl.sn+fill(20);
+if cs_tbl.cs="C" then line$=fill(20)+cs_tbl.sn;
+line$=line$+cs_tbl.us+"  "+cs_tbl.po+"  "+cs_tbl.rv;
+}
+
+subroutine sn_detail
+{
+if cs_tbl.sn<>"" then call/window "(BBX)snquery.bbx",cs_tbl.sn;
+}
+//

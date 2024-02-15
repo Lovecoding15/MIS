@@ -1,0 +1,334 @@
+REM 'Program BLK.30 - create html code for emailing or faxing lic/key form
+REM 'This program is also on Opus for ecommerce
+seterr entry_err
+rem 'The string html$ is returned to calling program
+rem 'choice$ is "E" or "F", email or fax
+enter firm$,toline$,subjline$,choice$,rec$,flex,html$
+goto build_html
+entry_err:
+if firm$="" then firm$="01"
+if choice$="" then choice$="E"
+if rec$="" then goto pgm_exit
+
+BUILD_HTML: 
+LET TS$="",TSPHONE$="",TSFAX$="",TSEMAIL$="",SP$="&#160;&#160;&#160;&#160;&#160;"
+IF FIRM$="02" AND FLEX=0 THEN LET CO$="BASIS Europe Distribution GmbH",AD1$="Nell-Breuning-Allee 6",AD2$="66115 Saarbrücken",AD3$="GERMANY",PH$="Telefon +49 (0)681 96814-0",FAX$="Fax +49 (0)681 96814-33",EMAIL$="",WWW$=""; GOTO START_HTML
+LET CO$="BASIS International Ltd.",AD1$="5901 Jefferson Street NE",AD2$="Albuquerque NM 87109-3432",AD3$="USA",PH$="Phone 505.345.5232",FAX$="Fax 505.345.5082",EMAIL$="info@basis.cloud",WWW$="www.basis.cloud"
+LET TS$="Technical Support",TSPHONE$="Phone 505.345.5021",TSFAX$="Fax 505.344.9057",TSEMAIL$="support@basis.cloud"
+START_HTML: 
+LOGO$="",FONT$=""
+IF CHOICE$="E" THEN LET LOGO$="<img src="+$22$+"http://www.basis.cloud/images/license_logo.gif"+$22$+">"
+IF CHOICE$="E" THEN LET FONT$="<font size=3 face="+$22$+"univers, cgtimes"+$22$+">",TOLINE$="",SUBJLINE$=""
+LET SN$=CVS(REC.NUMBER$,3),ACT$=CVS(REC.AUTH_KEY$,3)
+IF FLEX THEN GOTO LIC_FORM
+LET TITLE$="Activation Key, Do Not Discard!",DESC$="Activation Key (numbers are underlined)",KEY$=""
+FOR A=1 TO LEN(ACT$); IF POS(ACT$(A,1)="0123456789") THEN LET KEY$=KEY$+"<u>"+ACT$(A,1)+"</u>" ELSE LET KEY$=KEY$+ACT$(A,1)
+NEXT A
+LET HTML$="<html><body>"+FONT$+TOLINE$+SUBJLINE$+LOGO$+"<h4 align=right><i>Business Runs on BASIS&#174</i></h4>"+$0A$+"<h2 align=center>"+TITLE$+"</h1><br><br><small><table>"
+FOR LN=0 TO 14
+LET TMP$="",LN$="",T3$=""
+IF LN=0 THEN LET LN$="Serial Number:",TMP$=SN$
+IF LN=1 THEN LET LN$=SP$+DESC$+":",TMP$=KEY$
+IF LN=2 THEN LET LN$="Number of Users:",TMP$=REC.USERS$
+IF LN=3 THEN LET LN$="Part Number:",TMP$=REC.PART_NUM$
+IF LN=4 THEN LET LN$="Revision Level:",TMP$=REC.REV_LVL$
+IF LN=5 THEN LET LN$="Operating System Revision:",TMP$=REC.SYSTEM$
+IF LN=6 THEN LET LN$="Product Description:",TMP$=REC.DESC1$
+IF LN=7 THEN LET T3$=REC.ORDER_NO$
+IF LN=8 THEN LET T3$=REC.ORDER_DATE$
+IF LN<9 THEN LET LN$="<tr><td align=right>"+LN$+"<td>"+CVS(TMP$,3)+"<td>"+T3$+"<br>"
+IF LN=9 THEN LET LN$="</table></small><b><center>UNAUTHORIZED USE OF THIS INFORMATION IS PROHIBITED,</center><center>AND IS A VIOLATION OF THE LICENSE AGREEMENT.</center></b><br><br>"
+IF LN=10 THEN LET LN$="<small><table><tr><td>"+SP$+CO$+"<td>"+SP$+TS$+"<br>"
+IF LN=11 THEN LET LN$="<tr><td>"+SP$+AD1$+"<td>"+SP$+TSPHONE$+"<br>"
+IF LN=12 THEN LET LN$="<tr><td>"+SP$+AD2$+"<td>"+SP$+TSFAX$+"<br>"
+IF LN=13 THEN LET LN$="<tr><td>"+SP$+AD3$+"<td>"+SP$+TSEMAIL$+"<br>"
+IF LN=14 THEN LET LN$="<tr><td>"+SP$+PH$+"<td> <br><tr><td>"+SP$+FAX$+"<td> <br><tr><td>"+SP$+EMAIL$+"<td> <br><tr><td>"+SP$+WWW$+"<td> <br><br></table></small>"
+NXTLN: 
+IF LN$<>"" THEN LET HTML$=HTML$+$0A$+LN$
+NEXT LN
+LET HTML$=HTML$+"<br><br>For installation instructions, please see your Installation<br>and Configuration Guide<br><br>"+$0A$
+LET HTML$=HTML$+"<b>CD-ROM Users: The part number listed above corresponds to the file<br>"+$0A$+"name on the CD-ROM. Refer to index.txt for complete information.</b><br>"+$0A$
+GOTO end_html
+LIC_FORM: 
+call "ec_open::snm02"
+k$=pad(sn$,20)
+readrecord(snm02,key=k$,dom=*next)snm02$
+close(snm02)
+IF POS("Port ID 2"=REC.SYSTEM$) or POS("Port ID 6"=REC.SYSTEM$) THEN LET BBJ=1 ELSE LET BBJ=0
+LET TMP$=cvs(REC.SYSTEM$,3),p=POS("."=TMP$)
+if p>1 then tmp$=tmp$(1,p-1)
+LET TMP$=cvs(REC.DESC1$,3)+", "+tmp$
+LET HTML$="<html><body>"+FONT$+TOLINE$+SUBJLINE$ + "<div style=" +chr(34) + "width: 850px;" + chr(34) + "><center>"+LOGO$+"</center><br><center><table><tr><td colspan=" +chr(34) + "2" +chr(34) + "><b><center><big>LICENSE REGISTRATION FORM</center></td></b></big></tr>"
+LET HTML$=HTML$+$0A$+"<tr><td>Part Number: "+REC.PART_NUM$+"</td>"
+LET HTML$=HTML$+"<td align=right>Date: "+REC.ORDER_DATE$+"</td></tr>"
+LET HTML$=HTML$+$0A$+"<tr><td>"+TMP$+"</td>"
+LET HTML$=HTML$+"<td align=right>Order: "+REC.ORDER_NO$+"</td></tr>"
+LET U$=REC.USERS$ + " users"; IF NUM(REC.USERS$)<2 THEN LET U$=REC.USERS$ + " user"
+IF BBJ THEN LET R$="BBj Rev "+REC.rev_lvl$+" & PRO/5" ELSE LET R$="Revison "+REC.rev_lvl$
+epos=pos("E"=snm02.lic_property1$+snm02.lic_property2$)
+while snm02.users1+snm02.users2 
+if snm02.users1 and snm02.users2 then
+  if epos=1 then 
+    u$=str(snm02.users1)+" Extended users, "+str(snm02.users2)+" Standard users"
+    rec.users$ = str(snm02.users1 + snm02.users2)
+  else
+    u$=str(snm02.users2)+" Extended users, "+str(snm02.users1)+" Standard users"
+    rec.users$ = str(snm02.users1 + snm02.users2)
+  fi
+else
+  if (epos=1 and snm02.users1) or (epos=3 and snm02.users2) then 
+  	u$=str(snm02.users1 + snm02.users2) + " Extended "
+  	if snm02.users1 + + snm02.users2 < 2 then u$ = u$ + "user" else u$ = u$ + "users" 
+  	rec.users$ = str(snm02.users1 + snm02.users2)
+  else 
+  	u$=str(snm02.users1 + snm02.users2) + " Standard "
+  	if snm02.users1 + + snm02.users2 < 2 then u$ = u$ + "user" else u$ = u$ + "users"
+  	rec.users$ = str(snm02.users1 + snm02.users2)
+  fi
+fi
+break
+wend
+LET HTML$=HTML$+$0A$+"<tr><td>"+R$+", " + U$  + "&nbsp;&nbsp;" + "</td>"
+LET HTML$=HTML$+"<td align=right>Customer: "+REC.CUST$+"</td></tr>"
+
+rem ' add feature lines if any
+gosub addFeatureLines
+
+LET HTML$=HTML$+$0A$+"<p STYLE=" + chr(34) + "margin:30px 40px 20px" + chr(34) + ">The registration process returns a product license to you. This license is a perpetual fail-safe license that enables the license management software to automatically re-register the license after initial registration in the event of changes to the operating environment. Please follow each step carefully, then save this form for future reference. Complete installation instructions are available in the Installation, Licensing and Configuration section of the online manual at <a href=" + chr(34) + "http://www.basis.cloud/documentation" +chr(34) + ">http://www.basis.cloud/documentation.</a></p>"
+
+rem ' changed 9/7/2016
+rem ' LET HTML$=HTML$+$0A$+"<p>The registration process returns a product license to you. Please follow each step carefully, then save this form for future reference.</p>"
+
+REM ' remove this sentence 8/28/2009 kew in support of requiring users to pull the 
+REM LET HTML$=HTML$+" If you have just received a license for this order, do not repeat the registration process, but proceed with installing your license."
+
+rem ' changed 9/7/2016
+rem ' LET HTML$=HTML$+$0A$+"<p>First, verify that the BLM is version 11.10.1 or greater. To determine the BLM version:</p>"
+rem ' LET HTML$=HTML$+$0A$+"<p>From the blm directory of your installation, execute the license manager utility with the options “lmver basis”, ie:</p>"
+rem ' LET HTML$=HTML$+$0A$+"<p style=" + chr(34) + "margin-left: 40px" + chr(34) + ">./lmutil lmver basis</p>"
+rem ' LET HTML$=HTML$+$0A$+"<p>or examine the blm.log file found in the blm/log sub-directory, for example:</p>"
+rem ' LET HTML$=HTML$+$0A$+"<p style=" + chr(34) + "margin-left: 40px" + chr(34) + ">12:52:21 (lmgrd) FlexNet Licensing (v11.13.0.0 build 157483 x64_mac10)</p>"
+rem ' LET HTML$=HTML$+$0A$+"<p>If you have a supported BLM continue with the registration process below.</p>"
+rem ' LET HTML$=HTML$+$0A$+"<p>If you don’t have a supported BLM version, download the current BLM at:  <a href=" + chr(34) + "http://basis.cloud/basis-license-manager-download" +chr(34) + ">http://basis.cloud/basis-license-manager-download</a></p>"
+rem ' LET HTML$=HTML$+$0A$+"<p>Instructions for the BLM installation: <a href=" + chr(34) + "http://www.basis.cloud/kb-basis-license-manager-blm-16-installation-instructions" +chr(34) + ">http://www.basis.cloud/kb-basis-license-manager-blm-16-installation-instructions.</a></p>"
+rem ' LET HTML$=HTML$+"<p>Complete installation instructions are available in the Installation, Licensing and Configuration section of the online manual at"
+
+REM ' change this line 8/28/2009 kew to remove reference to product CD
+REM LET HTML$=HTML$+" www.basis.cloud/devtools/documentation/index.html or on the product CD.</small>"
+rem ' LET HTML$=HTML$+" <a href=" + chr(34) + "http://www.basis.cloud/documentation" +chr(34) + ">http://www.basis.cloud/documentation.</a></p>"
+
+LET HTML$=HTML$+$0A$+"<div STYLE=" + chr(34) + "margin:5px 40px 5px" + chr(34) + "><b>To register using the Standalone BASIS License Manager (BLM 16)</b></div>"+$0A$
+LET HTML$=HTML$+"<div STYLE=" + chr(34) + "margin:2px 40px 2px" + chr(34) + "><table><tr><td style=" + chr(34) + "vertical-align: top;" + chr(34) + ">Windows:<td>Launch the BLMAdmin utility.  Select 'License Registration'.  Complete the contact information fields.  Enter the serial number and authorization number.  Select 'Register and install a license automatically'</tr>"
+LET HTML$=HTML$+$0A$+"<tr><td  style=" + chr(34) + "vertical-align: top;" + chr(34) + ">UNIX:<td>Run './blmadmin' from the <blmhome>/bin directory.  Select 'License Registration'.  Complete the contact information fields.  Enter the serial number and authorization number.  Answer 'Yes' to 'Register and install a license automatically?'</tr></table></div>"
+
+LET HTML$=HTML$+$0A$+"<div STYLE=" + chr(34) + "margin:5px 40px 5px" + chr(34) + "><b>To register a BBj/BBx product (BLM/BLS)</b></div>"+$0A$
+LET HTML$=HTML$+"<div STYLE=" + chr(34) + "margin:2px 40px 2px" + chr(34) + "><table><tr><td style=" + chr(34) + "vertical-align: top;" + chr(34) + ">Windows:<td>Run the 'Admin' utility.  Select 'License Registration'.  Complete the contact information fields.  Enter the serial number and authorization number.  Select 'Register and install a license automatically'</tr>"
+LET HTML$=HTML$+$0A$+"<tr><td style=" + chr(34) + "vertical-align: top;" + chr(34) + ">UNIX:<td>Run './admin' from the <bbjhome>/bin directory.  Select 'License Registration'.  Complete the contact information fields.  Enter the serial number and authorization number.  Answer 'Yes' to 'Register and install a license automatically?'</tr></table></div>"
+
+rem ' add BLS note'
+LET HTML$=HTML$+$0A$+"<div STYLE=" + chr(34) + "margin:5px 110px 5px" + chr(34) + "><b>Note</b> BBj/BBx versions Rev 22 or higher select the BASIS License Service (BLS) Admin Wizard.</div>"
+
+REM ' added italics to the serial number and authorization key 8/28/2009 kew
+LET HTML$=HTML$+$0A$+"<br><div STYLE=" + chr(34) + "margin:10px 110px 10px" + chr(34) + "><table style=" + chr(34) + "table-layout: fixed; width: 700px;" +chr(34) + "><tr><td><b>Serial Number: </b></td><td><b>"+SN$ + " " +bpIndicator$ + "</b></td><td><b>Authorization Number: </b></td><td><b>"+REC.AUTH_KEY$+"</b></td></tr></table></div>"
+
+REM ' removed bold from this line 8/28/2009 kew
+rem ' removed this text 9/7/2016
+rem ' LET HTML$=HTML$+$0A$+"After receiving a license, install it using the appropriate instructions below:<br>"
+
+rem ' removed this text 9/7/2016
+rem ' LET HTML$=HTML$+$0A$+"<b>Installing a license for a PRO/5 family product</b>"
+rem ' LET HTML$=HTML$+$0A$+"<table><tr><td align=left><small>Windows:<td><small>Run the 'Install a BASIS License' shortcut in the Start, Programs, BASIS Products folder.</tr>"
+rem ' LET HTML$=HTML$+$0A$+"<tr><td align=left><small>UNIX:<td><small>Run './install' from the base installation directory. Type 'BLM', then 'Install'.</tr></table>"
+rem ' LET HTML$=HTML$+$0A$+"<b>Installing a license for a BBj product</b>"
+rem ' LET HTML$=HTML$+$0A$+"<table><tr><td align=left><small>Windows:<td><small>Run the 'Admin' shortcut located in the Start, Programs, BBj Products folder.</tr>"
+rem ' LET HTML$=HTML$+$0A$+"<tr><td align=left><small>UNIX:<td><small>Run './bin/admin' from the base installation directory. Type 'BLM', then 'Install'.</tr>"
+rem ' LET HTML$=HTML$+$0A$+"<tr><td align=left><small>All:<td><small>Select 'License Install wizard', then 'Next'.</tr></table>"
+
+rem ' removed this text 9/7/2016
+rem ' LET HTML$=HTML$+$0A$+"<br><b>If registration fails</b><small> and you have not received the product license within 30 minutes, you may install the temporary nag-free license below, valid until the listed expiration date.<br>"
+rem ' LET HTML$=HTML$+$0A$+"</small><b>To install a temporary license</b><br>"
+rem ' LET HTML$=HTML$+$0A$+"<small>See the installation instructions under 'Installing a license for a PRO/5 family product' or 'Installing a license for a BBj product' above. Instead of installing the license file, enter the following temporary license information where requested:</small>"
+rem ' LET HTML$=HTML$+$0A$+"<table><tr><td align=right><small>Feature: <td><small>"+REC.FLEX_FEATURE$+"<td align=right><small>"+SP$+SP$+"Encryption Code: <td><small>"+REC.FLEX_KEY$
+rem ' LET HTML$=HTML$+$0A$+"<tr><td align=right><small>License Rev: <td><small>"+REC.FLEX_REV_LVL$+"<td align=right><small>Host ID: <td><small>"+REC.FLEX_HOST_ID$
+rem ' LET HTML$=HTML$+$0A$+"<tr><td align=right><small>Expiration: <td><small>"+REC.FLEX_EXPIRY_DATE$+"<td align=right><small>Checksum: <td><small>"+REC.FLEX_CHECKSUM$
+rem ' LET HTML$=HTML$+$0A$+"<tr><td align=right><small>Number of Users: <td><small>"+REC.FLEX_USERS$+"<td align=right><small>"+SP$+"Serial Number: <td><small>"+SN$+"</table><br>"
+
+LET HTML$=HTML$+$0A$+"<br><div STYLE=" + chr(34) + "margin:10px 110px 10px" + chr(34) + ">Unauthorized use of this information is prohibited and is a violation of the License Agreement</div>"
+LET HTML$=HTML$+$0A$+"<br><br><center><b>"+CO$+"</b>"+SP$(1,12)+AD1$+SP$(1,12)+AD2$+SP$(1,12)+AD3$+"</center>"
+LET HTML$=HTML$+$0A$+"<center>"+PH$+SP$(1,12)+FAX$+SP$(1,12) + "<a href=" + chr(34) + "mailto:" + EMAIL$ + chr(34) + ">" + EMAIL$ + "</a>" + SP$(1,12) + "<a href=" + chr(34) + WWW$ + chr(34) + ">" + WWW$ + "</a></center>"
+LET TSWWW$=""; IF TS$<>"" THEN LET TSWWW$=WWW$+"/support"
+LET HTML$=HTML$+$0A$+"<center>"+TS$+" "+TSPHONE$+" "+TSFAX$+" " + "<a href=" + chr(34) + "mailto:" + TSEMAIL$ + chr(34) + ">" + TSEMAIL$ + "</a>"  + SP$(1,12) + "<a href=" + chr(34) +  TSWWW$ + chr(34) + ">" + TSWWW$ + "</a></center></div><br><br>"+$0A$
+end_html: LET HTML$=HTML$+"</font></body></html>"+$0A$
+
+rem ' for debugging'
+rem ' outfile$ = "/tmp/licAuthForm-" + date(0:"%Yz%Mz%Dz%Hz%Mz%sz") + ".html"
+rem ' string outfile$
+rem ' htmlout = unt
+rem ' open(htmlout)outfile$
+rem ' write(htmlout)html$
+rem ' close(htmlout)
+
+pgm_exit:
+	exit
+
+
+addFeatureLines:
+	
+	call "ec_open::SNT04"
+	call "ec_open::SNM01"
+	call "ec_open::SMC01"
+	call "ec_open::SNMEL"
+	call "ec_open::SNMEU"
+	call "ec_open::SN_PROD_BACKUP"
+	
+	rem ' is this license in a Prod Backup pair'
+	bpSN$ = SN$ + fill(20," "), bpSN$ = bpSN$(1,20)
+	bpIndicator$ = ""
+	foundp = 0, foundb = 0
+	read record(sn_prod_backup, knum = 1, key = bpSN$, dom=*next)sn_prod_backup$; foundp = 1
+	if foundp then
+	    bpIndicator$ = "(PRIMARY)"
+	else
+	    read record(sn_prod_backup, knum = 2, key = bpSN$, dom=*next)sn_prod_backup$; foundb = 1
+	    if foundb then
+	        bpIndicator$ = "(BACKUP)"
+	    fi
+	fi
+	
+	read record(snt04,key=SN$,err=*next)snt04$
+	featHTML$ = ""
+	featHTMLHeader$ = "<br><center><table><tr><td colspan=4><b>Feature Lines</b></td></tr>"
+	SAMFound = 0, SAMexpireDate$ = ""
+	
+	while 1
+		read record(snt04,err=*break)snt04$
+		
+		if pos(sn$ = snt04$) <> 1 then break
+	
+		rem ' skip the all upper case SAM line
+		if cvs(snt04.feature$,3) = "SOFTWAREASSETMANAGEMENT" then continue
+		
+		if cvs(snt04.feature$,3) = "SoftwareAssetManagement" then 
+			SAMFound = 1, SAMexpireDate$ = snt04.expire_on_dt$
+			rem --- the expiration date in the feature line does not get updated until the license is reqistered
+			rem --- so for SAM renewals the feature line will still show an expired date until re-registered
+			rem --- this corrects that situation
+			dim snKey$(20," ")
+			snKey$(1) = SN$
+			found = 0
+			read record(snm01, key=snKey$, err=*next)snm01$; found = 1
+			if found and cvs(snm01.contract$,3) <> "" then
+				contFound = 0
+				read record(smc01, key=snm01.contract$, err=*next)smc01$; contFound = 1
+				if contFound then
+					SAMexpireDate$ = smc01.expire_on_dt$
+					snt04.expire_on_dt$ = smc01.expire_on_dt$
+				endif
+			endif
+		endif
+		
+		rem ' build the table row
+		
+		featLine$ = "<tr><td>" + cvs(snt04.feature$,3) + "</td>"
+		featLine$ = featLine$ + "<td>Rev: " + cvs(snt04.feature_rev$,3) + "</td>"
+		
+		if cvs(snt04.expire_on_dt$,3) = "" then
+			featLine$ = featLine$ + "<td>Expires: Permanent</td>"
+		else
+			if len(cvs(snt04.expire_on_dt$,3)) <> 8 then
+				featLine$ = featLine$ + "<td>Expires: " + cvs(snt04.expire_on_dt$,3) + "</td>"
+			else
+				expDate$ = cvs(snt04.expire_on_dt$,3)
+				featLine$ = featLine$ + "<td>Expires: " + expDate$(5,2) + "/" + expDate$(7,2) + "/" + expDate$(1,4) + "</td>"
+			endif
+		endif
+		
+		rem ' if the SAM line use the license user count on the line
+		if cvs(snt04.feature$,3) = "SoftwareAssetManagement" then
+			featLine$ = featLine$ + "<td align=left>Users: " + rec.users$ + "</td></tr>"
+		else
+			featLine$ = featLine$ + "<td align=left>Users: " + str(snt04.users) + "</td></tr>"	
+		endif
+		
+		rem ' put the SAM line first
+		if cvs(snt04.feature$,3) = "SoftwareAssetManagement" then
+			featHTML$ = featLine$ + $0A$ + featHTML$
+		else
+			featHTML$ = featHTML$ + $0A$ + featLine$
+		endif
+		
+	wend
+	
+	rem ' if SAM not found in SNT04 then check the SMC01 table
+	if !SAMFound then
+		dim snKey$(20," ")
+		snKey$(1) = SN$
+		found = 0
+		read record(snm01, key=snKey$, err=*next)snm01$; found = 1
+		if found and cvs(snm01.contract$,3) <> "" then
+			contFound = 0
+			read record(smc01, key=snm01.contract$, err=*next)smc01$; contFound = 1
+			if contFound then
+				SAMFound = 1, SAMexpireDate$ = smc01.expire_on_dt$
+				featLine$ = "<tr><td>SoftwareAssetManagement</td>"
+				featLine$ = featLine$ + "<td>Rev: " + REC.rev_lvl$ + "</td>"
+				featLine$ = featLine$ + "<td>Expires: " + smc01.expire_on_dt$(5,2) + "/" + smc01.expire_on_dt$(7,2) + "/" + smc01.expire_on_dt$(1,4) + "</td>"
+				featLine$ = featLine$ + "<td align=left>Users: " + rec.users$ + "</td></tr>"	
+				featHTML$ = featLine$ + $0A$ + featHTML$
+			endif
+		endif
+	endif
+	
+	rem ' make the SAM notation
+	today$ = date(0:"%Y%Mz%Dz")
+	if !SAMFound then
+		SAMText$ = "Active SAM Plan: N/A"
+	else
+		SAMexpireDate$ = cvs(SAMexpireDate$,3)
+		
+		if len(SAMExpireDate$) = 8 then
+			dateToPrint$ = SAMexpireDate$(5,2) + "/" + SAMexpireDate$(7,2) + "/" + SAMexpireDate$(1,4)
+		else 
+			dateToPrint$ = SAMexpireDate$
+		endif
+		
+		if len(SAMexpireDate$) <> 8 OR today$ >= SAMexpireDate$ then
+			rem ' SAM expired
+			SAMText$ = "Active SAM Plan: N expired: " + dateToPrint$
+		else
+			SAMText$ = "Active SAM Plan: Y " + dateToPrint$
+		endif
+	endif
+	HTML$ = HTML$ + $0A$ + "<tr><td>" + SAMText$ + "</td></tr><tr><td></td></tr>"
+	
+	rem ' get the end user if any
+	readsn$ = SN$ + fill(20," ")
+	readsn$ = readsn$(1,20)
+	endUser$ = "No end user information provided"
+	read record(snmel, key = readsn$, dom = no_end_user)snmel$
+	read record(snmeu, key = snmel.end_user_nbr$, dom = no_end_user)snmeu$
+	endUser$ = cvs(snmeu.reference_nbr$,3)
+	if len(endUser$) > 0 then endUser$ = "(" + endUser$ + ") "
+	endUser$ = endUser$ + cvs(snmeu.company_name$,3)
+	no_end_user:
+	HTML$ = HTML$ + $0A$ + "<tr><td>End User: " + endUser$ +"</td></tr><tr><td></td></tr></table></center>"
+	
+	rem ' add on the feature lines
+	if featHTML$ <> "" then	
+		featHTML$ = featHTMLHeader$ + featHTML$ + "</table></center>"
+		HTML$ = HTML$ + $0A$ + featHTML$
+	endif
+	
+	close(snt04,err=*next)
+	close(snm01,err=*next)
+	close(smc01,err=*next)
+	close(snmel,err=*next)
+	close(snmeu,err=*next)
+
+return
+	
+	
+	
+	
+	
+	

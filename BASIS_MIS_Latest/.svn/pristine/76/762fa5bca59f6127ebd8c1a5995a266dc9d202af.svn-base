@@ -1,0 +1,246 @@
+0010 REM "ADM - ADministrator Report Parameter Maintenance"
+0020 REM "Program: ADM.AA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0045 SETERR 9000
+0050 ON O0 GOTO 0051,0051,0051,0051,0051,0051,0051,0051,0051,0500
+0060 BEGIN 
+0100 REM "----  Open/Lock Files"
+0110 OPEN (1)"ADS-01"; REM "--- ADministrator Parameter File"
+0160 OPEN (6)"ADS-01"; REM "--- ADministrator Parameter File"
+0200 REM "----  IOlists"
+0210 ADS01R: IOLIST A0$(1),A1$(1),A2$(1),A3$(1),A4$(1),A5$(1),A[0],A[1],A[2],A[3],A[4],A[5],A[6],A[7],A[8],A[9],A[10],A[11],A[12],A[13],B[0],B[1],B[2],B[3],B[4],B[5],B[6],B[7],B[8],B[9],B[10],B[11],B[12],B[13],B[14],B[15],B[16],B[17],B[18],B[19],B[20],A[14],A[15],A[16],A[17],A[18],A[19],A[20]
+0400 REM "----  Parameters"
+0420 LET PGM$=PGM(-2); RUN "ADS.01"
+0500 REM "----  System Parameter Check"
+0510 IF STATUS<>0 THEN GOTO 9900
+0600 REM "---- Local Variables"
+0620 DIM A0$(9),A1$(40),A2$(30),A3$(20),A4$(40),A5$(40),A[20],B[20]
+0625 LET TYPES$="DRMLERCFIFFSOF"
+0630 DIM X$(20); LET X$(1)="Demand Report",TYPE$=TYPE$+X$
+0635 DIM X$(20); LET X$(1)="Maint. Listing",TYPE$=TYPE$+X$
+0640 DIM X$(20); LET X$(1)="Entry Register",TYPE$=TYPE$+X$
+0645 DIM X$(20); LET X$(1)="Check Form",TYPE$=TYPE$+X$
+0650 DIM X$(20); LET X$(1)="Invoice Form",TYPE$=TYPE$+X$
+0655 DIM X$(20); LET X$(1)="Financial Stmts",TYPE$=TYPE$+X$
+0660 DIM X$(20); LET X$(1)="Other Forms",TYPE$=TYPE$+X$
+0700 REM "---- Background"
+0705 DIM SCREEN$[23](80),MARGIN$[3](12)
+0710 LET SCREEN$[3](1)="Report Program:",SCREEN$[3](27)="Description:"
+0715 LET SCREEN$[4](4)="Report Type:",SCREEN$[4](46)="Form Feed At Beginning-Of-Job:"
+0720 LET SCREEN$[5](3)="Override Ptr:",SCREEN$[5](21)="Print-To-File:",SCREEN$[5](52)="Form Feed At End-Of-Job:"
+0725 LET SCREEN$[6](4)="Default Ptr:",SCREEN$[6](46)="Max Horizontal Print Position:"
+0730 LET SCREEN$[7](3)="Default Mode:",SCREEN$[7](57)="Max Lines Per Page:"
+0735 LET SCREEN$[8](28)="Report Format Option Flags"
+0740 LET SCREEN$[9](3)="Program:",SCREEN$[9](19)="Date:",SCREEN$[9](32)="Time:",SCREEN$[9](45)="User:",SCREEN$[9](57)="Pg No:",SCREEN$[9](67)="Terminal:"
+0745 LET SCREEN$[10](5)="Title:",SCREEN$[10](15)="Title FF:",SCREEN$[10](29)="Heading:",SCREEN$[10](41)="Footr FF:"
+0750 FOR J=12 TO 15; LET SCREEN$[J](14)="Justify:",SCREEN$[J](29)="Position:",SCREEN$[J](45)="Height:",SCREEN$[J](61)="Width:"; NEXT J
+0760 LET COL=1; FOR J=17 TO 20; FOR K=0 TO 4; LET SCREEN$[J](K*16+3)="Col "+STR(COL:"##:"),COL=COL+1; NEXT K; NEXT J
+0765 LET MARGIN$[0](7)="Title",MARGIN$[1](5)="Heading",MARGIN$[2](8)="Body",MARGIN$[3](6)="Footer"
+0770 PRINT 'SB',; FOR J=3 TO 21; PRINT @(0,J),SCREEN$[J],; NEXT J; PRINT 'SF',
+0775 PRINT 'BR','SB',; FOR J=12 TO 15; PRINT @(0,J),MARGIN$[J-12],; NEXT J; PRINT 'ER','SF',
+0780 CALL "ADC.WC",1,0,80,0,0,8,0; CALL "ADC.WC",1,0,80,0,0,11,0; CALL "ADC.WC",1,0,80,0,0,16,0
+0785 PRINT 'SB',@(39-INT(LEN(FNQ$(FNP$(SCREEN$[8])))/2),8)," "+FNQ$(FNP$(SCREEN$[8]))+" ",'SF',
+0800 REM "---- Flag Control Section"
+0805 DIM FLAGS$[10]; LET X=0
+0810 LET X=X+1; LET FLAGS$[X]="Print Program Name In Title Section?"
+0815 LET X=X+1; LET FLAGS$[X]="Print Current Date In Title Section?"
+0820 LET X=X+1; LET FLAGS$[X]="Print Current Time In Title Section?"
+0825 LET X=X+1; LET FLAGS$[X]="Print User ID Code In Title Section?"
+0830 LET X=X+1; LET FLAGS$[X]="Print Page Number In Title Section?"
+0835 LET X=X+1; LET FLAGS$[X]="Print Terminal ID In Title Section?"
+0840 LET X=X+1; LET FLAGS$[X]="Suppress Printing Of The Title Section?"
+0845 LET X=X+1; LET FLAGS$[X]="Send Form Feed Character Before Printing Title?"
+0850 LET X=X+1; LET FLAGS$[X]="Suppress Printing Of The Heading Section?"
+0855 LET X=X+1; LET FLAGS$[X]="Send Form Feed After Page Footer?"
+0900 REM "---- Positions"
+0905 DIM POS$[4,4]; LET X=0
+0910 LET POS$[1,0]="Title",POS$[2,0]="Heading",POS$[3,0]="Body",POS$[4,0]="Footer"
+0915 LET X=X+1; LET POS$[1,X]="Justify Style <L>=Left, <C>=Center, <R>=Right For The "
+0920 LET X=X+1; LET POS$[1,X]="Print Position For Centering Or Justifying The "
+0925 LET X=X+1; LET POS$[1,X]="Height In Lines Of The "
+0930 LET X=X+1; LET POS$[1,X]="Width In Characters Of The "
+0935 FOR J=2 TO 4; FOR K=1 TO 4; LET POS$[J,K]=POS$[1,K]; NEXT K; NEXT J
+0940 FOR J=1 TO 4; FOR K=1 TO 4; LET POS$[J,K]=POS$[J,K]+POS$[J,0]; NEXT K; NEXT J
+1000 REM "---- Positioning Read"
+1100 REM "---- Key"
+1120 PRINT 'CF',
+1130 DIM A0$(9); LET A0$(1,1)="R"
+1140 LET V2$=KEY(1,END=1180)
+1150 IF V2$(1,1)<>"R" THEN LET V2$=""; GOTO 1180
+1160 LET A0$(2)=V2$(2),V2$=V2$(2)
+1170 GOTO 1200
+1180 LET A0$(2)="",V2$=""
+1200 REM "---- Program Name"
+1220 LET V0$="S",V1$="C",V3$="",V4$="8 Character Program Name For Report, <F4>=End",V0=8,V2=3,V1=16,I0=0; GOSUB 7000
+1230 IF V3=4 THEN GOTO 9900
+1240 LET A0$(2)=V$
+1260 IF FNP$(A0$(2,8))="" THEN GOTO 1200
+1300 REM "---- Main Read"
+1340 READ (1,KEY=A0$,DOM=1500)IOL=ADS01R
+1420 GOSUB 5000
+1490 GOTO 2000
+1500 REM "---- New Record?"
+1520 LET V0$="S",V1$="C",V2$="Y",V3$="YNyn",V4$="Is This A New Record? <Y/N>: ",V0=1,V1=40+INT(LEN(V4$)/2)+2,V2=22; GOSUB 7000; LET V$=FNU$(V$)
+1540 IF V$<>"Y" THEN GOTO 1000
+1600 REM "---- New Record Setup"
+1620 DIM A1$(40),A2$(30),A3$(20),A4$(40),A5$(40),A[20],B[20]
+2000 REM "---- Description"
+2020 LET V0$="S",V1$="C",V2$=A1$(1,40),V3$="",V4$="Enter The Report Title To Be Printed At The Top Of The Page",V0=40,V1=39,V2=3; GOSUB 7000
+2060 LET A1$(1,40)=V$
+2090 GOTO 3900
+2100 REM "---- Report Type"
+2120 LET V0$="S",V1$="C",V2$=A2$(1,2),V3$="",V4$="Enter A Valid Type Code <DR/ML/CF/IF/OF/FS>",V0=2,V1=16,V2=4; GOSUB 7000
+2140 IF POS(V$=TYPES$,2)=0 THEN GOTO 2100
+2160 LET A2$(1,2)=V$
+2180 PRINT @(19,4),TYPE$((INT(POS(A2$(1,2)=TYPES$,2)/2)+1)*20-19,20),
+2190 GOTO 3900
+2200 REM "---- Override Printer?"
+2220 LET V0$="Y",V1$="C",V2$=A2$(3,1),V3$="",V4$="Ignore Selected Printer And Use Report Default Printer? <Y/N>",V0=1,V1=16,V2=5; GOSUB 7000
+2240 LET A2$(3,1)=V$
+2290 GOTO 3900
+2300 REM "---- Default Printer"
+2320 LET V0$="S",V1$="C",V2$=A2$(4,2),V3$="",V4$="Enter A Valid Printer ID, Or <F1>=Skip",V0=2,V1=16,V2=6; GOSUB 7000
+2340 IF V3=1 THEN LET A2$(4,2)=""; GOTO 3900
+2350 IF FNP$(V$)="" THEN GOTO 2300
+2360 DIM X0$(20); FIND (6,KEY="P"+V$,DOM=2300)*,X0$(1)
+2370 PRINT @(19,6),X0$,
+2380 LET A2$(4,2)=V$
+2390 GOTO 3900
+2400 REM "---- Default Mode"
+2410 IF FNP$(A2$(4,2))="" THEN GOTO 3900
+2420 LET V0$="S",V1$="C",V2$=A2$(9,1),V3$="",V4$="Enter A Valid Printer Mode",V0=1,V1=16,V2=7; GOSUB 7000
+2460 LET A2$(9,1)=V$
+2490 GOTO 3900
+2500 REM "---- BOJ Form Feed Flag"
+2520 LET V0$="Y",V1$="C",V2$=A2$(11,1),V3$="",V4$="Send A Form Feed Control Character Before Page One?",V0=1,V1=76,V2=4; GOSUB 7000
+2560 LET A2$(11,1)=V$
+2590 GOTO 3900
+2600 REM "---- EOJ Form Feed"
+2620 LET V0$="Y",V1$="C",V2$=A2$(12,1),V3$="",V4$="Send A Form Feed Control Character After The Last Page?",V0=1,V1=76,V2=5; GOSUB 7000
+2650 LET A2$(12,1)=V$
+2690 GOTO 3900
+2700 REM "---- Max Horizontal Print Position"
+2720 LET V0$="N",V1$="C",V2$=STR(A[1]),V3$="000",V4$="Enter The Report Maximum Width In Characters",V0=3,V1=76,V2=6; GOSUB 7000
+2760 LET A[1]=V
+2790 GOTO 3900
+2800 REM "---- Max Lines Per Page"
+2820 LET V0$="N",V1$="C",V2$=STR(A[0]),V3$="000",V4$="Enter The Number Of Print Lines Required Per Page For This Report",V0=2,V1=76,V2=7; GOSUB 7000
+2860 LET A[0]=V
+2890 GOTO 3900
+2900 REM "---- Allow Print-To-File?"
+2920 LET V0$="Y",V1$="C",V2$=A2$(13,1),V3$="",V4$="Allow This Report To Be Printed To File/Ascii? <Y/N>",V0=1,V1=35,V2=5; GOSUB 7000
+2960 LET A2$(13,1)=V$
+2990 GOTO 3900
+3000 REM "---- Report Flags"
+3010 LET ROW=9,COL=11
+3020 IF FNP$(A3$(1,10))="" THEN LET A3$(1,10)="YYYYYYNYNN"
+3050 FOR J=1 TO 10
+3100 LET V0$="Y",V1$="C",V2$=A3$(J,1),V3$="",V4$=FLAGS$[J],V0=1,V1=COL,V2=ROW; GOSUB 7000
+3120 IF V3=2 AND J>1 THEN IF COL=11 AND ROW=10 THEN LET COL=77,ROW=9,J=J-1 ELSE LET COL=COL-13,J=J-1 FI; GOTO 3100 ELSE IF V3=2 AND J=1 THEN EXITTO 3900
+3140 LET A3$(J,1)=V$
+3160 LET COL=COL+13
+3170 IF COL>78 THEN LET COL=11,ROW=ROW+1
+3180 NEXT J
+3190 GOTO 3900
+3200 REM "---- Print Positions"
+3250 FOR J=1 TO 4; REM "For Title, Heading, Body & Footer
+3280 FOR K=1 TO 4; REM "For Justify, Position, Height, Width
+3300 LET V2=J+11
+3305 LET V1=(K-1)*15+22
+3310 IF K>1 THEN LET V2$=STR(A[J*3+K-3]) ELSE LET V2$=A3$(10+J,1)
+3320 IF K>1 THEN LET V0$="N",V3$="000",V0=3 ELSE LET V0$="S",V3$="CLRclr",V0=1
+3325 LET V4$=POS$[J,K]
+3350 GOSUB 7000
+3360 IF V3=2 AND K=1 AND J>1 THEN LET J=J-1,K=4; GOTO 3281 FI; IF V3=2 AND K>1 THEN LET K=K-1; GOTO 3281 FI; IF V3=2 AND K=1 AND J=1 THEN EXITTO 3900 FI
+3410 IF K>1 THEN LET V$=FNU$(V$)
+3420 IF K>1 THEN LET A[J*3+K-3]=V ELSE LET A3$(10+J,1)=V$
+3460 NEXT K
+3480 NEXT J
+3490 GOTO 3900
+3500 REM "---- Columns"
+3510 LET COL=1,ROW=1
+3520 FOR J=1 TO 20
+3540 LET V0$="N",V1$="C",V2$=STR(B[J]),V3$="000",V4$="Column Print Position For Column "+STR(J:"##")+", Or 0 To Suppress Printing",V0=3,V1=(COL-1)*16+11,V2=ROW+16; GOSUB 7000
+3560 IF V3=2 AND J=1 THEN EXITTO 3900 FI; IF V3=2 AND J>1 THEN IF COL=1 THEN LET COL=5,ROW=ROW-1,J=J-1 ELSE LET COL=COL-1,J=J-1 FI; GOTO 3540 FI
+3580 LET B[J]=V
+3600 LET COL=COL+1
+3620 IF COL>5 THEN LET ROW=ROW+1,COL=1
+3640 NEXT J
+3690 GOTO 3900
+3900 REM "---- Sequence Control"
+3910 IF V3=2 THEN GOTO 3940
+3920 LET I0=I0+1
+3930 GOTO 3960
+3940 IF I0>0 THEN LET I0=I0-1
+3960 ON I0 GOTO 2000,2100,2200,2900,2300,2400,2500,2600,2700,2800,3000,3200,3500,4000
+4000 REM "---- Termination"
+4020 LET V0$="S",V1$="C",V2$="",V3$="",V4$="Is The Above Information Correct? <Y/N/DELETE>: ",V0=6,V1=40+INT(LEN(V4$)/2)+2,V2=22; GOSUB 7000; LET V$=FNU$(V$)
+4030 IF V$="DELETE" OR V$="D" THEN GOTO 4200
+4040 IF V$="Y" OR V$="YES" THEN GOTO 4100
+4050 IF V$="N" OR V$="NO" THEN GOTO 2000
+4090 GOTO 4000
+4100 REM "---- Write"
+4120 WRITE (1,KEY=A0$)IOL=ADS01R
+4190 GOTO 1000
+4200 REM "---- Delete"
+4220 REMOVE (1,KEY=A0$,DOM=4221)
+4290 GOTO 1000
+5000 REM "---- Display Record"
+5020 PRINT 'SF',@(39,3),A1$,
+5040 PRINT @(16,4),A2$(1,2),@(19,4),TYPE$((INT(POS(A2$(1,2)=TYPES$,2)/2)+1)*20-19,20),@(76,4),A2$(11,1),
+5060 PRINT @(16,5),A2$(3,1),@(35,5),A2$(13,1),@(76,5),A2$(12,1),
+5070 DIM X0$(20); FIND (6,KEY="P"+A2$(4,5)+"  ",DOM=5071)*,X0$(1)
+5080 PRINT @(16,6),A2$(4,2),@(19,6),X0$,@(76,6),A[1]:"000",
+5090 DIM X0$(20); FIND (6,KEY="P"+A2$(4,5)+A2$(9,2),DOM=5091)*,X0$(1)
+5100 PRINT @(16,7),A2$(9,1),@(19,7),X0$,@(76,7),A[0]:"000",
+5120 PRINT @(11,9),A3$(1,1),@(24,9),A3$(2,1),@(37,9),A3$(3,1),@(50,9),A3$(4,1),@(63,9),A3$(5,1),@(76,9),A3$(6,1),@(11,10),A3$(7,1),@(24,10),A3$(8,1),@(37,10),A3$(9,1),@(50,10),A3$(10,1),
+5140 FOR J=1 TO 4; PRINT @(22,J+11),A3$(10+J,1),; NEXT J
+5150 LET COL=1,ROW=1; FOR J=1 TO 4; FOR K=1 TO 3; PRINT @(COL*15+22,ROW+11),A[J*3+K-3+1]:"000",; LET COL=COL+1; IF COL>3 THEN LET COL=1,ROW=ROW+1 FI; NEXT K; NEXT J
+5220 LET COL=1,ROW=1; FOR J=1 TO 20; PRINT @((COL-1)*16+11,ROW+16),B[J]:"000",; LET COL=COL+1; IF COL>5 THEN LET COL=1,ROW=ROW+1 FI; NEXT J
+5390 RETURN 
+7000 REM " --- User Input Routine"
+7020 CALL "ADC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-1),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7040 IF V3=5 THEN GOTO 7100
+7050 IF V3=6 THEN GOTO 7200
+7085 LET I$=V$
+7090 RETURN 
+7100 REM " --- Error During Input"
+7200 REM " --- Escape Requested"
+7210 PRINT @(0,22),'CL','CURSOR'("ON"),
+7220 ESCAPE
+7290 GOTO 7000
+8000 REM "FUNCTIONS"
+8010 DEF FNA$(Q$,Q2$)=STR((ASC(Q$)-32)*POS(" "<>Q2$(2,1)):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8030 DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+8040 DEF FND$(Q$)=CHR(NUM(Q$(5,2))+32)+CHR(NUM(Q$(1,2))+32)+CHR(NUM(Q$(3,2))+32)
+8050 DEF FNE$(Q$)=STR(INT(TIM):"00")+":"+STR(FPT(TIM)*60:"00")
+8060 DEF FNF$(Q$,Q1$)=STR(-NUM(Q$):Q1$)
+8070 DEF FNG$(Q$)=STR((ASC(Q$)-32)*POS(" "<>Q$):"000")
+8090 DEF FNP$(Q$)=CVS(Q$,2)
+8100 DEF FNQ$(Q$)=CVS(Q$,8)
+8110 DEF FNU$(Q$)=CVS(Q$,4)
+9000 REM "---- Errors"
+9010 LET ER0$=LST(PGM(TCB(5))),ER1$=STR(TCB(5)),ER2$=PGM(-1),ER0=ERR,ER1=0
+9020 IF ER0=0 AND POS(" (PTR"=ER0$)>0 THEN GOTO 9600
+9030 IF ER0=14 AND O0<>0 THEN LET O0=1; GOTO 0001
+9040 CALL "ADC.EA",ERR=9080,ER0$,ER1$,ER2$,ER0,ER1
+9050 IF ER1=1 THEN GOTO 9100
+9060 IF ER1=3 THEN GOTO 9900
+9080 PRINT @(0,22),'CL',ER0$,'LF','LF',; ESCAPE
+9100 REM "---- Retry"
+9120 RETRY
+9200 REM "---- Printer Offline"
+9220 CALL "ADS.EB",V3
+9230 IF V3=4 THEN GOTO 9900
+9240 IF V3=6 THEN ESCAPE
+9290 RETRY
+9800 REM "---- Error Exit"
+9820 IF ER0$="" THEN LET STATUS=ERR ELSE LET STATUS=ER0
+9900 REM "---- Exit"
+9990 RUN "ADS.AA"
+9999 END

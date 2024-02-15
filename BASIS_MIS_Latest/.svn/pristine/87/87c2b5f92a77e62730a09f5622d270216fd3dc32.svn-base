@@ -1,0 +1,91 @@
+0010 REM "ADX - MAS Administrator - Install - Combine Menu Files"
+0020 REM "Program: ADX.IA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0049 REM "MAS:SDM 03/07/95 - #530,550,560,800 Add PCS Module to MAS Administrator"
+0050 BEGIN 
+0510 DIM J$(80,"-")
+0520 LET MSG0$="MAS Installation Utility",MSG1$="ADX.IA - Combine Menu Files"
+0530 LET MODULES$="ADTSEFVSDCPC"
+0550 DIM MODNAMES$[6]; LET MODNAMES$[1]="MAS ADministrator"
+0552 LET MODNAMES$[2]="Technical Support System"
+0554 LET MODNAMES$[3]="Enhanced Financial Statements"
+0556 LET MODNAMES$[4]="Vsi-Fax Desktop"
+0558 LET MODNAMES$[5]="Data Collection System"
+0560 LET MODNAMES$[6]="Product Configurator"
+0720 PRINT 'CS','SB',
+0730 CALL "ADC.WC",0,0,80,3,0,0,0; CALL "ADC.WC",1,0,80,0,0,5,0
+0740 PRINT @(1,1),'SB',DAY,@(40-INT(LEN(MSG0$)/2),1),'SF',MSG0$,'SB',@(40-INT(LEN(MSG1$)/2),2),MSG1$,@(0,4),"Module ID:",
+0790 PRINT 'SF',
+0800 FOR J=1 TO 6
+0820 PRINT @(12,J+6),MODULES$(J*2-1,2)," = ",MODNAMES$[J],
+0840 NEXT J
+1000 REM " -- Get Module ID
+1020 LET V0$="S",V1$="C",V2$="",V3$="",V4$="Select From The List Above",V0=2,V1=12,V2=4; GOSUB 7000; LET V$=FNU$(V$)
+1040 IF V3=4 THEN GOTO 9900
+1060 IF LEN(V$)<>2 THEN GOTO 1000
+1120 IF POS(V$=MODULES$,2)=0 THEN GOTO 1000
+1220 OPEN (1,ERR=1300)"_SYM01"+V$
+1290 GOTO 1400
+1320 PRINT @(0,5),'RB',"Menu File _SYM01"+V$+" Is Not Found! ",; WAIT 3; GOTO 1000
+1390 GOTO 1000
+1420 OPEN (2,ERR=1500)"SYM-01"
+1490 GOTO 2000
+1520 PRINT @(0,5),'RB',"Menu File SYM-01 Is Not Found! ",; WAIT 3; GOTO 1000
+1590 GOTO 1000
+2000 REM " -- Write records to SYM-01
+2010 PRINT @(0,4),
+2020 LET K$=KEY(1,END=4000)
+2040 READ RECORD(1,KEY=K$)A0$
+2060 WRITE RECORD(2,KEY=K$)A0$
+2080 PRINT K$," Written! ",'CL',
+2085 WAIT 1
+2090 GOTO 2000
+4000 REM "---- Done
+4020 LET V0$="S",V1$="C",V2$="",V3$="",V4$="Press <CR> to Continue:",V0=1,V1=40+INT(LEN(V4$)/2)+2,V2=22; GOSUB 7000; LET V$=FNU$(V$)
+4990 GOTO 9900
+7000 REM " --- User Input Routine"
+7020 CALL "ADC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7040 IF V3=5 THEN GOTO 7100
+7050 IF V3=6 THEN GOTO 7200
+7085 LET I$=V$
+7090 RETURN 
+7100 REM " --- Error During Input"
+7200 REM " --- Escape Requested"
+7210 PRINT @(0,22),'CL','CURSOR'("ON"),
+7220 ESCAPE
+7290 GOTO 7000
+8000 REM "FUNCTIONS"
+8010 DEF FNA$(Q$,Q2$)=STR((ASC(Q$)-32)*POS(" "<>Q2$(2,1)):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8030 DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+8040 DEF FND$(Q$)=CHR(NUM(Q$(5,2))+32)+CHR(NUM(Q$(1,2))+32)+CHR(NUM(Q$(3,2))+32)
+8050 DEF FNE$(Q$)=STR(INT(TIM):"00")+":"+STR(FPT(TIM)*60:"00")
+8060 DEF FNF$(Q$,Q1$)=STR(-NUM(Q$):Q1$)
+8070 DEF FNG$(Q$)=STR((ASC(Q$)-32)*POS(" "<>Q$):"000")
+8090 DEF FNP$(Q$)=CVS(Q$,2)
+8100 DEF FNQ$(Q$)=CVS(Q$,8)
+8110 DEF FNU$(Q$)=CVS(Q$,4)
+9000 REM "---- Errors"
+9010 LET ER0$=LST(PGM(TCB(5))),ER1$=STR(TCB(5)),ER2$=PGM(-2),ER0=ERR,ER1=0
+9020 IF ER0=0 AND POS(" (PTR"=ER0$)>0 THEN GOTO 9600
+9030 IF ER0=14 AND O0<>0 THEN LET O0=1; GOTO 0001
+9040 CALL "ADC.EA",ERR=9080,ER0$,ER1$,ER2$,ER0,ER1
+9050 IF ER1=1 THEN GOTO 9100
+9060 IF ER1=3 THEN GOTO 9900
+9080 PRINT @(0,22),'CL',ER0$,'LF','LF',; ESCAPE
+9100 REM "---- Retry"
+9120 RETRY
+9200 REM "---- Printer Offline"
+9220 CALL "ADS.EB",V3
+9230 IF V3=4 THEN GOTO 9900
+9240 IF V3=6 THEN ESCAPE
+9290 RETRY
+9800 REM "---- Error Exit"
+9820 IF ER0$="" THEN LET STATUS=ERR ELSE LET STATUS=ER0
+9900 REM "---- Exit"
+9990 RUN "SYS.ZA"
+9999 END

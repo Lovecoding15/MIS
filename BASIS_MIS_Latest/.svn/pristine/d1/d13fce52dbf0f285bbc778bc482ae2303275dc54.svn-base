@@ -1,0 +1,293 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2022-04-4
+Last Build Time=16:11:36
+Precision=2
+Program Name=C:/eclipse202103r/workspace/b_commerce/ops_call
+Remarks=Yes
+Resource File=ops_call.arc
+Show Forms=All
+
+[EOJ]
+err_exit:
+if info(3,2)="thines" then escape
+xresp = msgbox("An error occurred: at " + str(tcb(5)) + ", error code is: " + str(err) + " " + errmes(-1),0,"debug")
+pgm_exit:
+while len(chan$)>2
+  close(num(chan$(1,3)),err=*next)
+  chan$=chan$(4)
+wend
+dim loc$:"x:i(2),y:i(2),w:u(2),h:u(2)"
+loc$=ctrl(gb__sysgui,0,0,old_context)
+if gb__forms and gb__sysgui then
+  for gb__temp=1 to gb__forms
+  print (gb__sysgui,err=*next)'context'(gb__form_context[gb__temp]),'destroy'(0)
+  next gb__temp
+fi
+print (gb__sysgui)'context'(old_context),'move'(0,loc.x,loc.y),'enable'(0),'show'(0),'raise','flush'
+close (gb__sysgui)
+resclose(gb__handle,err=*next)
+exit
+
+[Init]
+rem ' (1) Don't show borders on button controls
+rem ' (2) Force XP borders on list and edit controls
+seterr err_exit
+setesc err_exit
+sysgui!=bbjapi().getSysGui()
+if (info(3,6)="0" and info(0,0)="Windows XP" and info(1,1)>="1.4.2")
+:  or (info(3,6)<>"0" and
+:  bbjapi().getThinClient(err=*next).getClientOSName(err=*next)="Windows XP" and
+:  bbjapi().getThinClient(err=*next).getClientJavaVersion(err=*next)>="1.4.2")
+:  then bbjapi().getSysGui().setLookAndFeel("WindowsXPLookAndFeel")
+DIM DATE$:"default:c(32*=0),sm[12]:c(3*=0),m[12]:c(32*=0),sd[7]:c(3*=0),d[7]:c(32*=0)"
+date$=stbl("!DATE")
+date.default$="%Mz/%Dz/%Y"
+dummy$=stbl("!DATE",date$)
+l=0
+while l<7
+  p=pos($0a$=gb__arg$)
+  if p=0 then break
+  if l=0 then chan$=gb__arg$(1,p-1)
+  if l=1 then old_context=num(gb__arg$(1,3))
+  if l=2 then x=num(gb__arg$(1,4)),y=num(gb__arg$(5,4))
+  if l=3 then action$=gb__arg$(1,p-1)
+  if l=4 then security_level=num(gb__arg$(1,3))
+  if l=5 then uid$=gb__arg$(1,p-1)
+  l=l+1,gb__arg$=gb__arg$(p+1)
+wend
+while len(chan$)>2
+  f=num(chan$(1,3)),f$=fid(f),f$=cvs(f$(9),4),chan$=chan$(4)
+  if pos("ARM-10"=f$) then arm10=f
+  if pos("TMM-01"=f$) then 
+    tmm01=f
+    call "templates.pgm::tmm01"
+  fi
+wend
+
+gb__context = fngb__window("101")
+print (gb__sysgui)'context'(old_context),'hide'(0)
+if action$="credit_sam" then gosub credit_sam
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+goto pgm_exit
+
+[Event Win=101 ID=1 Code=B <PUSH_BUTTON> (W101_C1_PUSH_BUTTON)]
+rem ' Push button operated
+
+i=msgbox("Create and invoice credit memos now?",4+32,"Confirm")
+if i<>6 then return
+
+print (gb__sysgui)'setcursor'(3)
+read(tmpsam,key="",knum=0,err=*next)
+while 1
+  k$=key(tmpsam,end=*break)
+  readrecord(tmpsam,key=k$)samrec$
+  if samrec.credit$="Y" then 
+    msg$="INVOICE"  
+    call "BCS.02",samrec.firm$,samrec.cust$,samrec.invoice$,msg$
+    remove(tmpsam,key=k$)
+  fi
+wend
+print (gb__sysgui)'setcursor'(0)
+i=msgbox("Create memos done",0,"")
+
+goto pgm_exit
+
+[Event Win=101 ID=101 Code=l0 <LIST_CLICK> (W101_C101_LIST_CLICK)]
+rem ' Click in list box
+invoice$=ctrl(gb__sysgui,selected_list_id,1)
+gosub show_invoice
+gosub build_lists
+
+[Event Win=101 ID=105 Code=l0 <LIST_CLICK> (W101_C105_LIST_CLICK)]
+rem ' Click in list box
+invoice$=ctrl(gb__sysgui,rejected_list_id,1)
+gosub show_invoice
+gosub build_lists
+
+[Event Win=101 ID=2 Code=B <PUSH_BUTTON> (W101_C2_PUSH_BUTTON)]
+rem ' Push button operated
+goto pgm_exit
+
+[Event Win=101 ID=7 Code=B <PUSH_BUTTON> (W101_C7_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+invoice$=ctrl(gb__sysgui,rejected_list_id,1)
+samrec$=fattr(samrec$)
+readrecord(tmpsam,knum=1,key=invoice$,dom=*next)samrec$
+if samrec.invoice$<>invoice$ then return
+samrec.credit$="Y"
+writerecord(tmpsam)samrec$
+gosub build_lists
+
+[Event Win=101 ID=8 Code=B <PUSH_BUTTON> (W101_C8_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+invoice$=ctrl(gb__sysgui,selected_list_id,1)
+samrec$=fattr(samrec$)
+readrecord(tmpsam,knum=1,key=invoice$,dom=*next)samrec$
+
+rem ' xresp = msgbox(invoice$,0,"debug")
+if samrec.invoice$<>invoice$ then return
+
+rem ' xresp = msgbox(invoice$ + " equal" ,0,"debug")
+samrec.credit$="N"
+writerecord(tmpsam)samrec$
+
+rem ' xresp = msgbox("written ",0,"debug")
+gosub build_lists
+
+
+[Function (build_lists)]
+rem ' -----------------------------------------------------------------
+rem ' build_lists
+rem ' -----------------------------------------------------------------
+
+build_lists:
+slist$=""
+rlist$=""
+read(tmpsam,key="",knum=1,err=*next)
+while 1
+  readrecord(tmpsam,end=*break)samrec$
+  if samrec.credit$="Y" then 
+    slist$=slist$+samrec.invoice$+$0a$
+  else
+    rlist$=rlist$+samrec.invoice$+$0a$
+  fi
+wend
+ps=pos(invoice$+$0a$=slist$)
+pr=pos(invoice$+$0a$=rlist$)
+if ps or pr+ps=0 then slist$=slist$+$ff$+str(int(ps/8))
+if pr then rlist$=rlist$+$ff$+str(int(pr/8))
+win_credit_sam.selected_lbox$=slist$
+win_credit_sam.rejected_lbox$=rlist$
+win_credit_sam$=fngb__put_fields$(win_id_credit_sam$,win_credit_sam$,"selected_lbox,rejected_lbox")
+return
+
+[Function (credit_sam)]
+rem ' -----------------------------------------------------------------
+rem ' credit_sam
+rem ' -----------------------------------------------------------------
+
+credit_sam:
+win_id_credit_sam$=fngb__win_id$(gb__win.credit_sam)
+dim win_credit_sam$:fngb__template$(win_id_credit_sam$)
+selected_list_id=num(fattr(win_credit_sam$,"selected_lbox","ID"))
+rejected_list_id=num(fattr(win_credit_sam$,"rejected_lbox","ID"))
+call "ec_open::ART03"; chan$=str(ART03:"000")
+call "ec_open::ART13"; chan$=chan$+str(ART13:"000")
+call "ec_open::ART73"; chan$=chan$+str(ART73:"000")
+call "ec_open::ART83"; chan$=chan$+str(ART83:"000")
+tmpfile$=stbl("DATA_SERVER")+stbl("TEMP")+"credit_sam.dat"
+print (gb__sysgui)'context'(gb__win.credit_sam),'move'(0,x,y),'enable'(0),'show'(0),'focus'(0),'raise'
+tmpsam=unt
+ok=0
+open(tmpsam,err=no_invoices)tmpfile$
+chan$=chan$+str(tmpsam:"000")
+dim samrec$:"firm:c(2),cust:c(6),invoice:c(7),credit:c(1),avail:c(80*)"
+invoice$=fill(7)
+gosub build_lists
+if rlist$="" and slist$="" then goto no_invoices
+invoice$=ctrl(gb__sysgui,selected_list_id,1)
+invoice_dt_id=num(fattr(win_credit_sam$,"date","ID"))
+newWindow!=sysgui!.getWindow(gb__win.credit_sam)
+invoice_dt!=newWindow!.getControl(invoice_dt_id)
+gosub show_invoice
+return
+no_invoices:
+i=msgbox("No invoices selected to credit",0,"")
+return
+
+[Function (fnaonjul)]
+rem ' -----------------------------------------------------------------
+rem ' fnaonjul
+rem ' ----------------------------------------------------------------
+
+def fnaonjul(ymd$)
+  y=1900+asc(ymd$(1))-32,m=asc(ymd$(2))-32,d=asc(ymd$(3))-32
+  IF m<1 OR d<1 THEN LET jd=0 ELSE LET jd=JUL(y,m,d)
+  return jd
+fnend
+
+[Function (prep_routine)]
+rem ' -----------------------------------------------------------------
+rem ' prep_routine
+rem ' -----------------------------------------------------------------
+
+prep_routine:
+rem 'exist only to prevent compile error
+return
+
+[Function (show_invoice)]
+rem ' -----------------------------------------------------------------
+rem ' show_invoice
+rem ' -----------------------------------------------------------------
+
+show_invoice:
+if len(invoice$)<>7 then return
+readrecord(tmpsam,knum=1,key=invoice$)samrec$
+k$=samrec.firm$+"  "+samrec.cust$+invoice$+"000"
+readrecord(art03,key=k$)art03$
+rec$="Order: "+art03.order_number$+fill(17)+"Ship via: "+cvs(art03.ar_ship_via$,3)+$0a$
+dim x$(26)
+read(arm10,key=art03.firm_id$+"F"+art03.slspsn_code$,dom=*next)x$(1)
+rec$=rec$+"Sales: "+x$(4)+" Taken by: "+art03.ord_taken_by$+$0a$
+dim x$(25)
+read(arm10,key=art03.firm_id$+"A"+art03.terms_code$,dom=*next)x$(1)
+dim x1$(25)
+read(arm10,key=art03.firm_id$+"I"+art03.disc_code$,dom=*next)x1$(1)
+rec$=rec$+"Terms: "+x$(6)+fill(4)+"Discount: "+cvs(x1$(6),3)+$0a$
+rec$=rec$+fill(51,"_")+$0a$+$0a$
+rec$=rec$+"Line  Description         Qty Unit Price  Extension"+$0a$
+rec$=rec$+fill(51,"_")+$0a$+$0a$
+m$="###,###.00-"
+if art03.invoice_type$="V" then rec$=rec$+fill(6)+"* * * V O I D * *"+$0a$;goto show_invoice_end
+read(art13,key=art03$(1,17),dom=*next)
+while 1
+  readrecord(art13,end=*break)art13$
+  if pos(art03$(1,17)=art13$)=0 then break
+  rec$=rec$+art13.line_number$+" "+art13.line_code$+" "+pad(art13.item_number$,20)
+  rec$=rec$+str(art13.qty_ordered:"###")+str(art13.unit_price:m$)+str(art13.ext_price:m$)+$0a$
+  if cvs(art13.order_memo$,3)<>"" then rec$=rec$+fill(6)+art13.order_memo$+$0a$
+  readrecord(art73,key=art13$(1,20),dom=*continue)art73$
+  rec$=rec$+fill(6)+"Type: "+art73.type_of_sale$+"  Users:"+str(art73.users:"#####")
+  rec$=rec$+cvs(art73.lic_property1$,3)+str(art73.users2:"#####")+art73.lic_property2$+$0a$
+  read(art83,key=art73$(1,20),dom=*next)
+  while 2
+    readrecord(art83,end=*break)art83$
+    if pos(art73$(1,20)=art83$)<>1 then break
+    temp$=" Activated"
+    if art83.action$="D" then temp$=" Deactivated"
+    if art83.action$="M" then temp$=" Modified"
+    rec$=rec$+fill(6)+art83.serial_nbr$+temp$+$0a$
+  wend
+wend
+rec$=rec$+$0a$+fill(31)+"Subtotal:"+str(art03.total_sales:m$)+$0a$
+rec$=rec$+fill(31)+" Freight:"+str(art03.freight_amt:m$)+$0a$
+rec$=rec$+fill(31)+"     Tax:"+str(art03.tax_amount:m$)+$0a$
+rec$=rec$+fill(31)+"   Total:"+str(art03.total_sales+art03.freight_amt+art03.tax_amount:m$)+$0a$
+show_invoice_end:
+readrecord(tmm01,key=samrec.firm$+samrec.cust$+"000000",dom=*next)tmm01$
+win_credit_sam.cust_num$=samrec.cust$
+win_credit_sam.cust_name$=tmm01.cont_firm$
+win_credit_sam.invoice_nbr$=art03.ar_inv_nbr$
+win_credit_sam.po$=art03.ar_po_number$
+win_credit_sam.invoice$=rec$
+win_credit_sam$=fngb__put_fields$(win_id_credit_sam$,win_credit_sam$,"invoice,invoice_nbr,po,cust_num,cust_name")
+invoice_dt!.setValue(fnaonjul(art03.invoice_date$))
+print(gb__sysgui)'focus'(selected_list_id)
+
+return
+

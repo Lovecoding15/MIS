@@ -1,0 +1,36 @@
+0010 REM "ADC - Get Logname From Operating System Environment"
+0020 REM "Program: ADC.03"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0040 REM 
+0041 REM "KJS|10/16/96|Version 6.0
+0079 REM 
+0080 SETERR 9800
+0090 ENTER LOGNAME$,LNAME$,ERRFLAG
+0095 LET ERRFLAG=0
+0500 REM " --- Init data"
+0510 LET LOGNAME$="",LNAME$="",ERRFLAG=0
+0520 LET ELEMENT=0
+0530 DIM PAD$(80)
+1000 REM " --- Find LOGNAME environment variable"
+1020 LET X$=INFO(4,ELEMENT),ERR=4000
+1040 IF POS("LOGNAME"=X$)<>1 THEN LET ELEMENT=ELEMENT+1; GOTO 1020
+1060 LET X$=X$+PAD$
+1080 LET LOGNAME$=FNP$(X$(9))
+4000 REM " --- Done"
+4020 IF X$="" THEN GOTO 9800
+4090 GOTO 9900
+8000 REM "---- Functions"
+8010 DEF FNP$(Q$)=CVS(Q$,2)
+8020 DEF FNQ$(Q$)=CVS(Q$,16)
+8025 DEF FNS$(Q$)=CVS(Q$,1)
+8030 DEF FNU$(Q$)=CVS(Q$,4)
+9800 REM "---- Error Exit"
+9820 LET ERRFLAG=ERR
+9830 IF ERRFLAG=0 THEN LET ERRFLAG=99
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

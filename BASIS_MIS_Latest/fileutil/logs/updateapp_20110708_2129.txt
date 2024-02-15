@@ -1,0 +1,127 @@
+Updatexml log started: 2011-07-08@21:29:47
+Source syn file: /mnt/data/basisaon/fileutil/config/fileutil.syn
+Target syn file: /mnt/data/aon_prod/v1110/fileutil
+[FILEUTIL] source=/mnt/data/basisaon/aon/ADATA/  target=/mnt/data/basisaon/aon/ADATA/
+[FILEUTIL_PROG] source=/mnt/data/basisaon/fileutil/prog/  target=/mnt/data/aon_prod/v1110/fileutil/prog/
+[FILEUTIL_PROP] source=/mnt/data/basisaon/fileutil/prop/  target=/mnt/data/aon_prod/v1110/fileutil/prop/
+[FILEUTIL_LIB] source=/mnt/data/basisaon/fileutil/lib/  target=/mnt/data/aon_prod/v1110/fileutil/lib/
+
+source dir: /mnt/data/basisaon/fileutil/
+target syn: /mnt/data/aon_prod/v1110/fileutil/config/fileutil.syn
+
+copy source: /mnt/data/basisaon/fileutil/
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_spec_date_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_sn_select_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_are93_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_are83_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_snt04_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_oem_ar_price_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_smc01_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_snm02_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_snt01_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/prog/fut_are03_cpt.bbj
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_are03_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_oem_ar_price_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_snt01_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_smc01_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_sn_select_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_are93_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_snt04_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_are83_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_spec_date_cpt.src
+    /mnt/data/basisaon/fileutil/callpoints/source/fut_snm02_cpt.src
+    /mnt/data/basisaon/fileutil/prog/expCompDate.src
+    /mnt/data/basisaon/fileutil/data/cdf/fut_sn_select.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_snm02.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_spec_date.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_are03.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_snt01.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_oem_ar_price.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_smc01.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_snt04.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_are83.cdf
+    /mnt/data/basisaon/fileutil/data/cdf/fut_are93.cdf
+    /mnt/data/basisaon/fileutil/data/sync/adm_module_dflt~[01007514FUT].xml
+    /mnt/data/basisaon/fileutil/data/sync/adm_modules~[01007514FUT].xml
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_snt02.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_sn_select.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_smc01.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_are93.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_snm02.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_oem_ar_price.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_snm01.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_are03.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_snt01.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_are83.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_snt04.def
+    /mnt/data/basisaon/fileutil/data/def/enu/fut_spec_date.def
+    /mnt/data/basisaon/fileutil/data/bar/fut_sn_select.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_spec_date.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_snt02.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_snm02.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_are83.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_are03.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_snt01.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_smc01.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_are93.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_snt04.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_snm01.xml
+    /mnt/data/basisaon/fileutil/data/bar/fut_oem_ar_price.xml
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_oem_ar_price.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_snt04.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_sn_select.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_snm02.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_spec_date.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_snt01.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_smc01.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_snm01.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_are03.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_are93.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_snt02.arc
+    /mnt/data/basisaon/fileutil/data/arc/enu/fut_are83.arc
+    /mnt/data/basisaon/fileutil/config/enu/fileutil.men
+    /mnt/data/basisaon/fileutil/config/fileutil.syn
+
+copy SYSSTBL/STBL: FILEUTIL
+    SKIPPED /mnt/data/basisaon/aon/ADATA
+
+copy SYSSTBL/STBL: FILEUTIL_PROG
+    SKIPPED /mnt/data/basisaon/fileutil/prog
+
+copy SYSSTBL/STBL: FILEUTIL_PROP
+    SKIPPED /mnt/data/basisaon/fileutil/prop
+
+copy SYSSTBL/STBL: FILEUTIL_LIB
+    SKIPPED /mnt/data/basisaon/fileutil/lib
+
+update target syn file: /mnt/data/aon_prod/v1110/fileutil/config/fileutil.syn
+// Barista Application Framework - Application Synchronization File
+// Proprietary Information. BASIS International Ltd. All rights reserved.
+ACOMP=01007514;BASIS International, LTD
+SYS=FILEUTIL;Copyright: BASIS AddOn 6.0 Back Door File Utilities^
+DIR=/mnt/data/aon_prod/v1110/fileutil/
+MENU=fileutil
+APROD=FUT;AddOn 6.0 Filie Utility;;;fileutil;/mnt/data/aon_prod/v1110/fileutil/prop/;ENU
+STBL=SET FILEUTIL=/mnt/data/basisaon/aon/ADATA/
+STBL=SET FILEUTIL_LIB=/mnt/data/aon_prod/v1110/fileutil/lib/
+STBL=SET FILEUTIL_PROG=/mnt/data/aon_prod/v1110/fileutil/prog/
+STBL=SET FILEUTIL_PROP=/mnt/data/aon_prod/v1110/fileutil/prop/
+CFG=+FILEUTIL=/mnt/data/basisaon/aon/ADATA/
+CFG=+FILEUTIL_PROG=/mnt/data/basisaon/fileutil/prog/
+LANG=ENU
+DBDD=/mnt/data/basisaon/aon/BBDICT/
+DCOMP=01007514
+DAPP=FUT
+DPFX=FUT_
+SQLDB=
+DSTBL=DATA;FILEUTIL;
+
+
+update target adm_modules XML files: 
+    updated: /mnt/data/aon_prod/v1110/fileutil/data/sync/adm_modules~[01007514FUT].xml
+      <<< 		<LOCALE_PATH>/basisaon/fileutil/prop/</LOCALE_PATH>
+      >>> 		<LOCALE_PATH>/mnt/data/aon_prod/v1110/fileutil/prop/</LOCALE_PATH>
+      <<< 		<DD_MOUNT_DIR>/basisaon/fileutil/</DD_MOUNT_DIR>
+      >>> 		<DD_MOUNT_DIR>/mnt/data/aon_prod/v1110/fileutil/</DD_MOUNT_DIR>
+
+Updatexml log finished: 2011-07-08@21:29:56

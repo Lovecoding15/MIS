@@ -1,0 +1,214 @@
+// <biv02> Set inventory item_class
+
+create temporary table picklist
+    	prod char(3)/index
+	desc char(20)
+    	selected char(1);
+start:
+display/form="MAS_HEAD" firm_name="" screen_desc="Set Item Class";
+choose/traditional/prompt="@Set Item Class in Inventory for:"/drop
+	c0 from
+	"BASIS International"
+	"BASIS Software GmbH"
+	"End";
+if ctl(2) or c0>1 then exit;
+firm$="01"; if c0=1 then firm$="02";
+
+pause/message "Initializing product list";
+for each picklist delete/noerror picklist;
+picked=0;
+for each csm01 where firm_id=firm$
+{
+picklist.prod=csm01.product;
+picklist.desc=csm01.description;
+picklist.selected=" ";
+insert/noerror picklist;
+picked=picked+1;
+}
+if picked=0 then {pause/message="No products found.";goto start;}
+
+choose/record/upper
+	/rewind
+	/ctl(0)=toggle_one
+	/display=picklist.prod+" "+picklist.desc+" | "
+		+picklist.selected
+	/title="@Select Products\Product                Select?"
+	/help="(#F0)=(de)select one  (#F7)=Accept  (#F2)=Cancel"
+//	/help="(#F0)=(de)select one  (#F53)=(de)select all  (#F7)=Accept  (#F2)=Cancel"
+	/colchar="|"
+	/rows=15
+	/cols=30
+	/nobreak
+	/secure
+	/drop
+	picklist;
+if ctl(2) then exit;
+
+prodlist$="";
+for each picklist where selected="Y"
+	prodlist$=prodlist$+picklist.prod;
+if prodlist$="" then {pause/message="No products selected.";goto start;}
+
+choose/record/upper/rewind/drop/title="@Select Item Class to Set"
+	/display=ivm13.item_class+" "+ivm13.code_desc
+	ivm13 where firm_id=firm$;
+class$=ivm13.item_class;
+if ctl(2) then exit;
+
+create temporary table invlist
+	item char(12)/index
+	port char(5)
+	rev char(4)
+	class char(3)
+	selected char(1);
+
+pause/message/blink "Searching ...";
+picked=0;
+for each ivm01 
+where firm_id=firm$ and pos(item_number(1,3)=prodlist$,3)
+and item_class<>class$
+{
+init invlist;
+find/noerror csm04 using ivm01.firm_id+item_number(10,3);
+if available(csm04) then invlist.rev=csm04.description(1,4);
+find/noerror csm03 using ivm01.firm_id+item_number(7,3);
+if available(csm03) then invlist.port=csm03.port_id;
+invlist.item=ivm01.item_number(1,12);
+invlist.class=ivm01.item_class;
+insert/noerror invlist;
+picked=picked+1;
+}
+if picked=0 then {pause/message="No inventory items to set";goto start;}
+
+choose/record/upper
+	/rewind
+	/ctl(0)=toggle_inv
+	/display=invlist.item+"|"+invlist.port+"|"+invlist.rev+"|"+invlist.class+"| "+invlist.selected
+	/title="@Select Items to Set to "+class$+"\Item         Port  Rev Class Set?"
+	/help="(#F0)=(de)select one  (#F7)=Accept  (#F2)=Cancel"
+	/colchar="|"
+	/rows=15
+	/cols=33
+	/nobreak
+	/secure
+	/drop
+	invlist;
+if ctl(2) then exit;
+
+list$="";
+for each invlist where selected="Y"
+	list$=list$+invlist.item;
+if list$="" then 
+	{pause/message="No inventory items selected.";goto start;}
+
+choose/traditional/prompt="@Synonyms for Item Class "+class$/drop
+	sy from
+	"Don't change synonyms"
+	"Add port of selected items as synonym"
+	"Delete port of selected items from synonyms"
+	"Cancel";
+if ctl(2) or sy>2 then exit;
+updated=0;
+for each invlist where selected="Y"
+{
+find/next/noerror ivm01 using firm$+invlist.item;
+nextivm01:
+if available(ivm01)=0 then continue;
+if pos(invlist.item=ivm01.item_number)<>1 then continue;
+pause/message ivm01.item_number;
+ivm01.item_class=class$;
+update ivm01;
+updated=updated+1;
+i$=ivm01.item_number;
+find/next/noerror ivm01;
+if sy=0 then goto nextivm01;
+ivm14.firm_id=firm$;
+ivm14.item_synonym=invlist.port+fill(15);
+ivm14.item_number=i$;
+ivm24.firm_id=firm$;
+ivm24.item_synonym=invlist.port+fill(15);
+ivm24.item_number=i$;
+if sy=1 then 
+	{ insert/noerror ivm14; 
+	insert/noerror ivm24; 
+	gosub add_csm13;
+	}
+else 	{ delete/noerror ivm14;
+	delete/noerror ivm24;
+	gosub delete_csm13;
+	}
+goto nextivm01;
+}
+pause/message=str(updated)+" inventory items set";
+goto start;
+
+exit;
+
+subroutine add_csm13
+{
+ftype$="A";p1$=i$(1,3);p2$=i$(4,3);gosub find_csm13;
+if found_csm13=0 then gosub add_csm13rec;
+ftype$="B";p1$=i$(4,3);p2$=i$(7,3);gosub find_csm13;
+if found_csm13=0 then gosub add_csm13rec;
+ftype$="C";p1$=i$(7,3);p2$=i$(10,3);gosub find_csm13;
+if found_csm13=0 then gosub add_csm13rec;
+ftype$="H";p1$=i$(7,3);p2$=i$(1,3);gosub find_csm13;
+if found_csm13=0 then gosub add_csm13rec;
+}
+subroutine delete_csm13
+{
+ftype$="C";p1$=i$(7,3);p2$=i$(10,3);gosub find_csm13;
+if found_csm13=0 then break;
+delete/noerror csm13;
+seq$=csm13.cm_seq;
+find_next_csm13:
+find/next/noerror csm13;
+if available(csm13)=0 or csm13.firm_id<>firm$ or cm_file_type<>ftype$
+	or cm_id_1<>p1$ then break;
+seq_1$=csm13.cm_seq;
+delete/noerror csm13;
+csm13.cm_seq=seq$;
+insert/noerror csm13;
+seq$=seq_1$;
+goto find_next_csm13;
+}
+
+subroutine find_csm13
+{
+found_csm13=0;
+seqcm=0;
+for each csm13 where firm_id=firm$ and cm_file_type=ftype$ and cm_id_1=p1$
+	{
+	seqcm=num(csm13.cm_seq);
+	if csm13.cm_id_2=p2$ then { found_csm13=1;break; }
+	}
+}
+subroutine add_csm13rec
+{
+if cvs(p1$,3)="" or cvs(p2$,3)="" then break;
+init csm13;
+csm13.firm_id=firm$;
+csm13.cm_file_type=ftype$;
+csm13.cm_id_1=p1$;
+csm13.cm_id_2=p2$;
+next_seq:
+seqcm=seqcm+10;
+if seqcm>990 then break;
+csm13.cm_seq=str(seqcm:"000");
+find/noerror csm13;
+if available(csm13) then goto next_seq;
+insert csm13;
+}
+
+subroutine toggle_one
+{ if picklist.selected=" " then picklist.selected="Y";
+	else picklist.selected=" ";
+update picklist;
+}
+subroutine toggle_inv
+{ if invlist.selected=" " then invlist.selected="Y";
+	else invlist.selected=" ";
+update invlist;
+}
+
+//

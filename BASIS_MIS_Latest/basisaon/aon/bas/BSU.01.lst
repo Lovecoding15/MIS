@@ -1,0 +1,109 @@
+rem 'BSU.01
+rem 'Check for a deferred upgrade w/SAM purchase, save BBJ product & rev 
+rem 'the buyer is entitled to in are83 (put in SNM-02 during daily update)
+seterr eoj
+enter k$
+rem 'k$=firm+"  "+custno+orderno
+gosub open_files
+rem 'Clear all upg fields in are83 first
+gosub clear_are83
+ug$="",sm$="",current_rev$=""
+read(are73,key=k$,dom=*next)
+nxt73:
+readrecord(are73,end=end73)are73$
+if pos(k$=are73$)<>1 then goto end73
+if pos(are73.type_of_sale$(1,2)="UPUGSM,2")=0 then goto nxt73
+k73$=k$+are73.line_number$
+read(are83,key=k73$,dom=*next)
+nxt83:
+readrecord(are83,end=end83)are83$
+if pos(k73$=are83$)<>1 then goto end83
+rem 'Save sn's with upgrade and/or sam transactions
+s$=pad(are83.serial_nbr$,20)
+x$=are83$(1,26)+s$
+if pos(are83.action$="AM") then 
+  rem 'Save key and sn in ug$, need key to read are13 upgrade trans & are83 record later
+  if are73.type_of_sale$(1,1)="U" and pos(s$=ug$)=0 then ug$=ug$+x$
+  rem 'Save sam type in sm$, needed later
+  if are73.type_of_sale$(1,1)="S" and pos(s$=sm$)=0 then sm$=sm$+s$+are73.type_of_sale$
+fi
+rem 'Remove any deactivated sn from lists
+if are83.action$="D" then 
+  p=pos(s$=ug$);if p then ug$(p,len(s$))=fill(len(s$))
+  p=pos(s$=sm$);if p then sm$(p,len(s$))=fill(len(s$))
+fi
+goto nxt83
+end83:
+goto nxt73
+end73:
+rem 'Check sam list against upgrade list - if sn is in both, see if we need to save what they're entitled to
+while len(sm$)>=23
+  sn$=sm$(1,20),stype$=sm$(21,3),sm$=sm$(24)
+  if cvs(sn$,3)="" then continue
+  p=pos(sn$=ug$)
+  if p=0 then continue
+  k83$=ug$(p-26,26)
+  readrecord(are13,key=k83$(1,20),dom=*continue)are13$
+  rem 'Find the current rev of BBj
+  if current_rev$="" then read (csm04,key=are13.firm_id$+"CUR",dom=*continue)*,current_rev$
+  prod$=are13.item_number$(1,3)
+  rev$=are13.item_number$(10,3)
+
+  rem 'Already got current product&rev
+  if pos(prod$="BEFBERBSFBSR,3") and pos(rev$=current_rev$) then continue
+
+  rem 'If not a BBj product, find out what they're entitled to
+  if pos(prod$="BEFBERBSFBSR,3")=0 then
+    prod$="BER"
+    if stype$<>"SM2" then prod$="BSR"
+    if are13.item_number$(13,3)<>"RTM" and are13.item_number$(1,3)<>"ODB" then let prod$(3,1)="F"
+  fi
+  readrecord(are83,key=k83$,dom=*continue)are83$
+  are83.upg_to_product$=prod$
+  are83.upg_to_rev$=current_rev$
+  are83$=field(are83$)
+  writerecord(are83,key=k83$)are83$
+wend
+
+eoj:
+close(are13,err=*next)
+close(are73,err=*next)
+close(are83,err=*next)
+close(csm04,err=*next)
+seterr 0
+exit
+
+open_files:
+DIM ARE13$:"FIRM_ID:C(2),AR_TYPE:C(2),CUSTOMER_NBR:C(6),ORDER_NUMBER:C(7),LINE_NUMBER:C(3),LINE_CODE:C(1),MAN_PRICE:C(1),PRODUCT_TYPE:C(3),PULL_ASSMBLE:C(1),DIST_CODE:C(2),SAM_RENEW:C(1),RESERVED_STR_1:C(1),WAREHOUSE_ID:C(2),ITEM_NUMBER:C(20*=10),ORDER_MEMO:C(40),EST_SHP_DATE:C(3),COMMIT_FLAG:C(1),PICK_FLAG:C(1),RESERVED_STR_2:C(19*=10),UNIT_COST:N(7*=10),UNIT_PRICE:N(7*=10),QTY_ORDERED:N(7*=10),QTY_BACKORD:N(7*=10),QTY_SHIPPED:N(7*=10),STD_LIST_PRC:N(7*=10),EXT_PRICE:N(7*=10),TAXABLE_AMT:N(7*=10),DISC_PERCENT:N(7*=10),COMM_PERCENT:N(7*=10),COMM_AMT:N(7*=10),SPL_COMM_PCT:N(7*=10),RESERVED_NUM_1:N(1*=10),RESERVED_NUM_2:N(1*=10),DISC_CUST:N(7*=10)"
+LET ARE13=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-13"
+OPEN (ARE13)XF$
+
+DIM ARE73$:"FIRM_ID:C(2),AR_TYPE:C(2),CUSTOMER_NBR:C(6),ORDER_NUMBER:C(7),LINE_NUMBER:C(3*=10),MEDIA_TYPE:C(3),TYPE_OF_SALE:C(3),MANUALS:C(1),MANUAL_UPD:C(1),FIXED_FLOAT:C(1),DATA_SERVER:C(20),USE_SEQUENCE:C(1),CONTRACT:C(6),DEALER_STR:C(4*=10),MEDIA_QTY:N(7*=10),MEDIA_SETS:N(3*=10),USERS:N(5*=10),DEALER_NUM_1:N(1*=10),DEALER_NUM_2:N(1*=10)"
+LET ARE73=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-73"
+OPEN (ARE73)XF$
+
+DIM ARE83$:"FIRM_ID:C(2),AR_TYPE:C(2),CUSTOMER_NBR:C(6),ORDER_NUMBER:C(7),LINE_NUMBER:C(3),LICENSE_SEQ:C(3),SEQUENCE_NBR:C(3*=10),ACTION:C(1),SNHIST_FLAG:C(1),AUTH_CODE:C(15),UPG_TO_PRODUCT:C(3),UPG_TO_REV:C(3),AVAILABLE:C(9),CONTRACT:C(6),SAM_ACTIVE:C(1),DEALER_STR:C(1*=10),SERIAL_NBR:C(20*=10),LICENSE_CNT:N(7*=10),DEALER_NUM_1:N(1*=10),DEALER_NUM_2:N(1*=10)"
+LET ARE83=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-83"
+OPEN (ARE83)XF$
+
+DIM CSM04$:"FIRM_ID:C(2),PRODUCT_REV:C(3*=10),DESCRIPTION:C(20),AVAILABLE1:C(10*=10),KEY_OR_LICEN:C(1),DEALER_STR:C(19*=10),DEALER_NUM_1:N(1*=10),DEALER_NUM_2:N(1*=10)"
+LET CSM04=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-04"
+OPEN (CSM04)XF$
+
+return
+
+clear_are83:
+ok=1
+read(are83,key=k$,dom=*next)
+while ok
+ok=0
+readrecord(are83,end=*next)are83$;ok=1
+if pos(k$=are83$)<>1 then ok=0
+if ok and cvs(are83.upg_to_product$+are83.upg_to_rev$,3)<>"" then
+  are83.upg_to_product$="   "
+  are83.upg_to_rev$="   "
+  are83$=field(are83$)
+  writerecord(are83,key=are83$(1,26))are83$
+fi
+wend
+return

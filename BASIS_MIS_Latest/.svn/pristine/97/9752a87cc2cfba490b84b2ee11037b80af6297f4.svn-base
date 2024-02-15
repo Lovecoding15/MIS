@@ -1,0 +1,336 @@
+rem ' expired perpetual license report of the SN_LICENSE table
+
+seterr errmsg
+
+enter email$, firm_id$, cust_nbr$
+
+rem ' open files
+call "ec_open::SN_LICENSE"
+dim sn_license_alt$:fattr(sn_license$)
+
+call "ec_open::SNM01"
+snm01alt = snm01
+dim snm01alt$:fattr(snm01$)
+call "ec_open::SNM01"
+call "ec_open::SMC01"
+
+call "ec_open::SN_HOST_MULTI_SN"
+call "ec_open::SN_DORMANT_SN"
+
+call "ec_open::arm01"
+call "ec_open::tmm01"
+call "ec_open::tmm03"
+call "ec_open::tmm05"
+call "ec_open::logextract"
+call "ec_open::country"
+
+rem ' end user links and data
+call "ec_open::snmel"
+call "ec_open::snmeu"
+
+rem ' create a workfile to be sequence by the expire date
+workfile$ = "/tmp/perpetlicWorkfile" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".dat"
+workfiletemp$ = "EXPIRE_DATE:C(8),SERIAL_NBR:C(20),PRODUCT:C(3),LICENSE_TYPE:C(3),FIRM_ID:C(2),CUSTOMER_NBR:C(6),PERPET_OR_ANN:C(1),REG_DATE:C(8),REG_TIME:C(6),HOSTID:C(60*),USERS:N(4*),DAYS_TO_EXPIRE:N(3*)"
+dim workrec$:workfiletemp$
+xkeyed workfile$, [1:28], 0, 160
+workfile = unt
+open(workfile)workfile$
+
+rem ' build the work file
+curSN$ = ""
+read record(sn_license,key = "", dom = *next)sn_license$
+while 1
+	read record(sn_license, end=*break)sn_license_alt$
+	if curSN$ = "" then
+		curSN$ = sn_license_alt.serial_num$
+		sn_license$ = sn_license_alt$
+	else
+		if pos(curSN$ = sn_license_alt$) <> 1 then
+			rem ' we have a change of serial numbers
+			gosub change_of_serial_numbers
+			curSN$ = sn_license_alt.serial_num$
+			sn_license$ = sn_license_alt$
+		else
+			rem ' not the last record for this serial number
+			sn_license$ = sn_license_alt$
+		fi
+	fi
+wend
+rem ' pick up the last serial number
+gosub change_of_serial_numbers
+
+rem ' create the report csv file
+reportfile$ = "/tmp/perpetlicExpired_" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".csv"
+string reportfile$
+reportfile = unt
+open(reportfile)reportfile$
+
+if cvs(cust_nbr$,3) <> "" then
+	read record(arm01,key = firm_id$ + cust_nbr$)arm01$
+fi
+
+rem ' write header line
+sep$ = chr(34) + "," + chr(34)
+if cvs(cust_nbr$,3) <> "" then
+	line$ = chr(34) + "End User" + sep$ + "Serial Nbr" + sep$ + "Users" + sep$ + "SAM Status" + sep$ + "Type" + sep$ + "Expires" + sep$ + "Days Expired" + chr(34)
+else
+	line$ = chr(34) + "Customer #" + sep$ + "Customer" + sep$ + "End User" + sep$ + "Serial Nbr" + sep$ + "Users" + sep$ + "SAM Status" + sep$ + "Type" + sep$ + "Expires" + sep$ + "Days Expired" + chr(34)
+fi
+write(reportfile)line$
+
+count = 0
+
+rem ' read the workfile and build the report
+read record(workfile, key = "", dom = *next)workrec$
+while 1
+	read record(workfile,end = *break)workrec$
+	
+	rem ' skip Heimbas 020005
+	if workrec.customer_nbr$ = "020005" then continue
+	
+	rem ' not expired
+	if workrec.days_to_expire >= 0 then break
+
+	if workrec.firm_id$ <> firm_id$ then continue
+	
+	if cvs(cust_nbr$,3) <> "" AND workrec.customer_nbr$ <> cust_nbr$ then continue
+	
+	count = count + 1	
+	
+	if cvs(cust_nbr$,3) = "" then read record(arm01,key = workrec.firm_id$ + workrec.customer_nbr$)arm01$
+	
+	found = 0; end_user$ = ""
+	read record(snmel, key = workrec.serial_nbr$,dom = *next)snmel$; found = 1
+	if found then
+		read record(snmeu, key = snmel.end_user_nbr$)snmeu$
+		end_user$ = snmeu.company_name$
+	fi
+	
+	sam_status$ = "No SAM"
+	read record(snm01,key = workrec.serial_nbr$)snm01$
+	if cvs(snm01.contract$,3) <> "" then 
+		read record(smc01, key = snm01.contract$)smc01$
+		if smc01.expire_on_dt$ > date(0:"%Y%Mz%Dz") then
+			sam_status$ = "In force (" + smc01.expire_on_dt$(1,4) + "-" + smc01.expire_on_dt$(5,2) + "-" + smc01.expire_on_dt$(7,2) + ")"
+		else
+			sam_status$ = "Expired (" + smc01.expire_on_dt$(1,4) + "-" + smc01.expire_on_dt$(5,2) + "-" + smc01.expire_on_dt$(7,2) + ")"
+		fi
+	fi
+
+	if workrec.perpet_or_ann$ = "A" then
+		type$ = "Annual"
+	else
+		type$ = "Perpetual"
+	fi
+
+	if cvs(cust_nbr$,3) <> "" then
+		line$ = chr(34) + cvs(end_user$,3) + sep$ + cvs(workrec.serial_nbr$,3) + sep$ + str(workrec.users) + sep$ 
+		line$ = line$ + sam_status$ + sep$ + type$ + sep$ + workrec.expire_date$(1,4) + "-" + workrec.expire_date$(5,2) + "-" 
+		line$ = line$ + workrec.expire_date$(7,2) + sep$ + workrec.days_to_expire$ + chr(34)
+	else
+		line$ = chr(34) + workrec.firm_id$ + workrec.customer_nbr$ + sep$ + cvs(arm01.cust_name$,3) + sep$ + cvs(end_user$,3) + sep$ + cvs(workrec.serial_nbr$,3) + sep$
+		line$ = line$ + str(workrec.users) + sep$ + sam_status$ + sep$ + type$ + sep$ + workrec.expire_date$(1,4) + "-"
+		line$ = line$ + workrec.expire_date$(5,2) + "-" + workrec.expire_date$(7,2) + sep$ + workrec.days_to_expire$ + chr(34)
+	fi
+	write(reportfile)line$
+	
+wend
+if cvs(cust_nbr$,3) <> "" then
+	line$ = chr(34) + "Expired Perpeutal Licenses: " + sep$ + str(count) + sep$ + sep$ + sep$ + sep$ + chr(34)
+else
+	line$ = chr(34) + "Expired Perpeutal Licenses: " + sep$ + str(count) + sep$ + sep$ + sep$ + sep$ + sep$ + sep$ + sep$ + chr(34)
+fi
+write(reportfile)line$
+close(reportfile)
+
+from$ = "customer-service@basis.cloud"
+to$ = email$
+cc$ = ""
+bcc$ = "kurt.e.williams@comcast.net"
+subject$ = "Expired Perpetual Licenses"
+if cvs(cust_nbr$,3) <> "" then subject$ = subject$ + " " + firm_id$ + cust_nbr$ + " " + arm01.cust_name$
+
+msgtxt$ = "Attached is the report of expired perpetual licenses."
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, reportfile$
+
+msg$ = "The report has been created and emailed to " + email$ + "."
+resp = msgbox(msg$, 0, "Report Complete")
+
+exit
+
+change_of_serial_numbers:
+	rem ' we have a change of serial numbers
+	rem ' only perpetual or annual expire dates
+	
+	if sn_license.perpetual$ = "Y" or sn_license.annual$ = "Y" then
+		rem ' we have a perpetual or annual record
+		
+		rem ' has the serial number gone inactive
+		curSN$ = curSN$ + fill(20), curSN$ = curSN$(1,20)
+		read record(snm01, key = curSN$)snm01$
+
+		if snm01.active_flag$ = "Y" then
+		
+			rem ' do not include serial numbers that are in the dormant table SN_DORMANT_SN
+			dormant = 0
+			read record(sn_dormant_sn, key = curSN$, dom=*next)sn_dormant_sn$; dormant = 1
+			
+			if dormant = 0 then
+		
+				rem ' do not include serial numbers that are secondary in a host id group
+
+				productseq$="ODBDS5VP5PR5BAS"
+				currentHighRank = 0, currentHighSN$ = ""
+				snfound = 0
+				read record (sn_host_multi_sn, key = curSN$, knum = 0, dom = *next)sn_host_multi_sn$; snfound = 1
+
+				if snfound then
+					rem ' this serial number is in a hostid group
+					thishostid$ = sn_host_multi_sn.hostid$
+					rem ' position key pointer
+					read record(sn_host_multi_sn, knum = 1, key = thishostid$, err = *next)sn_host_multi_sn$
+
+					sn_count = 0
+					while 1
+						dim sn_host_multi_sn$:fattr(sn_host_multi_sn$)
+						read record(sn_host_multi_sn, end = *break)sn_host_multi_sn$
+						if thishostid$ <> sn_host_multi_sn.hostid$ then break
+
+						rem ' is it active
+						read record(snm01alt, key = sn_host_multi_sn.serial_nbr$, dom=*continue)snm01alt$
+						if snm01alt.active_flag$ = "N" then continue
+						if cvs(snm01alt.contract$,3) <> "" then
+						    read record(smc01, key = snm01alt.contract$)smc01$
+						    rent_or_kit = pos(smc01.contr_type$(1,2) = "RN,DV")
+						    if snm01alt.license_type$ = "EXP" and smc01.contr_type$ = "SM1" then rent_or_kit=1
+						    today$ = date(0:"%Y%Mz%Dz")
+						    rem ' is it expired?
+						    if rent_or_kit and smc01.expire_on_dt$ < today$ then continue
+						fi
+
+						rem ' is it primary
+						rank = pos(snm01alt.product$ = productseq$)
+						if rank > currentHighRank then
+							currentHighRank = rank
+							currentHighSN$ = snm01alt.serial_nbr$
+						fi
+
+						sn_count = sn_count + 1
+					wend
+
+					if sn_count = 1 or curSN$ = currentHighSN$ then
+						rem ' we have the primary sn in the hostid group
+						include = 1
+					else
+						rem ' we have a secondary sn in the hostid group
+						include = 0
+					fi
+				else
+					rem ' not in a host id group
+					include = 1
+				fi
+
+				if include then
+
+					expire_dt$ = FNNormalizeDate$(sn_license.expire$)
+
+					if expire_dt$ <> "" then			
+
+						workrec.expire_date$ = expire_dt$
+						workrec.serial_nbr$ = curSN$
+						workrec.product$ = snm01.product$
+						workrec.license_type$ = snm01.license_type$
+						workrec.firm_id$ = sn_license.firm_id$
+						workrec.customer_nbr$ = sn_license.customer_nbr$
+						if sn_license.perpetual$ = "Y" then
+							workrec.perpet_or_ann$ = "P"
+						else
+							workrec.perpet_or_ann$ = "A"
+						fi
+						workrec.reg_date$ = sn_license.date$
+						workrec.reg_time$ = sn_license.time$
+						workrec.hostid$ = sn_license.hostid$
+						workrec.users = sn_license.users + sn_license.users2
+						workrec.days_to_expire = FNDaysBetweenNowAndThen(sn_license.expire$)
+						write record(workfile)workrec$
+					fi
+				fi
+			fi
+		fi
+	fi
+return
+
+DEF FNNormalizeDate$(nd_in_date$)
+	nd_new_date$ = ""
+	nd_date$ = nd_in_date$
+	
+	rem ' for single digit days the expire field will not have a leading 0
+	if len(cvs(nd_date$,3)) = 10 then nd_date$ = "0" + cvs(nd_date$,3)
+	
+	if len(cvs(nd_date$,3)) = 11 then
+		rem ' date in the form of dd-mmm-yyyy
+		dbnat_mnth_lst$ = "janfebmaraprmayjunjulaugsepoctnovdec"
+		dbnat_month$ = nd_date$(4,3)
+		dbnat_month = pos(dbnat_month$ = dbnat_mnth_lst$)
+		if dbnat_month <> 0 then
+			dbnat_month = int(dbnat_month / 3) + 1
+			dbnat_day = 0
+			dbnat_day = num(nd_date$(1,2), err=*next)
+			if dbnat_day <> 0 then
+				dbnat_year = 0
+				dbnat_year = num(nd_date$(8,4), err=*next)
+				if dbnat_year <> 0 then
+					nd_new_date$ = date(jul(dbnat_year, dbnat_month, dbnat_day):"%Y%Mz%Dz")
+				fi
+			fi
+		fi
+	fi
+return nd_new_date$
+
+DEF FNDaysBetweenNowAndThen(dbnat_in_date$)
+	dbnat_days = 0
+	dbnat_date$ = dbnat_in_date$
+	
+	rem ' single digit years will not have a leading 0
+	if len(cvs(dbnat_date$,3)) = 10 then dbnat_date$ = "0" + cvs(dbnat_date$,3)
+	
+	if len(dbnat_date$) <> 11 then
+		dbnat_days = 0
+	else		
+		rem ' date in the form of dd-mmm-yyyy
+		dbnat_mnth_lst$ = "janfebmaraprmayjunjulaugsepoctnovdec"
+		dbnat_month$ = dbnat_date$(4,3)
+		dbnat_month = pos(dbnat_month$ = dbnat_mnth_lst$)
+		if dbnat_month = 0 then
+			dbnat_days = 0
+		else
+			dbnat_month = int(dbnat_month / 3) + 1
+			dbnat_day = 0
+			dbnat_day = num(dbnat_date$(1,2), err=*next)
+			if dbnat_day = 0 then
+				dbnat_days = 0
+			else
+				dbnat_year = 0
+				dbnat_year = num(dbnat_date$(8,4), err=*next)
+				if dbnat_year = 0 then
+					dbnat_days = 0
+				else
+					dbnat_days = jul(dbnat_year, dbnat_month, dbnat_day) - jul(0,0,0)
+				fi
+			fi
+		fi
+	fi
+RETURN dbnat_days			
+
+errmsg:
+	from$ = "customer-service@basis.cloud"
+	rem ' to$ = "mis@basis.cloud"
+	to$ = "kurt.e.williams@comcast.net"
+	cc$ = ""
+	bcc$ = ""
+	subject$ = "Perpetual license expired report error"	
+	msgtxt$ = "Error " + str(err) + " in " + str(tcb(5)) + " in " + pgm(-1) + $0a$ + errmes(err)
+	msgtxt$ = msgtxt$ + $0a$ + $0a$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	exit
+end

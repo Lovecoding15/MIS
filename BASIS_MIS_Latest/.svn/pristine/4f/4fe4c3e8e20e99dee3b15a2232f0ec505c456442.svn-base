@@ -1,0 +1,72 @@
+call "ec_open::snm01"
+call "ec_open::snm04"
+txt=unt
+rem open(txt)"infile.txt"
+open(txt)"/tmp/004559_Resurgence_deactivate.txt"
+
+rem ' can be used to reactivate licenses for InternetWorX that were requested to be deactivated by Gale by mistake.
+
+dim sn$(20)
+while 1
+  read(txt)sn$(1)
+  if cvs(sn$,3)="" then continue
+  count = count + 1
+  readrecord(snm01,key=sn$)snm01$
+  ?'cs'
+  ?count
+  ?snm01$
+ 
+ rem ' verify customer
+  if snm01.customer_nbr$<>"004559" then print "not 004559";escape
+  
+  rem ' this next 2 lines are for ab accu-med deactivation run
+  rem ' if snm01.contract$<>"000001" then print "not contract 000001";escape
+  rem ' if snm01.active_flag$<>"Y" then print "not active";escape
+  
+  snm01.active_flag$="N"
+  rem ' snm01.active_flag$="Y"
+  snm01.avail_support = 0
+  
+  snm01$=field(snm01$)
+  ?snm01$
+  input xx$
+  writerecord(snm01)snm01$
+  gosub write_comment
+  rem ' gosub replace_comment
+  input "next ",xx$
+wend
+end
+
+write_comment: 
+LET seq=1,com$="Deactivate per GR 02.27.23"
+IF LEN(com$)>48 THEN LET com$=com$(1,48)
+READ (snm04,KEY=snm01.serial_nbr$,DOM=*NEXT)
+WHILE seq<100
+  READ RECORD (snm04,END=*next)snm04$
+  IF snm04.serial_nbr$=snm01.serial_nbr$ THEN 
+    LET seq=NUM(snm04.comments_seq$)+1
+    CONTINUE
+  fi
+  LET snm04.serial_nbr$=snm01.serial_nbr$
+  LET snm04.comments_seq$=STR(seq:"00"),seq=100
+  LET snm04.cmt_line$=com$
+  LET snm04$=FIELD(snm04$)
+  WRITE RECORD (snm04,KEY=snm04$(1,22))snm04$
+WEND
+return
+
+replace_comment: 
+oc$="Deactivated by JE"
+LET seq=1,com$="Deactivated by JE/Mark Systems per GR "+DATE(0:"%Mz/%Dz/%Y")
+IF LEN(com$)>48 THEN LET com$=com$(1,48)
+READ (snm04,KEY=snm01.serial_nbr$,DOM=*NEXT)
+WHILE  1
+  READ RECORD (snm04,END=*next)snm04$
+  IF snm04.serial_nbr$<>snm01.serial_nbr$ THEN break
+  if pos(oc$=snm04.cmt_line$)=0 then continue
+  LET snm04.cmt_line$=com$
+  LET snm04$=FIELD(snm04$)
+  ?snm04$;input xx$
+  WRITE RECORD (snm04,KEY=snm04$(1,22))snm04$
+WEND
+return

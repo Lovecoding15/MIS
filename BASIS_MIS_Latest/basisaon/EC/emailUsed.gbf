@@ -1,0 +1,242 @@
+[Program]
+Creation Date=2020-03-23
+Creation Time=13:2:40
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2020-04-22
+Last Build Time=12:5:32
+Precision=99
+Program Name=emailUsed
+Remarks=Yes
+Resource File=emailUsed.arc
+Show Forms=All
+
+[EOJ]
+rem ' -----------------------------------------------------------------
+rem ' EOJ
+rem ' -----------------------------------------------------------------
+
+searchEmailAddress!.destroy()
+
+[Init]
+rem ' -----------------------------------------------------------------
+rem ' Init
+rem ' -----------------------------------------------------------------
+
+gosub buildObjectReferences
+gosub buildDBURL
+
+
+[Event Win=101 ID=106 Code=B <PUSH_BUTTON> (W101_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+goto gb__eoj
+
+[Event Win=101 ID=107 Code=B <PUSH_BUTTON> (W101_C107_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+emailText$ = searchEmail!.getText()
+if cvs(emailText$,3) = "" then
+    searchEmail!.focus()
+    return
+fi
+
+emailText$ = cvs(emailText$, 8)
+
+gosub searchTheDB
+
+
+[Function (buildDBURL)]
+rem ' -----------------------------------------------------------------
+rem ' buildDBURL
+rem ' -----------------------------------------------------------------
+
+buildDBURL:
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+
+DECLARE File file!
+DECLARE FileInputStream fis!
+DECLARE BufferedInputStream bis!
+DECLARE Properties props!
+DECLARE StringBuffer sqlBuilder!
+
+rem ' locate the properties file
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+
+sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+ourDbUrl$ = sqlBuilder!.toString()
+
+return
+
+[Function (buildObjectReferences)]
+rem ' -----------------------------------------------------------------
+rem ' buildObjectReferences
+rem ' -----------------------------------------------------------------
+
+buildObjectReferences:
+
+declare BBjAPI bbjapi!
+declare BBjSysGui sysgui!
+
+
+declare BBjTopLevelWindow searchEmailAddresses!
+declare BBjEditBox searchEmail!
+declare BBjStaticText searchEmailLabel!
+declare BBjButton searchButton!
+declare BBjButton exitBtn!
+declare BBjStandardGrid emailUsedGird!
+
+DECLARE BBjRecordSet emailRecordSet!
+DECLARE BBjRecordData emailRecordData!
+
+declare BBjVector emailAddresses!
+
+bbjapi! = BBjAPI()
+sysgui! = bbjapi!.getSysGui()
+
+searchEmailAddresses! = cast(BBjTopLevelWindow, sysgui!.getWindow("searchEmailAddresses"))
+searchEmail! = cast(BBjEditBox, searchEmailAddresses!.getControl("searchEmail"))
+searchEmailLabel! = cast(BBjStaticText, searchEmailAddresses!.getControl("searchEmailLabel"))
+searchButton! = cast(BBjButton, searchEmailAddresses!.getControl("searchButton"))
+exitBtn! = cast(BBjButton, searchEmailAddresses!.getControl("exitBtn"))
+emailUsedGrid! = cast(BBjStandardGrid, searchEmailAddresses!.getControl("emailUsedGrid"))
+
+return
+
+[Function (searchTheDB)]
+rem ' -----------------------------------------------------------------
+rem ' searchTheDB
+rem ' -----------------------------------------------------------------
+
+searchTheDB:
+
+emailUsedGrid!.clearMainGrid()
+emailUsedGrid!.setColumnAlignment(0, GRID_ALIGN_LEFT)
+emailUsedGrid!.setColumnAlignment(1, GRID_ALIGN_LEFT)
+emailUsedGrid!.setColumnAlignment(2, GRID_ALIGN_LEFT)
+        
+sql$ = "SELECT 'TMM05' as table, CUSTOMER_NBR+' '+TM_NUMBER as POINTER, TRIM(E_MAIL) as EMAIL_ADD FROM TMM05 where lcase(e_mail) like '%<emailtag>%' "
+sql$ = sql$ + "UNION "
+sql$ = sql$ + "SELECT 'TMM03' as table, CUSTOMER_NBR+' '+TM_NUMBER+' '+SEQUENCE_NBR as POINTER, TRIM(E_MAIL) as EMAIL_ADD FROM TMM03 where lcase(e_mail) like '%<emailtag>%' "
+sql$ = sql$ + "UNION "
+sql$ = sql$ + "SELECT 'ARM10F' as table, TRIM(SLSPSN_NAME) as POINTER, TRIM(E_MAIL) as EMAIL_ADD FROM ARM10F where lcase(e_mail) like '%<emailtag>%' "
+sql$ = sql$ + "UNION "
+sql$ = sql$ + "SELECT 'SMC01' as table, CONTRACT as POINTER, TRIM(E_MAIL) as EMAIL_ADD FROM SMC01 where lcase(e_mail) like '%<emailtag>%' "
+sql$ = sql$ + "UNION "
+sql$ = sql$ + "SELECT 'SNMEU' as table, FIRM_ID+CUSTOMER_NBR+' '+TRIM(END_USER_NBR)+' '+TRIM(COMPANY_NAME) as POINTER, TRIM(EMAIL_ADDRESS) as EMAIL_ADD FROM SNMEU where lcase(email_address) like '%<emailtag>%' "
+sql$ = sql$ + "UNION "
+sql$ = sql$ + "SELECT 'ECM01' as table, CUSTOMER_NBR+' '+USER_CODE as POINTER, TRIM(E_MAIL) as EMAIL_ADD FROM ECM01 where lcase(e_mail) like '%<emailtag>%' "
+sql$ = sql$ + "UNION "
+sql$ = sql$ + "SELECT 'ECM01' as table, CUSTOMER_NBR+' '+USER_CODE as POINTER, TRIM(E_MAIL2) as EMAIL_ADD FROM ECM01 where lcase(e_mail2) like '%<emailtag>%' "
+sql$ = sql$ + "UNION "
+sql$ = sql$ + "SELECT 'LOGEXTRACT' as table, TRIM(SERIALNUM) as POINTER, TRIM(EMAIL) as EMAIL_ADD FROM LOGEXTRACT where lcase(email) like '%<emailtag>%' "
+sql$ = sql$ + "UNION "
+sql$ = sql$ + "SELECT 'EMXREF' as table, CUSTOMER_NBR+' '+TM_NUMBER as POINTER, TRIM(EMAIL) as EMAIL_ADD FROM EMXREF where lcase(email) like '%<emailtag>%' "
+
+sql_final$ = ""
+rem ' replace tags with email search text
+while pos("<emailtag>" = sql$)
+    p = pos("<emailtag>" = sql$)
+    sql_final$ = sql_final$ + sql$(1, p-1) + emailText$
+    sql$ = sql$(p + 10)
+wend
+sql_final$ = sql_final$ + sql$
+
+emailRecordSet! = bbjapi!.createSQLRecordSet(ourDbUrl$,"",sql_final$)
+
+if emailRecordSet!.isEmpty() then
+    noMatch$ = "There are no email addresses in the database that include the search text."
+    resp = msgbox(noMatch$, 0, "No Matching Addresses")
+
+else
+    recordCount = 0
+    emailAddresses! = bbjapi!.makeVector()
+    
+    emailRecordSEt!.first()
+    
+    while 1
+
+        emailRecordData! = emailRecordSet!.getCurrentRecordData()
+        tableName$ = emailRecordData!.getFieldValue("TABLE")
+        pointer$ = emailRecordData!.getFieldValue("POINTER")
+        email_add$ = emailRecordData!.getFieldValue("EMAIL_ADD")
+        
+        if cvs(tableName$,3) = "ECM01" then 
+            tableName$ = "B-comm masterfile: " + tableName$
+            pointer$ = "Customer # + Usercode: " + pointer$
+        fi
+        
+        if cvs(tableName$,3) = "SNMEU" then
+            tableName$ = "End User Table: " + tableName$
+            pointer$ = "Cust Nbr + End User Nbr + Name: " + pointer$
+        fi
+                
+        if cvs(tableName$,3) = "TMM05" then
+            tableName$ = "Telemaster Master Email: " + tableName$
+            pointer$ = "Customer Nbr + TM Number: " + pointer$
+        fi
+
+        if cvs(tableName$,3) = "TMM03" then
+            tableName$ = "Telemaster Contact Email: " + tableName$
+            pointer$ = "Customer Nbr + TM Number + Sequence: " + pointer$
+        fi
+
+        if cvs(tableName$,3) = "EMXREF" then
+            tableName$ = "Search by EMAIL Address: " + tableName$
+            pointer$ = "Customer Nbr + TM Number: " + pointer$
+        fi
+
+        if cvs(tableName$,3) = "SMC01" then
+            tableName$ = "SAM, DVK, RNT contracts: " + tableName$
+            pointer$ = "Contract Number: " + pointer$
+        fi
+
+        if cvs(tableName$,3) = "ARM10F" then
+            tableName$ = "Salesperson Table: " + tableName$
+            pointer$ = "Salesperson: " + pointer$
+        fi
+ 
+        recordCount = recordCount + 1
+        emailAddresses!.addItem(tablename$)
+        emailAddresses!.addItem(pointer$)
+        emailAddresses!.addItem(email_add$)
+        
+        emailRecordSet!.next(err=*break)
+
+    wend
+    emailRecordSet!.close()
+
+    emailUsedGrid!.setNumRows(recordCount)
+    emailUsedGrid!.setSelectedCell(0,0)
+    emailUsedGrid!.setCellText(0, 0, emailAddresses!)
+    emailUsedGrid!.setEditable(0)
+    emailUsedGrid!.setVisible(1)
+    
+    searchEmail!.focus()
+        
+fi
+
+
+return
+

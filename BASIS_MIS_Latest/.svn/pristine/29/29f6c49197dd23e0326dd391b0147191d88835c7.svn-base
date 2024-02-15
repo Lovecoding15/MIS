@@ -1,0 +1,14 @@
+0010 REM "ADC - Bridge - Display Standard Error Message"
+0020 REM "Program ADC.XA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0080 SETERR 9000
+0085 SETESC 9900
+0090 ENTER TITLE,MESSAGE$[ALL],NUMBER,Y,X,V$,V3
+1020 CALL "SYC.XA",TITLE,MESSAGE$[ALL],NUMBER,X,Y,V$,V3
+9900 REM " --- Return to caller"
+9950 EXIT 
+9999 END

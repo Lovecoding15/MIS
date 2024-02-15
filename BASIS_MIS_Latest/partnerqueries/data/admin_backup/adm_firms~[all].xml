@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_FIRMS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<COMPANY_ID>01</COMPANY_ID>
+		<FIRM_NAME>BASIS International Ltd.</FIRM_NAME>
+		<HELP_FLAG>Y</HELP_FLAG>
+		<BATCH_ENTRY>N</BATCH_ENTRY>
+		<INTERFACE> </INTERFACE>
+		<MDI_BACKG_IMAGE>[+CUST_IMAGES]Firm_01.png</MDI_BACKG_IMAGE>
+		<MDI_IMAGE_LOC>3</MDI_IMAGE_LOC>
+		<USER_MODIFIED>M</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<COMPANY_ID>02</COMPANY_ID>
+		<FIRM_NAME>BASIS Europe Distribution GmbH</FIRM_NAME>
+		<HELP_FLAG>Y</HELP_FLAG>
+		<BATCH_ENTRY>N</BATCH_ENTRY>
+		<INTERFACE> </INTERFACE>
+		<RESERVED_STR>             </RESERVED_STR>
+		<MDI_BACKG_IMAGE>[+CUST_IMAGES]Firm_02.png</MDI_BACKG_IMAGE>
+		<MDI_IMAGE_LOC>5</MDI_IMAGE_LOC>
+		<USER_MODIFIED>M</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<COMPANY_ID>03</COMPANY_ID>
+		<FIRM_NAME>BSG in US Dollars</FIRM_NAME>
+		<HELP_FLAG>Y</HELP_FLAG>
+		<BATCH_ENTRY>N</BATCH_ENTRY>
+		<INTERFACE> </INTERFACE>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<COMPANY_ID>04</COMPANY_ID>
+		<FIRM_NAME>Audev International LLC</FIRM_NAME>
+		<HELP_FLAG>Y</HELP_FLAG>
+		<BATCH_ENTRY>N</BATCH_ENTRY>
+		<INTERFACE> </INTERFACE>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<COMPANY_ID>05</COMPANY_ID>
+		<FIRM_NAME>Audev de Mexico</FIRM_NAME>
+		<HELP_FLAG>Y</HELP_FLAG>
+		<BATCH_ENTRY>N</BATCH_ENTRY>
+		<INTERFACE> </INTERFACE>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<COMPANY_ID>06</COMPANY_ID>
+		<FIRM_NAME>BASIS Resources Ltd.</FIRM_NAME>
+		<HELP_FLAG>Y</HELP_FLAG>
+		<BATCH_ENTRY>N</BATCH_ENTRY>
+		<INTERFACE> </INTERFACE>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

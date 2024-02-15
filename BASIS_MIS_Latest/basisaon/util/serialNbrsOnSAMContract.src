@@ -1,0 +1,179 @@
+rem ' HEIMBAS (020005) serial numbers on contract 000177
+
+use java.util.HashMap
+use java.util.Set
+use java.util.Iterator
+
+Declare HashMap serialNbrs!
+Declare Set serialNbrSet!
+Declare Iterator serialNbrIterator!
+Declare BBjString sn!
+Declare BBjString flag!
+
+rem ' load a HashMap with the serial numbers they want on the contract
+
+serNbrList = unt
+open(serNbrList)"/mnt/data/basisaon/aon/tmp/HEIMBASsam2011.txt"
+
+serialNbrs! = new HashMap()
+
+while 1
+	read(serNbrList,end=*break)sn$
+	sn$ = cvs(sn$,3)
+	sn! = sn$
+	rem ' handle the CRLF
+	if sn!="" then continue
+	flag!="No Match"
+	serialNbrs!.put(sn!,flag!)
+	
+	count = count + 1
+	print sn!," ",count
+wend
+
+print "HashMap size: ", serialNbrs!.size()
+input "done reading text file: ",*
+
+count = 0
+
+rem ' query the serial number table for the active serial numbers already on the contract
+
+sql$ = "SELECT serial_nbr FROM SNM01 where contract = '000177' and active_flag = 'Y' and SAM_active = 'Y'"
+
+sqlChan = sqlunt
+sqlopen(sqlChan,mode="UID=ec,PWD=rEd|4pHhxFWrf6BK$^")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	count = count + 1
+	print rec.serial_nbr$, " ", count
+	
+	sn! = cvs(rec.serial_nbr$,3)
+	isThere = serialNbrs!.containsKey(sn!)
+	
+	if isThere then
+		flag!="Match"
+		serialNbrs!.put(sn!,flag!)
+		matchCount = matchCount + 1
+	else
+		unmatchCount = unmatchCount + 1
+	fi
+	
+wend
+sqlclose(sqlChan)
+
+print "Matched: ", matchCount
+print "UnMatched: ",unmatchCount
+print "HashMap size: ", serialNbrs!.size()
+input "done reading the serial numbers already on the contract: ",*
+
+count = 0
+matchCount = 0
+unmatchCount = 0
+
+rem ' querey the serial number table for active serial number not on this contract
+
+call "ec_open::SNM01"; rem open the serial number table for writes
+call "ec_open::SNM04"; rem open for writing comments
+
+sql$ = "SELECT serial_nbr FROM SNM01 where customer_nbr = '020005' and contract <> '000177' and active_flag = 'Y'"
+
+sqlChan = sqlunt
+sqlopen(sqlChan,mode="UID=ec,PWD=rEd|4pHhxFWrf6BK$^")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+while 1
+	rec$ = sqlfetch(sqlChan,end=*break)
+	count = count + 1
+	print rec.serial_nbr$," ",count
+	
+	sn! = cvs(rec.serial_nbr$,3)
+	isThere = serialNbrs!.containsKey(sn!)
+	
+	if isThere then
+		flag!="Match"
+		serialNbrs!.put(sn!,flag!)
+		matchCount = matchCount + 1
+		
+		
+		rem ' move to contract 000177
+		sn$ = sn! + fill(20," ")
+		sn$=sn$(1,20)
+		read record(snm01,key=sn$)snm01$
+		snm01.contract$ = "000177"
+		snm01.sam_active$ = "Y"
+		snm01$ = field(snm01$)
+		write record(snm01)snm01$
+		changeWritten = changeWritten + 1
+		gosub write_comment
+		
+	else
+		unmatchCount = unmatchCount + 1
+	fi
+
+wend
+sqlclose(sqlChan)
+
+print "Matched: ", matchCount
+print "Changed: ", changeWritten
+print "UnMatched: ",unmatchCount
+print "HashMap size: ", serialNbrs!.size()
+input "done reading the serial numbers not on the contract: ",*
+
+count = 0
+matchCount = 0
+unmatchCount = 0
+	
+rem ' detail the un matched serial numbers
+
+serialNbrSet! = serialNbrs!.keySet()
+serialNbrIterator! = serialNbrSet!.iterator()
+
+sqlChan = sqlunt
+sqlopen(sqlChan,mode="UID=ec,PWD=rEd|4pHhxFWrf6BK$^")"AddOnData"
+
+while serialNbrIterator!.hasNext()
+
+	sn! = cast(BBjString, serialNbrIterator!.next())
+	flag! = cast(BBjString, serialNbrs!.get(sn!))
+
+	if flag! = "No Match" then 
+		sql$ = "SELECT serial_nbr, contract, active_flag, users FROM SNM01 where serial_nbr = '" + sn! + "'"
+		sqlprep(sqlChan)sql$
+		sqlexec(sqlChan)
+		dim rec$:sqltmpl(sqlChan)
+		rec$ = sqlfetch(sqlChan,end=*break)
+		print cvs(rec.serial_nbr$,3)," contract: ",rec.contract$," active flag: ",rec.active_flag$," users: ",rec.users
+	fi
+		
+wend
+sqlclose(sqlChan)
+
+stop
+
+escape
+
+write_comment: 
+    LET seq=1
+    com$="Changed to contract 000177 per cust "+DATE(0:"%Mz/%Dz/%Y")
+    IF LEN(com$)>48 THEN LET com$=com$(1,48)
+    READ (snm04,KEY=snm01.serial_nbr$,DOM=*NEXT)
+    WHILE seq<100
+        READ RECORD (snm04,END=*break)snm04$
+        IF snm04.serial_nbr$=snm01.serial_nbr$ THEN 
+            LET seq=NUM(snm04.comments_seq$)+1
+            CONTINUE
+        fi
+        LET snm04.serial_nbr$=snm01.serial_nbr$
+        LET snm04.comments_seq$=STR(seq:"00"),seq=100
+        LET snm04.cmt_line$=com$
+        LET snm04$=FIELD(snm04$)
+        WRITE RECORD (snm04,KEY=snm04$(1,22))snm04$
+    WEND
+return
+
+end

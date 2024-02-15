@@ -1,0 +1,205 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<FUT_SNT02>
+	<ALIAS id="ddm_tables">
+		<ID id="ddm_tables">DDM_TABLES</ID>
+		<RECORD id="ddm_tables.fut_snt02">
+			<DD_TABLE_ALIAS id="ddm_tables.fut_snt02">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_ALIAS_DESC id="ddm_tables.fut_snt02">Server-linked Clients</DD_ALIAS_DESC>
+			<DD_FILE_NAME id="ddm_tables.fut_snt02">SNT-02</DD_FILE_NAME>
+			<DD_TABLE_PATH id="ddm_tables.fut_snt02">[FILEUTIL]</DD_TABLE_PATH>
+			<DD_ALIAS_TYPE id="ddm_tables.fut_snt02">K</DD_ALIAS_TYPE>
+			<DD_KEY_LENGTH id="ddm_tables.fut_snt02">0</DD_KEY_LENGTH>
+			<DD_SYSTEM_REC id="ddm_tables.fut_snt02">N</DD_SYSTEM_REC>
+			<ASC_COMP_ID id="ddm_tables.fut_snt02">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_tables.fut_snt02">FUT</ASC_PROD_ID>
+			<ASC_VERSION_ID id="ddm_tables.fut_snt02">1.0</ASC_VERSION_ID>
+			<DD_EXPORT_DATA id="ddm_tables.fut_snt02">Y</DD_EXPORT_DATA>
+			<DD_CREATE_DATE id="ddm_tables.fut_snt02">20100518</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_tables.fut_snt02">20100518</DD_LSTREV_DATE>
+			<DD_LSTSYNC_DATE id="ddm_tables.fut_snt02">20100518</DD_LSTSYNC_DATE>
+			<DD_LSTSYNC_TIME id="ddm_tables.fut_snt02">160858</DD_LSTSYNC_TIME>
+			<DD_ATTR_FTYP id="ddm_tables.fut_snt02">T</DD_ATTR_FTYP>
+			<DD_ATTR_WINT id="ddm_tables.fut_snt02">Server-linked Clients</DD_ATTR_WINT>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_tpls">
+		<ID id="ddm_table_tpls">DDM_TABLE_TPLS</ID>
+		<RECORD id="ddm_table_tpls.fut_snt02">
+			<DD_TABLE_ALIAS id="ddm_table_tpls.fut_snt02">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_TABLE_TPL id="ddm_table_tpls.fut_snt02">data_server:c(20),sn_serv_seq:c(5*),serial_nbr:c(20*)</DD_TABLE_TPL>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_keys">
+		<ID id="ddm_keys">DDM_KEYS</ID>
+		<RECORD id="ddm_keys.fut_snt0200">
+			<DD_TABLE_ALIAS id="ddm_keys.fut_snt0200">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_keys.fut_snt0200">00</DD_KEY_NUMBER>
+			<DD_KEY_DESC id="ddm_keys.fut_snt0200">Serial Nbr Server-linked Seq</DD_KEY_DESC>
+			<DD_KEY_ID id="ddm_keys.fut_snt0200">INDX1           </DD_KEY_ID>
+		</RECORD>
+		<RECORD id="ddm_keys.fut_snt0201">
+			<DD_TABLE_ALIAS id="ddm_keys.fut_snt0201">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_keys.fut_snt0201">01</DD_KEY_NUMBER>
+			<DD_KEY_DESC id="ddm_keys.fut_snt0201">Serial Nbr Server-linked Seq</DD_KEY_DESC>
+			<DD_KEY_ID id="ddm_keys.fut_snt0201">INDX2           </DD_KEY_ID>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_key_segs">
+		<ID id="ddm_key_segs">DDM_KEY_SEGS</ID>
+		<RECORD id="ddm_key_segs.fut_snt020001">
+			<DD_TABLE_ALIAS id="ddm_key_segs.fut_snt020001">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_key_segs.fut_snt020001">00</DD_KEY_NUMBER>
+			<DD_SEGMENT_SEQ id="ddm_key_segs.fut_snt020001">01</DD_SEGMENT_SEQ>
+			<DD_SEGMENT_COL id="ddm_key_segs.fut_snt020001">DATA_SERVER     </DD_SEGMENT_COL>
+			<DD_SEGMENT_POS id="ddm_key_segs.fut_snt020001">1</DD_SEGMENT_POS>
+			<DD_SEGMENT_OFF id="ddm_key_segs.fut_snt020001">0</DD_SEGMENT_OFF>
+			<DD_SEGMENT_LEN id="ddm_key_segs.fut_snt020001">20</DD_SEGMENT_LEN>
+			<DD_SEGMENT_SORT id="ddm_key_segs.fut_snt020001">N</DD_SEGMENT_SORT>
+			<DD_SEGMENT_UNIQ id="ddm_key_segs.fut_snt020001">N</DD_SEGMENT_UNIQ>
+			<DD_SEGMENT_MATH id="ddm_key_segs.fut_snt020001">N</DD_SEGMENT_MATH>
+		</RECORD>
+		<RECORD id="ddm_key_segs.fut_snt020002">
+			<DD_TABLE_ALIAS id="ddm_key_segs.fut_snt020002">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_key_segs.fut_snt020002">00</DD_KEY_NUMBER>
+			<DD_SEGMENT_SEQ id="ddm_key_segs.fut_snt020002">02</DD_SEGMENT_SEQ>
+			<DD_SEGMENT_COL id="ddm_key_segs.fut_snt020002">SN_SERV_SEQ     </DD_SEGMENT_COL>
+			<DD_SEGMENT_POS id="ddm_key_segs.fut_snt020002">1</DD_SEGMENT_POS>
+			<DD_SEGMENT_OFF id="ddm_key_segs.fut_snt020002">20</DD_SEGMENT_OFF>
+			<DD_SEGMENT_LEN id="ddm_key_segs.fut_snt020002">5</DD_SEGMENT_LEN>
+			<DD_SEGMENT_SORT id="ddm_key_segs.fut_snt020002">N</DD_SEGMENT_SORT>
+			<DD_SEGMENT_UNIQ id="ddm_key_segs.fut_snt020002">N</DD_SEGMENT_UNIQ>
+			<DD_SEGMENT_MATH id="ddm_key_segs.fut_snt020002">N</DD_SEGMENT_MATH>
+		</RECORD>
+		<RECORD id="ddm_key_segs.fut_snt020101">
+			<DD_TABLE_ALIAS id="ddm_key_segs.fut_snt020101">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_key_segs.fut_snt020101">01</DD_KEY_NUMBER>
+			<DD_SEGMENT_SEQ id="ddm_key_segs.fut_snt020101">01</DD_SEGMENT_SEQ>
+			<DD_SEGMENT_COL id="ddm_key_segs.fut_snt020101">SERIAL_NBR      </DD_SEGMENT_COL>
+			<DD_SEGMENT_POS id="ddm_key_segs.fut_snt020101">0</DD_SEGMENT_POS>
+			<DD_SEGMENT_OFF id="ddm_key_segs.fut_snt020101">0</DD_SEGMENT_OFF>
+			<DD_SEGMENT_LEN id="ddm_key_segs.fut_snt020101">0</DD_SEGMENT_LEN>
+			<DD_SEGMENT_SORT id="ddm_key_segs.fut_snt020101">N</DD_SEGMENT_SORT>
+			<DD_SEGMENT_UNIQ id="ddm_key_segs.fut_snt020101">N</DD_SEGMENT_UNIQ>
+			<DD_SEGMENT_MATH id="ddm_key_segs.fut_snt020101">N</DD_SEGMENT_MATH>
+		</RECORD>
+		<RECORD id="ddm_key_segs.fut_snt020102">
+			<DD_TABLE_ALIAS id="ddm_key_segs.fut_snt020102">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_key_segs.fut_snt020102">01</DD_KEY_NUMBER>
+			<DD_SEGMENT_SEQ id="ddm_key_segs.fut_snt020102">02</DD_SEGMENT_SEQ>
+			<DD_SEGMENT_COL id="ddm_key_segs.fut_snt020102">DATA_SERVER     </DD_SEGMENT_COL>
+			<DD_SEGMENT_POS id="ddm_key_segs.fut_snt020102">0</DD_SEGMENT_POS>
+			<DD_SEGMENT_OFF id="ddm_key_segs.fut_snt020102">0</DD_SEGMENT_OFF>
+			<DD_SEGMENT_LEN id="ddm_key_segs.fut_snt020102">0</DD_SEGMENT_LEN>
+			<DD_SEGMENT_SORT id="ddm_key_segs.fut_snt020102">N</DD_SEGMENT_SORT>
+			<DD_SEGMENT_UNIQ id="ddm_key_segs.fut_snt020102">N</DD_SEGMENT_UNIQ>
+			<DD_SEGMENT_MATH id="ddm_key_segs.fut_snt020102">N</DD_SEGMENT_MATH>
+		</RECORD>
+		<RECORD id="ddm_key_segs.fut_snt020103">
+			<DD_TABLE_ALIAS id="ddm_key_segs.fut_snt020103">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_key_segs.fut_snt020103">01</DD_KEY_NUMBER>
+			<DD_SEGMENT_SEQ id="ddm_key_segs.fut_snt020103">03</DD_SEGMENT_SEQ>
+			<DD_SEGMENT_COL id="ddm_key_segs.fut_snt020103">SN_SERV_SEQ     </DD_SEGMENT_COL>
+			<DD_SEGMENT_POS id="ddm_key_segs.fut_snt020103">0</DD_SEGMENT_POS>
+			<DD_SEGMENT_OFF id="ddm_key_segs.fut_snt020103">0</DD_SEGMENT_OFF>
+			<DD_SEGMENT_LEN id="ddm_key_segs.fut_snt020103">0</DD_SEGMENT_LEN>
+			<DD_SEGMENT_SORT id="ddm_key_segs.fut_snt020103">N</DD_SEGMENT_SORT>
+			<DD_SEGMENT_UNIQ id="ddm_key_segs.fut_snt020103">N</DD_SEGMENT_UNIQ>
+			<DD_SEGMENT_MATH id="ddm_key_segs.fut_snt020103">N</DD_SEGMENT_MATH>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_cols">
+		<ID id="ddm_table_cols">DDM_TABLE_COLS</ID>
+		<RECORD id="ddm_table_cols.fut_snt02001">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt02001">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt02001">001</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt02001">FUT_DATA_SERVER </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt02001">DATA_SERVER     </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt02001">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt02001">20100518</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt02001">20100518</DD_LSTREV_DATE>
+			<DD_ATTR_LABL id="ddm_table_cols.fut_snt02001">Data Server Serial Nbr</DD_ATTR_LABL>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt02001">20</DD_ATTR_MAXL>
+			<DD_ATTR_PROM id="ddm_table_cols.fut_snt02001">Enter Data Server Serial #</DD_ATTR_PROM>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt02001">1</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt02002">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt02002">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt02002">002</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt02002">FUT_SN_SERV_SEQ </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt02002">SN_SERV_SEQ     </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt02002">Y</DD_FIELD_DELIM>
+			<DD_DELIM_CHAR id="ddm_table_cols.fut_snt02002">0A</DD_DELIM_CHAR>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt02002">20100518</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt02002">20100518</DD_LSTREV_DATE>
+			<DD_ATTR_LABL id="ddm_table_cols.fut_snt02002">Server linked Seq</DD_ATTR_LABL>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt02002">5</DD_ATTR_MAXL>
+			<DD_ATTR_PROM id="ddm_table_cols.fut_snt02002">Enter Serial Nbr Server-linked</DD_ATTR_PROM>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt02002">2</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt02003">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt02003">FUT_SNT02       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt02003">003</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt02003">FUT_SERIAL_NBR  </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt02003">SERIAL_NBR      </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt02003">Y</DD_FIELD_DELIM>
+			<DD_DELIM_CHAR id="ddm_table_cols.fut_snt02003">0A</DD_DELIM_CHAR>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt02003">20100518</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt02003">20100518</DD_LSTREV_DATE>
+			<DD_ATTR_LABL id="ddm_table_cols.fut_snt02003">Serial Number</DD_ATTR_LABL>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt02003">20</DD_ATTR_MAXL>
+			<DD_ATTR_PROM id="ddm_table_cols.fut_snt02003">Enter Serial Number (Basis)</DD_ATTR_PROM>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt02003">3</DD_ATTR_TIND>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_elements">
+		<ID id="ddm_elements">DDM_ELEMENTS</ID>
+		<RECORD id="ddm_elements.fut_data_server">
+			<DD_DATA_NAME id="ddm_elements.fut_data_server">FUT_DATA_SERVER </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_data_server">Data Server Serial #</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_data_server">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_data_server">20</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_data_server">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_data_server">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_data_server">20100518</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_data_server">20100518</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_data_server">E</DD_ATTR_CTYP>
+			<DD_ATTR_DCOM id="ddm_elements.fut_data_server">            </DD_ATTR_DCOM>
+			<DD_ATTR_DEXP id="ddm_elements.fut_data_server">            </DD_ATTR_DEXP>
+			<DD_ATTR_LABL id="ddm_elements.fut_data_server">Data Server Serial #</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_data_server">Data Server Serial #</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_data_server">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_sn_serv_seq">
+			<DD_DATA_NAME id="ddm_elements.fut_sn_serv_seq">FUT_SN_SERV_SEQ </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_sn_serv_seq">Serial Nbr Server-linked Seq</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_sn_serv_seq">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_sn_serv_seq">5</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_sn_serv_seq">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_sn_serv_seq">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_sn_serv_seq">20100518</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_sn_serv_seq">20100518</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_sn_serv_seq">E</DD_ATTR_CTYP>
+			<DD_ATTR_DCOM id="ddm_elements.fut_sn_serv_seq">            </DD_ATTR_DCOM>
+			<DD_ATTR_DEXP id="ddm_elements.fut_sn_serv_seq">            </DD_ATTR_DEXP>
+			<DD_ATTR_LABL id="ddm_elements.fut_sn_serv_seq">Serial Nbr Server linked Seq</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_sn_serv_seq">Serial Nbr Server linked Seq</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_sn_serv_seq">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_serial_nbr">
+			<DD_DATA_NAME id="ddm_elements.fut_serial_nbr">FUT_SERIAL_NBR  </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_serial_nbr">Serial Number (Basis)</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_serial_nbr">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_serial_nbr">20</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_serial_nbr">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_serial_nbr">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_serial_nbr">20100518</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_serial_nbr">20100518</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_serial_nbr">E</DD_ATTR_CTYP>
+			<DD_ATTR_DCOM id="ddm_elements.fut_serial_nbr">            </DD_ATTR_DCOM>
+			<DD_ATTR_DEXP id="ddm_elements.fut_serial_nbr">            </DD_ATTR_DEXP>
+			<DD_ATTR_LABL id="ddm_elements.fut_serial_nbr">Serial Number (Basis)</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_serial_nbr">Serial Number (Basis)</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_serial_nbr">0</DD_ATTR_PREC>
+		</RECORD>
+	</ALIAS>
+</FUT_SNT02>

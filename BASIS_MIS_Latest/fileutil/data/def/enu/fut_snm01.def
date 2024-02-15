@@ -1,0 +1,41 @@
+Table Definition Module
+FUT_SNM01 - Serial Number Master
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SNM01^^^^^Serial Number Master^Serial Number Master^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+SERIAL_NBR^FUT_SNM01^001^C^^3001^ine_serial_nbr^0^^^1^^Y^^^^^FUT_SERIAL_NBR^Serial Number (Basis)^Serial Number^Serial Number (Basis)^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Serial Number (Basis)^^^^^^^Y^
+SERIAL_DESC^FUT_SNM01^002^C^^3002^ine_serial_desc^0^^^2^^N^^^^^FUT_SERIAL_DESC^Serial Number Description^Serial Number Description^Serial Number Description^C^^E^^^^^^^^^^^^^^^^^^^^^^^60^^^^^^^^^^^0^Enter Serial Number Descriptio^^^^^^^Y^
+PRODUCT^FUT_SNM01^003^C^^3003^ine_product^0^^^3^^N^^^^^FUT_PRODUCT^Configuration Product ID^Configuration Product Id^Configuration Product Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Configuration Product ID^^^^^^^N^
+PLATFORM^FUT_SNM01^004^C^^3004^ine_platform^0^^^4^^N^^^^^FUT_PLATFORM^Configuration Platform ID^Configuration Platform Id^Configuration Platform Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Configuration Platform I^^^^^^^N^
+OS_LEVEL^FUT_SNM01^005^C^^3005^ine_os_level^0^^^5^^N^^^^^FUT_OS_LEVEL^OS Level ID^Os Level Id^Os Level Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter OS Level ID^^^^^^^N^
+PRODUCT_REV^FUT_SNM01^006^C^^3006^ine_product_rev^0^^^6^^N^^^^^FUT_PRODUCT_REV^Product Revision ID^Product Revision Id^Product Revision Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Product Revision ID^^^^^^^N^
+LICENSE_TYPE^FUT_SNM01^007^C^^3007^ine_license_type^0^^^7^^N^^^^^FUT_LICENSE_TYPE^Configurator License Type ID^Configurator License Type Id^Configurator License Type Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Configurator License Typ^^^^^^^N^
+MEDIA_TYPE^FUT_SNM01^008^C^^3008^ine_media_type^0^^^8^^N^^^^^FUT_MEDIA_TYPE^Configurator Media Type ID^Configurator Media Type Id^Configurator Media Type Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Configurator Media Type^^^^^^^Y^
+ACTIVE_FLAG^FUT_SNM01^009^C^^3009^ine_active_flag^0^^^9^^N^^^^^FUT_ACTIVE_FLAG^Serial Number Active Flag^Serial Number Active Flag^Serial Number Active Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Serial Number Active Fla^^^^^^^N^
+ORIG_SALE_DATE^FUT_SNM01^010^C^^^^^^^10^^N^^^^^FUT_ORIG_SALE_DA^Original Sales Date^Original Sales Date^Original Sales Date^C^^H^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Original Sales Date^^^^^^^N^
+CUSTOMER_NBR^FUT_SNM01^011^C^^3010^dis_customer_nbr^0^^^11^^N^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^Enter Customer Number^^^0^^^^N^
+PORT_ID^FUT_SNM01^012^C^^3011^ine_port_id^0^^^12^^N^^^^^FUT_PORT_ID^BASIS Port ID^Basis Port Id^Basis Port Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^Enter BASIS Port ID^^^^^^^N^
+FIRM_ID^FUT_SNM01^013^C^^3012^ine_firm_id^0^^^13^^N^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Firm ID^^^^^^^N^
+CONTRACT^FUT_SNM01^014^C^^3013^ine_contract^0^^^14^^N^^^^^FUT_CONTRACT^SAM/Developer Contract^SAM/Developer Contract^SAM/Developer Contract^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^2^^^^^^^^N^
+SAM_ACTIVE^FUT_SNM01^015^C^^3014^ine_sam_active^0^^^15^^N^^^^^FUT_SAM_ACTIVE^SAM Contract Active^SAM Contract Active^SAM Contract Active^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+AVAIL_EXPIRE^FUT_SNM01^016^C^^3015^ind_avail_expire^0^^^16^^N^^^C^^FUT_AVAIL_EXPIRE^Avail Expire^Avail Expire^Avail Expire^C^1^D^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^^^^^^^^N^
+DEALER_STR^FUT_SNM01^017^C^^3016^ine_dealer_str^0^^^17^^N^^^^^FUT_DEALER_STR^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^C^^E^^^^0^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Reserved For Dealer Use^^^^^^^Y^
+COMMENT^FUT_SNM01^018^C^^3017^ine_comment^0^^^18^^N^^^^^FUT_COMMENT^Serial Number Comment^Serial Number Comment^Serial Number Comment^C^^E^^^^^^^^^^^^^^^^^^^^^^^60^^^^^^^^^^^0^Enter Serial Number Comment^^^^^^^Y^
+USERS^FUT_SNM01^019^C^^3018^inn_users^0^^^19^^N^^^^^FUT_USERS^Number of users^Number of users^Number of users^N^^N^^^^^^^^^^^^^^^^^^^^^^^5^^^^^^^^^^^0^Enter Number of users^^^^^^^Y^
+DIST_RESET^FUT_SNM01^020^C^^3019^inn_dist_reset^0^^^20^^N^^^^^FUT_DIST_RESET^Dist Reset^Dist Rest^Dist Rest^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Reserved For Dealer Use^^^^^^^Y^
+AVAIL_SUPPORT^FUT_SNM01^021^C^^3020^inn_avail_support^0^^^21^^N^^^^^FUT_AVAIL_SUPPOR^Avail Support^Avail Support^Avail Support^N^^N^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SNM01^PRIMARY^FUT_SNM01.SERIAL_NBR                    ^FUT_SNM01.SERIAL_NBR$^RD_REC_DATA.SERIAL_NBR$^RD_REC_DATA.SERIAL_NBR$                 
+{KeyDefsEnd}
+{GridCols}
+001FUT_SNM01.SERIAL_NBR                    ;002FUT_SNM01.SERIAL_DESC                   ;003FUT_SNM01.PRODUCT                       ;004FUT_SNM01.PLATFORM                      ;005FUT_SNM01.OS_LEVEL                      ;006FUT_SNM01.PRODUCT_REV                   ;007FUT_SNM01.LICENSE_TYPE                  ;008FUT_SNM01.MEDIA_TYPE                    ;009FUT_SNM01.ACTIVE_FLAG                   ;011FUT_SNM01.CUSTOMER_NBR                  ;012FUT_SNM01.PORT_ID                       ;013FUT_SNM01.FIRM_ID                       ;014FUT_SNM01.CONTRACT                      ;015FUT_SNM01.SAM_ACTIVE                    ;016FUT_SNM01.AVAIL_EXPIRE                  ;017FUT_SNM01.DEALER_STR                    ;018FUT_SNM01.COMMENT                       ;019FUT_SNM01.USERS                         ;020FUT_SNM01.DIST_RESET                    ;021FUT_SNM01.AVAIL_SUPPORT                 ;
+{GridColsEnd}

@@ -1,0 +1,120 @@
+rem --- check to ensure that all invoices entered have images attached
+
+rem	setesc std_error
+rem	seterr std_error
+
+enter ape_invoicehdr, ape_invoicehdr$, sysinfo$
+
+rem --- Retrieve SYSINFO Data
+
+    rem ' sysinfo_template$=stbl("+SYSINFO_TPL",err=*next)
+    rem ' dim sysinfo$:sysinfo_template$
+    rem ' sysinfo$=stbl("+SYSINFO",err=*next)
+    firm_id$=sysinfo.firm_id$
+    user_id$=sysinfo.user_id$
+
+rem --- Open Files
+
+	num_files=1
+	dim open_tables$[1:num_files],open_opts$[1:num_files],open_chans$[1:num_files],open_tpls$[1:num_files]
+	open_tables$[1]="APM_INVIMAGE",open_opts$[1]="OTA"
+	gosub open_tables
+
+	apm_invimage=num(open_chans$[1]);dim apm_invimage$:open_tpls$[1]
+
+rem --- main loop
+
+invoices_found$ = ""
+
+while 1
+	read record(ape_invoicehdr, end=*break)ape_invoicehdr$
+
+	rem --- if the invoice has a zero amount no image is needed
+	if ape_invoicehdr.invoice_amt = 0 then continue
+	
+	read record(apm_invimage, key=ape_invoicehdr.firm_id$ + ape_invoicehdr.vendor_id$ + ape_invoicehdr.ap_inv_no$,err=*next)apm_invimage$
+	
+	found_one = 0
+	dim apm_invimage$:fattr(apm_invimage$)
+	read record(apm_invimage, end=*next)apm_invimage$
+	if ape_invoicehdr.firm_id$ + ape_invoicehdr.vendor_id$ + ape_invoicehdr.ap_inv_no$ = apm_invimage.firm_id$ + apm_invimage.vendor_id$ + apm_invimage.ap_inv_no$ then
+		found_one = 1
+	endif
+	
+	if !found_one then
+		invoices_found$ = invoices_found$ + "Vendor: " + ape_invoicehdr.vendor_id$ + " Invoice: " + ape_invoicehdr.ap_inv_no$ + $0A$
+	endif
+	
+wend
+
+if invoices_found$ <> "" then
+	msg_id$="GENERIC_OK"
+	dim msg_tokens$[1]
+	msg_tokens$[1]="The following invoices do not have images archived." + $0A$ + invoices_found$
+	gosub disp_message
+	goto std_exit
+else
+	exit
+endif
+
+
+open_tables:rem --- Open Tables
+
+	call stbl("+DIR_SYP")+"bac_open_tables.bbj",
+:		open_beg,
+:		open_end,
+:		open_tables$[all],
+:		open_opts$[all],
+:		open_chans$[all],
+:		open_tpls$[all],
+:		rd_table_chans$[all],
+:		open_batch,
+:		open_status$
+
+	if open_status$<>""
+		msg_id$="ENTRY_OPEN_ERROR"
+		dim msg_tokens$[1]
+			msg_tokens$[1]=open_status$
+		gosub disp_message
+		goto std_exit
+	endif
+
+	return
+
+disp_message:rem --- Display Message Dialog
+
+	call stbl("+DIR_SYP")+"bac_message.bbj",
+:		msg_id$,
+:		msg_tokens$[all],
+:		msg_opt$,
+:		rd_table_chans$[all]
+
+	return
+
+std_error: rem --- Standard error handler (01Apr2006)
+
+	err_text$=""
+	if tcb(5)<>0 and pgm(-1)=pgm(-2) err_text$=pgm(tcb(5),err=*next)
+	call stbl("+DIR_SYP")+"bac_error.bbj",err=std_error_exit,pgm(-2),str(tcb(5)),str(err),err_text$,err_act$
+	if pos("EXIT"=err_act$) goto std_error_exit
+	if pos("ESCAPE"=err_act$) seterr 0;setesc 0
+	if pos("RETRY"=err_act$) retry
+
+std_error_exit:
+
+	master_user$=cvs(stbl("+MASTER_USER",err=std_error_release),2)
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=std_error_release)
+	if cvs(sysinfo.user_id$,2)=master_user$ escape
+
+std_error_release:
+
+	status=999
+	if pgm(-1)<>pgm(-2) exit
+
+	release
+
+std_exit: rem --- Standard program end (01Mar2006)
+
+	release

@@ -1,0 +1,216 @@
+rem --- add the custom sprocs
+
+sproc_path$=stbl("+DIR_SPROCS")
+p=pos("/aon/" = sproc_path$)
+xPath$=sproc_path$(1,p)+"barista/"
+barista_cfg_path$=xPath$+stbl("+DIR_CFG")
+
+rem --- init for sql
+database$=stbl("+DBNAME")
+chan = sqlunt
+SQLOPEN(chan) database$
+
+goto create_proc
+
+drop_proc:
+
+	rem ' drop the procedures
+	sql_action$="DROP PROCEDURE"
+	
+	sproc_vw_name$="ARCMPSLS_BAR"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def		
+
+	sproc_vw_name$="SATOPCST_BAR_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def		
+
+	sproc_vw_name$="SATOPCST_SBR_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def		
+
+	sproc_vw_name$="SAREPTOT_BAR_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def		
+
+	sproc_vw_name$="SATOPREP_LIN_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def		
+
+	sproc_vw_name$="SATOPREP_SAR_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def		
+
+	sproc_vw_name$="SATOPREP_PIE_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def	
+
+	sproc_vw_name$="SATOPREP_SBR_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def	
+	
+	sproc_vw_name$="LICTYPE_SBR_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def	
+	
+	sproc_vw_name$="LICREGTYPE_PIE_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def	
+
+	sproc_vw_name$="LICTYPE_CUST_SBR_60"
+	sqlprep$=sql_action$+" "+sproc_vw_name$+" "
+	gosub create_sproc_def	
+
+	escape
+
+create_proc:
+
+	rem --- Dashboard: ARCMPSLS_BAR
+	sproc_vw_name$="ARCMPSLS_BAR"
+	sqlprep$="CREATE PROCEDURE ARCMPSLS_BAR "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, CUSTOMER_NBR CHAR(6) IN, "
+	sqlprep$=sqlprep$+"SLSPSN_CODE CHAR(3) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/ARCMPSLS_BAR.prc' '/mnt/data/aon_prod/aon_prod_current/barista/sys/config/enu/barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard SA Sales Compare - Bar Widget'"
+
+	gosub create_sproc_def	
+	print sproc_vw_name$; input *
+	
+	rem --- Dashboard: SATOPCST_BAR_60
+	sproc_vw_name$="SATOPCST_BAR_60"
+	sqlprep$="CREATE PROCEDURE SATOPCST_BAR_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, YEAR_TO_REPORT CHAR(7) IN, NUM_TO_LIST VARCHAR(2) IN)"
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/SATOPCST_BAR_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard SA Top Customers by Sales - Bar Widget'"
+
+	gosub create_sproc_def		
+	print sproc_vw_name$; input *
+	
+	satopcst_sbr_60:
+	rem --- Dashboard: SATOPCST_SBR_60
+	sproc_vw_name$="SATOPCST_SBR_60"
+	sqlprep$="CREATE PROCEDURE SATOPCST_SBR_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, YEAR CHAR(4) IN, NUM_TO_LIST VARCHAR(1) IN, "
+	sqlprep$=sqlprep$+"MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN, ALL_PROD_TYPES VARCHAR(50) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/SATOPCST_SBR_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard SA Top Customers by Sales - Stacked Bar Widget'"
+
+	gosub create_sproc_def		
+	print sproc_vw_name$; input *
+	
+	rem --- Dashboard: SAREPTOT_SBR_60
+	sproc_vw_name$="SAREPTOT_SBR_60"
+	sqlprep$="CREATE PROCEDURE SAREPTOT_SBR_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, YEAR CHAR(4) IN, NUM_TO_LIST VARCHAR(1) IN, "
+	sqlprep$=sqlprep$+"MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN, ALL_PROD_TYPES VARCHAR(50) IN)"   
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/SAREPTOT_SBR_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard SA Sales by Salesrep - Stacked Bar Widget'"
+
+	gosub create_sproc_def		
+	print sproc_vw_name$; input *
+	
+	rem --- Dashboard: SATOPREP_LIN_60
+	sproc_vw_name$="SATOPREP_LIN_60"
+	sqlprep$="CREATE PROCEDURE SATOPREP_LIN_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, INCLUDE_TYPE CHAR(1) IN, YEAR CHAR(4) IN, "
+	sqlprep$=sqlprep$+"NUM_TO_LIST VARCHAR(1) IN, MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/SATOPREP_LIN_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard SA Top Salesreps - Line Widget'"
+
+	gosub create_sproc_def	
+	print sproc_vw_name$; input *
+	
+	rem --- Dashboard: SATOPREP_SAR_60
+	sproc_vw_name$="SATOPREP_SAR_60"
+	sqlprep$="CREATE PROCEDURE SATOPREP_SAR_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, INCLUDE_TYPE CHAR(1) IN, YEAR CHAR(4) IN, "
+	sqlprep$=sqlprep$+"NUM_TO_LIST VARCHAR(1) IN, MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/SATOPREP_SAR_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard SA Top Salesreps - Stacked Area Widget'"
+
+	gosub create_sproc_def		
+	print sproc_vw_name$; input *
+	
+	rem --- Dashboard: SATOPREP_PIE_60
+	sproc_vw_name$="SATOPREP_PIE_60"
+	sqlprep$="CREATE PROCEDURE SATOPREP_PIE_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, YEAR CHAR(4) IN, NUM_TO_LIST VARCHAR(1) IN, "
+	sqlprep$=sqlprep$+"MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/SATOPREP_PIE_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard SA Top Salesreps - Pie Widget'"
+
+	gosub create_sproc_def		
+	print sproc_vw_name$; input *
+	
+	satoprep_sbr_60:
+	rem --- Dashboard: SATOPREP_SBR_60
+	sproc_vw_name$="SATOPREP_SBR_60"
+	sqlprep$="CREATE PROCEDURE SATOPREP_SBR_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, YEAR CHAR(4) IN, NUM_TO_LIST VARCHAR(1) IN, "
+	sqlprep$=sqlprep$+"MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN, ALL_PROD_TYPES VARCHAR(50) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/SATOPREP_SBR_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard SA Top Salesreps - Stacked Bar Widget'"
+
+	gosub create_sproc_def	
+	
+	print sproc_vw_name$; input *
+	
+	LICTYPE_SBR_60:
+	rem --- LICTYPE_SBR_60
+	sqlprep$="CREATE PROCEDURE LICTYPE_SBR_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, REG_TYPES VARCHAR(4) IN, NUM_TO_LIST VARCHAR(4) IN, "
+	sqlprep$=sqlprep$+"MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN, ALL_PROD_TYPES VARCHAR(50) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/LICTYPE_SBR_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard Summarizes active licenses by Other, Perpetual, Other'"
+
+	gosub create_sproc_def		
+
+	print sproc_vw_name$; input *
+
+	LICREGTYPE_PIE_60:
+	rem --- LICREGTYPE_PIE_60
+	sqlprep$="CREATE PROCEDURE LICREGTYPE_PIE_60 "
+	sqlprep$=sqlprep$+"(FIRM_ID CHAR(2) IN, REG_TYPES VARCHAR(4) IN, NUM_TO_LIST VARCHAR(4) IN, "
+	sqlprep$=sqlprep$+"MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN, ALL_PROD_TYPES VARCHAR(50) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/LICREGTYPE_PIE_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard returns lic registration data in a pie chart'"
+	
+	gosub create_sproc_def
+
+	print sproc_vw_name$; input *
+	
+	LICTYPE_CUST_SBR_60:
+	rem --- LICTYPE_CUST_SBR_60
+	sqlprep$="CREATE PROCEDURE LICTYPE_CUST_SBR_60 "
+	sqlprep$=sqlprep$+"(GROUP VARCHAR(8) IN, NUM_TO_LIST VARCHAR(4) IN, "
+	sqlprep$=sqlprep$+"MASKS VARCHAR(1) IN, BARISTA_WD VARCHAR(50) IN, ALL_PROD_TYPES VARCHAR(50) IN)"	
+	sqlprep$=sqlprep$+"'/mnt/data/aon_prod/apps/extramenu/prog/LICTYPE_CUST_SBR_60.prc' '"+barista_cfg_path$+"barista.cfg' "
+	sqlprep$=sqlprep$+"RESULT_SET "
+	sqlprep$=sqlprep$+"{_begin_}{_end_} 'Dashboard returns lic registration data by perpetual, virtual and other'"
+
+	gosub create_sproc_def	
+	
+	print sproc_vw_name$; input *
+	
+	print "all loaded"
+	stop
+	
+	create_sproc_def:rem --- Create SPROC definitions
+
+	
+	SQLPREP(chan) sqlprep$
+	SQLEXEC(chan)
+
+	return
+
+end

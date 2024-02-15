@@ -1,0 +1,229 @@
+REM /**
+REM  * Audev App.bbj
+REM  * @author jayasakthidevendiran
+REM  *
+REM  */
+
+declare auto BBjStaticText text1!
+declare auto BBjStaticText text2!
+declare auto BBjRecordSet RecordSet!
+declare auto BBjRecordData RecordData!
+declare auto BBjVector serialNumbers!
+declare auto BBjListBox myListBox!
+declare auto BBjListBox myListBox2!
+declare auto BBjVector myVector!
+DECLARE SQLProperties sqlProps!
+declare auto BBjWindow myWindow!
+
+USE ::SQLProperties.bbj::SQLProperties
+
+LET myAPI!=BBjAPI()
+
+SYSGUI=UNT
+
+OPEN (SYSGUI) "X0"
+
+LET mySysGui!=myAPI!.getSysGui()
+
+csspath! = dsk("") + dir("") + "audev.css"
+
+css! = java.nio.file.Files.readAllBytes(java.nio.file.Path.of(csspath!))
+
+web! = BBjAPI().getWebManager()
+web!.injectStyle(css!, 0)
+
+tmp$ = stbl("!COMPAT", "LEGACY_FONTS=TRUE")
+
+myWindow! = mySysGui!.addWindow(mySysGui!.getAvailableContext(),10, 10, 550, 420, "Serial Number Renewal",$01101000$)
+
+myWindow!.addPanelStyle("top-frame")
+
+appWindow! = myWindow!.addChildWindow("", $00108800$, mySysGui!.getAvailableContext())
+appWindow!.addStyle("app-window")
+
+
+renewWindow! = appWindow!.addChildWindow("", $00108800$, mySysGui!.getAvailableContext())
+renewWindow!.addStyle("renew-Window")
+
+myListBox! = renewWindow!.addListBox(101, 40, 80, 120, 200, "")
+myListBox!.setMultipleSelection(1)
+myListBox!.setAttribute("label","Serial Numbers FOR RENEWAL")
+
+
+buttonWindow! = renewWindow!.addChildWindow("", $00108800$, mySysGui!.getAvailableContext())
+buttonWindow!.addStyle("button-Window")
+
+myListBox2! = renewWindow!.addListBox(102, 350, 80, 120, 200, "")
+myListBox2!.setMultipleSelection(1)
+myListBox2!.setAttribute("label","Serial Numbers that are NOT RENEWED")
+
+selectButton! = buttonWindow!.addButton(103, 180, 110, 140, 50, "<< Select for Renewal")
+selectButton!.setAttribute("theme","primary")
+
+doNotRenewButton! = buttonWindow!.addButton(105, 180, 200, 140, 50, "Do Not Renew >>")
+doNotRenewButton!.setAttribute("theme","primary")
+
+REM Set the "Select" button's callback
+selectButton!.setCallback(selectButton!.ON_BUTTON_PUSH, "selectButtonClick")
+
+REM Set the "Reverse" button's callback
+doNotRenewButton!.setCallback(doNotRenewButton!.ON_BUTTON_PUSH, "reverseButtonClick")
+
+text3! = appWindow!.addStaticText(203, 30, 300, 480, 20, "Press and hold [Ctrl] key while clicking the mouse to select multiple items in a column.")
+
+optionsWindow! = appWindow!.addChildWindow("", $00108800$, mySysGui!.getAvailableContext())
+optionsWindow!.addStyle("options-Window")
+renewButton! = optionsWindow!.addButton(104, 160, 350, 90, 40, "Renew")
+renewButton!.setAttribute("theme","primary")
+
+renewButton!.setCallback(renewButton!.ON_BUTTON_PUSH, "renewButtonClick")
+
+exitButton! = optionsWindow!.addButton(106, 280, 350, 90, 40, "Exit")
+exitButton!.setAttribute("theme","primary")
+
+exitButton!.setCallback(exitButton!.ON_BUTTON_PUSH, "APP_CLOSE")
+
+
+
+REM Add items into the list box
+gosub FILL_LISTBOX
+
+REM Register the CALLBACK routines
+CALLBACK(ON_CLOSE,APP_CLOSE,mySysGui!.getContext())
+
+REM Process Events
+PROCESS_EVENTS
+
+REM Callback routine called when the user closes the application window
+APP_CLOSE:
+    RELEASE
+
+FILL_LISTBOX:
+    serialNumbers! = BBjAPI().makeVector()
+
+    rem ' this will return a full database connect string using localhost
+    rem ' the userid and password will be included. It is for a special user called ec
+    rem ' this allows you use a special system user and not having to tie the connect to
+    rem ' you userid
+    sqlProps! = new SQLProperties()
+    connect$ = sqlProps!.getDBConnect()
+    select$ = "select trim(SERIAL_NBR) as SERIAL_NBR from SN_SELECT where SELECTED = '' order by SERIAL_NBR"
+    RecordSet! = BBJAPI().createSQLRecordSet(connect$,"",select$)
+
+    REM Load the serial numbers into the listbox
+    if (RecordSet!.isEmpty()) then
+   msg = msgbox("There are no serial numbers for renewal", BBjSysGui.MSGBOX_ICON_INFORMATION,"No Serial Numbers for Renewal", mode="theme=info")
+
+    else
+        RecordSet!.first()
+        while 1
+            RecordData! = RecordSet!.getCurrentRecordData()
+            sn! = str(RecordData!.getFieldValue("SERIAL_NBR"))
+            serialNumbers!.addItem(sn!)
+            RecordSet!.next(err=*BREAK)
+        wend
+
+        myListBox2!.insertItems(0, serialNumbers!)
+    fi
+return
+
+REM Event callback function for the "Select" button click
+selectButtonClick:
+    declare BBjVector selectedSerialNumbers!
+    event! = mySysGui!.getLastEvent()
+    selectedSerialNumbers! = myListBox2!.getSelectedIndices()
+
+    IF (selectedSerialNumbers!.size()=0) OR (selectedSerialNumbers!.get(0)=-1)
+        msg = msgbox("Please Select a Serial Number", BBjSysGui.MSGBOX_ICON_STOP,"Serial Number Not Selected", mode="theme=danger")
+    ELSE
+        FOR i = selectedSerialNumbers!.size() -1 to 0 step -1
+            index = num(selectedSerialNumbers!.get(i))
+            IF index >= 0 AND index < myListBox2!.getItemCount()
+                number! = myListBox2!.getItemAt(index)
+                myListBox!.addItem(number!)
+                myListBox2!.removeItemAt(index)
+            else
+                msg = msgbox("Please Select a Serial Number", BBjSysGui.MSGBOX_ICON_STOP,"Serial Number Not Selected", mode="theme=danger")
+                BREAK
+            fi
+        NEXT i
+    fi
+        myListBox!.deselectAll()
+        myListBox2!.deselectAll()
+RETURN
+
+REM Event callback function for the "Reverse" button click
+reverseButtonClick:
+    declare BBjVector reverseSerialNumbers!
+    event! = mySysGui!.getLastEvent()
+    reverseSerialNumbers! = myListBox!.getSelectedIndices()
+
+     IF (reverseSerialNumbers!.size()=0) OR (reverseSerialNumbers!.get(0)=-1)
+        msg = msgbox("Please Select a Serial Number", BBjSysGui.MSGBOX_ICON_STOP,"Serial Number Not Selected", mode="theme=danger")
+     ELSE
+        rem we are iterating backwards so we can remove items from the list without messing up with the selected indices
+        FOR i = reverseSerialNumbers!.size() -1 to 0 step -1
+            index = num(reverseSerialNumbers!.get(i))
+            IF index >= 0 AND index < myListBox!.getItemCount()
+                number! = myListBox!.getItemAt(index)
+                myListBox2!.addItem(number!)
+                myListBox!.removeItemAt(index)
+             else
+                msg = msgbox("Please Select a Serial Number", BBjSysGui.MSGBOX_ICON_STOP,"Serial Number Not Selected", mode="theme=danger")
+                BREAK
+            fi
+        NEXT i
+     FI
+        myListBox2!.deselectAll()
+        myListBox!.deselectAll()
+RETURN
+
+REM Event callback function for the "Renew" button click
+renewButtonClick:
+
+    declare BBjVector serialNumbers!
+    event! = mySysGui!.getLastEvent()
+    serialNumbers! = myListBox!.getAllItems()
+
+   IF serialNumbers!.size() > 0 then
+      serialNumberList$ = ""
+        FOR i = 0 TO serialNumbers!.size() - 1
+            serialNumberList$ = serialNumberList$ + "'" + serialNumbers!.get(i) + "',"
+        NEXT i
+        serialNumberList$ = serialNumberList$(1,len(serialNumberList$)-1)
+
+
+        rem use serialNumberList!
+       sqlProps! = new SQLProperties()
+
+       connect$ = sqlProps!.getDBConnect()
+
+      select$ = "select * from SN_SELECT WHERE SERIAL_NBR IN (" + serialNumberList$ + ")"
+
+     RecordSet! = BBJAPI().createSQLRecordSet(connect$,"",select$)
+     RecordSet!.first()
+
+    while 1
+
+        RecordData! = RecordSet!.getCurrentRecordData()
+
+        RecordData!.setFieldValue("SELECTED","Y")
+
+        RecordSet!.update(RecordData!)
+
+        RecordSet!.next(err=*BREAK)
+
+    wend
+
+    Call "../basisaon/aon/bas/roll_dates.pgm"
+
+    msg=msgbox("Serial Numbers Renewed Successfully!", BBjSysGui.MSGBOX_ICON_INFORMATION, " Renewal Completed", mode="theme=success")
+    myListBox!.removeAllItems()
+else
+ msg = msgbox("There are NO Serial Numbers Selected for Renewal", BBjSysGui.MSGBOX_ICON_INFORMATION,"No Serial Numbers for Renewal", mode="theme=info")
+Fi
+
+ RETURN
+
+
+

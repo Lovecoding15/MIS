@@ -1,0 +1,91 @@
+1EN:
+{
+Subject: <custnbr> <custname> <sn> with <users> user(s) automatic license registration failure, action required
+
+We have detected that the Automatic Re-registration of the perpetual license on your production server, <sn> with <users> users <enduser>, has failed on the last two attempts. If no action is taken it will expire on <expirationdate>. Please use the admin utility to "Register and install a license automatically" from the machine that is running the BLM. If you can manually initiate the admin utility's "Register and install a license automatically" from the machine that is running the BLM, then you can be sure that the Automatic Re-registration will work in the future. If you have any questions, do not hesitate to contact your BASIS representative or support@basis.cloud for assistance. 
+<addEvalText>
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+2EN:
+{
+Subject: <custnbr> <custname> <sn> with <users> user(s) automatic license registration failure, urgent action required
+
+We have detected that the Automatic Re-registration of the perpetual license on your production server, <sn> with <users> users <enduser>, has failed on the past five attempts. If no action is taken it will expire on <expirationdate>. Please use the admin utility to "Register and install a license automatically" from the machine that is running the BLM. If you can manually initiate the admin utility's "Register and install a license automatically" from the machine that is running the BLM, then you can be sure that the Automatic Re-registration will work in the future. If you have any questions, do not hesitate to contact your BASIS representative or support@basis.cloud for assistance. 
+<addEvalText>
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+3EN:
+{
+Subject: <custnbr> <custname> <sn> with <users> user(s) automatic license registration failure, immediate action required
+
+Your perpetual production license, <sn> with <users> users <enduser>, is set to expire in a week. We have detected that the Automatic Re-registration of the perpetual license on your production server has failed on the past fourteen (14) attempts. If no action is taken it will expire on <expirationdate>. Please use the admin utility to "Register and install a license automatically" from the machine that is running the BLM. If you can manually initiate the admin utility's "Register and install a license automatically" from the machine that is running the BLM, then you can be sure that the Automatic Re-registration will work in the future. If you have any questions, do not hesitate to contact your BASIS representative or support@basis.cloud for assistance. 
+<addEvalText>
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+4EN:
+{
+Subject: <custnbr> <custname> <sn> with <users> user(s) automatic license registration failure, action required today, system will nag within 24 hours
+
+Your production license, <sn> with <users> users <enduser>, is set to expire in less than 24hours. We have detected that the Automatic Re-registration of the perpetual license on your production server has failed on the past twenty (20) attempts. If no action is taken it will expire on <expirationdate>. Please use the admin utility to "Register and install a license automatically" from the machine that is running the BLM. If you can manually initiate the admin utility's "Register and install a license automatically" from the machine that is running the BLM, then you can be sure that the Automatic Re-registration will work in the future.  If you have any questions, do not hesitate to contact your BASIS representative or support@basis.cloud for assistance. 
+
+If you have received this last and final email alert and you are unable to execute the instructions included in it to re-register your BASIS license, you have access to a temporary fix. You can self-serve a perpetual license manually to keep your production machine running. See this document to learn how. 
+
+https://docs.google.com/document/d/1ozNii_JXxQzZNrn_vPU1BFWknF4OiybCbNHdLXmly_A/edit?usp=sharing  
+<addEvalText>
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+5EN:
+{
+Subject: Annual license re-registration is due - <custnbr> <custname> <sn> with <users> user(s), action required
+
+
+Please contact customer-service@basis.cloud or sales@basis.cloud to purchase a reset for this license. Re-registration is required within 45 days to ensure continued operation of the license. Resets are at no cost for licenses covered by SAM through the next annual renewal date.
+
+This process can be eliminated by converting your license to a perpetual license which does not require resets or manual intervention for continued operation. If you have any questions, do not hesitate to contact your BASIS representative or BASIS customer service for assistance. 
+<addEvalText>
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+6EN:
+{
+Subject: Annual license re-registration is due - <custnbr> <custname> <sn> with <users> user(s), urgent action required
+
+Please contact customer-service@basis.cloud or sales@basis.cloud to purchase a reset for this license. Re-registration is required within 14 days to ensure continued operation of the license. Resets are at no cost for licenses covered by SAM through the next annual renewal date.
+<addEvalText>
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+7EN:
+{
+Subject: Annual license re-registration is due - <custnbr> <custname> <sn> with <users> user(s), action required today, system will nag within 24 hours
+
+Please contact customer-service@basis.cloud or sales@basis.cloud to purchase a reset for this license. Re-registration is required within 24 hours to ensure continued operation of the license. Resets are at no cost for licenses covered by SAM through the next annual renewal date.
+<addEvalText>
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}

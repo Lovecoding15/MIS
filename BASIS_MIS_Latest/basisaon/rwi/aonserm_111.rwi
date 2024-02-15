@@ -1,0 +1,50 @@
+// Print serial number transaction detail   <serm_111>
+
+enter snm01;
+
+display/header "Invoice Date       Type Rev    Users  Auth code    Licctr";
+for each snt01 of snm01
+{
+find/noerror csm04 using snt01.firm_id+snt01.product_rev;  
+rv$="";
+if available(csm04) then
+	{ rv$=cvs(csm04.description,3);
+	p=pos(" "=rv$);if p=0 then p=len(rv$);
+	rv$=rv$(1,p); }
+call/nowindow "(BBX)aondate.bbx",snt01.trans_date,dt$,"U";
+display/notitle snt01.ar_inv_nbr
+	dt$ /col=9
+	snt01.type_of_sale /col=20
+	rv$ /col=25
+	snt01.users /col=32/mask="-###0"
+	snt01.auth_code /col=39
+	snt01.license_cnt/col=55/mask="#";
+}
+
+firstorder=1;
+for each are83 where serial_nbr=snm01.serial_nbr
+{
+find/noerror are13 using are83$(1,20);
+if available(are13)=0 then continue;
+find/noerror are03 using are83$(1,17)+"000";
+if available(are03)=0 then continue;
+init are73;
+find/noerror are73 using are83$(1,20);
+if firstorder then {display "* Pending Order *";firstorder=0;}
+call/nowindow "(BBX)aondate.bbx",are03.invoice_date,dt$,"U";
+line$=are73.type_of_sale;
+find/noerror csm04 using are13.firm_id+item_number(10,3);
+rv$=fill(4);
+if available(csm04) then
+	{rv$=cvs(csm04.description,3);
+	p=pos(" "=rv$);if p=0 then p=len(rv$);
+	rv$=rv$(1,p)+fill(4); }
+line$=line$+"  "+rv$(1,4)+"   "+str(are73.users:"-###0")+
+"  "+are83.auth_code+" "+str(are83.license_cnt:"#");
+if are83.action="D" then line$="Deactivated";
+if are83.snhist_flag="Y" then line$="Updated- See Invoice# "+are03.ar_inv_nbr;
+display/notitle are83.order_number
+	dt$ /col=9
+	line$/col=20;
+}
+//

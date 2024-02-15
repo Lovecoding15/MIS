@@ -1,0 +1,189 @@
+rem ' trigger code to sync changes to ARM_CUSTMAST to Goldmine contact1 and contact2
+rem ' after write trigger on ARM_CUSTMAST
+
+rem ' set opts
+SETOPTS $0800C02000002040$
+
+use java.util.Calendar
+use java.lang.Long
+
+declare BBjString time!
+
+rem ' do settrace
+trace = unt
+open(trace,mode="O_TRUNC")"c:/zwork/basis/goldmine/connection/triggertrace.log"
+rem ' settrace(trace)
+
+inTemp$ = "FIRM_ID:C(2),CUSTOMER_ID:C(6*=10),CUSTOMER_NAME:C(30),ADDR_LINE_1:C(24),ADDR_LINE_2:C(24),ADDR_LINE_3:C(24),ZIP_CODE:C(9),"
+inTemp$ = inTemp$ + "PHONE_NO:C(20),PHONE_EXTEN:C(4),RESALE_NO:C(20),ALT_SEQUENCE:C(10),RESERVED_STR:C(3),AR_SHIP_VIA:C(10),"
+inTemp$ = inTemp$ + "FAX_NO:C(20),ADDR_LINE_4:C(24),CITY:C(22),STATE_CODE:C(2),RETAIN_CUST:C(1),CONTACT_NAME:C(20),DB_NO:C(9),"
+inTemp$ = inTemp$ + "SIC_CODE:C(8),COUNTRY:C(24),FOB:C(15),RESERVED_STR_02:C(22),OPENED_DATE:C(8*=10),CNTRY_ID:C(2)"
+dim inRec$:inTemp$
+
+declare BBjTriggerData trigger!
+trigger! = BBjAPI().getFileSystem().getTriggerData()
+inRec$ = trigger!.getWriteBuffer()
+inRec$ = field(inRec$)
+
+connURL$ = "jdbc:sqlserver://localhost:1433;databaseName=BaristaAddon;user=sa;password=Password1;"
+java.lang.Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver")
+
+rem ' find the accountno for this contact
+sql$ = "SELECT * FROM dbo.contact2 WHERE dbo.contact2.Usourcekey = '" + inRec.firm_id$ + inRec.customer_id$ + "'"
+chan = sqlunt
+sqlopen(chan)connURL$
+sqlprep(chan)sql$
+sqlexec(chan)
+dim rec$:sqltmpl(chan)
+
+accountno$=""
+rec$=sqlfetch(chan, err=*next); accountno$ = cvs(rec.accountno$,3)
+
+if accountno$ <> ""
+
+	rem ' now update contact1
+
+	sql$ = "UPDATE dbo.contact1 set "
+	sql$ = sql$ + "dbo.contact1.COMPANY='" + cvs(inRec.CUSTOMER_NAME$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.CONTACT='" + cvs(inRec.CONTACT_NAME$,3) + "', "
+
+	phoneno$ = cvs(inRec.PHONE_NO$,3)
+	if len(phoneno$) = 10 then
+		phoneno$ = "(" + phoneno$(1,3) + ")" + phoneno$(4,3) + "-" + phoneno$(7)
+	else
+		if len(phoneno$) = 7 then
+			phoneno$ = phoneno$(1,3) + "-" + phoneno$(4)
+		endif
+	endif
+	sql$ = sql$ + "dbo.contact1.PHONE1='" + phoneno$ + "', "
+
+	faxno$ = cvs(inRec.FAX_NO$,3)
+	if len(faxno$) = 10 then
+		faxno$ = "(" + faxno$(1,3) + ")" + faxno$(4,3) + "-" + faxno$(7)
+	else
+		if len(faxno$) = 7 then
+			faxno$ = faxno$(1,3) + "-" + faxno$(4)
+		endif
+	endif
+	sql$ = sql$ + "dbo.contact1.FAX='" + faxno$ + "', "
+
+	sql$ = sql$ + "dbo.contact1.EXT1='" + cvs(inRec.PHONE_EXTEN$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.ADDRESS1='" + cvs(inRec.ADDR_LINE_1$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.ADDRESS2='" + cvs(inRec.ADDR_LINE_2$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.ADDRESS3='" + cvs(inRec.ADDR_LINE_3$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.CITY='" + cvs(inRec.CITY$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.STATE='" + cvs(inRec.STATE_CODE$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.ZIP='" + cvs(inRec.ZIP_CODE$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.COUNTRY='" + cvs(inRec.CNTRY_ID$,3) + "', "
+	sql$ = sql$ + "dbo.contact1.U_COMPANY='" + cvs(inRec.CUSTOMER_NAME$,7) + "', "
+	sql$ = sql$ + "dbo.contact1.U_CONTACT='" + cvs(inRec.CONTACT_NAME$,7) + "', "
+	sql$ = sql$ + "dbo.contact1.U_CITY='" + cvs(inRec.STATE_CODE$,7) + "', "
+	sql$ = sql$ + "dbo.contact1.U_COUNTRY='" + cvs(inRec.CNTRY_ID$,7) + "' "
+	sql$ = sql$ + "WHERE dbo.contact1.accountno = '" + accountno$ + "'"
+
+	write record(trace)sql$
+
+	sqlprep(chan)sql$
+	sqlexec(chan)
+	dim rec$:sqltmpl(chan,ind=1)
+	rec$=sqlfetch(chan,ind=1)
+	rem ' write record(trace)"contact1 rows affected: " + str(rec.rows_affected)
+
+else
+
+	rem ' create a new entry
+
+	rem ' contact1
+	
+	rem ' create accountno
+	time! = new Long(Calendar.getInstance().getTimeInMillis()).toString()
+	accountno$ = "B5" + date(0:"%Mz%Dz") + time!
+
+	rem ' create recid
+	recid$ = new Long(Calendar.getInstance().getTimeInMillis()).toString()
+	
+	sql$ = "INSERT INTO dbo.contact1 (dbo.contact1.ACCOUNTNO, dbo.contact1.COMPANY, dbo.contact1.CONTACT, "
+	sql$ = sql$ + "dbo.contact1.PHONE1, dbo.contact1.FAX, dbo.contact1.EXT1, dbo.contact1.ADDRESS1, dbo.contact1.ADDRESS2, "
+	sql$ = sql$ + "dbo.contact1.ADDRESS3, dbo.contact1.CITY, dbo.contact1.STATE, dbo.contact1.ZIP, dbo.contact1.COUNTRY, "
+	sql$ = sql$ + "dbo.contact1.STATUS, dbo.contact1.OWNER, dbo.contact1.U_COMPANY, dbo.contact1.U_CONTACT, dbo.contact1.U_LASTNAME, "
+	sql$ = sql$ + "dbo.contact1.U_CITY, dbo.contact1.U_STATE, dbo.contact1.U_COUNTRY, dbo.contact1.U_KEY1, dbo.contact1.U_KEY2, "
+	sql$ = sql$ + "dbo.contact1.U_KEY3, dbo.contact1.U_KEY4, dbo.contact1.U_KEY5, dbo.contact1.recid) "	
+
+	sql$ = sql$ + "VALUES ('" + accountno$ + "', "
+	sql$ = sql$ + "'" + cvs(inRec.CUSTOMER_NAME$,3) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.CONTACT_NAME$,3) + "', "
+	
+	phoneno$ = cvs(inRec.PHONE_NO$,3)
+	if len(phoneno$) = 10 then
+		phoneno$ = "(" + phoneno$(1,3) + ")" + phoneno$(4,3) + "-" + phoneno$(7)
+	else
+		if len(phoneno$) = 7 then
+			phoneno$ = phoneno$(1,3) + "-" + phoneno$(4)
+		endif
+	endif
+	sql$ = sql$ + "'" + phoneno$ + "', "
+	
+	faxno$ = cvs(inRec.FAX_NO$,3)
+	if len(faxno$) = 10 then
+		faxno$ = "(" + faxno$(1,3) + ")" + faxno$(4,3) + "-" + faxno$(7)
+	else
+		if len(faxno$) = 7 then
+			faxno$ = faxno$(1,3) + "-" + faxno$(4)
+		endif
+	endif
+	
+	sql$ = sql$ + "'" + faxno$ + "', "
+	sql$ = sql$ + "'" + cvs(inRec.PHONE_EXTEN$,3) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.ADDR_LINE_1$,3) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.ADDR_LINE_2$,3) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.ADDR_LINE_3$,3) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.CITY$,3) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.STATE_CODE$,3) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.ZIP_CODE$,3) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.CNTRY_ID$,3) + "', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'" + cvs(inRec.CUSTOMER_NAME$,7) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.CONTACT_NAME$,7) + "', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'" + cvs(inRec.CITY$,7) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.STATE_CODE$,7) + "', "
+	sql$ = sql$ + "'" + cvs(inRec.CNTRY_ID$,7) + "', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'" + recid$ + "')"
+
+	write record(trace)sql$
+	sqlprep(chan)sql$
+	sqlexec(chan)
+	dim rec$:sqltmpl(chan,ind=1)
+	rec$=sqlfetch(chan,ind=1)
+	rem ' write record(trace)"contact1 rows affected: " + str(rec.rows_affected)
+	wait .25
+
+	rem ' contact2
+
+	rem ' create recid
+	recid$ = new Long(Calendar.getInstance().getTimeInMillis()).toString()
+	
+	sql$ = "INSERT INTO dbo.contact2 (dbo.contact2.ACCOUNTNO, dbo.contact2.USOURCEKEY, dbo.contact2.recid) "
+	sql$ = sql$ + "VALUES ('" + accountno$ + "', "
+	sql$ = sql$ + "'" + inRec.FIRM_ID$ + inRec.CUSTOMER_ID$ + "', "
+	sql$ = sql$ + "'" + recid$ + "')"
+	
+	write record(trace)sql$
+	sqlprep(chan)sql$
+	sqlexec(chan)
+	dim rec$:sqltmpl(chan,ind=1)
+	rec$=sqlfetch(chan,ind=1)
+	rem ' write record(trace)"contact2 rows affected: " + str(rec.rows_affected)
+
+endif
+
+sqlclose(chan)
+rem ' endtrace
+rem ' close(trace)
+end

@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_MNU_ITEM</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<MOUNT_SYS_ID>PARTNERQUERIES  </MOUNT_SYS_ID>
+		<MENUITEM_ID>ca8c6aa3-e974-4fc6-80ea-e06d75f39317</MENUITEM_ID>
+		<MENU_DESC>Partner Queries</MENU_DESC>
+		<IMAGE>im_menua_customer_mgt.png</IMAGE>
+		<NO_SHOW> </NO_SHOW>
+		<EXPAND>N</EXPAND>
+		<NO_ACTION> </NO_ACTION>
+		<OPT_TYPE>M</OPT_TYPE>
+		<TABLE_ID>                </TABLE_ID>
+		<MULT_PROC> </MULT_PROC>
+		<NO_BUI> </NO_BUI>
+		<NO_SDI> </NO_SDI>
+		<NO_MDI> </NO_MDI>
+		<OPT_ID>PQY_MAIN            </OPT_ID>
+		<ASC_COMP_ID>01007514</ASC_COMP_ID>
+		<ASC_PROD_ID>PQY</ASC_PROD_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+		<INDENTS>0</INDENTS>
+		<EXPANDABLE>Y</EXPANDABLE>
+		<PREV_ITEM_ID>                                    </PREV_ITEM_ID>
+		<NEXT_ITEM_ID>d471a89f-ecd8-402c-91b5-02fa5ab118e5</NEXT_ITEM_ID>
+		<INTERNAL>0</INTERNAL>
+		<EXTERNAL>0</EXTERNAL>
+		<PARTNER>0</PARTNER>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PARTNERQUERIES  </MOUNT_SYS_ID>
+		<MENUITEM_ID>d471a89f-ecd8-402c-91b5-02fa5ab118e5</MENUITEM_ID>
+		<MENU_DESC>Inactive Partners</MENU_DESC>
+		<IMAGE>im_menui_table.png</IMAGE>
+		<NO_SHOW> </NO_SHOW>
+		<EXPAND>N</EXPAND>
+		<NO_ACTION> </NO_ACTION>
+		<OPT_TYPE>T</OPT_TYPE>
+		<TABLE_ID>PQY_INACTIVE_PAR</TABLE_ID>
+		<MULT_PROC> </MULT_PROC>
+		<NO_BUI> </NO_BUI>
+		<NO_SDI> </NO_SDI>
+		<NO_MDI> </NO_MDI>
+		<OPT_ID>PQY_INACTIVE_PAR    </OPT_ID>
+		<ASC_COMP_ID>01007514</ASC_COMP_ID>
+		<ASC_PROD_ID>PQY</ASC_PROD_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+		<INDENTS>1</INDENTS>
+		<EXPANDABLE>N</EXPANDABLE>
+		<PREV_ITEM_ID>ca8c6aa3-e974-4fc6-80ea-e06d75f39317</PREV_ITEM_ID>
+		<NEXT_ITEM_ID>                                    </NEXT_ITEM_ID>
+		<INTERNAL>0</INTERNAL>
+		<EXTERNAL>0</EXTERNAL>
+		<PARTNER>0</PARTNER>
+	</barista_record>
+</barista_admin_records>

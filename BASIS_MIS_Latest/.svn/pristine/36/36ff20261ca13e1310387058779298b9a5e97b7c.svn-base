@@ -1,0 +1,654 @@
+rem  month sam report for BSG accounting
+
+begin
+precision 4
+
+rem set up constant variables
+basis_bsg_cust_num$="007688"
+basis_firm_id$="01"
+bsg_firm_id$="02"
+memo_code$="M"; rem code that indicates the invioce line is a memo
+tab$=$09$
+
+rem ' USE and DECLARE statements
+USE ::ClientServerFileMover.src::ClientServerFileMover
+DECLARE ClientServerFileMover clientServerFileMover!
+
+rem output fields
+sam_type$=""; rem whether the sam is PRO5 or BBj
+cust_name$=""; rem bsg customer's name
+cust_number$=""; rem bsg customer's number
+update_date$=""; rem date of sam invoice to the customer
+inv_number$=""; rem bsg invoice number
+start_date$=""; rem estimated start date of the contract
+annual_date$=""; rem date the contract expires
+orig_eu_amount=0; rem the amount of the original invoice in EU
+org_amt=0; rem the orignial invoiced amount in dollars
+contract_term=0; rem estimated contract term
+days_remaining=0; rem the days remaining on the contract at the end of this month
+this_days_in_month=0; rem the days used in this month
+ref_number$=""; rem the Basis Invoice and line number
+problem$=""; rem a problem was discovered
+
+rem debugging write checks
+write_1=1
+write_2=1
+write_3=1
+
+rem input the month of the report
+    let thisDate=jul(0,0,0)
+    let thisMonth = num(date(thisDate:"%M"))-1,thisYear=num(date(thisDate:"%Y"))
+    if thisMonth=0 then thisMonth=12, thisYear=thisYear-1
+
+    rem setup the screen
+    prog_name$="BSG Intercompany SAM Disbursements Report"
+    spos = int((80-len(prog_name$))/2)
+    print 'cs',@(spos,0),prog_name$
+    dim ln$ (78,"-")
+    print @(1,1),ln$
+
+    theMonth$=str(thisMonth:"00")+"/"+str(thisYear:"0000")
+    input_theMonth:
+        rem can only run the report for the previous month
+        rem print @(10,10),'cl',"Report for: " +theMonth$ + " (CR) or a new month (MM/YYYY) or (End) ",; input inp$
+        rem if cvs(inp$,4)="END" then goto the_end
+        rem if inp$="" then goto input_done 
+        rem if len(inp$)<>7 then goto input_theMonth
+        rem let iMonth=num(inp$(1,2),err=input_theMonth), iYear=num(inp$(4,4),err=input_theMonth)
+        rem if iMonth<1 or iMonth>12 then goto input_theMonth
+        rem theMonth$=str(iMonth:"00")+"/"+str(iYear:"0000")
+        rem goto input_theMonth
+
+input_done:        
+    rem set the month begin and end dates
+    iMonth=num(theMonth$(1,2)),iYear=num(theMonth$(4,4))
+    month_begin_date=jul(iYear,iMonth,1)
+    if iMonth = 1 or iMonth = 3 or iMonth = 5 or iMonth = 7 or iMonth = 8 or iMonth = 10 or iMonth = 12 then
+        month_end_date=jul(iYear,iMonth,31)
+    else 
+        if iMonth = 4 or iMonth = 6 or iMonth = 9 or iMonth = 11 then
+            month_end_date=jul(iYear,iMonth,30)
+        else 
+            if mod(iYear,4)=0 then
+                month_end_date=jul(iYear,iMonth,29)
+            else
+                month_end_date=jul(iYear,iMonth,28)
+            FI
+        FI
+    FI
+    header$=Date(month_end_date:"%Ms")
+    header2$=Date(month_end_date:"%Ms %Y")
+    header3$=Date(month_end_date:"%Ms '%Yz")
+
+    print @(10,10),'cl',@(10,9),"Processing the report for " + date(month_begin_date:"%M/%D/%Yz") + " through " + date(month_end_date:"%M/%D/%Yz"),
+    days_in_month = month_end_date-month_begin_date+1
+
+rem open the files
+    data_svr$=stbl("DATA_SERVER")
+    smc02 = unt
+    open(smc02)"/mnt/data/basisaon/aon/ADATA/SMC-02"
+    call "templates.pgm::SMC02"
+
+    art13 = unt
+    open(art13)"/mnt/data/basisaon/aon/ADATA/ART-13"
+    call "templates.pgm::ART13"
+
+    art03 = unt
+    open(art03)"/mnt/data/basisaon/aon/ADATA/ART-03"
+    call "templates.pgm::ART03"
+
+    arm01 = unt
+    open(arm01)"/mnt/data/basisaon/aon/ADATA/ARM-01"
+    call "templates.pgm::ARM01"
+
+    arm10 = unt
+    open(arm10)"/mnt/data/basisaon/aon/ADATA/ARM-10"
+    call "templates.pgm::ARM10D"
+
+    exchng = unt
+    open(exchng)"/mnt/data/basisaon/aon/ADATA/dollar_euro_exchange.dat"
+    DIM DOLLAR_EURO_EXCHANGE$:"YEARMONTH:C(6*=10),DOLLARS:C(8*=10),EUROS:C(8*=10)"
+
+    rem do we have an exchange rate for this month
+    key$=date(month_end_date:"%Y%Mz")
+    read record(exchng,key=key$,dom=get_the_rate)dollar_euro_exchange$
+    print @(10,11),"1 EU = " + dollar_euro_exchange.dollars$ + "(USD) - 1 USD = " + dollar_euro_exchange.euros$ + "(EU)",
+    goto create_workfile
+
+        get_the_rate:
+            input @(10,11),'cl',"1 EU to (USD) ",dollars$
+            if cvs(dollars$,4)="END" then goto the_end
+            dollar = num(dollars$,err=get_the_rate)
+            dollars$=str(dollar:"0.0000")
+            print @(10,11),'cl',"1 EU = " + dollars$ + "(USD)",
+            get_the_euros:
+            input @(10,12),'cl',"1 USD to (EU) ",euros$
+            if cvs(euros$,4)="END" then goto the_end
+            euro = num(euros$,err=get_the_euros)
+            euros$=str(euro:"0.0000")
+            print @(10,12),'cl',@(10,11),'cl',"1 EU = " + dollars$ + "(USD) - 1 USD = " + euros$ + "(EU)",
+
+           verify_rate:
+                input @(10,15),'cl',"Is this correct? Y/N/END ",inp$
+                print @(10,15),'cl',
+                inp$=cvs(inp$,4)
+                if inp$="END" then goto the_end
+                if inp$="N" then goto get_the_rate
+                if inp$<>"Y" then goto verify_rate
+                yearmonth$=date(month_end_date:"%Y%Mz")
+                dollar_euro_exchange.yearmonth$=yearmonth$
+                dollar_euro_exchange.dollars$=dollars$
+                dollar_euro_exchange.euros$=euros$
+                write record(exchng)dollar_euro_exchange$
+
+    create_workfile:
+    erase "/mnt/data/basisaon/aon/ADATA/bsg_report_workfile",err=*next
+    rem key sam_type$,inv_number$,annual_date$
+    xkeyed "/mnt/data/basisaon/aon/ADATA/bsg_report_workfile",[1:1:6],[2:1:3:"D"]+[6:1:7]+[8:1:8],0,512
+    workfile = unt
+    open(workfile)"/mnt/data/basisaon/aon/ADATA/bsg_report_workfile"
+
+rem ******************************************
+    tempout = unt
+    path$=stbl("TEMP")
+    erase path$+"bsg_sam_report.txt",err=*next
+    string path$+"bsg_sam_report.txt"
+    open(tempout)path$+"bsg_sam_report.txt"
+
+    ofid$=fid(tempout)
+    rem ' if write_1 then print @(10,10),"Report will be here: ",ofid$(9),;input *; print@(10,10),'cl',;write_1=0
+
+    line_count=0
+    columns$=tab$+ header$+ " BSG SAM of"+tab$+tab$+tab$+"BSG Unearned SAM"
+    write(tempout)columns$; line_count=line_count+1
+    columns$=tab$+"BSG IC SAM"+date(month_begin_date:"%Yz")+tab$+tab$+tab$+header2$
+    write(tempout)columns$; line_count=line_count+1
+    columns$=tab$+"Run Date: " + Date(0:"%M/%D/%Y %Hz:%mz")+tab$+tab$+tab$+"Account #1175-000,4620-000"
+    write(tempout)columns$; line_count=line_count+1
+    num_of_lines=2; gosub write_blank_lines    
+
+    columns$=tab$+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$+tab$
+    columns$=columns$+"Original"+tab$+"IC SAM"+tab$
+    columns$=columns$+tab$+"Days"+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+"Beginning"+tab$+Header3$+tab$+Header3$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+"Days"+tab$+"Days"+tab$+tab$
+    columns$=columns$+"Days"+tab$+tab$
+    columns$=columns$+tab$+tab$
+    write(tempout)columns$; line_count=line_count+1
+
+    columns$="SAM"+tab$+"Cust"+tab$+"Cust"+tab$
+    columns$=columns$+"Update"+tab$+"Invoice"+tab$+"Start"+tab$+"Annual"+tab$
+    columns$=columns$+"Inv Amt"+tab$+"Charge"+tab$
+    columns$=columns$+"Contract"+tab$+"Remaining"+tab$+"Days"+tab$
+    columns$=columns$+tab$+"Exchange"+tab$
+    columns$=columns$+"PP IC SAM"+tab$+"IC SAM COS"+tab$+"PP IC SAM"+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+"Used"+tab$+"This"+tab$+"Days"+tab$
+    columns$=columns$+"Remaining"+tab$+tab$
+    columns$=columns$+"Invoice/Line"+tab$+tab$
+    write(tempout)columns$; line_count=line_count+1
+
+    columns$="Type"+tab$+"Name"+tab$+"Number"+tab$
+    columns$=columns$+"Date"+tab$+"Number"+tab$+"Date"+tab$+"Date"+tab$
+    columns$=columns$+"EU"+tab$+"USD"+tab$
+    columns$=columns$+"Term"+tab$+"On Contract"+tab$+"in Month"+tab$
+    columns$=columns$+tab$+"Rate"+tab$
+    columns$=columns$+"EU"+tab$+"EU"+tab$+"EU"+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+"Prior"+tab$+"Month"+tab$+"Remaining"+tab$
+    columns$=columns$+"From SMC02"+tab$+tab$
+    columns$=columns$+"Numbers"+tab$+"Problem"
+    write(tempout)columns$; line_count=line_count+1
+    starting_line=line_count+1
+
+
+    rem position the key pointer
+    read(smc02,knum=1,key=basis_firm_id$+basis_bsg_cust_num$,err=*next)
+
+main_loop:
+    read record(smc02,end=end_read)smc02$
+
+    rem if we are out of the BSG customer range we are done
+    if smc02.customer_nbr$<>basis_bsg_cust_num$ then goto end_read
+
+    rem exclude expired contracts
+        wrkDt$=smc02.annual_dt$
+        annual_dt=jul(num(wrkDt$(1,4)),num(wrkDt$(5,2)),num(wrkDt$(7,2)))
+        if annual_dt < month_begin_date then goto main_loop
+
+    rem if unearned bal and days remaining are zero change the annual date to the end of the month
+        x_unearned_bal = num(smc02.unearned_bal$)
+        x_days_remaining = num(smc02.days_remaining$)
+        if x_unearned_bal = 0 and x_days_remaining = 0 and annual_dt > month_end_date then annual_dt = month_end_date
+
+    rem set up the annual date
+        annual_date$ = date(annual_dt:"%Mz/%Dz/%Y")
+        ref_number$="(" + smc02.ar_inv_nbr$+" "+smc02.line_number$+")"
+
+    rem check the dollar amounts from SMC02 and ART-13 for a match
+        key$=smc02.firm_id$+"  "+smc02.customer_nbr$+smc02.ar_inv_nbr$+smc02.line_number$
+        read record(art13,key=key$)art13$
+        if num(smc02.orig_amount$) <> art13.ext_price then problem$=problem$+"Dollar amounts do not match from SMC02 to ART13, "
+        org_amt=num(smc02.orig_amount$)
+
+    rem set the type only BAS (BBj) or PR5 (Pro/5) using the dist_code
+        rem this idea is not working, the distribution code here is always IS
+        rem dis_co_key$="01D"+smc02.dist_code$
+        rem read record(arm10, key=dis_co_key$, dom=dist_code_not_found)arm10D$
+        rem sales_acct$=arm10D.GL_SLS_ACCT$
+        rem if sales_acct$(1,4)="4012" then
+            rem sam_type$="BAS"
+        rem else
+            rem if sales_acct$(1,4) = "4005" then
+                rem sam_type$="PR5"
+            rem else
+                rem sam_type$=smc02.dist_code$; problem$=problem$+"Bad SAM Type (" + smc02.item_number$ + "), "
+            rem endif
+        rem endif
+        rem goto sam_type_cont
+
+        rem dist_code_not_found:
+            rem sam_type$=smc02.dist_code$; problem$=problem$+"Bad SAM Type (" + smc02.item_number$ + "), "
+
+        rem sam_type_cont:
+
+        sam_type$=smc02.item_number$(1,3)
+        if sam_type$="DS5" then
+            sam_type$="PR5"
+        else
+            if sam_type$="ODB" then
+                sam_type$="PR5"
+            else
+                if sam_type$<> "BAS" and sam_type$<>"PR5" then
+                    sam_type$="PR5", problem$=problem$+"Bad SAM Type (" + smc02.item_number$ + "), "
+                endif
+           endif
+        endif
+
+            rem get the update date which will be the invoice date for the BASIS to BSG invoice
+        key$=basis_firm_id$+art13.ar_inv_nbr$
+        read(art03,key=key$,knum=1)art03$
+        update_date$ = fnformattedaondate$(art03.invoice_date$)
+        update_date  = jul(num(update_date$(7,4)),num(update_date$(1,2)),num(update_date$(4,2)))
+
+        rem exclude contracts that have an update date after the month end date
+        if update_date > month_end_date then goto main_loop
+
+        rem used later to convert the currency
+        wrk_date$ = fnaondate$(art03.invoice_date$)
+        
+        rem estimate the start date THE OLD WAY
+        rem wrk_date = jul(num(wrk_date$(1,4)),num(wrk_date$(5,2)),num(wrk_date$(7,2)))
+        rem estimate the start date THE OLD WAY
+        rem difference = annual_dt - wrk_date
+        rem if the difference between the annual_dt and the update_date is greater than a year use the
+        rem compute the start date as one year before the annual date 
+        rem otherwise use the update date as the start date
+        rem if difference >= (365) then
+        rem    start_date = jul( num(smc02.annual_dt$(1,4))-1, num(smc02.annual_dt$(5,2)), num(smc02.annual_dt$(7,2))) + 1
+        rem    start_date$ = date(start_date:"%Mz/%Dz/%Y")
+        rem    contract_term = annual_dt - start_date+1
+        rem else
+        rem    start_date$=update_date$
+        rem    start_date = jul(num(start_date$(7,4)), num(start_date$(1,2)), num(start_date$(4,2)))
+        rem    contract_term = difference+1
+        rem endif
+
+        rem find the contract term and start date
+        annual_date = annual_dt; rem jul(num(smc02.annual_dt$(1,4)),num(smc02.annual_dt$(5,2)), num(smc02.annual_dt$(7,2)))
+        annual_date_readable$=date(annual_date:"%M/%D/%Y")
+    
+            rem figure out the daily rate
+            if num(smc02.days_remaining$)<>0 then
+                daily_rate = num(smc02.unearned_bal$)/num(smc02.days_remaining$) 
+            else
+                month_days=annual_date - month_begin_date + 1
+                daily_rate = (num(smc02.mtd_earned$)+num(smc02.nmtd_earned$))/month_days
+            endif
+
+        total_days=num(smc02.orig_amount$)/daily_rate
+        daily_rate$=str(daily_rate)
+        contract_term = int(total_days + .5)
+
+        start_date=annual_date - contract_term
+        start_date$ = date(start_date:"%M/%D/%Y")
+
+        count=count+1
+        if mod(count,5) = 0 then print @(10,10),"Processing contract: ",count,
+
+    find_inv_nbr_loop:
+        read record(art13,end=fin_problem)art13$
+        if art13.ar_inv_nbr$ <> smc02.ar_inv_nbr$ then goto fin_problem
+
+        if art13.line_code$<>memo_code$ then goto find_inv_nbr_loop
+        if cvs(art13.order_memo$,3) = "" then goto find_inv_nbr_loop
+
+        let target_pos = pos("I/C Charge Inv #" = art13.order_memo$)
+        rem special case
+        if target_pos = 0 then let target_pos = pos("Credit for original BSG invoice #" = art13.order_memo$)
+        if target_pos = 0 then goto fin_problem
+
+        let target_pos = pos("#" = art13.order_memo$)
+        let inv_number$=cvs(art13.order_memo$(target_pos+1),3)
+        rem special case
+        if inv_number$(len(inv_number$),1)="," then inv_number$=inv_number$(1,len(inv_number$)-1)
+        let target_pos = pos(" " = inv_number$)
+        let inv_number$=inv_number$(1,target_pos-1)
+        let inv_number$=str(num(inv_number$):"0000000")
+        goto move_on_01
+
+        fin_problem:
+            problem$=problem$+"Could not find the BSG invoice number (" + smc02.ar_inv_nbr$ + " " + smc02.line_number$+ "), "
+            goto write_it
+
+move_on_01:
+
+    rem find the BSG customer number,customer name
+        key$=bsg_firm_id$+inv_number$
+        read record(art03,key=key$,knum=1, dom=fcn_problem)art03$
+        cust_number$=art03.customer_nbr$
+        read record(arm01,key=art03.firm_id$+art03.customer_nbr$)arm01$
+        cust_name$ = arm01.cust_name$
+        goto move_on_02
+
+        fcn_problem:
+            problem$="Could not find the BSG customer number for BSG Inv (" + inv_number$ + "), "
+            goto write_it
+
+move_on_02:
+    rem calculate days used before this monght, days in the month and the days remaining
+
+    if start_date < month_begin_date then
+        days_used_before = month_begin_date - start_date
+    else
+        days_used_before = 0
+    endif
+
+    if annual_dt<month_end_date then
+        if start_date <= month_begin_date then
+            this_days_in_month = annual_dt-month_begin_date; rem +1
+            days_remaining = 0
+        else
+            rem contract begins and ends in this month
+            this_days_in_month = contract_term
+            days_remaining = 0
+        endif
+    else
+        if start_date < month_begin_date then
+            this_days_in_month = days_in_month
+            days_remaining = annual_dt - month_end_date - 1
+        else
+            if start_date <= month_end_date then
+                this_days_in_month = month_end_date - start_date +1
+                days_remaining = annual_dt - month_end_date - 1
+            else
+                this_days_in_month = 0
+                days_remaining = contract_term
+            endif
+        endif
+    endif
+
+    if days_remaining < 0 then
+	this_days_in_month = this_days_in_month + days_remaining
+	days_remaining = 0
+    endif
+
+    rem check
+    if days_used_before + this_days_in_month + days_remaining <> contract_term then escape
+
+    rem caculate the orig amount in euros
+    read record(exchng, key=wrk_date$(1,6),dom=no_exchange)dollar_euro_exchange$
+    dollars$=dollar_euro_exchange.dollars$
+    euros$=dollar_euro_exchange.euros$
+    goto next_exchng_step
+
+         no_exchange:
+            rem use the oldest in the file
+            problem$=problem$+"no exchange rate used, "
+            rem use 1 for 1
+            euros$="1.00"
+
+        next_exchng_step:
+            orig_eu_amount = round(org_amt * num(euros$),2)
+
+            rem calculate the other dollar amounts
+            daily_rate = orig_eu_amount / contract_term
+
+            beginning_prepaid = orig_eu_amount - Round((days_used_before * daily_rate),2)
+            this_month_earned = round(this_days_in_month * daily_rate,2)
+            remaining_prepaid = beginning_prepaid - this_month_earned
+            rem if remaining_prepaid < 0 then this_month_earned = this_month_earned + remaining_prepaid, remaining_prepaid = 0
+            if days_remaining = 0 and remaining_prepaid <> 0 then this_month_earned = this_month_earned + remaining_prepaid, remaining_prepaid = 0
+
+            rem prep remaining days from smc02
+            days_remaining_smc02 = num(smc02.days_remaining$)
+            rem do we need to add any back
+            last_trans_dt=jul(num(smc02.last_trans_dt$(1,4)),num(smc02.last_trans_dt$(5,2)),num(smc02.last_trans_dt$(7,2)))
+            if last_trans_dt > month_end_date then
+                days_remaining_smc02 = days_remaining_smc02 + (last_trans_dt - month_end_date)
+            endif
+
+
+write_it:
+    rem adjust annual_date for sort
+    annual_date$=annual_date$(7,4)+annual_date$(1,2)+annual_date$(4,2)
+    uKey$=str(count:"000000")
+    rem if write_2 then print @(10,10),fid(workfile),;input *; print@(10,10),'cl',;write_2=0
+    write(workfile)uKey$,sam_type$,cust_name$,cust_number$,update_date$,inv_number$,start_date$,annual_date$,orig_eu_amount,org_amt,contract_term,days_remaining,this_days_in_month, euros$, beginning_prepaid, this_month_earned, remaining_prepaid, days_used_before, this_days_in_month, days_remaining, ref_number$, problem$, days_remaining_smc02
+
+housekeeping:
+    problem$=""
+    cust_name$=""
+    cust_number$=""
+    annual_date$=""
+    update_date$=""
+    start_date$=""
+    contract_term=0
+    inv_number$=""
+    sam_type$=""
+    org_amt=0
+
+    rem debugging to shorten the process
+    rem if count = 400 then goto end_read
+    goto main_loop
+
+end_read:
+    firstTime=1
+    hold_inv_number$=""
+    hold_annual_date$=""
+    smcCount=count
+    count = 0
+    readBackCount=0
+    print @(10,10),'cl',
+    read(workfile,key="ZZZ",knum=1,err=*next)
+
+readback_loop:
+    read(workfile,end=done_readback)uKey$,sam_type$,cust_name$,cust_number$,update_date$,inv_number$,start_date$,annual_date$,orig_eu_amount,org_amt,contract_term,days_remaining,this_days_in_month, euros$, beginning_prepaid, this_month_earned, remaining_prepaid, days_used_before, this_days_in_month, days_remaining, ref_number$, problem$, days_remaining_smc02
+    rem adjust annual_date back
+    annual_date$=annual_date$(5,2)+"/"+annual_date$(7,2)+"/"+annual_date$(1,4)
+    readBackCount=readBackCount+1
+
+    if inv_number$<>hold_inv_number$ or annual_date$<>hold_annual_date$ then gosub write_text_out
+
+    txtSam_type$=sam_type$
+    txtCust_name$=cust_name$
+    txtCust_number$=cust_number$
+    txtUpdate_date$=update_date$
+    txtInv_number$=inv_number$
+    txtStart_date$=start_date$
+    txtAnnual_date$=annual_date$
+    totOrig_eu_amount=totOrig_eu_amount+orig_eu_amount
+    totOrig_amt=totOrig_amt+org_amt
+    txtContract_term=contract_term
+    txtDays_remaining=days_remaining
+    txtThis_days_in_month=this_days_in_month
+    txtExchange_Rate$=euros$
+    totBeginning_prepaid=totBeginning_prepaid+beginning_prepaid 
+    totThis_month_earned=totThis_month_earned+this_month_earned
+    totRemaining_prepaid=totRemaining_prepaid+remaining_prepaid
+    txtDays_used_before=days_used_before 
+    txtThis_days_in_month = this_days_in_month 
+    txtDays_remaining = days_remaining 
+    txtDays_remaining_smc02 = days_remaining_smc02
+    txtRef_number$=txtRef_number$+" "+ref_number$
+    if len(problem$)<>0 and " "+problem$<>txtProblem$ then txtProblem$=txtProblem$+" "+problem$
+    goto readback_loop    
+
+    write_text_out:
+        if firstTime then firstTime=0; wrk_samType$=sam_type$; goto skip_write
+        if txtSam_type$<>wrk_samType$ then gosub type_break
+
+        columns$=""
+        columns$=columns$+txtSam_type$+tab$+txtCust_Name$+tab$+txtCust_number$+tab$
+        columns$=columns$+txtUpdate_date$+tab$+txtInv_number$+tab$+txtStart_date$+tab$+txtAnnual_date$+tab$
+        columns$=columns$+str(totOrig_eu_amount)+tab$+str(totOrig_amt)+tab$
+        columns$=columns$+str(txtContract_term)+tab$+str(txtDays_remaining)+tab$+str(txtThis_days_in_month)+tab$
+        columns$=columns$+tab$+txtExchange_Rate$+tab$
+        columns$=columns$+str(totBeginning_prepaid)+tab$+str(totThis_month_earned)+tab$+str(totRemaining_prepaid)+tab$
+        columns$=columns$+tab$+tab$
+        columns$=columns$+str(txtDays_used_before)+tab$+str(txtThis_days_in_month)+tab$+str(txtDays_remaining)+tab$
+        columns$=columns$+str(txtDays_remaining_smc02)+tab$+tab$
+        columns$=columns$+txtRef_number$+tab$+txtProblem$
+        rem if write_3 then print @(10,10),fid(tempout),;input *; print@(10,10),'cl',;write_3=0
+        write(tempout)columns$
+        count = count + 1
+        line_count=line_count+1
+        if mod(count,5) = 0 then print @(10,10),"Processing out file line: ",count,
+
+
+        skip_write:
+            hold_inv_number$=inv_number$
+            hold_annual_date$=annual_date$
+            totOrig_eu_amount=0
+            totOrig_amt=0
+            totBeginning_prepaid=0
+            totThis_month_earned=0
+            totRemaining_prepaid=0
+            txtProblem$=""
+            txtRef_number$=""
+        return
+
+type_break:
+    wrk_samType$=txtSam_type$
+    last_line=line_count
+
+    num_of_lines=2; gosub write_blank_lines
+
+    columns$=tab$+"PRO/5 SAM Total"+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+"=sum(O"+str(starting_line)+":O"+str(last_line)+")"+tab$+"=sum(P"+str(starting_line)+":P"+str(last_line)+")"+tab$+"=sum(Q"+str(starting_line)+":Q"+str(last_line)+")"
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    write(tempout)columns$
+    line_count=line_count+1
+    total_line1=line_count
+
+    num_of_lines=3; gosub write_blank_lines
+
+    columns$="BBj SAM"+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$
+    write(tempout)columns$
+    line_count=line_count+1
+
+    num_of_lines=1; gosub write_blank_lines
+    starting_line = line_count+1
+
+    return
+
+write_footer:
+    last_line=line_count
+
+    num_of_lines=2; gosub write_blank_lines
+
+    columns$=tab$+"BBj SAM Total"+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+"=sum(O"+str(starting_line)+":O"+str(last_line)+")"+tab$+"=sum(P"+str(starting_line)+":P"+str(last_line)+")"+tab$+"=sum(Q"+str(starting_line)+":Q"+str(last_line)+")"
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    write(tempout)columns$
+    line_count=line_count+1
+    total_line2=line_count
+
+    num_of_lines=4; gosub write_blank_lines
+
+    columns$="Total SAM"+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+"=O"+str(total_line1)+"+O"+str(total_line2)+tab$+"=P"+str(total_line1)+"+P"+str(total_line2)+tab$+"=Q"+str(total_line1)+"+Q"+str(total_line2)
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    columns$=columns$+tab$+tab$
+    write(tempout)columns$
+    line_count=line_count+1
+    return
+
+write_blank_lines:
+    for x = 1 to num_of_lines
+        columns$=tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$+tab$
+        write(tempout)columns$
+        line_count=line_count+1
+    next x
+    return
+
+done_readback:
+    gosub write_text_out
+    gosub write_footer
+    print @(10,10),"Processing out file total lines: ",count,
+    print @(10,11),"SMC02 lines read: ",smcCount," workfile lines read: ",readBackCount
+
+the_end:
+    if workfile <> 0 then close(workfile)
+    rem ********************************************REMOVE THE REM below to DEPLOY*****************************
+    rem erase data_svr$+"/basisaon/aon/ADATA/bsg_report_workfile", err=*next
+
+	rem ' download to the client
+	clientServerFileMover! = new ClientServerFileMover()
+	path$=stbl("TEMP")
+	success$ = clientServerFileMover!.downloadToClient("Save Report File", "", "bsg_sam_report.txt", "", "", path$)
+	if success$="::GOOD::" then
+	    msg$="The PDF report file download is complete."
+	    title$="Download Complete"
+	    resp=msgbox(msg$, 64, title$)
+	else
+	    if success$="::BAD::" then
+		msg$="The PDF report file download failed."
+		title$="Download Failed"
+		resp=msgbox(msg$, 16, title$)
+	    fi
+	fi
+    
+    input @(10,12),"Process Complete. Press CR to continue..",*
+    run "SYS.AA"
+    end
+
+functions:
+DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+
+DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+
+DEF fnformattedaondate$(ymd$)
+    y=1900+asc(ymd$(1))-32,m=asc(ymd$(2))-32,d=asc(ymd$(3))-32
+    if m<1 or d <1 then d$="unknown" else d$=date(jul(y,m,d):"%Mz/%Dz/%Y")
+    return d$
+    fnend
+
+DEF fnaondate$(ymd$)
+    y=1900+asc(ymd$(1))-32,m=asc(ymd$(2))-32,d=asc(ymd$(3))-32
+    if m<1 or d <1 then d$="unknown" else d$=date(jul(y,m,d):"%Y%Mz%Dz")
+    return d$
+    fnend

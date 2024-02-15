@@ -1,0 +1,334 @@
+rem --- apm_upload_image.src --- upload invoice image to google drive 
+
+enter apm_interface$
+
+rem --- declares for the upload
+
+use ::gapps.bbj::GDocsService
+use ::gapps.bbj::GDoc
+use ::gapps.bbj::GDocSaveDialog
+
+use java.net.URL
+
+
+declare GDoc doc!
+declare GDocsService docsService!
+declare GDocSaveDialog saveDialog!
+
+declare URL folderURL!
+	        
+declare BBjClientFile cf!
+declare BBjClientFileSystem cfs!
+
+
+rem --- Open Files
+
+	num_files=3
+	dim open_tables$[1:num_files],open_opts$[1:num_files],open_chans$[1:num_files],open_tpls$[1:num_files]
+	open_tables$[1]="APM_INVIMAGE",open_opts$[1]="OTA"
+	open_tables$[2]="APE_INVOICEHDR",open_opts$[2]="OTA"
+	open_tables$[3]="APM_VENDMAST",open_opts$[3]="OTA"
+	
+	gosub open_tables
+
+	apm_invimage = num(open_chans$[1]);dim apm_invimage$:open_tpls$[1]
+	ape_invhdr = num(open_chans$[2]);dim ape_invhdr$:open_tpls$[2]
+	apm_vendmast = num(open_chans$[3]);dim apm_vendmast$:open_tpls$[3]
+
+rem --- process
+
+	begin_process:
+	found = 0
+	read record(ape_invhdr, key = apm_interface$, err=*next)ape_invhdr$; found = 1 
+	
+	rem --- invoice not saved - ap_type$ = "*M" means this is coming from manual check entry
+	if !found and apm_interface.apm_ap_type$ <> "*M" then 
+		msg_id$="GENERIC_OK"
+		dim msg_tokens$[1]
+			msg_tokens$[1]="Invoice not saved."
+		gosub disp_message
+		exit
+	endif
+
+	altPrompt$ = "Select file to upload."
+	clientPath$ = ""
+	nameOnClient$ = ""
+	extension$ = ""
+	filter$ = "pdf" + $0a$ + "*.pdf" + $0a$ + "jpeg" + $0a$ + "*.jpg" +$0a$ + "gif" + $0a$ + "*.gif" + $0a$ + "all" + $0a$ + "*.*"
+        response$ = FILEOPEN(altPrompt$,clientPath$,nameOnClient$,extension$,filter$, MODE="client")
+            
+        if response$="::CANCEL::" or response$="::BAD::" then 
+		exit
+	endif 
+
+	rem --- attempt the upload to the server
+	
+	cfs! = BBjAPI().getThinClient().getClientFileSystem()
+	cf!=cfs!.getClientFile(response$)
+
+        tempFileLocation$=cf!.copyFromClient()
+	nameOnServer$=response$
+	serverPath$ = stbl("AUTHINVOICES")
+
+        rem --- strip the path and get the ordinary file name of the uploaded file
+	while pos("/"=nameOnServer$)
+		rpos = pos("/"=nameOnServer$)
+		nameOnServer$=nameOnServer$(rpos+1)
+	wend
+	while pos("\"=nameOnServer$)
+		rpos = pos("\"=nameOnServer$)
+		nameOnServer$=nameOnServer$(rpos+1)
+	wend
+
+	erase serverPath$+nameOnServer$,err=*next
+        rename tempFileLocation$,serverPath$+nameOnServer$
+
+	rem --- show the image in the preveiw
+        call "image_preview.src", serverPath$+nameOnServer$, retval$
+        if retval$ = "cancel" then 
+        	exit
+        else
+        	if retval$ = "reselect" then
+			goto begin_process
+		else
+			if retval$ <> "save" then
+				exit
+			endif
+		endif
+	endif
+	
+        rem --- attempt the upload to google docs
+
+	rem --- set the sequence number
+	sequence = 0
+	read record(apm_invimage, key = apm_interface.apm_firm_id$ + apm_interface.apm_vendor_id$ + apm_interface.apm_ap_inv_no$, dom=*next)apm_invimage$
+	while 1
+		found = 0
+		read record(apm_invimage,end=*next)apm_invimage$; found = 1
+		if !found or (apm_invimage.firm_id$ <> apm_interface.apm_firm_id$ or apm_invimage.vendor_id$ <> apm_interface.apm_vendor_id$ or apm_invimage.ap_inv_no$ <> apm_interface.apm_ap_inv_no$) then
+			sequence$ = str(sequence:"00")
+			break
+		endif
+		sequence = num(apm_invimage.sequence_num$) + 1
+	wend
+
+	rem --- get the vendor name and id and build the folder name
+	read record(apm_vendmast,key=apm_interface.apm_firm_id$ + apm_interface.apm_vendor_id$)apm_vendmast$
+	subdir$ = cvs(apm_vendmast.vendor_name$,3); if len(subdir$)>15 then subdir$=subdir$(1,15)
+	
+	rem --- remove any slashes from the directory name
+	while 1
+		ppos = pos("/"=subdir$)
+		if ppos then 
+			subdir$(ppos,1) = "_"
+		else
+			break
+		endif
+	wend
+	while 1
+		ppos = pos("\"=subdir$)
+		if ppos then 
+			subdir$(ppos,1) = "_"
+		else
+			break
+		endif
+	wend
+		
+	subdir$ = subdir$ + "_" + apm_vendmast.vendor_id$
+	folder$ = stbl("ARCHIVEBASE") + subdir$ + "/"
+
+	rem --- ensure the user credentials are good
+        docsService! = new GDocsService()
+        rem ' are we authenticated
+	authenticated = docsService!.isAuthenticated(0)
+	if !authenticated then
+		docsService!.resetAuthentication()
+		authenticated = docsService!.isAuthenticated(1)
+		if !authenticated then
+			msg_id$="GENERIC_OK"
+			dim msg_tokens$[1]
+			msg_tokens$[1]="Login cancelled"
+			gosub disp_message
+			exit
+		endif
+	endif
+
+	rem --- ensure there is a folder there	
+	succeeded=0
+	docsService!.createFolder(folder$,err=*next); succeeded=1
+	if !succeeded then
+		
+		rem ' error 306 is a create error
+		rem ' error 307 means the folder is already there
+
+        	if err<>307 then
+			msg_id$="GENERIC_OK"
+			dim msg_tokens$[1]
+			msg_tokens$[1]="Encountered a problem creating the folder (" + folder$ + ") Error message is: (" + errmes(-1) + ") Error number is: " + str(err)
+			gosub disp_message
+        		exit
+		endif
+	endif
+	
+	rem --- proceed with the upload
+	document$ = serverPath$+nameOnServer$
+	docTitle$ = cvs(apm_interface.apm_ap_inv_no$,3) + "_" + sequence$
+
+	rem --- determine file type
+	let ppos = pos("."=document$)
+	type$ = document$(ppos+1)
+
+	rem --- upload with no dialog ------------------------------------------------------------------------------
+	if type$ = "pdf" then
+		type$ = GDoc.getPDF_TYPE()
+	else
+		type$ = GDoc.getFILE_TYPE()
+	endif
+	convert = 1; rem --- convert to google file type
+	success = 0
+	doc! = docsService!.uploadDocument(document$, docTitle$, type$, folder$, convert, err=*next); success = 1
+
+	if !success then
+		msg_id$="GENERIC_OK"
+		dim msg_tokens$[1]
+		msg_tokens$[1]="Encountered a problem with the Google Docs service uploading (" + document$ + "). Error message is: (" + errmes(-1) + ")"
+		gosub disp_message
+	else
+		url$ = doc!.getHref()
+		rem --- write the invoice image record
+		dim apm_invimage$:fattr(apm_invimage$)
+		apm_invimage.firm_id$ = apm_interface.apm_firm_id$
+		apm_invimage.vendor_id$ = apm_interface.apm_vendor_id$
+		apm_invimage.ap_inv_no$ = apm_interface.apm_ap_inv_no$
+		apm_invimage.sequence_num$ = sequence$
+		apm_invimage.doc_url$ = url$
+		write record(apm_invimage)apm_invimage$
+		msg_id$="GENERIC_OK"
+		dim msg_tokens$[1]
+		msg_tokens$[1]="Invoice image uploaded successfully."
+		gosub disp_message			
+	endif
+
+	goto success_exit
+	
+	rem --- upload with a dialog--------------------------------------------------------------------------------
+	saveDialog! = new GDocSaveDialog()
+	saveDialog!.setDefaultFolder(folder$)
+	saveDialog!.setDefaultDocument(docTitle$)
+
+	if type$ = "pdf" then
+		saveDialog!.setDefaultType(GDoc.getPDF_TYPE())
+	else
+		saveDialog!.setDefaultType(GDoc.getFILE_TYPE())
+	endif
+	
+	rc = saveDialog!.doModal()
+
+	if (rc = GDocSaveDialog.getSELECTED())
+	        title$ = saveDialog!.getDocumentTitle()
+	        type$ = saveDialog!.getDocumentType()
+	        folder$ = saveDialog!.getDocumentFolder()
+	        docsService! = saveDialog!.getGDocsService()
+	        convert=1
+	        
+	 	success = 0
+	 	while 1
+	 		doc! = docsService!.uploadDocument(document$, title$, type$, folder$, convert, err=*break)
+			success = 1
+			url$ = doc!.getHref()
+			break
+		wend
+
+		if !success then
+			msg_id$="GENERIC_OK"
+			dim msg_tokens$[1]
+			msg_tokens$[1]="Encountered a problem with the Google Docs service uploading (" + document$ + "). Error message is: (" + errmes(-1) + ")"
+			gosub disp_message
+		else
+			rem --- write the invoice image record
+			dim apm_invimage$:fattr(apm_invimage$)
+			apm_invimage.firm_id$ = apm_interface.apm_firm_id$
+			apm_invimage.vendor_id$ = apm_interface.apm_vendor_id$
+			apm_invimage.ap_inv_no$ = apm_interface.apm_ap_inv_no$
+			apm_invimage.sequence_num$ = sequence$
+			apm_invimage.doc_url$ = url$
+			write record(apm_invimage)apm_invimage$
+			msg_id$="GENERIC_OK"
+			dim msg_tokens$[1]
+			msg_tokens$[1]="Invoice image uploaded successfully."
+			gosub disp_message			
+
+		endif
+	endif
+        
+success_exit:        
+        rem --- clean up
+        erase document$,err=*next
+        
+        exit
+          
+            
+open_tables:rem --- Open Tables
+
+	call stbl("+DIR_SYP")+"bac_open_tables.bbj",
+:		open_beg,
+:		open_end,
+:		open_tables$[all],
+:		open_opts$[all],
+:		open_chans$[all],
+:		open_tpls$[all],
+:		rd_table_chans$[all],
+:		open_batch,
+:		open_status$
+
+	if open_status$<>""
+		msg_id$="ENTRY_OPEN_ERROR"
+		dim msg_tokens$[1]
+			msg_tokens$[1]=open_status$
+		gosub disp_message
+		goto std_exit
+	endif
+
+	return
+
+disp_message:rem --- Display Message Dialog
+
+	call stbl("+DIR_SYP")+"bac_message.bbj",
+:		msg_id$,
+:		msg_tokens$[all],
+:		msg_opt$,
+:		rd_table_chans$[all]
+
+	return
+
+std_error: rem --- Standard error handler (01Apr2006)
+
+	err_text$=""
+	if tcb(5)<>0 and pgm(-1)=pgm(-2) err_text$=pgm(tcb(5),err=*next)
+	call stbl("+DIR_SYP")+"bac_error.bbj",err=std_error_exit,pgm(-2),str(tcb(5)),str(err),err_text$,err_act$
+	if pos("EXIT"=err_act$) goto std_error_exit
+	if pos("ESCAPE"=err_act$) seterr 0;setesc 0
+	if pos("RETRY"=err_act$) retry
+
+std_error_exit:
+
+	master_user$=cvs(stbl("+MASTER_USER",err=std_error_release),2)
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=std_error_release)
+	if cvs(sysinfo.user_id$,2)=master_user$ escape
+
+std_error_release:
+
+	status=999
+	if pgm(-1)<>pgm(-2) exit
+
+	release
+
+std_exit: rem --- Standard program end (01Mar2006)
+
+	progress!.setValue("+process_task",rd_task_val$+"^D^")
+
+	run stbl("+DIR_SYP")+"bas_process_end.bbj",err=*next
+
+	release

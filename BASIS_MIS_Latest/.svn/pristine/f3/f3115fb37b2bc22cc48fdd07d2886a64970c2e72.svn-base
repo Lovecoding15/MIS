@@ -1,0 +1,86 @@
+// Analyze each OSAS P/5 serial number transaction in OEMHISTORY, and
+// write records to OEM_SN_CANCEL.  Each serial number that appears
+// to be active will be set up to allow one exchange, and serial
+// numbers that appear to be inactive will be allowed zero exchanges.
+// Note that the analysis logic is the same as the report procedure
+// oem_sn_analysis.
+// <oem_sn_rebuild.rwi>
+
+first_time=1;
+active_serial=0;
+init oemhistory;
+init hold$:fattr(oemhistory$);
+
+for each oemhistory where serial_num(1,3)="OSH" and item_num(5,1)="5"
+   group by serial_num
+{
+
+   if first_of(serial_num) and first_time=0 then 
+      {
+      gosub write_cancel_record;
+      sale_count=0; return_count=0;
+      }
+
+   gosub determine_tran_type;
+   hold$=oemhistory$;
+   first_time=0;
+}
+gosub write_cancel_record;
+
+display/margin=10 "Open Systems Serial Number Update Results";
+display/skip "Added serial numbers eligible for exchange: "+str(exchangeable_sn_counter);
+display "Added serial numbers that were returned: "+str(returned_sn_counter);
+display "Added serial numbers that weren't sold properly: "+str(never_sold_sn_counter);
+display "Serial numbers skipped because they were already in file: "+str(duplicate_record_counter);
+
+subroutine determine_tran_type
+{
+if cur_user=0 and new_user>0 then
+   {
+   tran_type$="Purchase";
+   sale_count=sale_count+1;
+   }
+if cur_user>0 and new_user>0 and cur_user<>new_user then
+   tran_type$="NUI";
+if cur_user>0 and new_user>0 and cur_user=new_user then
+   tran_type$="Rev. level update";
+if cur_user>0 and new_user=0 then
+   {
+   tran_type$="Return";
+   return_count=return_count+1;
+   }
+}
+
+subroutine write_cancel_record
+{
+if sale_count>return_count then 
+   {
+   oem_sn_cancel.sn_old=hold.serial_num$;
+   oem_sn_cancel.sn_occurs=1;
+   oem_sn_cancel.times_updated=0;
+   exchangeable_sn_counter=exchangeable_sn_counter+1;
+   }
+
+if sale_count<=return_count and return_count>0 then
+   {
+   oem_sn_cancel.sn_old=hold.serial_num$;
+   oem_sn_cancel.sn_occurs=0;
+   oem_sn_cancel.times_updated=0;
+   returned_sn_counter=returned_sn_counter+1;
+   }
+
+if sale_count=0 then
+   {
+   oem_sn_cancel.sn_old=hold.serial_num$;
+   oem_sn_cancel.sn_occurs=0;
+   oem_sn_cancel.times_updated=0;
+   never_sold_sn_counter=never_sold_sn_counter+1;
+   }
+
+oem_sn_cancel.appeal_heard="N";
+//insert/noerror oem_sn_cancel;
+insert oem_sn_cancel;
+if available(oem_sn_cancel)=0 then
+   duplicate_record_counter=duplicate_record_counter+1;
+}
+

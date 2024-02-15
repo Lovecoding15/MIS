@@ -1,0 +1,5 @@
+0010 REM BSN.12
+0015 REM Serial number reports menu
+0020 CALL "TAOSSET","(BBX)aonserr_mnu.bbx"
+0030 REM CALL "TAOSSET","RESET"
+0040 RUN "SYS.AA"

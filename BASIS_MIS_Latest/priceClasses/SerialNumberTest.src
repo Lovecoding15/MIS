@@ -1,0 +1,195 @@
+REM /**
+REM  * SerialNumberTest.src
+REM  * @author kwilliams
+REM  * test the SerialNumber class
+REM  */
+
+use ::SerialNumber.src::SerialNumber
+
+sn! = new SerialNumber("BBX608949")
+
+print "serial number: ", sn!.getSerialNumber()
+print "valid sn: ", sn!.isValidSerialNumber()
+print "active sn: ", sn!.isActive()
+print "Firm id: ", sn!.getFirmId()
+print "Customer #: ", sn!.getCustomerNbr()
+print "Product: ", sn!.getProduct()
+print "Platform: ", sn!.getPlatform()
+print "OS Level: ", sn!.getOSLevel()
+print "Product Rev: ", sn!.getProductRev()
+print "License Type: ", sn!.getLicenseType()
+print "BPL: ",sn!.isBasisProductLicense()
+print "Virtual: ", sn!.isVirtual()
+print "SAM Type: ", sn!.getSAMType()
+print "On SAM: ", sn!.isOnSAM()
+print "User Count: ", sn!.getUsers()
+print "Days SAM expired: ", sn!.daysSamExpired()
+print "Backup License? ", sn!.isBackupLicense()
+print "ProductionSN: ", sn!.getRelatedProductionLicenseSN()
+
+uprops! = sn!.getUserProperties()
+if uprops!.size() > 0 then
+    print "User Props: ", 
+    for x = 0 to uprops!.size() - 1
+        print uprops!.getItem(x), " ",
+    next x
+    print " "
+else
+    print "No User Props"
+endif
+
+ucounts! = sn!.getUserCounts()
+if ucounts!.size() > 0 then
+    print "User Counts: ", 
+    for x = 0 to ucounts!.size() - 1
+        print ucounts!.getItem(x), " ",
+    next x
+    print " "
+else
+    print "No User Counts"
+endif
+
+rem ' add new userCounts
+accepted! = sn!.addNewUserPropsCounts("EF", 10)
+if !accepted! then
+    print "1st Prop Not accepted"
+    stop
+endif
+accepted! = sn!.addNewUserPropsCounts("SF", 20)
+if !accepted! then
+    print "2nd Not accepted"
+    stop
+endif
+accepted! = sn!.addNewUserPropsCounts("SF", 25)
+if !accepted! then
+    print "3nd Not accepted"
+    stop
+endif
+accepted! = sn!.addNewUserPropsCounts("EF", 20)
+if !accepted! then
+    print "2nd Not accepted"
+    stop
+endif
+uprops! = sn!.getNewUserProperties()
+if uprops!.size() > 0 then
+    print "New User Props: ", 
+    for x = 0 to uprops!.size() - 1
+        print uprops!.getItem(x), " ",
+    next x
+    print " "
+else
+    print "No User Props"
+endif
+ucounts! = sn!.getNewUserCounts()
+if ucounts!.size() > 0 then
+    print "New User Counts: ", 
+    for x = 0 to ucounts!.size() - 1
+        print ucounts!.getItem(x), " ",
+    next x
+    print " "
+else
+    print "No User Counts"
+endif
+
+input "CR to Continue ",*
+
+sn! = new SerialNumber("BBX612133")
+
+print ""
+print "serial number: ", sn!.getSerialNumber()
+print "valid sn: ", sn!.isValidSerialNumber()
+print "active sn: ", sn!.isActive()
+print "Firm id: ", sn!.getFirmId()
+print "Customer #: ", sn!.getCustomerNbr()
+print "Product: ", sn!.getProduct()
+print "Platform: ", sn!.getPlatform()
+print "OS Level: ", sn!.getOSLevel()
+print "Product Rev: ", sn!.getProductRev()
+print "License Type: ", sn!.getLicenseType()
+print "BPL: ",sn!.isBasisProductLicense()
+print "Virtual: ", sn!.isVirtual()
+print "SAM Type: ", sn!.getSAMType()
+print "On SAM: ", sn!.isOnSAM()
+print "User Count: ", sn!.getUsers()
+print "Days SAM expired: ", sn!.daysSamExpired()
+print "Backup License? ", sn!.isBackupLicense()
+print "ProductionSN: ", sn!.getRelatedProductionLicenseSN()
+
+input "CR to Continue ",*
+
+sn! = new SerialNumber("BOD100024")
+
+print ""
+print "serial number: ", sn!.getSerialNumber()
+print "valid sn: ", sn!.isValidSerialNumber()
+print "active sn: ", sn!.isActive()
+print "Firm id: ", sn!.getFirmId()
+print "Customer #: ", sn!.getCustomerNbr()
+print "Product: ", sn!.getProduct()
+print "Platform: ", sn!.getPlatform()
+print "OS Level: ", sn!.getOSLevel()
+print "Product Rev: ", sn!.getProductRev()
+print "License Type: ", sn!.getLicenseType()
+print "BPL: ",sn!.isBasisProductLicense()
+print "Virtual: ", sn!.isVirtual()
+print "SAM Type: ", sn!.getSAMType()
+print "On SAM: ", sn!.isOnSAM()
+print "User Count: ", sn!.getUsers()
+print "Days SAM expired: ", sn!.daysSamExpired()
+print "Backup License? ", sn!.isBackupLicense()
+print "ProductionSN: ", sn!.getRelatedProductionLicenseSN()
+
+input "CR to Continue ",*
+
+sn! = new SerialNumber("PRO500023")
+
+print ""
+print "serial number: ", sn!.getSerialNumber()
+print "valid sn: ", sn!.isValidSerialNumber()
+print "active sn: ", sn!.isActive()
+print "Firm id: ", sn!.getFirmId()
+print "Customer #: ", sn!.getCustomerNbr()
+print "Product: ", sn!.getProduct()
+print "Platform: ", sn!.getPlatform()
+print "OS Level: ", sn!.getOSLevel()
+print "Product Rev: ", sn!.getProductRev()
+print "License Type: ", sn!.getLicenseType()
+print "BPL: ",sn!.isBasisProductLicense()
+print "Virtual: ", sn!.isVirtual()
+print "SAM Type: ", sn!.getSAMType()
+print "On SAM: ", sn!.isOnSAM()
+print "User Count: ", sn!.getUsers()
+print "Days SAM expired: ", sn!.daysSamExpired()
+print "Backup License? ", sn!.isBackupLicense()
+print "ProductionSN: ", sn!.getRelatedProductionLicenseSN()
+
+input "CR to Continue ",*
+
+sn! = new SerialNumber("PRO500007")
+
+print ""
+print "serial number: ", sn!.getSerialNumber()
+print "valid sn: ", sn!.isValidSerialNumber()
+print "active sn: ", sn!.isActive()
+print "Firm id: ", sn!.getFirmId()
+print "Customer #: ", sn!.getCustomerNbr()
+print "Product: ", sn!.getProduct()
+print "Platform: ", sn!.getPlatform()
+print "OS Level: ", sn!.getOSLevel()
+print "Product Rev: ", sn!.getProductRev()
+print "License Type: ", sn!.getLicenseType()
+print "BPL: ",sn!.isBasisProductLicense()
+print "Virtual: ", sn!.isVirtual()
+print "SAM Type: ", sn!.getSAMType()
+print "On SAM: ", sn!.isOnSAM()
+print "User Count: ", sn!.getUsers()
+print "Days SAM expired: ", sn!.daysSamExpired()
+print "Backup License? ", sn!.isBackupLicense()
+print "ProductionSN: ", sn!.getRelatedProductionLicenseSN()
+
+input "CR to Continue ",*
+
+end
+
+ 
+    

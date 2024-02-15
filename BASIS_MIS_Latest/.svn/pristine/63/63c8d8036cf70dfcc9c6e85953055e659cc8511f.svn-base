@@ -1,0 +1,56 @@
+REM genflexlic.bbx - generate a FLEXLM license file
+REM (EXPDT$ added as optional date for license to expire - 1/12/2000)
+REM (feature_file$ added as optional vendor features - 11/22/2000)
+REM (xusers added as extra Extended users on a BASIS license - 02/04/2003)
+REM (composite$ added to determine if composite hostid required - 09/27/2007)
+seterr enter_err
+enter product_type$,revision$,serial_num$,users,hostid$,lmfile$,expdt$,feature_file$,xusers,composite$, org_sale_dt$
+goto start1
+enter_err: if err<>36 then let lmfile$=""; goto exit
+start1: seterr exit
+let lmfile$="",hostid$=cvs(hostid$,3),expdt$=cvs(expdt$,3)
+if expdt$<>"" then gosub expire_date
+let prod_type$=cvs(product_type$,3),ser_num$=cvs(serial_num$,3)
+REM revision must be a number - strip away non-numerics
+let l=len(revision$),p=pos(" "=revision$); if p then let l=p
+let revnum$=""
+for n=1 to l
+if pos(revision$(n,1)=".0123456789") then let revnum$=revnum$+revision$(n,1)
+next n
+let l=len(revnum$); if pos("."=revnum$)=l then let revnum$=revnum$(1,l-1)
+let flexhome$=stbl("FLEXHOME")
+let outfile$=flexhome$+"lic/"+ser_num$+".lic"
+let arg$="-t "+$22$+prod_type$+$22$+" -r "+revnum$+" -s "+ser_num$+" -u "+str(users)
+if hostid$<>"" then let arg$=arg$+" -h "+hostid$,arg$=cvs(arg$,2)
+if expdt$<>"" then let arg$=arg$+" -d "+expdt$
+if org_sale_dt$ <> "" and expdt$ = "perpetual" then arg$ = arg$ + " -p " + org_sale_dt$ 
+if feature_file$<>"" then let arg$=arg$+" -f "+feature_file$
+if xusers then let arg$=arg$+" -x "+str(xusers)
+if cvs(composite$,3)<>"" then arg$=arg$+" "+cvs(composite$,3)
+let arg$=cvs(arg$,2)
+erase outfile$,err=scall
+scall:
+let a=scall(flexhome$+"bin/flex_license "+arg$+" 2>/dev/null")
+let outchn=unt; open (outchn,err=exit)outfile$
+let fin$=fin(outchn),filsiz=dec(fin$(1,4))
+read record(outchn,siz=filsiz,err=file_end)lmfile$
+file_end:
+close (outchn)
+let a=scall("chmod 666 "+outfile$+" 2>/dev/null")
+exit:
+exit
+expire_date:
+seterr expire_date_end
+rem 'Dates from contracts are already formatted dd-mmm-yyy by flexlic.bbx and should be skipped due to the seterr
+yy=0,mm=0,dd=num(expdt$)
+if len(expdt$)=8 then let yy=num(expdt$(1,4)),mm=num(expdt$(5,2)),dd=num(expdt$(7,2))
+let today=jul(0,0,0),xdt=today+dd
+rem weekday$=cvs(date(xdt:"%Ds"),4)
+rem p=pos(weekday$="FRITHUWEDTUEMONSUNSAT",3)/3
+rem let xdt=xdt+int(p);rem 'add to #days to get to a Friday
+if yy then let xdt=jul(yy,mm,dd)
+rem 'Test expiration - no more than 1 year (? reasonable ?)
+rem 'if xdt-today>365 then xdt=today+365
+let expdt$=cvs(date(xdt:"%Dz-%Ms-%Y"),8)
+expire_date_end: seterr exit
+return

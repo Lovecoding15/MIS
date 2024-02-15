@@ -1,0 +1,152 @@
+[Program]
+Creation Date=2008-12-02
+Creation Time=14:04:35
+Last Build Date=2008-12-11
+Last Build Time=15:20:25
+Precision=2
+Program Name=E:/work/buy_now
+Remarks=Yes
+Resource File=buy_now.arc
+Show Forms=All
+
+[EOJ]
+rem ' -----------------------------------------------------------------
+rem ' EOJ
+rem ' -----------------------------------------------------------------
+err_exit:
+if info(3,2)="thines" then escape
+
+pgm_exit:
+while len(chan$)>2
+  close(num(chan$(1,3)),err=*next)
+  chan$=chan$(4)
+wend
+if gb__forms and gb__sysgui then
+  for gb__temp=1 to gb__forms
+  print (gb__sysgui)'context'(gb__form_context[gb__temp]),'destroy'(0)
+  next gb__temp
+fi
+print (gb__sysgui)'context'(old_context),'focus'(0),'flush'
+close (gb__sysgui)
+resclose(gb__handle,err=*next)
+exit
+
+[Init]
+rem ' -----------------------------------------------------------------
+rem ' Init
+rem ' -----------------------------------------------------------------
+seterr err_exit
+setesc err_exit
+sysgui!=bbjapi().getSysGui()
+if (info(3,6)="0" and info(0,0)="Windows XP" and info(1,1)>="1.4.2")
+:  or (info(3,6)<>"0" and
+:  bbjapi().getThinClient(err=*next).getClientOSName(err=*next)="Windows XP" and
+:  bbjapi().getThinClient(err=*next).getClientJavaVersion(err=*next)>="1.4.2")
+:  then bbjapi().getSysGui().setLookAndFeel("WindowsXPLookAndFeel")
+DIM DATE$:"default:c(32*=0),sm[12]:c(3*=0),m[12]:c(32*=0),sd[7]:c(3*=0),d[7]:c(32*=0)"
+date$=stbl("!DATE")
+date.default$="%Mz/%Dz/%Y"
+dummy$=stbl("!DATE",date$)
+l=1
+while l<5
+  p=pos($0a$=gb__arg$)
+  if p=0 then break
+  if l=1 then old_context=num(gb__arg$(1,3))
+  if l=2 then x=num(gb__arg$(1,4))+25,y=num(gb__arg$(5,4))+60
+  if l=3 then security_level=num(gb__arg$(1,3))
+  if l=4 then uid$=gb__arg$(1,p-1)
+  l=l+1,gb__arg$=gb__arg$(p+1)
+wend
+if pos(cvs(uid$,3)="LG,+ON")=0 then goto pgm_exit
+
+gb__context = fngb__window("101")
+win_id_buynow$=fngb__win_id$(gb__win.buynow)
+dim win_buynow$:fngb__template$(win_id_buynow$)
+rem ' Set Window Focus
+ctl_id=num(fattr(win_buynow$,"ponumber","ID"))
+print (gb__sysgui)'context'(gb__win.buynow),'move'(0,x,y),
+:'enable'(0),'show'(0),'focus'(0),'raise','focus'(ctl_id)
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+print (gb__sysgui)'context'(gb__event.context),'destroy'(0)
+
+[Event Win=101 ID=1 Code=B <PUSH_BUTTON> (W101_C1_PUSH_BUTTON)]
+rem ' Push button operated
+win_buynow$=fngb__get_fields$(win_id_buynow$,win_buynow$,"ponumber")
+
+po$=cvs(win_buynow.ponumber$,3)
+if po$="" then return
+action$="03"
+firm$="01"
+cust$="007808**"
+q$=chr(34)
+statfile$="/basisaon/audev_stat.txt"
+erase statfile$,err=*next
+string statfile$,err=*next
+nostat=scall("chmod 666 "+statfile$)
+cmd$="/usr/local/directcomm/audev_buy_now "+q$+action$+q$+" "+q$+firm$+cust$+q$+" "+q$+po$+q$+" "+q$+statfile$+q$
+if nostat then 
+  i=MSGBOX("You will not receive a response"+$0a$+"check email for confirmation",0,"Can't create output file")
+  cmd$="/usr/local/bbj/bin/bbj -tIO -c/basisaon/config.aon /usr/local/ec/basdirectorder.bbj - "+q$+action$+q$+" "+q$+firm$+cust$+q$+" "+q$+po$+q$
+fi
+
+failed=SCALL(cmd$)
+msg$="Buy now command failed!",x$=""
+IF failed=0 then
+  msg$="No response received, status unknown"
+  statfile=unt
+  open(statfile,err=*endif)statfile$
+  f$=fin(statfile)
+  s=dec(f$(1,4))
+  stat$=""
+  readrecord(statfile,siz=s,err=*next)stat$
+  gosub get_status
+  if nostat=0 then msg$="Result: "+temp$
+fi
+close(statfile,err=*next)
+LET i=MSGBOX(msg$,0,"Status "+x$)
+
+[Event Win=101 ID=2 Code=B <PUSH_BUTTON> (W101_C2_PUSH_BUTTON)]
+rem ' Push button operated
+goto pgm_exit
+
+
+[Function (get_status)]
+rem ' -----------------------------------------------------------------
+rem ' get_status
+rem ' -----------------------------------------------------------------
+
+get_status:
+x$="??",temp$="Unknown "+stat$
+if len(stat$)<2 then return
+x$=stat$(1,2),stat$=stat$(3)
+if errtxt$="" then
+errtxt$="00OK|01Invalid arguments|02Could not reset counter - exceeded limit|"
+errtxt$=errtxt$+"07Invalid product ID|"+"08shopping cart is full|"
+errtxt$=errtxt$+"09Invalid serial number|11Undefined Vendor feature|"
+errtxt$=errtxt$+"12feature users exceed Basis users|"
+errtxt$=errtxt$+"13Customer record locked/not found|"
+errtxt$=errtxt$+"14Invalid license type|15Invalid revision|"
+errtxt$=errtxt$+"16Invalid port id|17Can't match platform|"
+errtxt$=errtxt$+"18Invalid inventory item|19No temporary license|"
+errtxt$=errtxt$+"20Empty cart or PO number not found|"
+errtxt$=errtxt$+"21Failed to open files in ec_open|"
+errtxt$=errtxt$+"22SAM purchase required|"
+errtxt$=errtxt$+"23Serial numbers of same type are required for consolidation|"
+errtxt$=errtxt$+"24New SAM annual date is less than old annual or todays date|"
+errtxt$=errtxt$+"25License has not been registered - license count=0|"
+errtxt$=errtxt$+"26Invalid number of users|27Rental/Devloper kit has expired|"
+errtxt$=errtxt$+"28Cannot change an existing permanent license to a rental|"
+errtxt$=errtxt$+"29Cannot consolidate - serial number(s) in order status|"
+fi
+
+p=pos(x$=errtxt$)
+if p then temp$=errtxt$(p+2)
+p=pos("|"=temp$)
+if p then temp$=temp$(1,p-1)
+if len(stat$)>2 then stat$=stat$(3)
+if len(stat$)>30 then stat$=stat$(1,30)
+temp$=temp$+$0a$+stat$
+return
+

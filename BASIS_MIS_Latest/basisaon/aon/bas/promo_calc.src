@@ -1,0 +1,406 @@
+REM 'promo_calc.src/bbj (based on ec_trade.bbj)
+seterr end_pgm
+
+enter firm_id$,cust_num$,csm03,ivm01,smc01,snm01,snm02,snt01,snlist$,new_item$,ent_tot_users,std_tot_users,sn1$,invoice$,invdate$,oldsc
+
+eu$="EF",su$="SF",m$="0000"
+
+call "templates.pgm::snm01"
+call "templates.pgm::snm02"
+call "templates.pgm::snt01"
+call "templates.pgm::SMC01"
+call "ec_open::arm02"
+call "ec_open::arm10i"
+call "ec_open::csm01"
+call "ec_open::csm02"
+call "ec_open::csm04"
+call "ec_open::csm05"
+call "ec_open::csm07"
+call "ec_open::csm10"
+call "ec_open::csm13"
+promo=unt
+open(promo)stbl("DATA_SERVER")+"/basisaon/aon/ADATA/promo.dat"
+chan$=str(arm02:m$)+str(arm10i:m$)+str(csm01:m$)+str(csm02:m$)+str(csm04:m$)+str(csm05:m$)+str(csm07:m$)+str(csm10:m$)+str(csm13:m$)+str(promo:m$)
+
+pricemask$="-####0.00"
+usermask$="-00000"
+disc_pct=0,partner_disc=0
+readrecord(arm02,key=firm_id$+cust_num$+"  ")arm02$
+splevel=arm02.pricing_level
+FIND (arm10i,KEY=firm_id$+"I"+arm02.disc_code$,ERR=*NEXT)*,disc_pct
+if pos(arm02.cust_type$(1,1)="AMP") then partner_disc=5
+
+if oldsc then goto online_disc
+
+dim sninfo$:"upg_pct:c(3),sam:c(1),sn:c(20),product:c(3),platform:c(3),os_level:c(3),product_rev:c(3),license_type:c(3),contract:c(6),date:c(8),users1:c(6),users2:c(6),chg_upg:c(1)"
+sninfo_len=len(sninfo$)
+sn_detail$=""
+sn_count=0,ent_users=0,std_users=0,ds_users=0,cl_users=0,add_total=0
+today_jul=fnaonjul(invdate$)
+templist$=snlist$
+Read record (smc01,KEY=sn1.contract$,DOM=*next)smc01$
+d$=smc01.annual_dt$
+jul_renew=jul(num(d$(1,4)),num(d$(5,2)),num(d$(7,2)))
+
+while pos($0a$=templist$)
+  p=pos($0a$=templist$), sninfo.sn$=templist$(1,p-1), templist$=templist$(p+1)
+  Readrecord(snm01,key=sninfo.sn$,err=*next)snm01$
+  if pos(sn1.serial_nbr$=snlist$)=1 then snm01$=sn1$
+  sninfo.product$=snm01.product$
+  sninfo.platform$=snm01.platform$
+  sninfo.os_level$=snm01.os_level$
+  sninfo.product_rev$=snm01.product_rev$
+  sninfo.license_type$=snm01.license_type$
+  sninfo.users1$=str(snm01.users:usermask$)
+  sninfo.users2$=str(0:usermask$)
+
+  sninfo.date$=""
+  sninfo.contract$=""
+  sam_flag=0,sam_active$=""
+  Read record (smc01,KEY=snm01.contract$,DOM=no_sam_contract)smc01$
+  days_expired=NUM(fnxdays$(smc01.annual_dt$))
+  sam_active$=snm01.sam_active$
+  IF smc01.sam_active$="N" OR days_expired THEN LET sam_active$="N"
+  IF sam_active$<>"N" THEN LET sam_flag=(POS("SM"=smc01.contr_type$)=1)
+  if days_expired or sam_active$<>"N" then 
+    sninfo.date$=smc01.annual_dt$
+    sninfo.contract$=smc01.contract$
+  fi
+  no_sam_contract: 
+  Readrecord(snm02,key=sninfo.sn$,err=*next)snm02$
+  u1=0,u2=0
+  if snm02.serial_nbr$=sninfo.sn$ then
+    if pos("E"=snm02.lic_property1$) then u1=snm02.users1
+    if pos("S"=snm02.lic_property1$) then u2=snm02.users1
+    if pos("E"=snm02.lic_property2$) then u1=snm02.users2
+    if pos("S"=snm02.lic_property2$) then u2=snm02.users2
+    if u1+u2 then 
+     snm01.users=0,ent_users=ent_users+u1,std_users=std_users+u2	
+     sninfo.users1$=str(u2:usermask$)
+     sninfo.users2$=str(u1:usermask$)
+    fi
+  fi
+
+  IF snm01.product$="DS5" THEN 
+    LET ds_users=ds_users+snm01.users 
+  else  
+    LET cl_users=cl_users+snm01.users
+  fi
+  sninfo.sam$=str(sam_flag)
+  upg_pct=100
+  READ (CSM04,KEY=FIRM_ID$+sninfo.product_rev$,ERR=*next)*,*,*,upg_pct
+  sninfo.upg_pct$=str(upg_pct*(sam_flag=0):"000")
+  sn_detail$=sn_detail$+sninfo$+$0a$
+  sn_count=sn_count+1
+wend
+
+sn_detail$=ssort(sn_detail$,sninfo_len+1);rem 'add 1 for $0a$ at end
+ent_users=ent_users+ds_users
+std_users=std_users+cl_users-ds_users
+ent_add=ent_tot_users-ent_users,std_add=std_tot_users-std_users
+tier_override=std_users+ent_users+std_add+ent_add
+
+rem '2 for 1 std -> ent
+ent_nc=0
+if std_add<-1 and ent_add>0 and ent_add<abs(std_add) then
+  ent_nc=int(std_add/-2)
+  if ent_nc>ent_add then ent_nc=ent_add
+  std_add=std_add+2*ent_nc
+  ent_add=ent_add-ent_nc
+fi
+
+if std_add>0 and ent_add<0 then
+  std_nc=ent_add*-1
+  if std_nc>std_add then std_nc=std_add
+  ent_add=ent_add+std_nc
+  std_add=std_add-std_nc
+  eu=std_nc,su=0,pass=3
+  gosub user_decrease 
+  ds_users=ds_users-std_nc
+fi
+
+if ds_users>cl_users then 
+  eu=ds_users-cl_users,su=0,pass=3
+  gosub user_decrease 
+  ds_users=cl_users
+fi
+
+if std_add<0 and ent_add<1 then 
+  su=std_add,eu=0,pass=1
+  gosub user_decrease
+  std_users=std_users+std_add
+  std_add=0
+fi
+if ent_add<0 then 
+  su=0,eu=ent_add,pass=3
+  if ds_users then 
+    gosub user_decrease
+    if ds then 
+      pass=2,eu=ds
+      gosub user_decrease
+      eu=u
+    fi
+  fi
+  pass=1
+  gosub user_decrease
+  ent_users=ent_users+ent_add
+  ent_add=0
+fi
+
+dim dsinfo$:fattr(sninfo$)
+dslist$=sn_detail$
+while pos($0a$=dslist$)
+  lf=pos($0a$=dslist$),dsinfo$=dslist$(1,lf-1),dslist$=dslist$(lf+1)
+  if dsinfo.product$<>"DS5" then continue
+  uds=fnnum(dsinfo.users1$)
+  if uds=0 then continue
+  cllist$=sn_detail$
+  dsup=0
+  while pos($0a$=cllist$)
+    lf=pos($0a$=cllist$),sninfo$=cllist$(1,lf-1),cllist$=cllist$(lf+1)
+    if pos(sninfo.product$="DS5,BAS") or sninfo.chg_upg$<>" " then continue
+    u1=fnnum(sninfo.users1$),u2=0
+    if uds>=u1 then u2=u1, u1=0 else u2=uds, u1=u1-u2
+    uds=uds-u2
+    rem if dsinfo.sam$="0" and sninfo.sam$<>"0" then dsup=dsup+u2
+    if dsinfo.sam$="0" then dsup=dsup+u2
+    sninfo.chg_upg$="E"
+    if dsinfo.sam$<>"0" and sninfo.sam$="0" then sninfo.chg_upg$="S"
+    sninfo.users1$=str(u1:usermask$)
+    sninfo.users2$=str(u2:usermask$)
+    p=pos(sninfo.sn$=sn_detail$)-4
+    sn_detail$(p,sninfo_len)=sninfo$
+    if uds=0 then break
+  wend
+  dsinfo.users1$=str(dsup:usermask$)
+  p=pos(dsinfo.sn$=sn_detail$)-4
+  sn_detail$(p,sninfo_len)=dsinfo$
+wend
+
+qty=1
+templist$=sn_detail$
+
+rem 'loop to do trades
+while pos($0a$=templist$)
+  p=pos($0a$=templist$), sninfo$=templist$(1,p-1), templist$=templist$(p+1)
+  if sninfo.sam$<>"0" then continue
+  if sninfo.product$="DS5" then continue
+  if cvs(sninfo.contract$,3)<>"" then continue
+  users=fnnum(sninfo.users1$)
+  users2=fnnum(sninfo.users2$)
+  totusr=users+users2
+  if totusr=0 then continue
+  old_item$=sninfo.product$+sninfo.platform$+sninfo.os_level$+sninfo.product_rev$+sninfo.license_type$
+  sam_flag=1
+  contract$=sninfo.contract$
+  jul_prorate=today_jul
+  d$=sninfo.date$
+  dim old_users[2],new_users[2],old_lprop$[2],new_lprop$[2]
+  old_users[0]=totusr
+  if sninfo.product$="BAS" then 
+    old_users[0]=users
+    old_users[1]=users2
+    if users then old_lprop$[0]=su$
+    if users2 then old_lprop$[1]=eu$
+  fi
+  new_users[0]=users
+  if pos("BAS"=new_item$)=1 then new_lprop$[0]=su$
+  new_users[1]=users2
+  if sninfo.chg_upg$="S" then
+    new_users[0]=users+users2
+    new_users[1]=0
+  fi
+  if new_users[1] then new_lprop$[1]=eu$ else new_lprop$[1]=""
+  if new_users[0]=0 then
+    new_users[0]=new_users[1],new_lprop$[0]=new_lprop$[1]
+    new_users[1]=0,new_lprop$[1]=""
+  fi
+  tran_users=new_users[0]+new_users[1]
+  checktype$="TRDUPDUG4"
+  line_sort=0
+  gosub ec_price
+  sn_price=price
+  if jul_renew-jul_prorate>0 then contract$=""
+  new_users[0]=users
+  new_users[1]=users2
+  if new_users[0] then new_lprop$[1]=su$ else new_lprop$[0]=""
+  if new_users[1] then new_lprop$[1]=eu$ else new_lprop$[1]=""
+  if new_users[0]=0 then
+    new_users[0]=new_users[1],new_lprop$[0]=new_lprop$[1]
+    new_users[1]=0,new_lprop$[1]=""
+  fi
+  checktype$="SM1"
+  line_sort=1
+  gosub ec_price
+  sn_price=sn_price+price
+  gosub write_promo
+wend
+
+end_pgm:
+
+l=len(m$)
+while len(chan$)
+  chan=fnnum(chan$(1,l))
+  chan$=chan$(l+1)
+  close(chan,err=*next)
+wend
+  
+exit
+
+rem 'Subroutines, functions
+
+online_disc:
+dim promo$:"firm:c(2),cust:c(6),invoice:c(7),sn:c(20),inv_date:c(8),available:c(30*),users:n(7*),amt:n(10*),avail_num:n(5*)"
+k$=firm_id$+cust_num$+invoice$
+read(promo,key=k$,dom=*next)
+while 1
+  readrecord(promo,end=*break)promo$
+  if pos(k$=promo$)<>1 then break
+  price=promo.amt
+  promo.amt=promo.amt-price/(1-disc_pct/100)*.05
+  promo$=field(promo$)
+  writerecord(promo)promo$
+wend
+goto end_pgm
+
+write_promo:
+dim promo$:"firm:c(2),cust:c(6),invoice:c(7),sn:c(20),inv_date:c(8),available:c(30*),users:n(7*),amt:n(10*),avail_num:n(5*)"
+promo.firm$=firm_id$
+promo.cust$=cust_num$
+promo.invoice$=invoice$
+promo.sn$=sninfo.sn$
+promo.inv_date$=date(today_jul:"%Y%Mz%Dz")
+promo.users=totusr
+promo.amt=sn_price
+promo$=field(promo$)
+writerecord(promo)promo$
+return
+
+ec_price:
+totprice=0
+samfactor=max(0,sam_flag*(jul_renew-jul_prorate))
+dim type$[1],price[1]
+price=0,com$=""
+xtra$="EN"+$0a$+str(disc_pct+partner_disc)+$0a$+"0"+$0a$+str(tier_override)+$0a$+"0"+$0a$
+CALL "ec_price",firm_id$,cust_num$,qty,old_item$,old_users[all],old_lprop$[all],new_item$,new_users[all],new_lprop$[all],type$[ALL],price[ALL],comments$,arm02,arm10i,csm01,csm02,csm03,csm04,csm05,csm07,csm10,csm13,ivm01,smc01,sam_flag,samfactor,contract$,nbr_trans,xtra$
+LET ok=!(POS("**"=comments$)=1)
+IF ok=0 THEN exitto end_pgm
+
+FOR nbr=0 TO nbr_trans
+  IF type$[nbr]="" then continue
+  if checktype$<>"" and pos(type$[nbr](1,3)=checktype$,3)=0 then continue
+  if pos("NCA"=checktype$) then price[nbr]=0
+  totprice=totprice+price[nbr]
+  if pos("TRD"=type$[nbr]) then gosub alternate_upg
+  LET price=price+price[nbr]
+NEXT nbr
+
+return
+
+alternate_upg:
+if sam_flag=0 or cvs(contract$,3)<>"" then return 
+if price[nbr]<=0 then return
+upg=nbr
+dim snm01$:fattr(snm01$)
+readrecord(snm01,key=sninfo.sn$,dom=*next)snm01$
+if cvs(snm01.serial_nbr$,3)="" then return
+
+dim old_u[2],old_lp$[2],new_lp$[2]
+if new_lprop$[0]<>"" then new_lp$[0]=new_lprop$[0] else new_lp$[0]=new_item$(1,3)
+new_lp$[1]=new_lprop$[1]
+call "price.pgm",firm_id$,"SM1",new_item$(10,3),old_u[all],old_users[all],old_lp$[all],new_lp$[all],"","SM1",0,disc_pct+partner_disc,splevel,prc,samprc
+if samprc<=0 then return
+
+jd=0
+first=1
+read record(snt01,key=snm01.serial_nbr$,dom=*next)snt01$
+while 1
+  read record(snt01,end=*break)snt01$
+  if snt01.serial_nbr$<>snm01.serial_nbr$ then break
+  if (pos(snt01.type_of_sale$="UPDUG4UG3PLXUNCEXC",3) or first) and snt01.ext_price>0 then jd=fnaonjul(snt01.trans_date$)
+  first=0
+wend
+
+if jd then
+  days=max(0,today_jul-jd)
+  sam_upg=samprc*days/365
+  if sam_upg>0 and sam_upg<price[upg] then 
+    price[upg]=sam_upg
+    xc$=xc$+$0a$+"Price based on retroactive SAM"
+  fi
+fi
+
+RETURN
+
+DEF fnnum(tempnum$)
+ RETURN NUM(tempnum$,ERR=badnum)
+ badnum: RETURN 0
+FNEND
+
+DEF fnxdays$(xdt$)
+ LET xdays=0
+ LET xy=NUM(xdt$(1,4),ERR=xdays_end)
+ LET xm=NUM(xdt$(5,2),ERR=xdays_end)
+ LET xd=NUM(xdt$(7,2),ERR=xdays_end)
+ LET xdays=MAX(0,today_jul-JUL(xy,xm,xd,ERR=xdays_end))
+ xdays_end: RETURN STR(xdays)
+FNEND
+
+def fnaonjul(ymd$)
+  y=1900+asc(ymd$(1))-32,m=asc(ymd$(2))-32,d=asc(ymd$(3))-32
+  IF m<1 OR d<1 THEN LET jd=0 ELSE LET jd=JUL(y,m,d)
+  return jd
+fnend
+
+user_decrease:
+rem 'build list of sns sorted by sam type, upg% & users to take users from
+rem 'those w/no sam, higher upg% & higher user counts first, working down
+rem 'the list as needed (upg% & users are subtracted from a big number in
+rem 'order to get the proper order using a descending sort)
+templist$=sn_detail$
+sortlist$=""
+l=0
+while pos($0a$=templist$)
+  lf=pos($0a$=templist$),sninfo$=templist$(1,lf-1)
+  templist$=templist$(lf+1)
+  if su and sninfo.product$="DS5" then continue
+  uu=fnnum(sninfo.users1$)+fnnum(sninfo.users2$)
+  if uu<1 then continue
+  u$=str(99999-uu:usermask$)
+  p$=str(100-fnnum(sninfo.upg_pct$):"000")
+  sortlist$=sortlist$+sninfo.sam$+p$+u$+sninfo.product$+sninfo.sn$
+  if l=0 then l=len(sortlist$)
+wend
+sortlist$=ssort(sortlist$,l)
+u=abs(eu+su)
+ds=0
+while len(sortlist$)
+  temp$=sortlist$(1,l)
+  sortlist$=sortlist$(l+1)
+  sam=fnnum(temp$(1,1)),sn$=temp$(l-19,20),prod$=temp$(l-22,3)
+  if pass=3 and prod$<>"DS5" then continue
+  if pass=2 and pos(prod$="DS5,BAS") then continue
+  p=pos(sn$=sn_detail$); if p<5 then continue
+  p=p-4,temp$=sn_detail$(p),p1=pos($0a$=temp$);if p1=0 then continue
+  sninfo$=temp$(1,p1-1)
+  u1=fnnum(sninfo.users1$)
+  u2=fnnum(sninfo.users2$)
+  if pass>1 then 
+    if u1>u then u1=u1-u, ux=u, u=0 else u=u-u1, ux=u1, u1=0
+    ds=ds+ux
+  fi
+  if pass=1 then 
+    if eu and u2 then 
+      if u2>u then u2=u2-u, ux=u, u=0 else u=u-u2, ux=u1, u2=0
+    else
+      if u1>u then u1=u1-u, u=0 else u=u-u1, u1=0
+    fi
+  fi
+  sninfo.users1$=str(u1:usermask$)
+  sninfo.users2$=str(u2:usermask$)
+  sn_detail$(p,len(sninfo$))=sninfo$
+  if u=0 then break
+wend
+return
+
+END

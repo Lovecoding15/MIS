@@ -1,0 +1,142 @@
+rem ' check the renewal status of a serial number
+
+enter sn$,status
+
+status=99
+
+seterr pgm_exit
+
+rem 'status codes returned:
+rem '0 = Ok to renew using same contract or no SAM contract
+rem '1 = Ok to renew - other sn's on this contract, make new one
+rem '10 = SN not found or inactive
+rem '15 = Current order exists for this SN
+rem '20 = Open SAM invoice exists for this SN
+
+rem '99 = Undetermined program failure
+
+rem ' housekeeping
+jul_today=jul(0,0,0)
+days_expired=0
+days_to_expire=0
+
+rem ' open files
+mc$="000"
+call "ec_open::smc01"
+chan$=str(smc01:mc$)
+call "ec_open::snm01"
+chan$=chan$+str(snm01:mc$)
+call "ec_open::snt01"
+chan$=chan$+str(snt01:mc$)
+call "ec_open::are83"
+chan$=chan$+str(are83:mc$)
+call "ec_open::are03"
+chan$=chan$+str(are03:mc$)
+call "ec_open::art03"
+chan$=chan$+str(art03:mc$)
+call "ec_open::art01"
+chan$=chan$+str(art01:mc$)
+call "ec_open::art11"
+chan$=chan$+str(art11:mc$)
+
+status=10
+
+rem ' check serial number record
+readrecord(snm01,key=sn$,knum=0,dom=pgm_exit)snm01$
+
+rem 'No old kits (KVP,KOD,etc)
+if pos("K"=snm01.product$)=1 then goto pgm_exit
+
+if snm01.active_flag$<>"Y" then goto pgm_exit
+
+rem ' no contract record ok to renew
+if cvs(snm01.contract$,3)="" then status=0;goto pgm_exit
+
+rem ' check contract
+readrecord(smc01,key=snm01.contract$,dom=pgm_exit)smc01$
+
+rem if smc01.contr_type$<>"SM1" then goto pgm_exit
+
+jul_expire=fnjul(smc01.expire_on_dt$)
+days_expired=jul_today-jul_expire
+rem if days_expired<0 then goto pgm_exit
+
+rem ' check the order serial number detail file  
+k$=snm01.firm_id$+"  "+snm01.customer_nbr$
+ok=1
+read(are83,key=k$,dom=*next)
+while 1
+  readrecord(are83,end=*break)are83$
+  if pos(k$=are83$)<>1 then break
+  if are83.serial_nbr$=sn$ then 
+    ok=0
+    status=15
+    readrecord(are03,key=k$+are83.order_number$+"000",dom=*break)are03$
+    if smc01.contr_type$ = "SM1" then
+	    if pos("SAM Renew"=are03.ar_po_number$) then status=20
+    else
+	    if smc01.contr_type$ = "RN1" then
+	        if pos("RNT Renew"=are03.ar_po_number$) then status=20
+	    else
+	        if smc01.contr_type$ = "DV1" then
+	            if pos("DVK Renew"=are03.ar_po_number$) then status=20
+	        fi
+	    fi
+    fi
+    break
+  fi
+wend
+if ok=0 then goto pgm_exit
+
+rem ' check serial number detail file
+read(snt01,key=sn$,dom=*next)
+
+while 1
+  readrecord(snt01,end=*break)snt01$
+  if pos(sn$=snt01$)<>1 then break
+  
+  rem ' RN1 and DV1 with have a RNW type of sale
+  if pos("SM"=snt01.type_of_sale$)<>1 and pos("RNW"=snt01.type_of_sale$)<>1 then continue
+  
+  if jul_today-fnj3(snt01.trans_date$)>365 then continue
+  readrecord(art03,key=k$+snt01.ar_inv_nbr$+"000",dom=*continue)art03$
+  
+  if pos("SAM Renew"=art03.ar_po_number$)=0 and pos("RNT Renew"=art03.ar_po_number$)=0 and pos("DVK Renew"=art03.ar_po_number$) = 0 then continue
+  
+  tot=0
+  art01key$=k$+snt01.ar_inv_nbr$+"00"
+  read record(art01,key=art01key$,dom=*continue)art01$
+  read(art11,key=art01$(1,17),dom=*next)
+  while 2
+    read record(art11,end=*break)art11$
+    if pos(art01$(1,17)=art11$)<>1 then break
+    if art11.AR_TRAN_CODE$="C" then tot=tot+art11.trans_amt
+  wend
+  if art01.invoice_amt+tot then ok=0;break
+wend
+if ok=0 then status=20;goto pgm_exit
+
+status=0
+rem 'find out if there are more serial numbers on this contract
+read(snm01,key=smc01.contract$,knum=3,dom=*next)
+while 1
+  read record(snm01,end=*break)snm01$
+  if snm01.contract$<>smc01.contract$ then break
+  if snm01.firm_id$+snm01.customer_nbr$<>smc01.firm_id$+smc01.customer_nbr$ then break
+  if snm01.serial_nbr$<>sn$ then status=1;break
+wend
+
+pgm_exit:
+
+    rem ' close files
+    lc=len(mc$)
+    while len(chan$)>=lc
+        ch=num(chan$(1,lc))
+        close(ch,err=*next)
+        chan$=chan$(lc+1)
+    wend
+exit
+
+rem ' user defined functions
+    def fnjul(xx$)=jul(num(xx$(1,4)),num(xx$(5,2)),num(xx$(7,2)))
+    def fnj3(ymd$)=jul(1900+asc(ymd$(1))-32,asc(ymd$(2))-32,asc(ymd$(3))-32)

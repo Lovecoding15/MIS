@@ -1,0 +1,34 @@
+Table Definition Module
+FUT_OEM_AR_PRICE - Line Item Price Tracking
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_OEM_AR_PRICE^/mnt/data/aon_prod/apps/fileutil/;^BSHO;^^^Line Item Price Tracking^Line Item Price Tracking^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_OEM_AR_PRICE^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^+2^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+AR_TYPE^FUT_OEM_AR_PRICE^002^C^^3002^ine_ar_type^0^^^2^^Y^^^^^FUT_AR_TYPE^AR Type^AR Type^AR Type^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+CUSTOMER_NBR^FUT_OEM_AR_PRICE^003^C^^3003^dis_customer_nbr^0^^^3^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^^^^0^^^^N^
+AR_INV_NBR^FUT_OEM_AR_PRICE^004^C^^3004^ine_ar_inv_nbr^0^^^4^^Y^^^^^FUT_AR_INV_NBR^A/R Invoice Number^A/R Invoice Number^A/R Invoice Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^0^^^^^^^^N^
+LINE_NUMBER^FUT_OEM_AR_PRICE^005^C^^3005^ine_line_number^0^^^5^^Y^^^^^FUT_LINE_NUMBER^Line Number^Line Number^Line Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^3^^^^^^^^N^
+INV_DATE^FUT_OEM_AR_PRICE^006^C^^3006^ind_inv_date^0^^^6^^N^^^C^^FUT_INV_DATE^Invoice date (YYYYMMDD)^Invoice date (YYYYMMDD)^Invoice date (YYYYMMDD)^C^1^D^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^^^^^^^^N^
+TYPE_OF_SALE^FUT_OEM_AR_PRICE^007^C^^3007^ine_type_of_sale^0^^^7^^N^^^^^FUT_TYPE_OF_SALE^Configurator Type of Sale ID^Configurator Type of Sale Id^Configurator Type of Sale Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^N^
+ITEM_NUMBER^FUT_OEM_AR_PRICE^008^C^^3008^ine_item_number^0^^^8^^N^^^^^FUT_ITEM_NUMBER^Item number^Item number^Item number^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^^^^^^^^N^
+AR_PO_NUMBER^FUT_OEM_AR_PRICE^009^C^^3009^ine_ar_po_number^0^^^9^^N^^^^^FUT_AR_PO_NUMBER^Ar Po Number^Ar Po Number^Ar Po Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^2^^^^^^^^N^
+ORDER_NUMBER^FUT_OEM_AR_PRICE^010^C^^3010^ine_order_number^0^^^10^^N^^^^^FUT_ORDER_NUMBER^Order Number^Order Number^Order Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^^^^^^^^N^
+AVAILABLE^FUT_OEM_AR_PRICE^011^C^^3011^ine_available^0^^^11^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^23^^^^^^^^^^^0^^^^^^^^Y^
+EXT_PRICE^FUT_OEM_AR_PRICE^012^C^^3012^inn_ext_price^0^^^12^^N^^^^^FUT_EXT_PRICE^Extended Price^Extended Price^Extended Price^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^^^^^^^^Y^
+NBR_1^FUT_OEM_AR_PRICE^013^C^^3013^inn_nbr_1^0^^^13^^N^^^^^FUT_NBR_1^Available number 1^Available number 1^Available number 1^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^Y^
+NBR_2^FUT_OEM_AR_PRICE^014^C^^3014^inn_nbr_2^0^^^14^^N^^^^^FUT_NBR_2^Available number 2^Available number 2^Available number 2^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_OEM_AR_PRICE^PRIMARY^FUT_OEM_AR_PRICE.FIRM_ID                FUT_OEM_AR_PRICE.AR_TYPE                FUT_OEM_AR_PRICE.CUSTOMER_NBR           FUT_OEM_AR_PRICE.AR_INV_NBR             FUT_OEM_AR_PRICE.LINE_NUMBER            ^FUT_OEM_AR_PRICE.FIRM_ID$+FUT_OEM_AR_PRICE.AR_TYPE$+FUT_OEM_AR_PRICE.CUSTOMER_NBR$+FUT_OEM_AR_PRICE.AR_INV_NBR$+FUT_OEM_AR_PRICE.LINE_NUMBER$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.AR_TYPE$+RD_REC_DATA.CUSTOMER_NBR$+RD_REC_DATA.AR_INV_NBR$+RD_REC_DATA.LINE_NUMBER$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.AR_TYPE$                    RD_REC_DATA.CUSTOMER_NBR$               RD_REC_DATA.AR_INV_NBR$                 RD_REC_DATA.LINE_NUMBER$                
+{KeyDefsEnd}
+{GridCols}
+001FUT_OEM_AR_PRICE.FIRM_ID                ;002FUT_OEM_AR_PRICE.AR_TYPE                ;003FUT_OEM_AR_PRICE.CUSTOMER_NBR           ;004FUT_OEM_AR_PRICE.AR_INV_NBR             ;005FUT_OEM_AR_PRICE.LINE_NUMBER            ;006FUT_OEM_AR_PRICE.INV_DATE               ;007FUT_OEM_AR_PRICE.TYPE_OF_SALE           ;008FUT_OEM_AR_PRICE.ITEM_NUMBER            ;009FUT_OEM_AR_PRICE.AR_PO_NUMBER           ;010FUT_OEM_AR_PRICE.ORDER_NUMBER           ;011FUT_OEM_AR_PRICE.AVAILABLE              ;012FUT_OEM_AR_PRICE.EXT_PRICE              ;013FUT_OEM_AR_PRICE.NBR_1                  ;014FUT_OEM_AR_PRICE.NBR_2                  ;
+{GridColsEnd}

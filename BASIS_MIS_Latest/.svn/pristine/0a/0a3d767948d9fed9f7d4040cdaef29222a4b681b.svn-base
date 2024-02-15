@@ -1,0 +1,60 @@
+// Analyze each P/5 OSAS serial number transaction and report its status
+// <oem_sn_analysis.rwi>
+
+first_time=1;
+active_serial=0;
+init oemhistory;
+init hold$:fattr(oemhistory$);
+
+for each oemhistory where serial_num(1,3)="OSH" and item_num(5,1)="5"
+   group by serial_num
+{
+
+   if first_of(serial_num) and first_time=0 then 
+      {
+      gosub report_serial_summary;
+      sale_count=0; return_count=0;
+      }
+
+   gosub determine_tran_type;
+   gosub display_raw_record;
+   hold$=oemhistory$;
+   first_time=0;
+}
+gosub report_serial_summary;
+
+subroutine determine_tran_type
+{
+if cur_user=0 and new_user>0 then
+   {
+   tran_type$="Purchase";
+   sale_count=sale_count+1;
+   }
+if cur_user>0 and new_user>0 and cur_user<>new_user then
+   tran_type$="NUI";
+if cur_user>0 and new_user>0 and cur_user=new_user then
+   tran_type$="Rev. level update";
+if cur_user>0 and new_user=0 then
+   {
+   tran_type$="Return";
+   return_count=return_count+1;
+   }
+}
+
+subroutine display_raw_record
+{
+display/notitle serial_num,date,prod_type,cur_user,new_user,tran_type$;
+}
+
+subroutine report_serial_summary
+{
+display "Sales/Updates:",str(sale_count);
+display "Returns:",str(return_count);
+if sale_count>return_count then 
+   display/skip/after cvs(hold.serial_num$,3)+" Is probably active.";
+if sale_count<=return_count and return_count>0 then
+   display/skip/after cvs(hold.serial_num$,3)+" Has been returned.";
+if sale_count=0 then
+   display/skip/after cvs(hold.serial_num$,3)+" Was never recorded as a sale.";
+}
+

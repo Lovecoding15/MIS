@@ -1,0 +1,82 @@
+rem 'temp_license.pgm
+rem 'generate temporary license to use in the registration form
+rem 'put copy of this program in /basisaon/aon/bas and on opus for ecomm
+ 
+rem LET TRACELOG$="/usr/local/ec/trace.log",DEBUG=UNT
+rem OPEN (DEBUG)TRACELOG$
+rem SETTRACE (DEBUG)
+
+seterr pgm_exit
+enter sn$,lictext$
+lictext$=""
+
+flexhome$=stbl("FLEXHOME")
+rem "Return w/out license if from Opus, write data to txt file on kazoo2. 
+rem "Program bcomm_license.bbj on kazoo2 reads the file and send form. (June 04)
+if pos("port="=flexhome$) then goto pgm_exit
+
+rem 'Prep return value in case of license failure
+dl$=","
+let lictext$=dl$+dl$+dl$+dl$+dl$+dl$+dl$+dl$+cvs(SN$,3)+dl$+fill(1)
+authnum$="TEMPORARY*"
+hostid$="0123456789ab"
+license$=""
+rem '***************************************************
+rem 'Don't generate temp license anymore 9/14/2007
+rem call flexhome$+"bin/flexlic.bbx",err=email_it,authnum$,sn$,hostid$,license$
+rem '***************************************************
+goto pgm_exit
+
+form_info:
+fldlist$="FEATURE "+$0a$+"basis "+$0a$+" "+$0a$+" "+$0a$+" "+$0a$+"VENDOR_STRING="+$0a$+"ck="+$0a$+"FEATURE "+$0a$+"basis "+$0a$+" "+$0a$+" "+$0a$+" "+$0a$+"ck="+$0a$
+flds=pos($0a$=fldlist$,1,0)-1
+dim value$[flds]
+rem '0 Feature
+rem '1 Rev
+rem '2 Expiration date
+rem '3 Users
+rem '4 Encryption code
+rem '5 Vendor string (for bbj feature)
+rem '6 Checksum
+rem '7  Feature 2
+rem '8  Rev 2 - NOT USED
+rem '9  Expiration date 2 - NOT USED
+rem '10 Users 2
+rem '11 Encryption code 2
+rem '12 Checksum 2
+fld=0
+sep$="."
+while len(fldlist$)
+  p=pos($0a$=fldlist$)
+  if p=0 then break
+  fld$=fldlist$(1,p-1),fldlist$=fldlist$(p+1)
+  gosub find_fld
+  value$[fld]=val$
+  rem 'combine 0 & 5 for FEATURE for BBj
+  if fld=5 then value$[0]=value$[0]+val$
+  rem 'FEATURE w/2 properties-2nd is hard coded, value is not in license
+  if fld=7 and val$<>"" then value$[0]=value$[0]+sep$+"BE"
+  rem 'Users for 2nd property
+  if fld=10 and val$<>"" then value$[3]=value$[3]+sep$+val$
+  rem 'Encryption code for 2nd property
+  if fld=11 and val$<>"" then value$[4]=value$[4]+sep$+val$
+  rem 'Checksum for 2nd property
+  if fld=12 and val$<>"" then value$[6]=value$[6]+sep$+val$
+  fld=fld+1
+wend
+
+let lictext$=dl$+value$[0]+dl$+value$[4]+dl$+value$[1]+dl$+dl$+value$[2]+dl$+value$[6]+dl$+value$[3]+dl$+cvs(SN$,3)+dl$+fill(1)
+
+pgm_exit:
+
+rem endtrace
+
+exit
+
+find_fld: 
+let val$="",fldpos=pos(fld$=license$)
+if fldpos=0 then return
+let fldlen=len(fld$),val$=license$(fldlen+fldpos),spos=pos(" "=val$)
+if spos then let val$=val$(1,spos-1)
+let fldlen=fldlen+len(val$),license$=license$(fldpos+fldlen)
+return

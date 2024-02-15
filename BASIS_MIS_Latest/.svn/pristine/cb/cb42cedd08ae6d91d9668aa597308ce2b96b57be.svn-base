@@ -1,0 +1,43 @@
+rem ' catch read from the B-comm masterfile ECM01 decrypt the password
+
+rem ' set opts
+SETOPTS $0800C02000002040$
+
+rem ' remove the rem below to trace the operation
+rem ' trace = unt
+if trace then open(trace,mode="O_TRUNC")"/mnt/data/basisaon/aon/trig_trace/trace-ECM-01_ar.log"
+if trace then settrace(trace)
+
+rem '----declares
+Declare BBjTriggerData trigger!
+
+rem '----get the trigger data
+trigger! = BBJAPI().getFileSystem().getTriggerData()
+
+rem '----template for the ECM01 record being caught
+intemp$="FIRM_ID:C(2),CUSTOMER_NBR:C(6),USER_CODE:C(2),E_MAIL:C(80),PASSWORD:C(128),E_MAIL2:C(80),SURVEY_FLAG:C(1),FIRST_NAME:C(20),LAST_NAME:C(30),AVAILABLE:C(28)"
+dim inRec$:intemp$
+
+rem '----get the read buffer into the template
+inRec$ = trigger!.getReadBuffer()
+inRec$ = field(inRec$)
+
+rem ' decrypt the password
+cryptPass$ = "WethePeopleoftheUnitedStates,inOrdertoform"
+password$ = cvs(inrec.password$,3)
+decryptPass$ = decrypt(ath(password$),cryptPass$,mode="CRYPTALG=AES-256")
+inrec.password$ = decryptPass$
+
+rem ' set the read buffer
+trigger!.setReadBuffer(inRec$)
+
+if trace endtrace
+
+end
+
+handle_err:
+    if trace then write (trace)"error: " + str(err) + " line " + str(tcb(5)) + " errmsg " + errmes(-1)
+    throw "An error " + str(err) + " occurred on line " + str(tcb(5)) + " of the trigger ECM-01.trigger.ar.src.berrmsg " + errmes(-1), 275
+
+end
+

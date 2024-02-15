@@ -1,0 +1,123 @@
+0010 REM "SNM - Serial Number Maintenance (Registration Information)"
+0020 REM "Program SNM.ME"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * 4/21/99 * WA# 208 * BASIS"
+0040 REM 
+0070 SETERR 9000
+0080 SETESC 9000
+0090 PRECISION P[1]
+0200 REM " --- IOLIST's"
+0210 SNM02A: IOLIST B0$(1),B1$(1),B2$(1),B[ALL]
+0310 ARM01E: IOLIST X0$,X1$
+0500 REM " --- Initializations"
+0510 DIM B0$(20),B1$(27),B2$(20),B[1]
+0520 DIM TMM01$(500)
+0700 REM " --- Background"
+0705 PRINT @(0,6),'CE',
+0710 PRINT 'SF',@(1,6),"Registered Contact: "
+0720 PRINT @(2,13),"Contact: ",@(46),"Registration Date: "
+0730 PRINT @(4,14),"Phone: ",@(30),"Ext: ",@(46),"Domestic or Int'l: "
+0740 PRINT @(6,15),"Fax: ",@(45),"Registered to Cust: "
+0750 PRINT 'SB'
+1300 REM " --- Display record"
+1310 LET B0$=A0$
+1320 READ (SNM02_DEV,KEY=B0$,DOM=1321)IOL=SNM02A
+1330 READ (TMM01_DEV,KEY=B1$(1,22),DOM=1331)TMM01$
+1350 GOSUB 5000
+1390 ON O0 GOTO 4000,4000,4000
+2000 REM " --- Registered Contact"
+2020 LET V0$="S",V1$="CE",V2$=B1$(3,20),V3$="",V0=20,V1=21,V2=6
+2030 LET V4$="Enter the Registered Contact, <F3>=Lookup"
+2040 GOSUB 7000
+2050 IF V3=3 THEN CALL "TMC.AA",V$,V3
+2080 LET B1$(1,22)=N0$+V$
+2100 REM 
+2110 FIND (TMM01_DEV,KEY=B1$(1,22),DOM=2000)TMM01$
+2120 GOSUB 5000
+2190 GOTO 3900
+2200 REM "Registration Date"
+2220 LET V0$="D",V1$="CE",V2$=FNB$(B1$(23,3)),V3$="",V0=8,V1=65,V2=13
+2230 LET V4$="Enter the Registration Date"
+2240 GOSUB 7000
+2280 LET B1$(23,3)=V$
+2290 GOTO 3900
+2300 REM "Domestic or Int'l"
+2320 LET V0$="S",V1$="CE",V2$=B1$(26,1),V3$="DI",V0=1,V1=65,V2=14
+2330 LET V4$="D=Domestic, I=International"
+2340 GOSUB 7000
+2380 LET B1$(26,1)=V$
+2390 GOTO 3900
+2400 REM "Registered to Customer"
+2420 LET V0$="Y",V1$="CE",V2$=B1$(27,1),V3$="",V0=1,V1=65,V2=15
+2430 LET V4$="Is This Serial Number Registered To A Customer"
+2440 GOSUB 7000
+2480 LET B1$(27,1)=V$
+2490 GOTO 3900
+3900 REM " --- Next field"
+3905 IF V3=4 THEN GOTO 3990
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 ON I0 GOTO 2000,2200,2300,2400,3990
+3990 LET I0=0
+4000 REM " --- Correct?"
+4010 GOSUB 5000
+4020 CALL "SYC.YN",1,"Is The Above Information Correct",2,V$,V3
+4030 ON V3 GOTO 4040,4000,4000,4000,4900
+4090 ON POS(V$="YN") GOTO 4000,4100,2000
+4100 REM " --- Write"
+4150 WRITE (SNM02_DEV,KEY=B0$)IOL=SNM02A
+4190 GOTO 4900
+4900 REM " --- Run menu overlay"
+4990 RUN "SNM.MA"
+5000 REM " --- Display"
+5010 PRINT @(21,6),B1$(3,20)
+5020 PRINT @(4,7),TMM01$(112,30)
+5030 PRINT @(4,8),TMM01$(142,30)
+5040 PRINT @(4,9),TMM01$(172,30)
+5050 PRINT @(4,10),CVS(TMM01$(202,25),2),", ",TMM01$(227,2)
+5060 PRINT @(4,11),TMM01$(229,9); REM FORMAT ZIP?
+5080 PRINT @(11,13),TMM01$(52,30),@(65),FNB$(B1$(23,3))
+5090 PRINT @(11,14),TMM01$(38,10),@(35),TM_EXT$,@(65),B1$(26,1); REM FORMAT PHONE?
+5100 PRINT @(11,15),TMM01$(379,10),@(65),B1$(27,1); REM FORMAT FAX?
+5190 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END

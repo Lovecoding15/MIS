@@ -1,0 +1,47 @@
+window.title=BASIS b-Commerce System - End User Information
+advantage.label=Should Receive the Advantage Magazine
+announcements.label=Should Receive BASIS Marketing Announcements
+save.button=Save 
+skip.button=Skip
+comp.name.label=Company Name:
+contact.name.label=Contact Name:
+addr.one.label=Address Line 1:
+addr.two.label=Address Line 2:
+addr.three.label=Address Line 3:
+city.label=City:
+state.label=State:
+postal.code.label=Postal Code:
+country.label=Country:
+email.address.label=Email Address:
+phone.number.label=Phone Number:
+industry.label=Industry:
+other.desc.label=Other Description:
+basis.prod.used.label=BASIS Product Used:
+app.module.used.label=Application Modules Used:
+select.user.label=Select Existing End User\:
+end.user.nbr.label=End User Number:
+ref.nbr.label=Reference \#\:
+req.label=Required
+toggle.button=Toggle Select List Order
+toggle.button.tooltip=Click here to toggle the record selection between Alpha and Numeric.
+menu.file=File
+
+menu.exit=Exit
+
+loadUser.inform=You have selected an end user record which is currently in the \\nsystem. If you edit this data the changes will be reflected for \\nall the BASIS products linked to this record (Edit). However, \\nyou may create a new end user record using this data as a \\ntemplate (New).
+
+loadUser.title=End User Data
+
+edit=Edit
+
+new=New
+
+cancel=Cancel
+
+loadUser.inform.existing=This serial number, {0}, is currently linked in the system to this \\nend user, {1}. If you edit this data \\nthe changes will be reflected for all the BASIS products linked to this \\nrecord (Edit). However, you may relink this serial number and create \\na new end user record using this data as a template (New).
+
+required.fields=Some required fields are missing. They are marked with a red 'Required' label. Please correct them before a save can be done.
+
+required.fields.title=Required Fields Missing
+
+contact.phone.label=Contact Phone\:

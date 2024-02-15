@@ -1,0 +1,14 @@
+Thank you for your order. If you are not the individual in your organization responsible for processing invoice(s), please forward this e-mail to them and contact BASIS with the new Accounts Payable contact information. 
+
+Attached to this e-mail is your invoice(s) in two formats; plain text and Adobe Portable Document Format (PDF).
+
+==> .PDF
+
+Open and print the PDF invoices(s) with the Adobe Acrobat Reader, available for download free at www.adobe.com. 
+
+For utmost security, the .PDF version includes an authentic BASIS electronic signature. If the signature appears unverified, follow the instructions in http://www.basis.cloud/company/invoice_verification.pdf.
+
+==> .TXT
+
+Open the text version of the invoice. To print correctly, the font must be a 10 point or smaller fixed-width style such as Courier or System. Change the font, if necessary, and print the file.
+

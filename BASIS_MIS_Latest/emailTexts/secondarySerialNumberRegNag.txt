@@ -1,0 +1,22 @@
+1EN:
+{
+Subject: <custnbr> <custname> <primarysn> with <users> user(s), One-time warning of a possible licensing issue
+
+Multiple serial numbers are running on the server with the hostid of <hostid>, including <primarysn>, and <sn>, these comprise a license set. We have detected that a secondary serial number; <sn>, in your license set was the last one registered with this hostid. 
+
+Future fail-safe Automatic Re-registration of the set's perpetual licenses on your production server for hostid, <hostid>, will fail unless one of two actions or circumstances prevail:
+
+1. We strongly recommend that you either upgrade to BLM 19 or to the most secure BLM, BLM 21. Once installed re-register your licenses. This will eliminate this issue and deliver the latest features and function, including security enhancements, to your license manager.
+
+2. In prior versions, the BLM required that the primary serial number be the one that was last registered with the hostid. If you’re running a pre-18.0 version of the BLM, you must perform a manual re-registration of the set's primary serial number; <primarysn>, using the Admin tool. 
+
+To download the latest BLM, follow this link: https://www.basis.cloud/download-product and select the BLM from the product drop down list. This will eliminate this issue and deliver the latest features and function, including security enhancements, to your license manager. Be aware that the BLM 21 requires a license version of at least 20.
+
+Should you have any questions, do not hesitate to contact your BASIS representative or support@basis.cloud for assistance. 
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}

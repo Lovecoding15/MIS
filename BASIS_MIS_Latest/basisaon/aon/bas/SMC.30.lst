@@ -1,0 +1,809 @@
+0010 REM "SMC - SAM deactivation and Expiration Notices"
+0020 REM "Program SMC.30"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| February 2001                                             |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0070 begin 
+0075 SETESC 9000
+0080 SETERR 9000
+0082 REM "Chg prefix, point to alt_data for modified ec_open called by price.pgm
+0083 REM ' removed the alt_data reference 5/10/2010 kew, added it back 10/28/2013
+0085 savepfx$=pfx
+0090 rem ' prefix "/basisaon/aon/alt_data/ "+savepfx$
+
+0100 REM " --- Open/Lock Files"
+0105 LET FILES=20
+0110 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0115 files$[1]="IVM-01",files$[2]="IVM-02",FILES$[3]="SYS-01",FILES$[4]="TMM-01"
+0120 FILES$[5]="SMC-01",files$[6]="IVM-06",files$[7]="ARM-02",FILES$[8]="SNM-01"
+0125 FILES$[9]="ARM-10",files$[10]="IVM-10"
+0130 files$[11]="INC-01",files$[12]="SNM-02",files$[13]="country.dat"
+0135 files$[14]="SNM-EL",files$[15]="SNM-EU",files$[16]="SNT-01"
+0140 files$[17]="ART-01",files$[18]="ART-11",files$[19]="ART-03",files$[20]="ARM02_CANADA"
+0145 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0150 IF STATUS>0 THEN GOTO 9900
+0160 SYS01=CHANNELS[3],TMM01=CHANNELS[4],SMC01=CHANNELS[5],arm02=channels[7]
+0165 SNM01=CHANNELS[8],ARM10=CHANNELS[9]
+0170 inc01=channels[11],snm02=channels[12],country=channels[13]
+0180 snmel=channels[14],snmeu=channels[15],snt01=channels[16]
+0185 art01=channels[17],art11=channels[18],art03=channels[19],arm02_canada = channels[20]
+0190 gosub open_properties_file
+
+0200 REM " --- IOLIST's"
+0210 call "templates.pgm::TMM01"
+0215 call "templates.pgm::country"
+0220 call "templates.pgm::SMC01"
+0225 call "templates.pgm::SNM01"
+0230 call "templates.pgm::ARM10F"
+0235 call "templates.pgm::ARM02"
+0240 call "templates.pgm::INC01"
+0245 call "templates.pgm::SNM02"
+0250 call "templates.pgm::SNMEL"
+0255 call "templates.pgm::SNMEU"
+0260 call "templates.pgm::SNT01"
+0265 call "templates.pgm::ART01"
+0270 call "templates.pgm::ART11"
+0275 call "templates.pgm::ART03"
+0277 call "templates.pgm::ARM02_CANADA"
+0290 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+
+0300 rem ' useAlternate and AlternateUsed are variables that control the type of email we send
+0302 rem ' in anticipation of a price change for normal runs we we leave that set to 0 see
+0304 rem ' line 13124 - 13128
+
+0400 REM " --- Parameters"
+0410 FIND (SYS01,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET N0$=F0$(16,2),N1$=F4$,N2$="AR",N4$=F5$
+
+0430 use ::BasisPriceEngine.src::PriceElement
+0435 use ::SerialNumber.src::SerialNumber
+0440 use ::TransactionBuilder.src::TransactionBuilder
+
+0445 declare TransactionBuilder tb!
+0450 declare SerialNumber sn!
+
+0455 rem ' get a TransactionBuilder - not Canadian
+0456 rem ' use the alternate price table (to support price changes)
+0460 tb! = new TransactionBuilder(0, 0)
+
+0500 REM " --- Initialize Data"
+0520 cr$=$0d0a$,lf$=$0a$,smc30_txt$=""
+0530 tmpchan=unt
+0540 open(tmpchan)"SMC_30.txt"
+0550 f1$=fin(tmpchan),s=dec(f1$(1,4))
+0560 readrecord(tmpchan,siz=s)smc30_txt$
+0570 close(tmpchan)
+0580 dt_mask$="%Dz %Ms %Y",amt_mask$="#,###,###.00"
+0590 htmldollarsign$ = "&#36;", htmleurosign$ = "&nbsp;&euro;"
+
+0700 REM " --- Background"
+0710 call "SYC.WA",mode,54,5,18,10,"",name$
+0712 response = msgbox("This process has been automated and will run by the system at 5:00PM Mountain Time",0,"Process Block")
+0713 prefix savepfx$; goto 9970
+0715 rem 'response = msgbox("Are you ready to proceed with SAM notices?",4+32+256,"Ready to Proceed")
+0716 rem ' if response = 7 then prefix savepfx$; goto 9970
+0720 message$="Checking Expired Incidents..."
+0730 print 'sb',@(27-int((len(message$)+9)/2),1),message$,'sf',
+1000 REM " --- Initial Read"
+
+1005 rem ' changed the lead times to be based on terms code of the customer 2015/12
+1006 rem ' TERMS_CODE	New Timing
+1007 rem ' 03 Net 15     notice at 31 days, invoice at 16 days
+1008 rem ' 05 Net 30     notice at 46 days, invoice at 31 days
+1009 rem ' 06 Net 15 EOM use same timing as current, notice at 65 days, invoice at 50 days
+
+1010 cnt = 0, today_jul = jul(0,0,0)
+1020 today$=date(0:"%Yl%Mz%Dz")
+1030 old_dt$=date(today_jul-30:"%Yl%Mz%Dz")
+
+2000 while 1
+2010 read record(inc01,end=*break)inc01$
+2020 read record(snm01,key=inc01.serial_nbr$,dom=remove_incident)snm01$
+2030 if snm01.avail_expire$>=today$ then continue
+2040 support=0
+2050 if snm01.active_flag$="N" or snm01.sam_active$="N" then goto remove_incident
+2060 readrecord(smc01,key=snm01.contract$,dom=remove_incident)smc01$
+2070 if smc01.expire_on_dt$>today$ then support=max(snm01.avail_support,0)
+2100 remove_incident:
+2110 remove(inc01,key=inc01.serial_nbr$)
+2120 if inc01.serial_nbr$=snm01.serial_nbr$ then 
+2130   snm01.avail_expire$=fill(8),snm01.avail_support=support
+2140   snm01$=field(snm01$)
+2150   write record(snm01)snm01$
+2160 fi
+2190 wend
+
+2200 message$="Checking Expired Serial Numbers.."
+2210 print @(0,1),'cl','sb',@(27-int((len(message$)+9)/2),1),message$,'sf',
+
+2220 temp_file$=stbl("TEMP")+"smc30"+date(0:"%Y%M%D%H%m")+".dat"
+2230 erase temp_file$,err=*next
+2250 mkeyed temp_file$,[0:1:81],0,100
+2260 tmp_dev=unt;open(tmp_dev)temp_file$
+2270 dim temprec$:"firm:c(2),cust:c(6),type:c(2),exp_dt:c(8),contr_type:c(3),end_user:c(40),serial_nbr:c(20),invoice:c(7),lead_days:c(2),avail:c(1*)"
+
+2280 gosub do_contracts
+
+2300 sort$="*",sn_list$=""
+2310 read(tmp_dev,key="",err=*next)
+2320 while 1
+2325 done=1
+2330 dim temprec$:fattr(temprec$);readrecord(tmp_dev,end=*next)temprec$;done=0
+2335 if sort$="*" and done then break
+2340 if sort$="*" then sort$=temprec$(1,21), cust_lead_days$ = temprec.lead_days$
+2350 if pos(sort$=temprec$)=1 then sn_list$=sn_list$+temprec.serial_nbr$+temprec.invoice$+temprec.end_user$;continue
+
+2352 rem ' canadian table
+2354 canadian_table = 0
+2358 read record(ARM02_CANADA,KEY=sort$(1,8),dom=*next)ARM02_CANADA$; canadian_table = 1
+2359 alternateUsed = 0
+2360 if sort$(1,8) = "01001014" then internetworx = 1 else internetworx = 0
+
+2366 gosub language
+2380 gosub parse_smc30_txt
+2390 gosub serial_loop
+2400 gosub do_mail
+
+2405 if done then break
+2410 sort$=temprec$(1,21),cust_lead_days$ = temprec.lead_days$, sn_list$=temprec.serial_nbr$+temprec.invoice$+temprec.end_user$
+2420 wend
+
+3000 rem 'Done
+3005 call "SYC.WD",name$
+3010 close(tmp_dev,err=*next)
+3014 rem ' remove rem on statement below when done monitoring the process
+3015 rem ' erase temp_file$,err=*next
+3020 for x=1 to files
+3030 close(channels[x])
+3040 next x
+3050 goto 9900
+
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+
+8000 rem " --- functions
+8010 def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+8020 def fnj3(ymd$)=jul(1900+asc(ymd$(1))-32,asc(ymd$(2))-32,asc(ymd$(3))-32)
+
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+
+9900 REM " --- Return to menu"
+9905 prefix savepfx$
+9910 CALL "SYC.WD",ERR=*next,NAME$
+9920 CALL "SYC.WB","0",1
+9930 PRINT @(0,20),
+9938 rem ' RNT.01 responsibilities moved into SMC.30 10/2016
+9940 rem ' run "RNT.01"
+9970 RUN "SYS.AA"
+
+10000 find_sales:
+10010 dim sales_name$(30)
+10020 find record(arm02,key=smc01.firm_id$+smc01.customer_nbr$+"  ",dom=sales_done)arm02$
+10030 find record(arm10,key=arm02.firm_id$+"F"+arm02.SLSPSN_CODE$,dom=sales_done)arm10f$
+10040 sales_name$(1)=arm10f.SLSPSN_NAME$
+10050 sales_done:
+10060 return
+
+10100 serial_loop:
+10105 sn_line$=""; sn_lineN$ = ""
+10107 if len(sn_list$) > 67 multiLicense = 1 else multiLicense = 0
+10110 while sn_list$<>"" 
+10115 sn$=sn_list$(1,20),invoice$=sn_list$(21,7),eu$=sn_list$(28,40),sn_list$=sn_list$(68),line$=fill(100)
+10120 read record(snm01,key=sn$,knum=0)snm01$
+10130 readrecord(smc01,key=snm01.contract$)smc01$
+10140 tlist$=fill(10),ulist$=tlist$,users$=fill(5),expdt$=fill(11)
+10145 annual_jul=jul(num(smc01.annual_dt$(1,4)),num(smc01.annual_dt$(5,2)),num(smc01.annual_dt$(7,2)))
+10150 expdt$=date(annual_jul:dt_mask$)
+10155 rem ' get_price subroutine sets the users for serial numbers needing a price
+10156 rem ' for expiring licenses rely on the SNM01 users field
+10157 users$=str(snm01.users:"#####")
+10160 if pos(sort$(9,2)="DV,RN") then 
+10170   gosub get_price
+10180   smc01.invoiced_flag$="Y"
+10190 else
+10200   smc01.sam_active$="N"
+10210 fi
+10215 if usingHtml then
+10216   gosub html_add_license_data
+10218 else
+10220   if sn1 then line$(sn1,12)=sn$(1,12)
+10230   if users1 then line$(users1,5)=users$
+10240   if ulist1 then line$(ulist1,10)=ulist$
+10250   if tlist1 then line$(tlist1,10)=tlist$
+10260   if expdt1 then line$(expdt1,11)=expdt$
+10270   if invoice1 then line$(invoice1,7)=invoice$
+10280   if pos(sort$(9,2)="X1,X2") then gosub update_serial_nbr
+10290   if endusr1 then line$(endusr1)=cvs(eu$,3)
+10295   sn_line$=sn_line$+cvs(line$,2)+lf$
+10297 fi
+10301 if useAlternate then
+10302	if sn1 then line$(sn1,12)=sn$(1,12)
+10303 	if users1 then line$(users1,5)=users$
+10304 	if ulist1 then line$(ulist1,10)=ulist$
+10305 	if tlist1 then line$(tlist1,10)=tlist$
+10306 	if expdt1 then line$(expdt1,11)=expdt$
+10307	if endusr1 then line$(endusr1)=cvs(eu$,3)
+10308	sn_lineN$ = sn_lineN$+cvs(line$,2)+lf$
+10309 fi
+
+10310 smc01$=field(smc01$);write record(smc01)smc01$
+10320 wend
+10390 return
+
+10700 update_serial_nbr:
+10710 extract record(snm01,key=snm01.serial_nbr$)snm01$
+10720 if pos("DV"=smc01.contr_type$)=0 then snm01.sam_active$="N"
+10730 snm01.avail_support=0,snm01.avail_expire$=fill(8)
+10740 snm01$=field(snm01$)
+10750 write record(snm01)snm01$
+10760 return
+
+11400 create_message:
+11405 rem ' converted to use email.bbj via sendEmail.src 11/13/14 kew
+11410 rem ' outfile$=stbl("TEMP")+sort$(9,2)+sort$(1,8)+str(cnt)+".txt"
+11420 rem ' cnt=cnt+1
+11430 rem ' erase outfile$,err=*next
+11440 rem ' string outfile$
+11450 rem ' out_chn=unt;open(out_chn)outfile$
+11455 rem ' start$=""; call"emailEncoding.src::encode_start",start$
+11460 if sendto$="" then sendto$="customer-service@basis.cloud"
+11470 rem ' HEADER$=start$ + "To: "+SENDTO$+cr$+"From: "+cvs(sales_name$,1+2)+" <"+from$+">"+cr$
+11472 finalFrom$ = cvs(sales_name$,1+2)+" <"+from$+">"
+11480 rem ' header$=header$+"Reply-To: "+from$+cr$
+11490 rem ' if pos("customer-service@basis"=sendto$)=0 then header$=header$+"Cc: customer-service@basis.cloud, "+from$+cr$
+11491 finalCC$ = "customer-service@basis.cloud, "+from$
+11492 finalBCC$ = "kurt.e.williams@comcast.net"; rem ' header$ = header$ + "Bcc: kurt.e.williams@comcast.net" + cr$
+
+11493 if alternateUsed then 
+11494	if sort$(19,3) = "DV1" and sort$(9,2) = "RN" then
+11495		sr$ = "RE_EN_PC:"
+11496	else
+11497		sr$ = "RN_EN_PC:"
+11498	fi
+11499   gosub parseEmailText
+11500 fi
+
+11501 if !usingHtml then
+11502   header$ = cvs(head$,2)
+11504   dayspos = pos("<days>" = header$)
+11505   if dayspos then header$ = header$(1,dayspos - 1) + str(num(cust_lead_days$)) + header$(dayspos + 6)
+11510   while sn_line$<>""
+11520       lfpos=pos(lf$=sn_line$)
+11530       if lfpos=0 then break 
+11540       serial$=sn_line$(1,lfpos-1)
+11550       sn_line$=sn_line$(lfpos+1) 
+11560       header$=header$+serial$+cr$
+11562   wend
+11564   dayspos = pos("<days>" = body$)
+11566   if dayspos then body$ = body$(1,dayspos - 1) + str(num(cust_lead_days$)) + body$(dayspos + 6)
+
+11567   if alternateUsed then
+11568       p0=pos("<snN>"=body$)
+11569       p1=pos(lf$=body$(1,p0),-1);if p1=0 then p1=p0-1
+11570       tail$=body$(p1+1),body$=body$(1,p1)
+11571	    while sn_lineN$<>""
+11573	      lfpos=pos(lf$=sn_lineN$)
+11574	      if lfpos=0 then break 
+11575	      serial$=sn_lineN$(1,lfpos-1)
+11576	      sn_lineN$=sn_lineN$(lfpos+1) 
+11577	      body$=body$+serial$+cr$
+11578	    wend
+11579	    p1 = pos(lf$=tail$), tail$=tail$(p1+1)
+11580	    body$=body$+tail$
+11581   fi
+11582   header$=header$+body$
+
+11585 else
+
+11590   rem ' htmlEmail'
+11592   dayspos = pos("%days%" = htmlEmail$)
+11594   if dayspos then htmlEmail$ = htmlEmail$(1,dayspos - 1) + str(num(cust_lead_days$)) + htmlEmail$(dayspos + 6)
+11596   begpos = pos("<!--begin licenseData -->" = htmlEmail$)
+11597   endpos = pos("<!--end licenseData -->" = htmlEmail$)
+11598   htmlEmail$ = htmlEmail$(1, begpos - 1) + htmlTableRow$ + htmlEmail$(endpos + len("<!--end licenseData -->"))
+
+11600 fi
+
+11625 wait 10
+
+11630 rem ' call sendEmail.src
+11631 finalFile$ = ""
+11635 rem ' next 5 lines for testing
+11636 rem ' if usingHtml then call "sendEmailHtml.src", "customer-service@basis.cloud", "kurt.e.williams@comcast.net", "", "", subject$, htmlEmail$, finalFile$
+11638 rem ' finalFrom$="customer-service@basis.cloud", sendto$ = "kw5121151@gmail.com, kurt.e.williams@comcast.net", finalCC$ = "williams.kurt@comcast.net", finalBCC$=""
+11639 rem ' finalResp = msgbox("from: " + finalFrom$ + " to: " + sendto$ + " cc: " + finalCC$ + " bcc: " + finalBCC$ + " subject: " + subject$ + " users: " + users$ + " per user: " + ulist$ + " total: " + tlist$ + " sn: " + sn$,4,"debug")
+11640 rem ' if finalResp = 7 then escape
+11641 let header$ = header$ + sr$
+11645 if !usingHtml then 
+11647   call "sendEmail.src", finalFrom$, sendto$, finalCC$, finalBCC$, subject$, header$, finalFile$
+11649 else
+11650   call "sendEmailHtml.src", finalFrom$, sendto$, finalCC$, finalBCC$, subject$, htmlEmail$, finalFile$
+11652 fi
+11654 return
+
+11700 no_sendto:
+11710 DIM MESSAGE$[1]
+11720 LET MESSAGE$[0]="There is no E-Mail address for Contract:"
+11730 LET MESSAGE$[1]=smc01.contract$+" (<Enter>=Continue)"
+11740 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+11750 RETURN
+
+12000 do_contracts:
+12010 read record(smc01,end=contract_done)smc01$
+
+12011 rem ' for testing
+12012 rem ' count = count + 1; if mod(count,10000) = 0 then xresp = msgbox(str(count),4,"debug")
+12013 rem ' if smc01.contract$ <> "039425" then goto do_contracts
+
+12014 rem ' BAS
+12015 if pos(smc01.customer_nbr$="008450001081007808001031002786020005007514",6) then goto do_contracts
+12016 rem ' BSE
+12017 if pos(smc01.customer_nbr$="020004020005020012020448020490",6) then goto do_contracts
+
+12021 rem ' this next statement basically includes all contract types
+12022 if pos(smc01.contr_type$(1,2)="SM,DV,RN")=0 then goto do_contracts
+
+12030 if smc01.expire_on_dt$<old_dt$ then goto do_contracts
+12032 rem ' special beginning cut off for BSE
+12033 if smc01.firm_id$ = "02" and smc01.expire_on_dt$ < "20170515" then goto do_contracts
+
+12034 rem ' for testing
+12035 rem ' if smc01.contract$ <> "031691" then goto do_contracts
+
+12040 annual_jul=jul(num(smc01.annual_dt$(1,4)),num(smc01.annual_dt$(5,2)),num(smc01.annual_dt$(7,2)))
+
+12042 dim arm02$:fattr(arm02$)
+12043 find record(arm02,key = smc01.firm_id$ + smc01.customer_nbr$ + "  ", dom = *next)arm02$
+12044 terms$ = arm02.terms_code$
+12045 if pos(terms$="030506",2)=0 then terms$="03"
+12046 if terms$ = "05" then 
+12047	lead_days = 46, invoice_days = 31 
+12048 else 
+12049   if terms$ = "03" then 
+12050      lead_days = 31, invoice_days = 16
+12051   else
+12052      lead_days = 65, invoice_days = 50
+12053   endif
+12054 endif
+12055 rem ' put BSE on the same timing as BAS - if smc01.firm_id$ = "02" then lead_days = 65, invoice_days = 50; rem ' leave BSE on the default timing
+
+12059 temprec.firm$=smc01.firm_id$
+12060 temprec.cust$=smc01.customer_nbr$
+12065 temprec.exp_dt$=smc01.annual_dt$
+12070 temprec.invoice$=""
+12072 temprec.lead_days$ = str(lead_days:"00")
+12073 temprec.contr_type$ = smc01.contr_type$
+
+12078 rem ' remarked out when we start auto invoiceing rental and developer kits
+12079 rem ' developers kits
+12080 rem ' if pos("DV"=smc01.contr_type$) then
+12085 rem '   if pos(smc01.invoiced_flag$="YI") then goto do_contracts
+12090 rem '   if today_jul <= annual_jul and annual_jul <= today_jul + 65 then
+12095 rem '     temprec.type$="DV"
+12100 rem '     gosub find_sns
+12110 rem '   endif
+12120 rem '   goto do_contracts
+12130 rem ' endif
+
+12139 rem ' SAM contracts, Rentals (RN1) and Developer Kits (DV1)
+12140 if pos(smc01.invoiced_flag$="YI") then goto cont_ctr_check
+
+12150 if smc01.renew_flag$="N" then goto cont_ctr_check
+12170 if smc01.sam_active$="N" then goto do_contracts
+
+12180 if today_jul + invoice_days <= annual_jul and annual_jul <= today_jul + lead_days then
+12185 	rem ' screen out quick invoicers on RN1 and DV1 start up - code can be removed on after 12/11/2016
+12186 	if smc01.contr_type$ = "RN1" or smc01.contr_type$ = "DV1" then
+12187		if lead_days = 65 and annual_jul < jul(2016, 12, 27) then goto cont_ctr_check
+12188		if lead_days = 46 and annual_jul < jul(2016, 12, 08) then goto cont_ctr_check
+12189		if lead_days = 31 and annual_jul < jul(2016, 11, 23) then goto cont_ctr_check
+12190	endif
+12200   temprec.type$="RN"
+12210   gosub find_sns
+12230   goto do_contracts
+12240 endif
+
+12250 cont_ctr_check:
+12260 temprec.type$="X2"
+12270 if smc01.expire_on_dt$>=today$ then goto do_contracts
+12280 gosub find_sns
+12330 goto do_contracts
+12340 contract_done:
+12350 return
+
+12400 do_mail:
+12410 if sort$(1,2)<>"02" then gosub find_sales
+12420 sendto$=cvs(smc01.e_mail$,1+2)
+12430 if sendto$="" then gosub no_sendto
+12440 if smc01.firm_id$="02" then 
+12450   from$="eu.sales@basis.cloud"
+12460   sales_name$=""
+12470 else 
+12480   from$=cvs(arm10f.e_mail$,1+2)
+12490 endif
+12500 if from$="" then from$="customer-service@basis.cloud"
+12510 gosub create_message
+12520 return
+
+12700 find_sns:
+12710 read(snm01,key=smc01.contract$,knum=3,dom=*next)
+12720 while 1
+12730 read record(snm01,end=*break)snm01$
+12740 if snm01.contract$<>smc01.contract$ then break
+12750 if snm01.firm_id$+snm01.customer_nbr$<>smc01.firm_id$+smc01.customer_nbr$ then continue
+12760 if snm01.sam_active$="N" or snm01.active_flag$<>"Y" then continue
+12770 temprec.serial_nbr$=snm01.serial_nbr$
+12780 euok=0
+12785 readrecord(snmel,key=snm01.serial_nbr$,dom=*next)snmel$;euok=1
+12790 snmeu.company_name$=""
+12795 if euok then readrecord(snmeu,key=snmel.end_user_nbr$,dom=*next)snmeu$
+12800 temprec.end_user$=cvs(snmeu.company_name$,3)
+12810 if temprec.type$="X2" then gosub find_invoice
+
+12820 rem ' do not write DV1 contr_type with X2 or X1 notice type
+12825 if temprec.contr_type$ = "DV1" and (temprec.type$ = "X1" or temprec.type$ = "X2") then
+12830    rem ' do nothing
+12835 else
+12840    writerecord(tmp_dev)temprec$
+12845 endif
+
+12850 wend
+12890 return
+
+13000 get_price:
+13010 dim snm02$:fattr(snm02$)
+13020 read record(snm02,key=snm01.serial_nbr$,dom=*next)snm02$
+13030 dim iv_item$(20),wx1$(40),wx[5]
+13035 iv_item$(1)=snm01.product$+"SAM1",wx1$(4,3)="SM1"
+13040 if sort$(9,2)="DV" then iv_item$(1)=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$,wx1$(4,3)="RNW"
+13045 if iv_item$(1,2)="VP" then iv_item$(1,2)="PR"
+13050 if snm01.product$="BAS" then
+13060   wx[2]=snm02.users1,wx[3]=snm02.users2
+13070   wx1$(10,2)=snm02.lic_property1$,wx1$(12,2)=snm02.lic_property2$
+13080 else
+13090   wx[2]=snm01.users
+13100 endif
+13110 LET ORDQTY=1,disc=0,SALECD$=str(disc:"00")
+13120 samfactor=365
+
+13121 rem ' get serial number
+13122 rem ' assume there is only one serial nbr per line
+13123 sn! = new SerialNumber(cvs(snm01.serial_nbr$, 3))
+
+13124 rem ' special code for price change 2018-10-01 and 2022-01-01 useAlternate
+13125 useAlternate = 0
+13126 rem ' if sn!.getFirmId() = "02" and sn!.getSAMExpirationDate() > "20211231" then useAlternate = 1
+13127 rem ' if sn!.getFirmId() = "01" and sn!.getSAMExpirationDate() > "20220131" then useAlternate = 1
+
+13128 rem ' if useAlternate then xresp = msgbox("Firm: " + sn!.getFirmId() + " Exp: " + sn!.getSAMExpirationDate() + " " + str(useAlternate),4,"debug")
+13129 rem ' if xresp = 7 then escape
+ 
+13130 rem ' CALL "CSC.PC",channels[ALL],snm01.firm_id$,"01",iv_item$,"",snm01.customer_nbr$,fndate$(jul(0,0,0)),arm02.pricing_code$,ORDQTY,TYPEFLAG$,PRICE,DISC,NEWDISC,STATUS,WX1$,WX[ALL],SALECD$,LISTPRICE,SAMFACTOR
+
+13131 rem ' calculate as normal
+13132 tb!.setCanadian(canadian_table); tb!.setAltPriceTable(0); if internetworx = 1 then tb!.setInternetworx(internetworx)
+13133 rem ' xresp = msgbox(str(tb!.isCanadian()) + " " + str(tb!.isUsingAltPriceTable()) + " " + str(tb!.isUsingInternetworx()), 4, "debug"); if xresp = 7 escape     
+13134 if sort$(19,3) = "SM1" or sort$(19,3) = "DV1" then
+13135     priceElements! = tb!.calcAnnualSam(sn!)
+13136 else
+13137     if sort$(19,3) = "RN1" then
+13138         priceElements! = tb!.calcAnnualRental(sn!)
+13139     else
+13140         priceElements! = BBjAPI().makeVector()
+13141     fi
+13142 fi
+13143 price = tb!.sumListPrice(priceElements!)
+
+13144 if useAlternate then 
+13145 	tb!.setAltPriceTable(useAlternate); if internetworx = 1 then tb!.setInternetworx(internetworx)
+13146  	if sort$(19,3) = "SM1" or sort$(19,3) = "DV1" then
+13147 	    priceElementsN! = tb!.calcAnnualSam(sn!)
+13148  	else
+13149  	    if sort$(19,3) = "RN1" then
+13150  	        priceElementsN! = tb!.calcAnnualRental(sn!)
+13151  	    else
+13152  	        priceElementsN! = BBjAPI().makeVector()
+13153  	    fi
+13154  	fi
+13155  	price = tb!.sumListPrice(priceElementsN!)
+13156 fi
+
+13160 tlist$=str(price:amt_mask$),u=wx[2]+wx[3],uprice=0;if u then uprice=price/u
+13161 rem ' if useAlternate then tlistN$=str(priceN:amt_mask$),upriceN=0;if u then upriceN=priceN/u
+13162 users$=str(u:"#####"),ulist$=str(uprice:amt_mask$)
+13163 rem ' xresp= msgbox(tlist$ + " " + ulist$,4,"debug"); rem ' if useAlternate then ulistN$=str(upriceN:amt_mask$)
+
+13164 rem ' set currency sign and 1000s separator 
+13165 if snm01.firm_id$ = "01" and usinghtml then tlist$ = htmldollarsign$ + cvs(tlist$,3), ulist$ = htmldollarsign$ + cvs(ulist$,3)
+13167 if snm01.firm_id$="02" then
+13169   while 1      
+13171       p=pos(","=tlist$)
+13173       if p then tlist$(p,1)=":" else break
+13175   wend
+13177   while 1
+13179       p=pos("."=tlist$)
+13181       if p then tlist$(p,1)="," else break
+13183   wend
+13185   while 1
+13187       p=pos(":"=tlist$)
+13189       if p then tlist$(p,1)="." else break
+13191   wend
+13193   while 1      
+13195       p=pos(","=ulist$)
+13197       if p then ulist$(p,1)=":" else break
+13199   wend
+13201   while 1
+13203       p=pos("."=ulist$)
+13205       if p then ulist$(p,1)="," else break
+13207   wend
+13209   while 1
+13211       p=pos(":"=ulist$)
+13213       if p then ulist$(p,1)="." else break
+13215   wend
+13217   if tlist$(1,2) = "  " then tlist$ = tlist$(3)
+13219   if ulist$(1,2) = "  " then ulist$ = ulist$(3)
+13223   if usinghtml then tlist$ = cvs(tlist$,3) + htmleurosign$, ulist$ = cvs(ulist$,3) + htmleurosign$
+13225 fi
+13227 return
+
+13500 language:
+13510 lang$="EN"
+13520 if sort$(1,2)="01" then return
+13530 dim tmm01$:fattr(tmm01$),country$:fattr(country$)
+13540 readrecord(tmm01,key=sort$(1,8)+"000000",dom=*next)tmm01$
+13550 lang$=cvs(tmm01.lang_code$,7)
+13560 readrecord(country,key=tmm01.country_code$,dom=*next)country$
+13570 tmp$=cvs(country.lang_code$,7)
+13580 if lang$="" then lang$=tmp$
+13590 return
+
+14000 parse_smc30_txt:
+14010 head$="",body$="",sn1=0,users1=0,ulist1=0,tlist1=0,expdt1=0,invoice1=0,endusr1=0
+14011 snN=0,usersN=0,ulistN=0,tlistN=0,expdtN=0,endusrN=0
+14020 sr$=sort$(9,2)+"_"+lang$+":"
+14021 if sort$(1,2)="01" and sort$(9,2) = "RN" and cust_lead_days$ = "65" then sr$ = sort$(9,2)+"_"+lang$+"_EOM:"
+
+14023 rem ' expiring licenses renewals have a different email
+14024 if (sort$(19,3) = "RN1" and sort$(9,2) = "RN") or (sort$(19,3) = "DV1" and sort$(9,2) = "RN") then sr$ = "RE_" + lang$ + ":"
+14025 if (sort$(1,2)="01" and cust_lead_days$ = "65" and sort$(19,3) = "RN1" and sort$(9,2) = "RN") or (sort$(1,2)="01" and cust_lead_days$ = "65" and sort$(19,3) = "DV1" and sort$(9,2) = "RN") then sr$ = "RE_" + lang$ + "_EOM:"
+
+14026 rem ' rent exipring has a different email
+14027 if sort$(19,3) = "RN1" and (sort$(9,2) = "X1" or sort$(9,2) = "X2") then 
+14028	sr$ = "RX_" + lang$
+14029   if smc01.firm_id$ = "02" and lang$ = "EN" then
+14030      sr$ = sr$ + "_02:"
+14031   else
+14032      sr$ = sr$ + "_01:"
+14033   fi
+14034 fi
+14035 if sr$(len(sr$),1) <> ":" then sr$ = sr$ + ":"
+
+14049 parseEmailText:
+14050 while 1
+14052   rem ' xresp = msgbox(sr$,0,"debug")
+14053   rem ' RN_EN, RN_DE, RN_EN_EOM, RE_EN, RE_EN_EOM 
+14054   if (sort$(1,2) = "01" and sr$ = "RN_EN:") or (sort$(1,2) = "01" and sr$ = "RN_EN_EOM:") or (sort$(1,2) = "02" and sr$ = "RN_DE:") or (sr$ = "RE_EN:") or (sr$ = "RE_EN_EOM:") then
+14055       includeSegments = 1; filename$="mainEmailBodies.txt", tag$ = sr$(1,len(sr$)-1), fillInData$ = ""     
+14056       call "/mnt/data/ec/emailHtmlEditor/basisEmailGetEmail.bbj", includeSegments, props!.getProperty("libraryLocation"), props!.getProperty("segmentsRepository"), fileName$, tag$, fillInData$, subject$, htmlEmail$
+14057       gosub parse_html_email_for_snurl_cad
+14058       gosub html_extract_license_data_row
+14059       usingHtml = 1
+14060   else
+14061       usingHtml = 0
+14062   fi
+   
+14068   if !usingHtml then
+14070       p0=pos(sr$=cvs(smc30_txt$,4));if p0=0 then break
+14080       txt$=smc30_txt$(p0)
+14090       p0=pos("{"=txt$);if p0=0 then break
+14100       txt$=txt$(p0+1),p0=pos("}"=txt$)
+14110       if p0=0 then break
+14120       txt$=txt$(1,p0-1)
+
+14122       rem ' pull out the subject
+14123       subject$=""
+14124       p1 = pos(lf$=txt$)
+14125       subject$ = txt$(1,p1-1), txt$ = txt$(p1+1)
+14126       if subject$(len(subject$),1) = $0D$ then subject$ = subject$(1,len(subject$)-1)
+14127       rem ' call "emailEncoding.src::encode_subject", subject$
+14128       if cvs(subject$(1,9),4) = "SUBJECT: " subject$ = subject$(10)
+
+14130       p0=pos("<cust>"=txt$)
+14140       if p0 then txt$=txt$(1,p0-1)+" - "+smc01.customer_nbr$+txt$(p0+6)
+
+14141       p0 = pos("<type>" = subject$)
+14143       if p0 <> 0 and sort$(19,3) = "RN1" then subject$ = subject$(1, p0-1) + "Rental" + subject$(p0 + 6)
+14144       if p0 <> 0 and sort$(19,3) = "DV1" then subject$ = subject$(1, p0-1) + "Developer Kit" + subject$(p0 + 6)
+
+14146	    p0 = pos("<SNURL>" = txt$)
+14147 	    if alternateUsed then
+14148		     replSN$ = cvs(sn_line$(1,12),3)
+14149	    else
+14150		     replSN$ = cvs(sn_list$(1,20),3)
+14151	    fi
+14152	    if p0 <> 0 then txt$ = txt$(1, p0 - 1) + replSN$ + txt$(p0 + 7)
+
+14155       p0=pos("<sn>"=txt$); if p0=0 then break
+14160       p1=pos(lf$=txt$(1,p0),-1);if p1=0 then p1=p0-1
+14165       head$=txt$(1,p1),loc$=txt$(p1+1)
+
+14170       sn1=pos("<sn>"=loc$),users1=pos("<users>"=loc$),ulist1=pos("<ulist>"=loc$)
+14173       tlist1=pos("<tlist>"=loc$),expdt1=pos("<expdt>"=loc$),invoice1=pos("<invoice>"=loc$)
+14176       endusr1=pos("<endusr>"=loc$),p0=pos(lf$=loc$),body$=loc$(p0+1)
+
+14179   fi
+
+14200   break
+14210 wend
+
+14220   if !usingHtml and head$="" and lang$<>"EN" then lang$="EN";goto parse_smc30_txt
+
+14228 if !usingHtml then 
+14230   if sort$(1,2)<>"01" 
+14240       p0=pos("List USD"=head$)
+14250       if p0 then head$(p0,8)="List EUR"
+14260   fi
+14261   if canadian_table then
+14262  	    p0=pos("List USD"=head$)
+14263  	    if p0 then head$(p0,8)="List CAD"
+14264   fi
+14265   while 1
+14270       p=pos($0a$=head$),p1=pos($0d$=head$)
+14275       if p=1 then head$=head$(2);continue
+14280       if p1=1 then head$=head$(2);continue
+14285       break
+14290   wend
+
+14295 else
+
+14300   rem ' htmlEmail'
+14305   if sort$(1,2)<>"01" 
+14310       p0 = pos("List USD" = htmlEmail$)
+14315       if p0 then htmlEmail$(p0,8) = "List EUR"
+14320   fi
+14325   if canadian_table then
+14330       p0 = pos("List USD" = htmlEmail$)
+14335       if p0 then htmlEmail$(p0,8)="List CAD"
+14340   fi
+14345 fi 
+
+14350 return
+
+15000 find_invoice:
+15005 k$=snm01.firm_id$+"  "+snm01.customer_nbr$
+15010 read(snt01,key=snm01.serial_nbr$,dom=*next)
+15020 while 1
+15030   readrecord(snt01,end=*break)snt01$
+15040   if snm01.serial_nbr$<>snt01.serial_nbr$ then break
+15050   rem ' if pos("SM"=snt01.type_of_sale$)<>1 then continue
+15060   if today_jul-fnj3(snt01.trans_date$)>365 then continue
+15070   readrecord(art03,key=k$+snt01.ar_inv_nbr$+"000",dom=*continue)art03$
+15080   if smc01.contr_type$ = "SM1" then if pos("SAM Renew"=art03.ar_po_number$)=0 then continue
+15081   if smc01.contr_type$ = "RN1" then if pos("RNT Renew"=art03.ar_po_number$)=0 then continue
+15082   if smc01.contr_type$ = "DV1" then if pos("DVK Renew"=art03.ar_po_number$)=0 then continue
+15090   tot=0
+15100   art01key$=k$+snt01.ar_inv_nbr$+"00"
+15110   read record(art01,key=art01key$,dom=*continue)art01$
+15120   read(art11,key=art01$(1,17),dom=*next)
+15130   while 2
+15140     read record(art11,end=*break)art11$
+15150     if pos(art01$(1,17)=art11$)<>1 then break
+15160     if art11.AR_TRAN_CODE$="C" then tot=tot+art11.trans_amt
+15170   wend
+15180   if art01.invoice_amt+tot then temprec.type$="X1",temprec.invoice$=snt01.ar_inv_nbr$;break
+15190 wend
+15200 return
+
+15300 rem ' use
+15302 use java.io.File
+15304 use java.io.FileInputStream
+15306 use java.io.BufferedInputStream
+15308 use java.util.Properties
+15310 rem ' declare
+15312 declare File propfile!
+15314 declare FileInputStream fis!
+15316 declare BufferedInputStream bis!
+15318 declare Properties props!
+
+15400 open_properties_file:
+15402 rem ' the properties file 
+15404 props$ = "/mnt/data/basisaon/aon/ADATA/basisEmailHtmlEditor.properties"
+15406 propfile!= new java.io.File(props$)
+15408 fis!=new java.io.FileInputStream(propfile!)
+15410 bis!=new java.io.BufferedInputStream(fis!)
+15412 props!=new java.util.Properties()
+15414 props!.load(bis!)
+15416 return
+
+15450 parse_html_email_for_snurl_cad:
+15452 p0 = pos("%SNURL%" = htmlEmail$)
+15454 if alternateUsed then
+15456     replSN$ = cvs(sn_line$(1,12),3)
+15458 else
+15460     replSN$ = cvs(sn_list$(1,20),3)
+15462 fi
+15464 if p0 <> 0 then htmlEmail$ = htmlEmail$(1, p0 - 1) + replSN$ + htmlEmail$(p0 + 7)
+
+15466 if canadian_table then
+15468   p0=pos("List USD"=htmlEmail$)
+15470   if p0 then htmlEmail$(p0,8)="List CAD"
+15472 fi
+
+15474 return
+
+15500 html_extract_license_data_row:
+15505 begpos = pos("<!--begin licenseData -->" = htmlEmail$); begpos = begpos + len("<!--begin licenseData -->")
+15510 endpos = pos("<!--end licenseData -->" = htmlEmail$)
+15515 htmlLicenseDataRow$ = htmlEmail$(begpos, endpos-begpos)
+15520 htmlTableRow$ = ""
+15530 return
+
+15600 html_add_license_data:
+15605 p0 = pos("%licenseHdr%" = htmlEmail$)
+15607 if p0 <> 0 then
+15610   if multiLicense then
+15611       if sr$ = "RN_DE:" then
+15612           htmlEmail$ = htmlEmail$(1,p0-1) + "folgenden Lizenzen" + htmlEmail$(p0+12)
+15613       else
+15614           htmlEmail$ = htmlEmail$(1,p0-1) + "Licenses" + htmlEmail$(p0+12)
+15615       fi
+15620   else
+15621       if sr$ = "RN_DE:" then
+15622           htmlEmail$ = htmlEmail$(1,p0-1) + "folgende Lizenz" + htmlEmail$(p0+12)
+15623       else       
+15624           htmlEmail$ = htmlEmail$(1,p0-1) + "License" + htmlEmail$(p0+12)
+15625       fi
+15630   fi
+15635 fi
+
+15650 p0 = pos("%type%" = subject$)
+15655 if p0 <> 0 and sort$(19,3) = "RN1" then subject$ = subject$(1, p0-1) + "Rental" + subject$(p0 + 6)
+15660 if p0 <> 0 and sort$(19,3) = "DV1" then subject$ = subject$(1, p0-1) + "Developer Kit" + subject$(p0 + 6)
+
+15680 p0 = pos("%type%" = htmlEmail$)
+15685 if p0 <> 0 and sort$(19,3) = "RN1" then htmlEmail$ = htmlEmail$(1,p0-1) + "Rental" + htmlEmail$(p0 + 6)
+15690 if p0 <> 0 and sort$(19,3) = "DV1" then htmlEmail$ = htmlEmail$(1, p0-1) + "Developer Kit" + htmlEmail$(p0 + 6)
+
+15750 tempRow$ = htmlLicenseDataRow$
+15755 p0 = pos("%sn%" = tempRow$); tempRow$ = tempRow$(1, p0-1) + cvs(sn$,3) + tempRow$(p0 + len("%sn%"))
+15760 p0 = pos("%users%" = tempRow$); tempRow$ = tempRow$(1, p0-1) + cvs(users$,3) + tempRow$(p0 + len("%users%"))
+15765 p0 = pos("%ulist%" = tempRow$); tempRow$ = tempRow$(1, p0-1) + cvs(ulist$,3) + tempRow$(p0 + len("%ulist%"))
+15770 p0 = pos("%tlist%" = tempRow$); tempRow$ = tempRow$(1, p0-1) + cvs(tlist$,3) + tempRow$(p0 + len("%tlist%"))
+15775 p0 = pos("%expdt%" = tempRow$); tempRow$ = tempRow$(1, p0-1) + cvs(expdt$,3) + tempRow$(p0 + len("%expdt%"))
+15780 p0 = pos("%endusr%" = tempRow$); tempRow$ = tempRow$(1, p0-1) + cvs(eu$,3) + tempRow$(p0 + len("%endusr%"))
+15785 htmlTableRow$ = htmlTableRow$ + tempRow$
+
+15790 return
+
+
+

@@ -1,0 +1,115 @@
+01_EN: {INVOICE NUMBER:}
+01_ES: {NÚMERO DE FACTURA:}
+
+02_EN: {INVOICE}
+02_ES: {FACTURA}
+
+03_EN: {INVOICE DATE:}
+03_ES: {FECHA DE LA FACTURA:}
+
+04_EN: {PAGE:}
+04_ES: {PÁGINA:}
+
+05_EN: {ORDER NUMBER:}
+05_ES: {NÚMERO DE ORDEN:}
+
+06_EN: {ORDER DATE:}
+06_ES: {FECHA DE LA ORDEN:}
+
+07_EN: {CUSTOMER NO:}
+07_ES: {NÚMERO DE CLIENTE:}
+
+08_EN: {SOLD TO:}
+08_ES: {VENDIDO A:}
+
+09_EN: {SHIP TO:}
+09_ES: {ENVIAR A:}
+
+10_EN: {CONFIRM TO:}
+10_ES: {CONFIRMAR A:}
+
+11_EN: {CUSTOMER P.O.}
+11_ES: {ORDEN DE COMPRA}
+
+12_EN: {DISCOUNT}
+12_ES: {DESCUENTO}
+
+13_EN: {SALESPERSON}
+13_ES: {VENDEDOR}
+
+14_EN: {TERMS}
+14_ES: {TÉRMINO}
+
+15_EN: {ORDER} #order qty
+15_ES: {CANTIDAD} 
+
+16_EN: {DESCRIPTION}
+16_ES: {DESCRIPCIÓN}
+
+17_EN: {PRICE} #unit price
+17_ES: {PRECIO}
+
+18_EN: {TOTAL} #total line price
+18_ES: {TOTAL}
+
+19_EN: {NET INVOICE:} #inv line total
+19_ES: {NETO DE FACTURA:} 
+
+20_EN: {FREIGHT:}
+20_ES: {FLETE:}
+
+21_EN: {SALES TAX:}
+21_ES: {IMPUESTO SOBRE VENTAS:}
+
+22_EN: {INVOICE TOTAL:} #16+17+18
+22_ES: {TOTAL DE LA FACTURA:$}
+
+23_EN: {Coverage through}
+23_ES: {Cobertura hasta el}
+
+24_EN: {Number of Users}
+24_ES: {Número de usuarios}
+
+25_EN: {Serial Numbers}
+25_ES: {Números de Serie}
+
+26_EN: {End User}
+26_ES: {Usuario Final}
+
+27_EN: {New}
+27_ES: {Nuevo}
+
+28_EN: {Deactivated}
+28_ES: {Desactivado}
+
+29_EN: {Not Available}
+29_ES: {No Disponible}
+
+30_EN: {CREDIT MEMO}
+30_ES: {NOTA DE CRÉDITO}
+
+31_EN: {Continued}
+31_ES: {Continuación}
+
+32_EN: {Credit Card}
+32_ES: {Tarjeta de crédito}
+
+33_EN: {Net 15}
+33_ES: {15 días}
+
+50_EN: {By placing this order, Customer expressly reaffirms and agrees to all of the terms and conditions of the Reseller Agreement between Customer and BASIS and acknowledges having read and agreed to the same. All of the terms and conditions
+of the Reseller Agreement are incorporated herein. No additional or different terms or conditions proposed by Customer shall be effective.}
+50_ES: {Al colocar esta orden, el Cliente acepta expresamente todos los términos y condiciones del Contrato entre el Cliente y BASIS y reconoce haber leído y aceptado el mismo. Todos los términos y condiciones del Contrato se incluyen en el presente. No será válido ningún término o condición adicional o diferente que haya sido propuesto por el Cliente.}
+
+51_EN: {Please pay from this invoice.}
+51_ES: {Factura pagada en una sola exhibición.}
+
+52_EN: {This invoice has already been paid.}
+52_ES: {Esta factura ya fue pagada.}
+
+53_EN: {Your Software Asset Management (SAM) Plan provides free product upgrades, better prices on additional users, and 5 free technical support incidents per license. Your SAM coverage for the above listed licenses is within 30 days of expiring. Payment of this SAM renewal guarantees your benefits will continue uninterrupted for another 12-month term. Free upgrades will continue to be available at http://www.basis.cloud/cgi-bin/sam.cgi. See SAM Plan terms at http://www.basis.cloud/devtools/sam/terms.html.}
+53_ES: {Su Plan Software Asset Management (SAM) ofrece mejoras al producto sin cargo, mejores precios para usuarios adicionales, y 5 soportes técnicos sin cargo a incidentes por licencia. Su cobertura SAM para las licencias antes listadas es dentro de los 30 días de la fecha de vencimiento.  El pago de esta renovación SAM le garantiza la continuidad ininterrumpida de los beneficios durante otro plazo de 12 meses.  Las mejoras sin cargo continuarán estando disponibles en http://www.basis.cloud/cgi-bin/sam.cgi. Ver los términos del Plan SAM en http://www.basis.cloud/devtools/sam/terms.html.}
+
+54_EN: {Please remit to:}
+54_ES: {Favor de remitir a:}
+

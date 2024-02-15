@@ -1,0 +1,148 @@
+0010 REM " Program BCC.02 - Event Registration CC/ other info lookup
+0020 BEGIN
+0030 SETERR std_err
+0040 SETESC std_err
+0050 LET SYS01T=UNT; OPEN (SYS01T)"SYS-01"
+0060 LET TERMINAL$="T"+FID(0)
+0070 READ (SYS01T,KEY=TERMINAL$)*,F0$; CLOSE (SYS01T)
+0080 LET FIRM$=F0$(16,2)
+0100 pwd=unt
+0110 open(pwd)"password"
+0120 read(pwd)password$
+0130 close(pwd)
+0140 reg=UNT
+0150 OPEN (reg)"registrations.dat"
+0160 call "templates.pgm::registrations"
+0170 dim reg$:fattr(registrations$)
+0200 ADATA$=STBL("AON")+"ADATA/"
+0300 TITLE$="Event Registrations"
+0500 while 1
+0520 CCLIST$="",CC_COUNT=0
+0540 GOSUB CREATE_CCLIST
+0560 GOSUB DISPLAY_LIST
+0600 wend
+0700 CREATE_CCLIST: 
+0720 READ (reg,KEY="",knum=1,DOM=MAIN_READ)
+0740 MAIN_READ: 
+0760 READ RECORD (reg,END=CCLIST_END)reg$
+0780 LET CCLIST$=CCLIST$+reg.key1$+$0A$,CC_COUNT=CC_COUNT+1
+0800 GOTO MAIN_READ
+0820 CCLIST_END: 
+0840 RETURN
+0900 DISPLAY_LIST: 
+0920 LET WIDTH=75,HEIGHT=20,WIN_X=2,WIN_Y=3
+0940 DIM HEADING$(WIDTH-2),FOOTING$(WIDTH-2)
+0960 LET HEADING$(2)="Name                           Date/Event           "
+0980 LET FOOTING$(2)="F1=Restart  F4=End  PgUp  PgDn"
+1000 CALL "SYC.WA",0,WIDTH,HEIGHT,WIN_X,WIN_Y,TITLE$,NAME$
+1020 LET PAGES=INT(CC_COUNT/14)+2,MAX_ROW=HEIGHT-5;rem '14 lines per page shown
+1040 DIM LLIST$[PAGES,MAX_ROW,5],MORE$[PAGES,MAX_ROW,2]
+1060 PRINT @(0,0),'BR',HEADING$,@(0,HEIGHT-4),FOOTING$,'ER',
+1080 LET PAGE=1,L=1,X1=1,SELECTION$="",XMODE=5
+1100 IF CC_COUNT=0 THEN LET LLIST$[PAGE,X1,1]=" No registrations"
+1120 GET_KEY: P=POS($0A$=CCLIST$); IF P<4 THEN LET SELECTION$="|EOF"; GOSUB DISPLAY_PAGE; GOTO DISPLAY_LIST_END
+1140 LET k$=CCLIST$(1,P-1),CCLIST$=CCLIST$(P+1)
+1160 READ RECORD (reg,KEY=K$,knum=0,DOM=GET_KEY)REG$
+1180 d$=reg.start_dt$+fill(8),e$=cvs(reg.event$,3)+fill(80)
+1200 dt$=d$(5,2)+"/"+d$(7,2)+"/"+d$(1,4),name$=cvs(reg.name$,3)
+1220 LET LINE$=" "+name$+fill(31-len(name$))+dt$+"  "+e$(1,20)+"  "+reg.invoice_nbr$
+1240 IF L>=MAX_ROW THEN GOSUB DISPLAY_PAGE
+1260 LLIST$[PAGE,X1,1]=LINE$,LLIST$[PAGE,X1,2]=k$
+1280 LET X1=X1+1,L=L+1
+1300 GOTO GET_KEY
+1320 DISPLAY_LIST_END: 
+1340 CALL "SYC.WD",NAME$
+1360 RETURN
+1400 DISPLAY_PAGE: 
+1410 v$=""
+1420 CALL "SYC.SA",XMODE,LLIST$[ALL],MORE$[ALL],SELECTION$,PAGE,MAX_ROW,NAME$,HEIGHT,WIDTH,FKEY
+1440 IF FKEY=1 THEN EXITTO DISPLAY_LIST_END
+1460 IF FKEY=4 THEN EXITTO END_PROGRAM
+1470 IF FKEY=-16 THEN LET PAGE=PAGE+1
+1480 IF FKEY=0 THEN 
+1490   GOSUB ALL_INFO
+1500   if v$="" then GOTO DISPLAY_PAGE else exitto display_list_end
+1510 fi
+1520 LET L=1,X1=1
+1540 RETURN
+1560 ALL_INFO: 
+1580 IF LEN(SELECTION$)<14 THEN GOTO ALL_INFO_END
+1600 K$=SELECTION$
+1620 READ RECORD (reg,KEY=K$,knum=0,DOM=ALL_INFO_END)reg$
+1640 payby$="?????",chk_cc$="",x$="CheckVISA MC   AMEX "
+1660 p=pos(reg.pmt_type$="CVMA")
+1680 if p then payby$=x$((p-1)*5+1,5)
+1700 CC$=cvs(reg.cc_number$,3),un$=cc$
+1710 IF len(cc$)>12 and p>1 THEN 
+1720   rem un$=decrypt(cc$,mode="cryptpass="+password$)
+1722   enc$=reg.cc_number$,un$=""
+1724   call "BCC.11",un$,enc$                                             
+1730   LOG$=cvs(reg.name$,3)+" "+reg.start_dt$+" "+cvs(reg.event$,3)
+1740   GOSUB LOGENTRY
+1750 fi
+1760 if p then chk_cc$=reg.check_dt$;if p>1 then chk_cc$=un$
+1770 LET WIDTH=60,HEIGHT=22,WIN_X=21,WIN_Y=2,TITLE$=""
+1780 CALL "SYC.WA",0,WIDTH,HEIGHT,WIN_X,WIN_Y,TITLE$,ANAME$
+1800 PRINT 'WRAP'("on"),@(5,0),"Invoice:",@(5,1),"Company:",@(4,2),"Address1:",@(4,3),"Address2:",@(8,4),"City:",@(10,5),"St:",@(4,6),"PostCode:",@(5,7),"Country:",@(7,8),"Phone:",@(5,9),"Paid By:",@(6,10),"Amount:",@(2,11),
+1840 if p=1 then print "Check Date:", else print " CC Number:",
+1880 if p>1 then print @(2,12),"CC Expires:",@(5,13),"CC Name:",@(0,14),"CC Bill Addr:"
+1900 print @(7,12+3*(P>1)),"Email:"
+1940 X1=14
+1980 PRINT @(X1,0),reg.invoice_nbr$,@(X1,1),reg.company$,@(X1,2),reg.addr1$,@(X1,3),reg.addr2$,@(X1,4),reg.city$,@(X1,5),reg.state$,@(x1,6),reg.zip$,@(x1,7),reg.country$,@(x1,8),reg.phone$,@(x1,9),payby$,@(x1,10),reg.amt$,@(x1,11),chk_cc$,
+2000 if p>1 then PRINT @(X1,12),reg.cc_exp_mo$," ",reg.cc_exp_yr$,@(X1,13),reg.cc_name$,@(X1,14),Reg.cc_address$
+2010 print @(x1,12+3*(P>1)),reg.email$
+2020 inv_in:
+2030 V0$="S",V1$="CE^",V2$=reg.invoice_nbr$,V3$="",V4$="Invoice#, <DEL> Delete, <Enter> Continue",V0=7,V1=x1,V2=0
+2040 GOSUB 7000;v$=cvs(v$,3);if v$="" then goto all_info_end
+2050 IF v$="DEL" then 
+2060   remove(reg,key=reg.key1$,err=all_info_end)
+2070   goto all_info_end
+2080 fi
+3010 reg.invoice_nbr$=str(num(v$):"0000000",err=inv_in)
+3020 reg$=field(reg$)
+3030 writerecord(reg)reg$
+3040 ALL_INFO_END: 
+3050 CALL "SYC.WD",ANAME$
+3100 RETURN
+6000 LOGENTRY: 
+6020 LOG$=$22$+LOG$+" <"+INFO(3,2)+"> "+DATE(0:"%Mz/%Dz/%Y - %Hz:%mz:%sz")+$22$
+6040 LET A=SCALL("echo "+LOG$+" >> "+ADATA$+"bcc01.log")
+6090 RETURN
+7000 input_rtn: REM 7000 " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO err_esc
+7030 IF V3=127 THEN GOTO inp_esc 
+7040 RETURN
+7050 inp_esc: REM " --- Escape During Input"
+7060 CALL "SYC.ES",ERR=err_esc,PGM(-2),TCB(8),E$,E2,V3
+7070 IF V3<>127 THEN GOTO input_rtn
+7080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7090 err_esc:REM " --- Error During Input"
+7100 ESCAPE
+7110 GOTO input_rtn
+9000 std_err: REM 9000 " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO std_esc
+9020 CALL "SYC.EA",ERR=9060,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9070
+9040 IF E1=3 THEN GOTO 9090
+9050 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9060 ESCAPE
+9070 REM " --- Retry"
+9080 RETRY
+9090 REM " --- Return"
+9100 SETERR std_err
+9110 GOTO end_program
+9300 std_esc: REM 9300 " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9340,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9350
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9340 ESCAPE
+9350 RETURN
+9800 REM 9800 " --- Display Parameter record error"
+9810 LET LINE_ERR$=PGM(TCB(5))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 REM 9900
+9910 END_PROGRAM: CALL "SYC.WD",NAME$
+9920 CALL "SYC.WD",SNAME$
+9940 RUN "SYS.AA"
+9950 END

@@ -1,0 +1,239 @@
+rem '------------------------------------------------------------------
+rem ' calculate the exchange rate of a Canadian Customer's cash payment
+rem ' runs as the last step of the cash receipts update
+rem '------------------------------------------------------------------
+
+begin
+setesc escape_trap
+seterr error_trap
+
+newRatesEntered = 0
+
+rem '--------------------------------------------------------------
+rem ' uses
+rem ' ARM02_CANADA - record containing the firm id and customer number
+rem '                of the Canadian Customer
+rem ' CANADIAN_EXCH - current and historical exchange rates used in
+rem '                 the system
+rem ' ART06 - Cash Receipts History Header
+rem ' ART16 - Cash Receipts History Detail
+rem ' ART03 - Invoice History Header
+rem ' ART03_CANADA - contains exchange rates used on individual
+rem '                invoices
+rem '--------------------------------------------------------------
+
+rem '--------------------------------------------------------------
+rem ' find the firm id and customer number of the Canadian customer
+rem '--------------------------------------------------------------
+SELECT_ARM02_CANADA$ = "SELECT * FROM ARM02_CANADA"
+
+sqlchan = sqlunt
+sqlopen(sqlchan)"AddOnData"
+sqlprep(sqlchan)SELECT_ARM02_CANADA$
+sqlexec(sqlchan)
+dim arm02_canada$:sqltmpl(sqlchan)
+arm02_canada$ = sqlfetch(sqlchan)
+sqlclose(sqlchan)
+
+firm_id$ = arm02_canada.firm_id$
+customer_nbr$ = arm02_canada.customer_nbr$
+
+
+rem '------------------------------------------------------------
+rem ' find the most recent auto update exchange rate record
+rem '------------------------------------------------------------
+SELECT_CE$ = "SELECT TOP 1 CAST(RATEDATE AS SQL_CHAR) AS RATEDATE, SEQUENCE_NBR, "
+SELECT_CE$ = SELECT_CE$ + "TO_US_DOLL, TO_CANA_DOLL, CAST(RECEIPT_DATE AS SQL_CHAR) "
+SELECT_CE$ = SELECT_CE$ + "AS RECEIPT_DATE, AR_CHECK_NBR FROM CANADIAN_EXCH WHERE "
+SELECT_CE$ = SELECT_CE$ + "RECEIPT_DATE IS NOT NULL AND AR_CHECK_NBR IS NOT NULL "
+SELECT_CE$ = SELECT_CE$ + "ORDER BY RATEDATE DESC"
+
+sqlchan = sqlunt
+sqlopen(sqlchan)"AddOnData"
+sqlprep(sqlchan)SELECT_CE$
+sqlexec(sqlchan)
+dim canadian_exch$:sqltmpl(sqlchan)
+canadian_exch$ = sqlfetch(sqlchan)
+sqlclose(sqlchan)
+
+receipt_date$ = canadian_exch.receipt_date$
+
+rem '------------------------------------------------------------
+rem ' select cash receipts header record for specified receipt
+rem '------------------------------------------------------------
+SELECT_ART06$ = "SELECT CAST(RECEIPT_DATE AS SQL_CHAR) AS RECEIPT_DATE, AR_CHECK_NBR, "
+SELECT_ART06$ = SELECT_ART06$ + "PAYMENT_AMT FROM ART06 WHERE FIRM_ID = '" + firm_id$ + "' "
+SELECT_ART06$ = SELECT_ART06$ + "AND CUSTOMER_NBR = '" + customer_nbr$ + "' "
+SELECT_ART06$ = SELECT_ART06$ + "AND RECEIPT_DATE > '" + receipt_date$ + "' "
+SELECT_ART06$ = SELECT_ART06$ + "AND PAYMENT_AMT <> 0 ORDER BY RECEIPT_DATE DESC"
+
+sqlchan = sqlunt
+sqlopen(sqlchan)"AddOnData"
+sqlprep(sqlchan)SELECT_ART06$
+sqlexec(sqlchan)
+dim art06$:sqltmpl(sqlchan)
+found = 0
+art06$ = sqlfetch(sqlchan,err=*next); found = 1
+sqlclose(sqlchan)
+
+if !found then
+	rem ' no new cash receipts records found - exit
+	goto pgm_exit
+else
+	usDollarsReceived = art06.payment_amt
+	receipt_date$ = art06.receipt_date$
+	ar_check_nbr$ = art06.ar_check_nbr$
+endif
+
+rem '------------------------------------------------------------
+rem ' select cash receipts detail records for specified receipt
+rem '------------------------------------------------------------
+SELECT_ART16$ = "SELECT * FROM ART16 WHERE FIRM_ID = '" + firm_id$ + "' "
+SELECT_ART16$ = SELECT_ART16$ + " AND CUSTOMER_NBR = '" + customer_nbr$ + "' "
+SELECT_ART16$ = SELECT_ART16$ + " AND RECEIPT_DATE = '" + receipt_date$ + "' "
+SELECT_ART16$ = SELECT_ART16$ + " AND AR_CHECK_NBR = '" + ar_check_nbr$ + "' "
+
+sqlchan = sqlunt
+sqlopen(sqlchan)"AddOnData"
+sqlprep(sqlchan)SELECT_ART16$
+sqlexec(sqlchan)
+dim art16$:sqltmpl(sqlchan)
+
+totalCanadianInvoices = 0
+
+while 1
+	art16$ = sqlfetch(sqlchan, err=*break)
+
+	rem ' skip any ON ACCOUNT over payments
+	if pos("OA" = art16.ar_inv_nbr$) = 1 then
+		usDollarsReceived = usDollarsReceived - art16.apply_amt
+		continue
+	endif
+
+	rem '------------------------------------------------------------
+	rem ' select invoice history header record for paid invoice
+	rem '------------------------------------------------------------
+	SELECT_ART03$ = "SELECT CAST(INVOICE_DATE AS SQL_CHAR) AS INV_DATE, ORDER_NUMBER FROM ART03 WHERE FIRM_ID = '" + firm_id$ + "' "
+	SELECT_ART03$ = SELECT_ART03$ + " AND CUSTOMER_NBR = '" + customer_nbr$ + "' "
+	SELECT_ART03$ = SELECT_ART03$ + " AND AR_INV_NBR = '" + art16.ar_inv_nbr$ + "' "
+
+	sqlchan2 = sqlunt
+	sqlopen(sqlchan2)"AddOnData"
+	sqlprep(sqlchan2)SELECT_ART03$
+	sqlexec(sqlchan2)
+	dim art03$:sqltmpl(sqlchan2)
+	art03$ = sqlfetch(sqlchan2)
+	sqlclose(sqlchan2)
+
+	rem '------------------------------------------------------------
+	rem ' select exchange rates used on specific invoice
+	rem '------------------------------------------------------------
+	rem ' SELECT_ART03_CANADA$ = "SELECT * FROM ART03_CANADA WHERE FIRM_ID = '" + firm_id$ + "' "
+	rem ' SELECT_ART03_CANADA$ = SELECT_ART03_CANADA$ + " AND CUSTOMER_NBR = '" + customer_nbr$ + "' "
+	rem ' SELECT_ART03_CANADA$ = SELECT_ART03_CANADA$ + " AND INVOICE_DATE = '" + art03.inv_date$ + "' "
+	rem ' SELECT_ART03_CANADA$ = SELECT_ART03_CANADA$ + " AND ORDER_NUMBER = '" + art03.order_number$ + "' "
+	rem '------------------------------------------------------------
+	rem ' removed the firm_id and customer_nbr from the where clause
+	rem ' 8/17/2011 - encountered a problem selecting from this table
+	rem ' when three or more where params are used and one is the
+	rem ' invoice_date
+	rem '------------------------------------------------------------
+	SELECT_ART03_CANADA$ = "SELECT * FROM ART03_CANADA WHERE INVOICE_DATE = '" + art03.inv_date$ + "' "
+	SELECT_ART03_CANADA$ = SELECT_ART03_CANADA$ + " AND ORDER_NUMBER = '" + art03.order_number$ + "' "
+
+	sqlchan2 = sqlunt
+	sqlopen(sqlchan2)"AddOnData"
+	sqlprep(sqlchan2)SELECT_ART03_CANADA$
+	sqlexec(sqlchan2)
+	dim art03_canada$:sqltmpl(sqlchan2)
+	art03_canada$ = sqlfetch(sqlchan2)
+	sqlclose(sqlchan2)
+
+	rem '------------------------------------------------------------
+	rem ' convert the invoice amount to canadian dollars
+	rem '------------------------------------------------------------
+	call "canDollConversion", art03_canada$, 0, art16.apply_amt, amountout
+
+	totalCanadianInvoices = totalCanadianInvoices + amountout
+wend
+
+sqlclose(sqlchan)
+
+rem '------------------------------------------------------------
+rem ' insert new row into CANADIAN_EXCH
+rem '------------------------------------------------------------
+
+rem ' calc new exchange rate
+precision 4
+to_us_doll = usDollarsReceived / totalCanadianInvoices
+to_cana_doll = totalCanadianInvoices / usDollarsReceived
+
+INSERT_SQL$ = "INSERT INTO CANADIAN_EXCH (RATEDATE, SEQUENCE_NBR, TO_US_DOLL, "
+INSERT_SQL$ = INSERT_SQL$ + "TO_CANA_DOLL, RECEIPT_DATE, AR_CHECK_NBR) VALUES "
+INSERT_SQL$ = INSERT_SQL$ + "('" + receipt_date$ +"', '00', " + STR(TO_US_DOLL) + ", "
+INSERT_SQL$ = INSERT_SQL$ + STR(TO_CANA_DOLL) + ", '" + receipt_date$ + "', "
+INSERT_SQL$ = INSERT_SQL$ + "'" + cvs(ar_check_nbr$,3) + "')"
+
+sqlchan = sqlunt
+sqlopen(sqlchan)"AddOnData"
+sqlprep(sqlchan)INSERT_SQL$
+sqlexec(sqlchan)
+sqlclose(sqlchan)
+
+newRatesEntered = 1
+
+rem '------------------------------------------------------------
+rem ' send emails notifying of the change in rates
+rem '------------------------------------------------------------
+
+from$ = "customer-service@basis.cloud"
+subject$ = "New Exchange Rates"
+to$ = "kpeterl@basis.cloud"
+cc$ = "misDev@basis.cloud"
+bcc$ = ""
+file$ = ""
+
+msgtxt$ = "New Canadian Exchange Rate record set: " + $0A$
+msgtxt$ = msgtxt$ + "Date: " + receipt_date$ + $0A$
+msgtxt$ = msgtxt$ + "Based on check: " + ar_check_nbr$ + $0A$
+msgtxt$ = msgtxt$ + "To US Rate: " + str(to_us_doll) + $0A$
+msgtxt$ = msgtxt$ + "To CAD Rate: " + str(to_cana_doll) + $0A$
+msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+
+rem call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+pgm_exit:
+
+	rem ' as a temp check email misdev@basis.cloud kurt when this runs and rates are not updated
+	if !newRatesEntered then
+		from$ = "customer-service@basis.cloud"
+		subject$ = "New Exchange Rates - not entered"
+		to$ = "misdev@basis.cloud"
+		cc$ = ""
+		bcc$ = ""
+		file$ = ""
+		msgtxt$ = $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+		rem call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+	endif
+
+	run "SYS.AA"
+
+escape_trap:
+	return
+
+error_trap:
+	emailmsg$ = "An error " + str(err) + " " + errmes(-1) + " has occurred in calcCanadianExchangeRate.src on line number: " + str(tcb(5))
+
+	from$ = "customer-service@basis.cloud"
+	subject$ = "Error in calcCanadianExchangeRate.src"
+	to$ = "misdev@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	file$ = ""
+	msgtxt$ = emailmsg$
+	msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	rem call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+	run "SYS.AA"
+
+end

@@ -1,0 +1,147 @@
+// Handle line items for COM forms  <aonintr_11>
+// May, 1994--Apply overall invoice discount to line items' unit prices
+// Nov. 1995--Use tables for item descriptions
+//			  Special handling of media qty. on bundled clients
+
+enter are13,media_table$[all],description_table$[all],media_accum;
+
+create temporary table com_line_item /nocreate
+	counter char(4)/index
+	product_class char(2)/index
+	line_type char(1)
+	item_num char(15)
+	desc char(50)
+	comment char(30)
+	qty num(5)
+	unit_price num(7)/precision=2
+	extension num(9)/precision=2,;
+
+if are13.line_code="S" then gosub handle_inventory_line;
+
+subroutine handle_inventory_line
+{
+// Check forms control tables to see if we want to report this item
+// First, blow off all the "temporary" GUI Guides
+test_item$=cvs(are13.item_number,3);
+if test_item$="MS10GUI" or test_item$="MS10SUP" then break;
+if len(test_item$)>8 then 
+	{find/noerror csm03 using are13.firm_id+test_item$(7,3);
+	if available(csm03) then test_item$=csm03.port_id; }
+
+/* don't know what this routine is for
+// Next, see if we need to convert a duplicate item type
+i=0;
+repeat/until conversion_table$[i,0]=$$
+	{
+	if len(test_item$)>=len(conversion_table$[i,0])
+	and test_item$(1,len(conversion_table$[i,0]))=
+		conversion_table$[i,0] then
+		{ test_item$=conversion_table$[i,1];
+		i=3; }
+	else i=i+1;
+	}
+*/
+// See if this is an item type that should be reported
+i=0;
+found_match_sw=0;
+repeat/until description_table$[i,0]=$$ or found_match_sw=1
+	{
+	if len(test_item$)>=len(description_table$[i,0])
+	and test_item$(1,len(description_table$[i,0]))=
+	description_table$[i,0] then
+		{test_item$=description_table$[i,0];
+		description_table_pointer=i;
+		found_match_sw=1; }
+	else i=i+1;
+	}
+
+// Break out if this item type should not be reported
+if found_match_sw=0 then break;
+
+// See if this is first occurrence of this item type
+com_line_item.product_class=test_item$;
+find/noerror/index=product_class com_line_item;
+
+if available(com_line_item)=0 then
+	{
+	line_type$="S";
+	gosub add_lines_to_file;
+	}
+else
+	{
+	gosub add_to_existing_record;
+	}
+
+if pos("MEDIA"=test_item$) then
+	{
+	media_price=are13.ext_price;
+	media_accum=media_accum+media_price;
+	}
+else gosub calculate_media;
+}
+
+subroutine calculate_media
+{
+find/noerror are73 using are13$(1,20);
+if available(are73)=0 then break;
+i=0;
+repeat
+	{
+	if media_table$[i,0]=are73.media_type then
+		{
+		media_price=num(media_table$[i,1])*are73.media_sets;
+		media_accum=media_accum+media_price;
+		break;
+		}
+	else if media_table$[i,0]=$$ then break;
+	else i=i+1;
+	}
+}
+
+// ******* Routine to add new item group lines to temp. file ************
+subroutine add_lines_to_file
+{
+find/last/noerror com_line_item;
+counter=str(num(counter)+1:"0000");
+product_class=test_item$;
+com_line_item.line_type=line_type$;
+com_line_item.item_num=are13.item_number;
+com_line_item.comment=fill(30);
+com_line_item.qty=are13.qty_shipped;
+com_line_item.unit_price=are13.unit_price;
+com_line_item.extension=are13.ext_price;
+
+// Build description lines from table
+com_line_item.desc=description_table$[description_table_pointer,1];
+insert com_line_item;
+
+product_class=fill(2);
+i=description_table_pointer+1;
+desc_loop:
+if description_table$[i,0]=test_item$ then
+	{
+	hold=num(counter)+1;
+	init com_line_item;
+	counter=str(hold:"0000");
+	desc=description_table$[i,1];
+	line_type="M";
+	item_num="/C";
+	insert com_line_item;
+	i=i+1;
+	goto desc_loop;
+	}
+}
+
+subroutine add_to_existing_record
+{
+com_line_item.qty=com_line_item.qty+are13.qty_shipped;
+com_line_item.extension=com_line_item.extension+are13.ext_price;
+
+if com_line_item.qty then
+	com_line_item.unit_price=com_line_item.extension/com_line_item.qty;
+else
+	com_line_item.extension=0;
+update com_line_item;
+}
+
+//

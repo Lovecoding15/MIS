@@ -1,0 +1,25 @@
+1EN:
+{
+Subject: <custnbr> <custname> <sn> with <users> user(s) attempted to register with a restricted host id
+
+Registrations for <sn> with <users> user(s) <enduser> are limited to a single host id: <hostid><prihostname>. An attempt to register with a different host id, <oth_hostid><hostname>, was rejected. Please contact your BASIS representative or support@basis.cloud for assistance. 
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+2EN:
+{
+Subject: <custnbr> <custname> <sn> with <users> user(s), an inactive serial number attempted to register.
+
+An attempt to register an inactive serial number, <sn>  with <users> user(s) <enduser>, was rejected. Please contact your BASIS representative or support@basis.cloud for assistance. 
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+

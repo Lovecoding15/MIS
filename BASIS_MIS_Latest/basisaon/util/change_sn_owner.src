@@ -1,0 +1,164 @@
+rem ' bulk change serial number onwership
+
+? 'cs'
+
+call "ec_open::snm01"
+call "ec_open::snm04"
+call "ec_open::smc01"
+
+snm01out=unt
+open(snm01out)stbl("DATA_SERVER")+"/basisaon/aon/ADATA/SNM-01"
+
+rem ' rem these out if not using serial number text file to drive the change
+rem ' txt=unt
+rem ' open(txt)"/tmp/020689SerialNbrs.txt"
+
+rem ' from Tanager 01-008450 to Marriot 01-002786
+rem ' 11/22/2011  kew
+rem ' 11/29/2012  kew
+rem ' 11/26/2013  kew
+rem ' 11/13/2014  kew
+rem ' 11/16/2015  kew
+rem ' 11/18/2016  kew
+rem ' 11/18/2017  kew
+rem ' 01/16/2018  kew
+rem ' 11/27/2018  kew
+rem ' 01/26/2019  kew
+rem ' 12/23/2020  kew
+rem ' 01/06/2021  kew
+rem ' 01/14/2022  kew
+rem ' 11/29/2022  kew
+
+from_firm$="02"
+from$="020795"
+
+to_firm$="01"
+to$="009269"
+
+rem ' this is used for the change from tanager to marriot master contract
+rem ' newContract$="010328"
+
+rem ' insert an email address in email$ to change the email address in SMC01
+email$="pierre.robinson@groupelacasse.com"
+
+dim sn$(20)
+count = 0
+cont_count = 0
+
+rem ' rem out the following line to use serial_nbrs.txt to drive this process
+read(snm01,knum=1,key=from_firm$+from$,dom=*next)
+
+? "From:"
+? from_firm$
+? from$
+
+? "To:"
+? to_firm$
+? to$
+
+escape
+
+rem ' loop the serial number text file
+while 1
+
+  rem ' un rem these to use the serial_nbrs.txt to drive the process
+  rem ' read(txt,end=*break)txt$
+  rem ' sn$(1)=cvs(txt$,3)
+  rem ' if cvs(sn$,3)="" then continue
+  
+
+  rem ' switch the rems on these to use serial_nbrs.txt
+  rem ' readrecord(snm01,key=sn$)snm01$
+  readrecord(snm01,end=*break)snm01$
+
+  if snm01.customer_nbr$<>from$ or snm01.firm_id$<>from_firm$ then break
+
+  rem ' do only active serial numbers
+  rem ' if snm01.active_flag$ <> "Y" then continue
+
+  count = count + 1
+  
+  ?'cs'
+  ?count
+  ?snm01.firm_id$ + snm01.customer_nbr$
+  ?snm01$
+  
+  from$=snm01.customer_nbr$,from_firm$=snm01.firm_id$
+
+  snm01.customer_nbr$=to$
+  snm01.firm_id$=to_firm$
+  
+  rem ' this is used for the change from Tanager to Marriott
+  rem ' snm01.contract$=newContract$
+  
+  snm01$=field(snm01$)
+
+  ?snm01.firm_id$ + snm01.customer_nbr$
+  ?snm01$
+  rem ' input xx$
+  
+  write record(snm01out)snm01$
+  
+  rem ' un-rem this next line to write a comment
+  gosub write_comment
+
+  rem ' this continue was used to bypass the contract stuff for Tanager to Marriott
+  rem ' input XX$
+  rem ' continue
+
+  rem ' change the contract record
+  if (cvs(snm01.contract$,3)<>"") then
+    
+      readrecord(smc01,key=snm01.contract$,dom=*continue)smc01$
+
+      cont_count = cont_count + 1
+
+      ?cont_count
+      ?smc01$
+
+      smc01.customer_nbr$=to$
+      smc01.firm_id$=to_firm$
+
+      rem ' if email$<>"" then smc01.e_mail$=email$
+      smc01.e_mail$=email$
+            
+      smc01$=field(smc01$)
+      ?smc01$
+      rem ' input xx$
+
+      write record(smc01,key=snm01.contract$)smc01$
+  fi
+
+  if count < 3 then
+  	input XX$
+  else
+	  if mod(count,100) = 0 then 
+	  	input XX$
+	  endif
+  endif
+  rem ' input XX$
+  
+wend
+print "serial nbrs: ", count
+print "contracts: ", cont_count
+end
+
+write_comment: 
+    LET seq=1
+        
+    com$="from 020795 to 009629 2023-08-09 per GR/MS"
+    IF LEN(com$)>48 THEN LET com$=com$(1,48)
+    READ (snm04,KEY=snm01.serial_nbr$,DOM=*NEXT)
+    WHILE seq<100
+        READ RECORD (snm04,END=*break)snm04$
+        IF snm04.serial_nbr$=snm01.serial_nbr$ THEN 
+            LET seq=NUM(snm04.comments_seq$)+1
+            CONTINUE
+        fi
+        LET snm04.serial_nbr$=snm01.serial_nbr$
+        LET snm04.comments_seq$=STR(seq:"00"),seq=100
+        LET snm04.cmt_line$=com$
+        LET snm04$=FIELD(snm04$)
+        WRITE RECORD (snm04,KEY=snm04$(1,22))snm04$
+    WEND
+return

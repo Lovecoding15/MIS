@@ -1,0 +1,917 @@
+# <sn> = where to place serial# (12 char), <invoice>=place invoice# (7 char), <expdt>=place expiration date (11 char),<users>=place user count (5 char),<ulist>=list price/user (10 char),<tlist>=total list price (10 char)
+# { = begin text, } = end text
+
+# Email boiler plate sectioins
+# X1 is the SAM expiration notice for contracts that have an open "SAM Renew" invoice
+# X2 is the SAM expiration notice for contracts that do not have an open "SAM Renew" invoice
+# RN is the SAM Renew notice email that goes out 65, 46 or 31 days prior to expiration depending on the customers terms
+# DV is the DVK Renew notice email use to go out 65 days prior to expiration - NO LONGER USED after the move to auto invoicing for DVK
+# RE is the DVK and RNT Renew notice email that goes out 65, 46 or 31 days prior to expiration depending on the customers terms
+# RX is the RNT license expired notification
+
+# X1 is the SAM expiration notice for contracts that have an open "SAM Renew" invoice
+
+X1_EN:
+{Subject: SAM coverage expired
+
+SAM Plan software maintenance expired for the license listed below:
+
+ Serial #    Users    Renewal Invoice #   Expired on    End User
+ <sn>        <users>          <invoice>   <expdt>       <endusr>      
+
+Though the renewal invoice and payment terms may come due after the SAM 
+expiration date, our records show that this invoice is still outstanding 
+and therefore must be paid according to BASIS payment terms to avoid 
+disruption in SAM benefits.
+
+==> If you already paid this SAM renewal invoice, please call 1.505.938.6121
+to verify we received and posted your payment in order continue your SAM
+benefits.
+
+==> If you intend to renew this coverage, please process a payment immediately
+or pay online through b-commerce® at www.poweredbybbj.com. BASIS will
+reinstate all SAM benefits if the invoice is paid before its due date.
+
+==> If you are aware that the SAM coverage expired and have no need to renew
+coverage, please generate a credit invoice at www.poweredbybbj.com against
+this open invoice to close this process. Once SAM expires, please note that
+reinstating SAM in the future or updating a license requires purchasing SAM
+coverage from the expiration date to the current date, a minimum of one year
+coverage, plus incurring a reinstatement fee of 12% of the cost of a new
+license.
+
+Thank you, in advance, for acting on this notice. If you have any questions,
+please contact BASIS Sales at sales@basis.cloud or by phone at 1.505.938.6120
+(U.S.) or +1.505.338.4188 (International).
+
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+X1_ES:
+{Subject: Cobertura SAM expirada
+
+El Plan de Mantenimiento de software SAM expiró para la licencia que se lista a continuación:
+
+ No. de Serie    Users  Factura de Renovación #   Expirada el    Usuario Final
+ <sn>           <users>               <invoice>   <expdt>       <endusr>      
+
+Aún cuando la fecha de vencimiento de la factura de renovación es posterior a la fecha de expiración SAM,
+Nuestros registros muestran que esta factura aún está pendiente y es necesario cerrarla.
+
+==> Si usted ya pagó esta factura de renovación SAM, por favor llame al 1.505.938.6121
+para verificar que hayamos recibido y aplicado su pago, a fin de continuar con sus beneficios SAM.
+
+==> Si tiene la intención de renovar esta cobertura, por favor proceda a pagar inmediatamente
+o realice el pago en-líne por medio de  b-commerce® en www.poweredbybbj.com. BASIS restablecerá
+todos sus beneficios SAM si la factura se paga antes de su fecha de vencimiento.
+
+==> Si está consciente de que la cobertura SAM ha expirado y no tiene necesidad de renovar
+la cobertura, por favor genere una factura de crédito en www.poweredbybbj.com contra
+esta factura abierta para cerrar este proceso.Una vez que SAM expira, recuerde que para
+restablecer SAM en el futuro o para actualizar una licencia se requiere comprar cobertura SAM
+a partir de la fecha de expiración hasta la fecha actual, cobertura de un año
+mínimo, más los cargos incurridos por reinstalación del 12% del costo de una licencia
+nueva.
+
+Gracias de antemano por considerar este aviso.  Si tiene alguna pregunta, por favor póngase en contacto con Ventas de BASIS en sales@basis.cloud o por teléfono al 1.505.938.6120
+(EUA) o AL +1.505.338.4188 (Internacional).
+
+
+Departamento BASIS de Servicio al Cliente
+customer-service@basis.cloud
+1.505.938.6121
+}
+X1_IT:
+{Subject: Contratto di assistenza SAM è scaduto
+
+Il suo contratto per l`assistenza Software SAM per i seguenti numeri di licenze sono scadute:
+
+ No.d.serie   Utenti        Fattura di rin.      Scadenza       Utente finale 
+ <sn>        <users>         <invoice>            <expdt>        <endusr> 
+
+
+La fattura di rinnovo dell`assistenza SAM corrisponde la data di scadenza dell`assistenza. Secondo la nostra documentazione il pagamento dovuto non é compensato.
+
+==> Se la fattura di rinnovo è pagato, telefona al numero +49 681 96814-0 per verificare se l`importo è registrato e cosi la copertura SAM continua.
+
+==> Se vuole continuare la copertura SAM, al più presto effettua un versamento sul ns. conto corrente della somma dovuta. Se la fattura viene pagato prima della scadenza, la BASIS continua ad essere in vigore il contratto SAM.
+
+==> Se lei è a conoscenza che il SAM è scaduto e non desidera di rinnovare, si prega di creare nel sito www.poweredbybbj.com una nota di credito per contabilizzare la fattura e chiudere questa procedura. Attenzione: Se lei ignora la data di scadenza, dopo la scadenza si deve acquistare lo SAM, per minimo di un anno, dalla data di scadenza SAM fino alla data di rientro più il 12% del costo di una licenza attuale.
+
+Per informazioni, si prega di contattare il ns. ufficio commerciale BASIS via:
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+X1_DE:
+{Subject: SAM-Wartungsvertrag ausgelaufen
+
+Ihr SAM Software-Wartungsvertrag für die genannten Lizenzen ist ausgelaufen:
+
+ Serien-Nr#  Users  Verlängerungs-Re.#   Abgelaufen    End-User
+ <sn>       <users>           <invoice>    <expdt>       <endusr> 
+
+Die Verlängerungs-Rechnung für SAM entspricht dem Ablaufdatum Ihres Wartungsvertrags. Nach unseren Unterlagen steht für diese Rechnung die Zahlung noch aus. 
+
+==> Wenn Sie Ihre SAM-Verlängerungs-Rechnung bereits bezahlt haben, rufen Sie bitte die Tel.-Nr. +49 681 96814-0  an. Wir klären, ob wir den Zahlungseingang erhalten haben, und Ihr SAM-Schutz läuft weiter. 
+
+==> Wenn Sie den Wartungsvertrag verlängern möchten, überweisen Sie den Rechnungsbetrag schnellstmöglich. Wenn die Rechnung vor dem Fälligkeitsdatum bezahlt wird, setzt BASIS Ihren SAM-Vertrag in Kraft.
+
+==> Wenn Sie wissen, dass Ihr SAM-Schutz abgelaufen ist und keine Verlängerung wünschen, dann erzeugen Sie bitte unter www.poweredbybbj.com eine Gutschrift als Gegenbuchung, um diesen Vorgang abzuschließen. Bitte beachten Sie: Wenn Sie den Ablauftermin verstreichen lassen, müssen Sie erneuten SAM-Schutz vom Auslaufdatum bis zum Tagesdatum nachträglich erwerben – mit einer Mindestlaufzeit von einem Jahr und einem Aufschlag von 12% auf den dann gültigen Preis einer Lizenz.
+
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren BASIS Vertrieb.
+ Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+X1_FR:
+{Subject: Votre couverture SAM a expiré
+
+Votre plan de maintenance SAM a expiré le indiquer la date pour les licences suivantes:
+
+             Utilisa-  Facture de
+ Série #     teurs     renouvellement #  Client final
+ <sn>        <users>      <invoice>         <endusr>  
+
+Bien que la date de paiement de la facture de renouvellement soit postérieure à la date d’expiration du contrat SAM, notre service de comptabilité nous indique que la facture est encore ouverte et reste à payer.
+
+==> Si vous avez déjà payé la facture de renouvellement SAM, merci d'appeler le +49 681 96814-0 pour vérifier que nous avons bien reçu votre paiement; vous continuerez ainsi à profiter de vos avantages SAM. 
+
+==> Si vous comptez renouveler votre couverture SAM, merci de procéder immédiatement au paiement par virement. BASIS vous réinstallera tous les avantages SAM si la facture est payée avant la date indiquée.
+
+
+==> Si vous savez que votre couverture SAM a expiré, et que vous n’avez pas besoin de renouveller cette couverture, merci de créer un avoir sur le site www.poweredbybbj.com pour compenser cette facture ouverte et clore cette procédure. Lorsque le contrat SAM a expiré, sachez que la réinstallation postérieure du SAM, ou la mise à jour d’une licence, nécessite l’achat de la couverture SAM pour la période écoulée, avec un minimum d’un an de couverture, plus les frais de réinstallation à hauteur de 12% du prix d’une nouvelle licence.
+
+Merci par avance de prendre acte de ces informations.
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +49 681 96814-0 
+
+Cordialement
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 681 96814-0
+}
+
+X1_NL:
+{Subject: SAM-overeenkomst geexpireerd
+
+Basis SAM Plan - software-onderhoudsovereenkomst - is geexpireerd op input required voor onderstaande licenties:
+
+ Serienummer  aantal   Faktuur-   Eind-
+              users    nummer     gebruiker
+ <sn>         <users>  <invoice>  <endusr>
+
+Volgens onze gegevens is bovenstaande faktuur nog niet voldaan. Daar de vervaldatum van de SAM-faktuur volgt op de expiratiedatum van de SAM- overeenkomst, komt deze faktuur te vervallen.
+
+==> Als u deze SAM-faktuur inmiddels heeft betaald, neemt u dan kontakt met ons op om te verifieren of wij uw betaling hebben ontvangen en verwerkt, zodat u blijft profiteren van de voordelen van een SAM Plan.
+
+==> Als u voornemens bent deze SAM-overeenkomst te vernieuwen, betaalt u dan per omgaande. BASIS zal dan alle SAM voordelen heraktiveren, wanneer de faktuur voor de vervaldatum is voldaan.
+
+==> Als u op de hoogte bent, dat de SAM-overeenkomst geexpireerd is en het niet noodzakelijk acht deze te vernieuwen, genereert u dan een credit-nota op www.poweredbybbj.com. Als de SAM geexpireerd is, houdt u er dan rekening mee, dat er voor het heraktiveren van de SAM of de upgrade van een licentie in de toekomst een SAM-overeenkomst vereist is van de expiratiedatum tot de toekomstige datum, met een minimum van 1 jaar, plus heraktiveringskosten ter hoogte van 12% van een nieuwe licentie.  
+
+Bij voorbaat dank voor het reageren op deze mededeling. Voor meer informatie kunt u kontakt opnemen met BASIS Europe:
+
+E-mail      eu.sales@basis.cloud
+Telefoon    +49(0)681-968140 ( Europa ) 
+
+
+BASIS Europe
+}
+
+# X2 is the SAM expiration notice for contracts that do not have an open "SAM Renew" invoice
+
+X2_EN:
+{Subject: Software maintenance has expired
+
+SAM coverage just expired for the following BASIS product(s):
+
+ Serial #    Users     End User
+ <sn>        <users>   <endusr>        
+
+This license no longer has SAM software maintenance that provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+  + data replication to local or remote servers
+
+If you wish to reinstate SAM coverage, renew SAM by logging on to b-commerce®
+at www.poweredbybbj.com and ordering a SAM renewal. For additional
+information, please contact BASIS Sales at sales@basis.cloud or by phone at
+1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+X2_ES:
+{Subject: El mantenimiento a Software expiró
+
+La cobertura SAM acaba de expirar para el siguiente producto o productos BASIS:
+
+ No. de Serie #   Users      Usuario Final
+ <sn>             <users>    <endusr>        
+
+Esta licencia ya no cuenta con el mantenimiento a software SAM que ofrece
+  + optimizaciones de producto gratis
+  + soporte técnico gratis (aplican determinadas limitantes)
+  + restablecimientos de licencia gratis
+  + sin cargo por reinstalación (12% del costo de una licencia nueva)
+  + descuentos por usuarios adicionales
+  + descuentos en capacitación BASIS
+  + licencia redundante para soluciones seguras en caso de falla
+
+Si desea reinstalar la cobertura SAM, puede renovar el SAM entrando a b-commerce®
+en www.poweredbybbj.com y ordenando una renovación de SAM. Si desea información 
+adicional, por favor póngase en contacto con ventas de BASIS en sales@basis.cloud o por teléfono al
+1.505.938.6120 (EUA) o +1.505.338.4188 (Internacional).
+
+
+Departamento BASIS de Servicio al Cliente
+customer-service@basis.cloud
+1.505.938.6121
+}
+X2_IT:
+{Subject: Il suo contratto di assistenza SAM è scaduto
+
+Il suo contratto per l`assistenza Software SAM per i seguenti numeri di licenze sono scadute:
+
+ No.d.serie    Utenti     Utente finale 
+ <sn>          <users>       <endusr> 
+
+Le sopra elencate licenze non hanno più a disposizione:
+
+    + Upgrades gratuito
+    + assistenza tecnica gratuito (con particolare condizioni)
+    + Reset licenza gratuito
+    + Nessun costo per riattivare lo SAM (12% dal costo di una nuova licenza )
+    + Sconti sul prezzo per aggiungere utenti
+    + Sconti sul prezzo dei formazioni BASIS
+    + Licenze ridondante per una disponibilità sicura
+
+Se desidera di attivare di nuovo lo SAM, entra nel b-commerce® in www.poweredbybbj.com  e fare un ordine.
+
+Per informazioni, si prega di contattare il ns. ufficio commerciale BASIS via:
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+X2_DE:
+{Subject: Ihr Software-Wartungsvertrag ist abgelaufen
+
+Ihr SAM-Schutz für folgende BASIS-Produkte ist erloschen:
+ 
+ Serien-Nr.#  Users     End-User
+ <sn>         <users>   <endusr>     
+
+Der Wartungsvertrag für diese Software-Lizenz ist abgelaufen. Damit stehen Ihnen folgende Services nicht mehr zur Verfügung: 
+
+  + kostenlose Upgrades
+  + kostenlosen technischen Support (unter bestimmten Voraussetzungen)
+  + Kostenlose Lizenz-Resets
+  + Keine SAM-Reaktivierungsgebühren (12% der Kosten einer neuen Lizenz)
+  + Rabatte für zusätzliche Nutzer
+  + Rabatte für BASIS Trainings
+  + Redundante Lizenzen für Ausfallsichere Lösungen
+
+Wenn Sie Ihren SAM-Schutz wieder aktivieren wollen, dann erneuern Sie SAM unter b-commerce® in www.poweredbybbj.com und geben Sie Ihre Bestellung auf.
+
+
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren BASIS Vertrieb.
+ Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+X2_FR:
+{Subject: Votre plan de maintenance est arrivé à expiration 
+
+Votre couverture SAM vient juste d’expirer pour le(s) produit(s) suivant(s) :
+
+            Utilisa-
+ Série #    teurs     Client final
+ <sn>       <users>   <endusr> 
+
+Votre licence n’a plus de maintenance SAM offrant
++ mise à jour gratuite des produits
++ maintenance technique gratuite (sauf quelques exceptions)
++ réinitialisation gratuite des licences
++ absence de frais de réinstallation (à hauteur de 12% du prix d’une nouvelle licence)
++ remises pour utilisateurs supplémentaires
++ remises sur le prix des formations BASIS
++ license redondante pour vos solutions high availability
+
+Si vous souhaitez réinstaller votre couverture SAM, renouvelez votre contrat SAM en vous loggant sur le site b-commerce® www.poweredbybbj.com et en commandant un renouvellement SAM. 
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +49 681 96814-0 
+
+Cordialement
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 681 96814-0
+}
+
+X2_NL:
+{Subject: SAM-overeenkomst is geexpireerd
+
+SAM software-onderhoudsovereenkomst is geexpireerd voor de volgende BASIS produkten:
+
+              aantal
+ Serienummer  users     Eindgebruiker
+ <sn>         <users>     <endusr> 
+
+Deze licentie heeft geen SAM software-onderhoudsovereenkomst meer, die voorziet in het volgende:
+
+  + gratis produkt upgrades
+  + gratis technisch support voor BASIS producten
+  + gratis licentie resets
+  + geen heraktiveringskosten (normaal 12% van de licentieprijs)
+  + korting op extra gebruikers
+  + korting op BASIS trainingen
+  + redundant licentie voor fail safe solutions
+
+Als u de SAM-overeenkomst wenst te heraktiveren, dient u zich in te loggen bij b-commerce® op www.poweredbybbj.com en een vernieuwing van de SAM te bestellen. Voor nadere informatie kunt u kontakt opnemen met BASIS Europe:
+
+E-mail     eu.sales@basis.cloud
+Telefoon   +49(0)681-968140 ( Europa ) 
+
+
+BASIS Europe
+}
+
+# RN is the SAM Renew notice email that goes out 65, 46 or 31 days prior to expiration depending on the customers terms
+
+RN_EN: 
+{Subject: Renew SAM today
+
+It is time to renew SAM software maintenance on the following license(s):
+
+ Serial #    Users    List/User   List USD     Expires    End User
+ <sn>        <users> <ulist>    <tlist>      <expdt>      <endusr>  
+
+Your current coverage expires within <days> days. In 15 days, you will receive an invoice by e-mail for a 12-month renewal. The invoice will reflect any  applicable discount(s). Please pay that invoice by its due date or renew SAM coverage today through b-commerce® at www.poweredbybbj.com.
+
+Renew immediately at https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>
+
+Renewing SAM coverage on or before the due date assures you of continued:
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+  + data replication to local or remote servers
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Thank you,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+
+}
+
+# This email is used for the SAM Renew Notice for Net 15 EOM customers
+# that get invoiced on the first business day of the month for firm 01
+
+RN_EN_EOM: 
+{Subject: Renew SAM today
+
+It is time to renew SAM software maintenance on the following license(s):
+
+ Serial #    Users    List/User   List USD     Expires    End User
+ <sn>        <users> <ulist>    <tlist>      <expdt>      <endusr>  
+
+Your current coverage expires within 65 days. On the first business day of the month preceding the month in which your coverage expires you will receive an invoice by e-mail for a 12-month renewal. The invoice will reflect any applicable discount(s). Please pay that invoice by its due date or renew SAM coverage today through b-commerce® at www.poweredbybbj.com.
+
+Renew immediately at https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>
+Renewing now and adding a purchase order number will immediately roll the SAM date forward by one year to secure your SAM benefits. 
+
+Renewing SAM coverage on or before the due date assures you of continued:
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+  + data replication to local or remote servers
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Thank you,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+
+}
+
+# This email was used for the price change that moved all SF users to EF users
+# Began with notices on 8/22 through 9/15, on 9/16 all generated invoices will be on 10/01 or later (at the new price)
+# will go to contracts that are expiring 10/01 or later
+# and to only those that have SF users, PR5, VP5, ODB
+# not to those that have RNT contracts
+# firm 01 only
+
+RN_EN_PC: 
+{Subject: Renew SAM today
+
+It is time to renew SAM software maintenance on the following license(s):
+
+ Serial #    Users    List/User   List USD     Expires    End User
+ <sn>        <users> <ulist>    <tlist>      <expdt>      <endusr>  
+
+Your current coverage expires within <days> days. In 15 days, you will receive an invoice by e-mail for a 12-month renewal. The invoice will reflect any applicable discount(s). 
+
+As part of BASIS’ investment in its community’s applications, since SAM coverage will be active on 10/01/2018, all of the Standard Edition Users will automatically be upgraded to Extended Edition Users on that date at no cost! If you confirm the invoice by paying it or supplying your own purchase order number via https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL> prior to 10/01/2018, you will lock in the lower price for this renewal as indicated above. 
+
+If the invoice has not been confirmed by 10/01/2018, it will be credited and a new invoice will be issued for the upgraded license.
+
+Pricing will reflect the fact that all users on the license will now be Extended Edition users:
+
+ Serial #    Users    List/User   List USD     Expires    End User
+ <snN>        <usersN> <ulistN>    <tlistN>      <expdtN>      <endusrN>  
+
+Renewing SAM coverage on or before the due date assures you of continued:
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + price advantage for additional users
+  + discounts on BASIS training
+  + virtual and redundant license format for fail safe solutions
+  + advance features support for data replication to local or remote servers, data change auditing, asynchronous triggers, sql indexing, and more. See the complete list at http://basis.cloud/sam-fulfillment
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Thank you,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+
+}
+
+RN_IT:
+{Subject: Rinnovi ancora oggi il suo piano SAM!
+
+È ora di rinnovare il contratto di assistenza Software SAM per i seguenti numeri:
+
+ No.d.serie   Utenti   Lista/Utenti  Lista EUR   scadenza     Utente finale
+ <sn>         <users>   <ulist>      <tlist>     <expdt>      <endusr>
+
+Il contratto attuale scade nelle prossimi <days> giorni. Tra 15 giorni riceve via Email una fattura per rinnovare il contratto per altri 12 mesi.
+
+Continua l`assistenza Software SAM prima della scadenza del contratto. Lei continui ad avere delle seguenti vantaggi:
+
+    + Upgrades gratuito
+    + assistenza tecnica gratuito (con particolare condizioni)
+    + Reset licenza gratuito
+    + Nessun costo per riattivare lo SAM (12% dal costo di una nuova licenza )
+    + Sconti sul prezzo per aggiungere utenti
+    + Sconti sul prezzo dei formazioni BASIS
+    + Licenze ridondante per una disponibilità sicura
+
+Per avere più informazioni, si prega di contattare il ns. ufficio commerciale BASIS via:
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+Grazie!
+
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+RN_DE:
+{Subject:  Verlängern Sie Ihren SAM-Plan noch heute!
+  
+Es ist Zeit, Ihren Software-Wartungsvertrag SAM für die folgende(n) Lizenz(en) zu verlängern:
+
+ Serien-Nr.#  User   Liste/User  Liste EUR   Erlischt    End-User
+ <sn>        <users> <ulist>    <tlist>     <expdt>      <endusr>
+
+Ihr aktueller Vertrag läuft innerhalb der nächsten <days> Tage aus. In 15 Tagen erhalten Sie per E-Mail eine Rechnung für die Vertragsverlängerung um 12 Monate. Die Rechnung, die Sie erhalten werden, wird alle gültigen Konditionen berücksichtigen. Bitte zahlen Sie diese Rechnung zum Fälligkeitsdatum oder erneuern Sie bereits heute Ihren SAM-Vertrag über b-commerce® (unter www.poweredbybbj.com).
+
+Renew immediately at https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>
+
+Verlängern Sie SAM vor Vertragsende. So können Sie weiterhin folgende Vorteile nutzen:
+  + Kostenlose Upgrades
+  + Kostenloser technischer Support (mit Einschränkungen)
+  + Kostenlose Lizenz-Resets
+  + Keine SAM-Reaktivierungsgebühren (12% der Kosten einer neuen Lizenz)
+  + Rabatte für zusätzliche User
+  + Rabatte für BASIS-Fortbildungen
+  + Redundante Lizenzen für Ausfallsichere Lösungen
+
+Nähere Informationen gibt Ihnen Ihr BASIS Vertrieb. Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+Vielen Dank!
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+RN_FR:
+{Subject: Renouvellez votre SAM aujourd’hui 
+
+Le plan de maintenance SAM de la (des) licence(s) suivante(s) arrive à expiration : 
+
+             Utilisa-       Liste/           
+ Série #     teurs    Utilisateurs   Liste EUR   Expire le   Client final 
+ <sn>        <users>    <ulist>     <tlist>     <expdt>      <endusr> 
+
+Votre contrat actuel expire dans <days>  jours. Dans 15 jours, vous recevrez par email une facture pour un renouvellement de 12 mois. La facture que vous recevrez mentionnera toute remise applicable. Merci de payer cette facture avant la date indiquée par virement, ou renouvelez votre contrat SAM dès maintenant sur le site b-commerce® www.poweredbybbj.com.
+
+Renew immediately at https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>
+
+Renouveler votre contrat SAM avant ou à la date d’expiration vous assure un service continu :
++ mise à jour gratuite des produits
++ maintenance technique gratuite (sauf quelques exceptions)
++ réinitialisation gratuite des licences
++ absence de frais de réinstallation (à hauteur de 12% du prix d’une nouvelle licence)
++ remises pour utilisateurs supplémentaires
++ remises sur le prix des formations BASIS
++ license redondante pour vos solutions high availability
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +49 681 96814-0 
+
+Merci beaucoup
+
+Cordialement
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 681 96814-0
+}
+
+RN_NL:
+{Subject: vernieuwing SAM  
+
+Het is tijd uw SAM Plan - software-onderhoudsovereenkomst - te vernieuwen voor de volgende licenties:
+
+ serienummer  aantal      prijs /              expiratie   eind
+              users         user    bedrag €   datum       gebruiker
+ <sn>          <users> <ulist>    <tlist>     <expdt>      <endusr>
+
+Uw huidige SAM expireert binnen <days> dagen. Over 15 dagen ontvangt u per e-mail een faktuur voor vernieuwing van uw SAM voor een periode van12 maanden. De rekening die u zult ontvangen zal dan zijn voorzien van alle van toepassing zijnde kortingen. Betaalt u deze faktuur aub voor het verstrijken van de vervaldatum of vernieuw uw SAM vandaag nog via b-commerce® op www.poweredbybbj.com.
+
+Renew immediately at https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>
+
+Met het vernieuwen van uw SAM op of voor de vervaldatum verzekert u zich van het volgende:
+
+  + gratis produkt upgrades
+  + gratis technisch support voor BASIS producten
+  + gratis licentie resets
+  + geen heraktiveringskosten (normaal 12% van de licentieprijs)
+  + korting op extra gebruikers
+  + korting op BASIS trainingen
+  + redundant licentie voor fail safe solutions
+
+Voor meer informatie kunt u kontakt opnemen met BASIS Europe:
+
+Dank u,
+
+BASIS Europe
+E-mail      eu.sales@basis.cloud
+Telefoon    +49(0)681-968140 ( Europa )
+}
+
+# DV is the DVK Renew notice email use to go out 65 days prior to expiration - NO LONGER USED after the move to auto invoicing for DVK
+
+DV_EN:
+{Subject: Developer Kit Expiration Notice
+
+We hope you have enjoyed using the BASIS Developer Kit/Not For Resale license(s).
+
+The one-year use of your license(s) expires within 65 days, however, BASIS offers the opportunity to extend the Kit for an additional year. To renew the license(s) listed below, simply purchase one year of SAM Plan software maintenance and support at the listed price:
+ 
+ Serial #   Users           List USD
+ <sn>       <users>          <tlist>     
+
+
+Renew your Developer Kit license to guarantee the following:
+ + free product upgrades
+ + free Technical Support (up to 5 incidents per license per year)
+ + free license resets
+ + price advantages for additional users
+ + discounts on BASIS training
+ + data replication to local or remote servers
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International). If you are a BASIS Partner, purchase SAM coverage online through BASIS b-commerce® account.
+
+Thank you for your continued use of BASIS products.
+
+
+BASIS International Ltd.
+}
+
+DV_IT:
+{Subject: Avviso di scadenza della licenza di sviluppo (NFR)
+
+Speriamo, che Lei abbia potuto lavorare effettivo con la licenza di sviluppo della BASIS.
+
+Il contratto attuale scade nelle prossimi 45 giorni. Ma c`è la possibilità di continuare per altri 12 mesi. Basta acquistare un piano SAM al prezzo sotto indicato:
+
+ No.d.serie#   Utenti       Prezzo d.listino in EUR
+ <sn>          <users>      <tlist> 
+
+Con un rinnovo della licenza di sviluppo garantiamo i seguenti servizi:
+
+    + Upgrades gratuito
+    + assistenza tecnica gratuito 
+    + Reset licenza gratuito
+    + Sconti sul prezzo per aggiungere utenti
+    + Sconti sul prezzo dei formazioni BASIS
+
+
+Per continuare la sua licenza di sviluppo si prega di contattare il ns. ufficio commerciale BASIS via:
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+
+Grazie della sua fiducia e collaborazione!
+
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+DV_DE:
+{Subject: NFR/Entwicklerlizenz Ablaufmeldung
+
+Wir hoffen, dass Sie mit der BASIS Entwicklerlizenz/Not for Resale Lizenz effektiv arbeiten konnten.
+ 
+Ihre Lizenz läuft innerhalb der nächsten 45 Tage ab. Es besteht jedoch die Möglichkeit, die Lizenz für ein weiteres Jahr zu verlängern. Sie kaufen einfach ein weiteres Jahr SAM-Plan zu dem unten aufgeführten Preis.
+
+ Serien-Nr#    Users   Listenpreis EUR
+ <sn>          <users>      <tlist> 
+
+Durch die Verlängerung Ihrer Entwicklerlizenz garantieren wir die nachfolgend aufgeführten Leistungen des SAM-Planes:
+ + kostenlose Produkt Upgrades
+ + kostenlosen Support
+ + kostenlose Freischaltungen
+ + Preisvorteil beim Kauf von zusätzlichen Benutzern
+ + Rabatt bei Schulungen
+
+Um Ihre Lizenz zu verlängern kontaktieren Sie bitte:
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+DV_FR:
+{Subject: Avis d'expiration de la licence pour développeur
+
+Nous espérons que vous avez pu travailler efficacement avec la licence de
+BASIS pour développeur/ Not for Resale license.
+
+Votre license s'expire dans les prochains 45 jours. Par contre, vous avez la
+possibilité de la prolonger d'un an en achetant simplement le plan SAM pour
+une année supplémentaire et ceci pour le prix suivant:
+
+            Utilisa-
+ Série #    teurs     Liste EUR
+ <sn>       <users>   <tlist>     
+
+Grâce au renouvellement de la license pour développeur, nous vous
+garantissons les avantages du plan SAM suivants:
+ + Mises à jour du produit gratuites
+ + Support gratuit
+ + Réactivations de license gratuites
+ + Achat à prix avantageux d'utilisateurs supplémentaires  + Remise pour les
+formations
+
+Pour le renouvellement de votre(vos) licence(s), veuillez trouver ci-joint
+nos coordonnées:
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 681 96814-0
+
+Nous vous remercions pour votre confiance!
+}
+
+# RE is the DVK and RNT Renew notice email that goes out 65, 46 or 31 days prior to expiration depending on the customers terms
+
+RE_EN:
+{Subject: Renew Your <type> License Today
+
+The following license(s) will expire within approximately <days> days:
+
+ Serial #          Users          List/User          List USD          Expires          End User
+ <sn>              <users>       <ulist>            <tlist>          <expdt>          <endusr>
+
+We will be sending you an invoice by email within the next 15 days for a 12-month renewal. To maintain continued use, please pay that invoice by its due date or renew online today in b-commerce® at www.poweredbybbj.com. Once the invoice is paid you can manually register for a new license via the Administration Wizard. If you don’t register for a new license manually, your system will automatically attempt to register for the new license within 20 days of expiration.
+
+Renew immediately at https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>
+
+License renewals also include SAM coverage that assures you of the following:
+ + continued access to BBj Database and File Replication to local and/or remote machines 
+ + free product upgrades
+ + free technical support (some limitations apply)
+ + free license resets
+ + no reinstatement fees (12% of the cost of a new license)
+ + discounts for additional users
+ + discounts on BASIS training
+ + redundant license for fail safe solutions
+
+For more information, please contact BASIS Sales by email at sales@basis.cloud or call 1.505.938.6120 (US & Canada) or +1.505.338.4188 (International).
+
+Thank you,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+
+}
+
+RE_EN_EOM:
+{Subject: Renew Your <type> License Today
+
+The following license(s) will expire within approximately <days> days:
+
+ Serial #          Users          List/User          List USD          Expires          End User
+ <sn>              <users>       <ulist>            <tlist>          <expdt>          <endusr>
+
+We will be sending you an invoice by email on the first business day of the month preceding the month in which your license expires. The invoice will be for a 12-month renewal. The invoice will reflect any applicable discount(s). Please pay that invoice by its due date or renew your license today through b-commerce® at www.poweredbybbj.com. Once the invoice is paid you can manually register for a new license via the Administration Wizard. If you don’t register for a new license manually, your system will automatically attempt to register for the new license within 20 days of expiration.
+
+Renew immediately at https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>
+Renewing now and adding a purchase order number will immediately roll the license expiration date forward by one year to secure your continued use of the license.
+
+License renewals also include SAM coverage that assures you of the following:
+ + continued access to BBj Database and File Replication to local and/or remote machines 
+ + free product upgrades
+ + free technical support (some limitations apply)
+ + free license resets
+ + no reinstatement fees (12% of the cost of a new license)
+ + discounts for additional users
+ + discounts on BASIS training
+ + redundant license for fail safe solutions
+
+For more information, please contact BASIS Sales by email at sales@basis.cloud or call 1.505.938.6120 (US & Canada) or +1.505.338.4188 (International).
+
+Thank you,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+
+}
+
+# This email was used for the price change that moved all SF users to EF users
+# Began with notices on 8/22 through 9/15, on 9/16 all generated invoices will be on 10/01 or later (at the new price)
+# will go to contracts that are expiring 10/01 or later
+# and to only those that have SF users, PR5, VP5, ODB
+# not to those that have RNT contracts
+# firm 01 only
+
+RE_EN_PC: 
+{Subject: Renew Your <type> License Today
+
+The following license(s) will expire within approximately <days> days:
+
+ Serial #    Users    List/User   List USD     Expires    End User
+ <sn>        <users> <ulist>    <tlist>      <expdt>      <endusr>  
+
+Your current license expires within <days> days. In 15 days, you will receive an invoice by e-mail for a 12-month renewal. The invoice will reflect any applicable discount(s). 
+
+As part of BASIS’ investment in its community’s applications, since SAM coverage will be active on 10/01/2018, all of the Standard Edition Users will automatically be upgraded to Extended Edition Users on that date at no cost! If you confirm the invoice by paying it or supplying your own purchase order number via https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL> prior to 10/01/2018, you will lock in the lower price for this renewal as indicated above. 
+
+If the invoice has not been confirmed by 10/01/2018, it will be credited and a new invoice will be issued for the upgraded license.
+
+Pricing will reflect the fact that all users on the license will now be Extended Edition users:
+
+ Serial #    Users    List/User   List USD     Expires    End User
+ <snN>        <usersN> <ulistN>    <tlistN>      <expdtN>      <endusrN>  
+
+Renewing SAM coverage on or before the due date assures you of continued:
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + price advantage for additional users
+  + discounts on BASIS training
+  + virtual and redundant license format for fail safe solutions
+  + advance features support for data replication to local or remote servers, data change auditing, asynchronous triggers, sql indexing, and more. See the complete list at http://basis.cloud/sam-fulfillment
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Thank you,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+
+}
+
+# RX is the RNT license expired notification
+
+RX_EN_01:
+{Subject: Rental license expired
+
+Thank you for using BASIS products. Effective today, the limited term BASIS software license for the following serial number(s) has expired: 
+
+<sn>
+
+To continue uninterrupted service of your rental license(s), log on to b-commerce® at www.poweredbybbj.com. From “Add Users/Upgrade,” enter the expired serial number and click [Renew]. Then proceed to order checkout and complete the transaction. 
+
+If the rental license is not renewed within 45 days of the expiry date, the serial number will be deactivated. If you do not have access to b-commerce or have any questions about your expiring license, please contact BASIS Sales at sales@basis.cloud or by phone at 1.505.938.6120 (U.S) or +1.505.335.4188 (International).
+}
+
+RX_EN_02:
+{Subject: Rental license expired
+
+Thank you for using BASIS products. Effective today, the limited term BASIS software license for the following serial number(s) has expired: 
+
+<sn>
+
+To continue uninterrupted service of your rental license(s), log on to b-commerce® at www.poweredbybbj.com. From “Add Users/Upgrade,” enter the expired serial number and click [Renew]. Then proceed to order checkout and complete the transaction. 
+
+If the rental license is not renewed within 45 days of the expiry date, the serial number will be deactivated. If you do not have access to b-commerce or have any questions about your expiring license, please contact BASIS Europe Sales at +49 (0)681 96814-0.
+}
+
+RX_IT:
+{Subject: Il tempo di noleggio è scaduto
+
+Grazie per la Sua fiducia sui prodotti BASIS. Con la data di oggi il noleggio del BASIS-Software con il numero di serie è terminato.
+
+<sn>
+
+Per continuare il noleggio senza interruzione, si prega di usare il nostro b-commerce Online -Ordertool su www.poweredbybbj.com. Sotto "Agg Utenti/Upgrade" inserisca il numero di serie, clicca su "Rinnovo" (Renew). Dopo completa
+l`acquisto come abituato con la funzione Carello-d`acquisto.
+
+Se il noleggio non si rinnova entro le 45giorni, il numero di serie verrà inattivo. Se Lei non ha un accesso sul b-commerce
+o una questione sul noleggio, si prega di contattare via Email a eu.sales@basis.cloud oppure telefonando al numero +49 681 96814-0.
+}
+
+RX_DE:
+{Subject: Der Mietzeitraum für Ihre Lizenz ist abgelaufen
+
+Vielen Dank für Ihr Vertrauen in BASIS Produkte. Mit dem heutigen Tag ist das zeitlich begrenzte Nutzungsrecht für Ihre BASIS Software mit dieser Seriennummer abgelaufen:
+
+<sn>
+
+Um diese Mietlizenz weiterhin ohne Unterbrechung nutzen zu können verwenden Sie bitte unsere b-commerce Online-Bestelltool unter www.poweredbybbj.com. Unter „Add Users/Upgrade“  geben Sie die oben genannte Seriennummer ein und klicken auf [Renew]. Danach beenden Sie Ihre Bestellung wie gewohnt über die Warenkorb-Funktion.
+
+Falls Sie die Mietdauer Ihrer Lizenz nicht innerhalb von 45 Tagen nach Ablauf verlängern, wird diese Seriennummer inaktiv. Falls Sie keinen Zugang zu b-commerce haben, oder eine Frage zu Ihrer Mietlizenz haben, so kontaktieren Sie uns bitte per Mail an eu.sales@basis.cloud oder telefonisch unter +49 681 96814-0.
+}
+
+RX_FR:
+{Subject: Votre licence arrive à expiration
+
+Merci de la confiance que vous accordez aux produits BASIS. La validité de la licence de votre logiciel BASIS, au numéro de série indiqué ci-dessous, arrive aujourd’hui à expiration :
+
+<sn>
+
+Pour renouveler votre licence sans interruption, merci d’utiliser notre programme de commande en ligne b-commerce sur le site www.poweredbybbj.com. Inscrivez dans la rubrique « Add Users/Upgrade » le numéro de série indiqué ci-dessus et cliquez sur « Renew ». Poursuivez ensuite votre commande selon la procédure habituelle en utilisant le panier d’achats.
+
+Si la licence n’est pas renouvelée dans les 45 jours suivant la date d’expiration, le numéro de série sera désactivé. Si vous n’avez pas encore de code d’accès à la plateforme b-commerce, ou si vous avez des questions concernant votre licence, n’hésitez pas à nous contacter par email, eu.sales@basis.cloud, ou par téléphone au +49 681 96814-0.
+}
+RX_NL:
+{Subject: Huurlicentie Verstreken
+
+Bedankt voor uw vertrouwen in BASIS-producten. Vandaag is de BASIS-softwarelicentie met beperkte termijn voor volgend(e) serienummer(s) verstreken: 
+
+<sn>
+
+Om uw huurlicentie(s) ononderbroken te blijven gebruiken, gaat u naar b-commerce® op www.poweredbybbj.com. Voer onder “Add Users/Upgrade” het verstreken serienummer in en klik op [Renew]. Voltooi dan uw bestelling zoals gewoonlijk via de winkelwagen. 
+
+Als de huurlicentie niet binnen 45 dagen na de vervaldatum wordt vernieuwd, wordt het serienummer geïnactiveerd. Als u geen toegang hebt tot b-commerce of vragen hebt over uw huurlicentie, neem dan contact op met BASIS Europe Sales op eu.sales@basis.cloud of telefonisch op +49 681 96814-0.
+}

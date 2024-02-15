@@ -1,0 +1,98 @@
+rem ' run the get line Item Sales by Cust in a give time frame
+
+seterr pgm_error
+
+enter firm_id$, customer_nbr$, beginDate$, endDate$, repEmail$
+rem ' date format yyyy-mm-dd
+
+rem --- Execute the query
+
+	sql$ = "call GET_LINE_ITEM_SALES_BY_CUST('" + firm_id$ + "', '" + customer_nbr$ + "', '" + beginDate$ + "', '" + endDate$ + "')"
+	
+	sql_chan=sqlunt
+	
+	sqlopen(sql_chan,mode="UID=basisaon,pwd=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+	
+	sqlprep(sql_chan)sql$
+	
+	sqlexec(sql_chan)
+	
+	dim read_tpl$:sqltmpl(sql_chan)
+
+rem --- create the output file
+
+outfile$= "/mnt/data/basisaon/aon/tmp/getLineItemSalesbyCust" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".csv"
+string outfile$
+outfile=unt
+open(outfile)outfile$
+
+call "ec_open::SNMEL"
+call "ec_open::SNMEU"
+
+call "ec_open::ARM01"
+read record(arm01, key = firm_id$ + customer_nbr$, dom=*next)arm01$
+custName$ = cvs(arm01.cust_name$, 3)
+if custName$ = "" then custName$ = "Not Found"
+
+sep$ = chr(34) + "," +chr(34)
+line$ = chr(34) + firm_id$ + customer_nbr$ + sep$ + custName$ + sep$ + beginDate$ + sep$ + endDate$ + chr(34)
+write(outfile)line$
+
+line$ = chr(34) + "Invoice Date" + sep$ + "Invoice Nbr" + sep$ + "Order Nbr" + sep$ + "Purchase Order" + sep$ + "Line Number" + sep$ + "Type of Sale" + sep$ + "Product Type" + sep$ + "Item Number" + sep$ + "Ext Price" + sep$ + "Serial Nbr" + sep$ + "User Type" + sep$ + "Users" + sep$ + "User Type" + sep$ + "Users" + sep$ + "License Type" + sep$ + "End User" + chr(34)
+write(outfile)line$
+
+rem --- run the file
+	
+	while 1
+		read_tpl$ = sqlfetch(sql_chan,end=*break)
+		
+		rem ' get the enduser is any
+		sn$ = read_tpl.serial_nbr$
+		enduser_name$ = ""
+		found = 0
+		read record(snmel, key = sn$, dom = *next)snmel$; found = 1
+		if found then
+			found = 0
+			read record(snmeu, key = snmel.end_user_nbr$, dom = *next)snmeu$; found = 1
+			if found then
+				enduser_name$ = snmeu.company_name$
+			fi
+		fi
+		
+		line$ = chr(34) + read_tpl.invoice_date$ + sep$ + read_tpl.ar_inv_nbr$ + sep$ + read_tpl.order_number$ + sep$ 
+		line$ = line$ + read_tpl.ar_po_number$ + sep$ + read_tpl.line_number$ + sep$ + read_tpl.type_of_sale$ + sep$
+		line$ = line$ + read_tpl.product_type$ + sep$ + read_tpl.item_number$ + sep$ + read_tpl.ext_price$ + sep$
+		line$ = line$ + read_tpl.serial_nbr$ + sep$ + read_tpl.lic_property1$ + sep$ + read_tpl.users$ + sep$
+		line$ = line$ + read_tpl.lic_property2$ + sep$ + read_tpl.users2$ + sep$ + read_tpl.license_type$ + sep$
+		line$ = line$ + enduser_name$ + chr(34)
+		write(outfile)line$
+		
+	wend
+	
+	rem ' print "file is ready ", outfile$
+	rem ' input *
+	
+	
+	close(outfile)
+	
+	cc$ = "", bcc$ = ""
+	from$ = "customer-service@basis.cloud"
+	subject$ = firm_id$ + customer_nbr$ + " Line Item Sales Report for " + beginDate$ + " " + endDate$
+	msgtxt$ = "Report file is attached."
+	call "sendEmail.src", from$, repEmail$, cc$, bcc$, subject$, msgtxt$, outfile$
+
+	rem ' clean up the report file
+	erase outfile$,err=*next
+	goto std_exit
+
+pgm_error:rem --- error trap/handler
+    rd_err_text$ = ""
+    err_num=err
+    rd_err_text$ = str(err_num) + " " + str(tcb(5)) + " " + errmes(-1)
+    xresp = msgbox(rd_err_text$,0,"Error Encountered")
+	
+	std_exit:
+	
+	close(debugchan, err = *next)
+	
+	end	

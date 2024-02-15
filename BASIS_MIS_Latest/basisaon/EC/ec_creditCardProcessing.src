@@ -1,0 +1,73 @@
+rem '----<submit a credit card transaction for approval>----
+
+setesc escape_trap; seterr error_trap
+
+enter ccCallStr$
+
+rem '----<declarations>----
+    
+    USE com.basis.creditCard.CreditCardAuthorization
+
+    DECLARE BBjString cardNumber!
+    DECLARE BBjString expDate!
+    DECLARE BBjString amount!
+    DECLARE BBjString ccName!
+    DECLARE BBjString uniqueID!
+    DECLARE BBjString cvv2!
+    DECLARE BBjString ccType!
+    DECLARE BBjString ccStreet!
+    DECLARE BBjString ccZip!
+    DECLARE BBjString comment1!
+
+    DECLARE BBjFileInfo fileInfo!
+    DECLARE BBjString fileLocation!
+
+    DECLARE CreditCardAuthorization ccAuth!
+    DECLARE BBjString response!
+    DECLARE BBjString tempDef!
+
+rem '----<extract the data needed>----
+    cardNumber! = ccCallStr.CARDNUMBER$
+    expDate! = ccCallStr.EXPDATE$
+    amount! = ccCallStr.AMOUNT$
+    ccName! = ccCallStr.NAME$
+    uniqueID! = ccCallStr.UNIQUEID$
+    cvv2! = ccCallStr.CVV2$
+    ccType!=ccCallStr.CCTYPE$
+    ccStreet!=ccCallStr.CCSTREET$
+    ccZip!=ccCallStr.CCZIP$
+    comment1!=ccCallStr.COMMENT1$
+
+rem '----<get the properties file location>----
+    propfile = unt
+    open(propfile)"ec_creditcardProcessing.properties"
+    fileInfo! = bbjapi().getFileSystem().getFileInfo(propfile)
+    fileLocation! = fileInfo!.getFilename()
+    close(propfile)
+
+rem '----<get the authorization object>----
+    ccAuth! = new CreditCardAuthorization(fileLocation!)
+
+    bypassAVS$ = "01003932|01004231|01001014|01009146|01004240|01004500|01005091|01005494|01006136|01008813"
+    
+    if pos(ccCallStr.COMMENT1$(1,8)=bypassAVS$) <> 0 then
+	    response! = ccAuth!.processAuthorizationWithoutAVSandCSC(cardNumber!, ccType!, expDate!, amount!, ccName!, uniqueID!, comment1!)
+    else
+	    response! = ccAuth!.processAuthorization(cardNumber!, ccType!, expDate!, amount!, ccName!, uniqueID! ,cvv2!, ccStreet!, ccZip!, comment1!)
+    fi    
+
+rem '----<prep the results for return>----
+    tempDef! = ccAuth!.getReponseStringTemplateDefinition()
+    dim ccCallStr$: tempDef!
+    ccCallStr$=response!
+
+rem '----<done>---
+    exit
+
+escape_trap:
+    retry
+
+error_trap:
+    exit err
+
+end

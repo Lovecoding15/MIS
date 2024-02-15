@@ -1,0 +1,73 @@
+REM /**
+REM  * EngineTest.src
+REM  * @author kwilliams
+REM  *
+REM  */
+
+use ::BasisPriceEngine.src::PriceEngine
+use ::BasisPriceEngine.src::PriceElement
+use ::CustomerDiscount.src::CustomerDiscount
+use ::SerialNumber.src::SerialNumber
+
+rem ' test params
+firmID$ = "01"
+customerNbr$ = "009094"
+canadian! = 0
+serialNbr$ = "BBX623568"
+
+cd! = new CustomerDiscount(firmID$, customerNbr$)
+pe! = new PriceEngine(canadian!)
+pel! = pe!.getPriceElement()
+sn! = new SerialNumber(serialNbr$)
+
+users! = sn!.getUserCounts()
+props! = sn!.getUserProperties()
+
+rem ' print users!.size()
+rem ' print props!.size()
+
+override = 0
+for x = 0 to users!.size() - 1
+    override = override + cast(BBjNumber,users!.getItem(x))
+next x
+print "override: ", override
+
+listPrice = 0
+discPrice = 0
+for x = 0 to users!.size() - 1
+    prod_code$ = cast(BBjString, props!.getItem(x))
+    users = cast(BBjNumber,users!.getItem(x))
+    prod_code$ = "B" + prod_code$
+
+    rem ' quantity one price for percentage calculation
+    type_of_sale$ = "NEW"
+    pel!.fill(firmID$,prod_code$,type_of_sale$,1,override,0)
+    rem ' print pel!.toString()
+
+    pel! = pe!.getPrice(pel!)
+    rem ' print pel!.toString()
+    qty1ListPrice = pel!.getListPrice()
+    rem ' print qty1ListPrice
+    
+    rem ' calcualate the SAM
+    type_of_sale$ = "SM1"
+    pel!.fill(firmID$,prod_code$,type_of_sale$,users,override,qty1ListPrice)
+    rem ' print pel!.toString()
+    pel! = pe!.getPrice(pel!)
+    pel! = cd!.calculateDiscount(pel!)
+    rem ' print pel!.toString()
+
+    rem ' print pel!.getListPrice()
+    rem ' print pel!.getDiscountedPrice()
+    
+    listPrice = listPrice + pel!.getListPrice()
+    discPrice = discPrice + pel!.getDiscountedPrice()
+    
+next x
+
+print listPrice
+print discPrice
+
+
+
+end

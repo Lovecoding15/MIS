@@ -1,0 +1,76 @@
+Table Definition Module
+FUT_TMM01 - Telemaster Masterfile
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_TMM01^^^^^Telemaster Masterfile^Telemaster Masterfile^^^^^^^^T^^^^^^L;A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_TMM01^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Firm ID^^^^^^^N^
+NAME_SORT^FUT_TMM01^002^C^^3002^ine_name_sort^0^^^2^^N^^^^^FUT_NAME_SORT^Company name key (knum=1)^Main Sort^Main Sort^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Main Sort^^^^^^^N^
+CONTACT_SORT^FUT_TMM01^003^C^^3003^ine_contact_sort^0^^^3^^N^^^^^FUT_CONTACT_SORT^Contact name (knum=2)^2nd Sort (Firm or Name)^2nd Sort (Firm or Name)^C^^E^^^^^^^^^^^^^^^^^^^^^^^15^^^^^^^^^^^0^Enter 2nd Sort (Firm or Name)^^^^^^^N^
+PHONE_NUMBER^FUT_TMM01^004^C^^3004^ine_phone_number^0^^^4^^N^^^^^FUT_PHONE_NUMBER^Telephone Number^Telephone Number^Telephone Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^14^^^^^^^^^^^0^Enter Telephone Number^^^^^^^N^
+CONT_NAME^FUT_TMM01^005^C^^3005^ine_cont_name^0^^^5^^N^^^^^FUT_CONT_NAME^Contact Name TM^Contact Name Tm^Contact Name Tm^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^Enter Contact Name TM^^^^^^^N^
+CONT_TITLE^FUT_TMM01^006^C^^3006^ine_cont_title^0^^^6^^N^^^^^FUT_CONT_TITLE^Contact Title TM^Contact Title Tm^Contact Title Tm^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^Enter Contact Title TM^^^^^^^N^
+CONT_FIRM^FUT_TMM01^007^C^^3007^ine_cont_firm^0^^^7^^N^^^^^FUT_CONT_FIRM^Contact Firm Name TM^Contact Firm Name Tm^Contact Firm Name Tm^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^Enter Contact Firm Name TM^^^^^^^N^
+ADDRESS_1^FUT_TMM01^008^C^^3008^ine_address_1^0^^^8^^N^^^^^FUT_ADDRESS_1^Address 1^Address 1^Address 1^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^Enter Address 1^^^^^^^N^
+ADDRESS_2^FUT_TMM01^009^C^^3009^ine_address_2^0^^^9^^N^^^^^FUT_ADDRESS_2^Address 2^Address 2^Address 2^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^Enter Address 2^^^^^^^N^
+CITY^FUT_TMM01^010^C^^3010^ine_city^0^^^10^^N^^^^^FUT_CITY^Telemkt City^Telemkt City^Telemkt City^C^^E^^^^^^^^^^^^^^^^^^^^^^^25^^^^^^^^^^^0^^^^^^^^N^
+STATE^FUT_TMM01^011^C^^3011^ine_state^0^^^11^^N^^^^^FUT_STATE^State^State^State^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+ZIP_CODE^FUT_TMM01^012^C^^3012^ine_zip_code^0^^^12^^N^^^^^FUT_ZIP_CODE^Zip/Postal Code^Zip/Postal Code^Zip/Postal Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^9^^^^^^^^^^^0^Enter Zip/Postal Code^^^^^^^N^
+LANG_CODE^FUT_TMM01^013^C^^3013^ine_lang_code^0^^^13^^N^^^^^FUT_LANG_CODE^Lang Code^Lang Code^Lang Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^2^^^^^^^^N^
+AVAILABLE^FUT_TMM01^014^C^^3014^ine_available^0^^^14^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+CUSTOMER_NBR^FUT_TMM01^015^C^^3015^dis_customer_nbr^0^^^15^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^Enter Customer Number^^^0^^^^N^
+RECORD_ID_L^FUT_TMM01^016^C^^3016^ine_record_id_l^0^^^16^^N^^^^^FUT_RECORD_ID_L^"L"^Record ID^Record ID^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter "L"^^^^^^^N^
+CUST_TYPE^FUT_TMM01^017^C^^3017^ine_cust_type^0^^^17^^N^^^^^FUT_CUST_TYPE^Customer Type^Customer Type^Customer Type^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Customer Type^^^^^^^N^
+RECORD_ID_I^FUT_TMM01^018^C^^3018^ine_record_id_i^0^^^18^^N^^^^^FUT_RECORD_ID_I^"I"^Record ID^Record ID^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter "I"^^^^^^^N^
+DISC_CODE^FUT_TMM01^019^C^^3019^ine_disc_code^0^^^19^^N^^^^^FUT_DISC_CODE^Sales Discount Code^Sales Discount Code^Sales Discount Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Sales Discount Code^^^^^^^N^
+RECORD_ID_A^FUT_TMM01^020^C^^3020^ine_record_id_a^0^^^20^^N^^^^^FUT_RECORD_ID_A^"A"^Record ID^Record ID^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter "A"^^^^^^^N^
+TERMS_CODE^FUT_TMM01^021^C^^3021^ine_terms_code^0^^^21^^N^^^^^FUT_TERMS_CODE^Terms Code^Terms Code^Terms Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Terms Code^^^^^^^N^
+TM_NUMBER^FUT_TMM01^022^C^^3022^ine_tm_number^0^^^22^^Y^^^^^FUT_TM_NUMBER^Main Sort^Main Sort^Main Sort^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^0^Enter First Order Date (yyyymm^^^^^^^N^
+COUNTRY_CODE^FUT_TMM01^023^C^^3023^ine_country_code^0^^^23^^N^^^^^FUT_COUNTRY_CODE^Country^Country^Country^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+DISC_CODE_A^FUT_TMM01^024^C^^3024^ine_disc_code_a^0^^^24^^N^^^^^FUT_DISC_CODE_A^Disc Code A^Disc Code A^Disc Code A^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+AVAILABLE0^FUT_TMM01^025^C^^3025^ine_available0^0^^^25^^N^^^^^FUT_AVAILABLE0^Last Order Date yyyymmdd^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Last Order Date yyyymmdd^^^^^^^N^
+TERRITORY^FUT_TMM01^026^C^^3026^ine_territory^0^^^26^^N^^^^^FUT_TERRITORY^Territory Code^Territory Code^Territory Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Territory Code^^^^^^^N^
+APDIR_DT^FUT_TMM01^027^C^^3027^ine_apdir_dt^0^^^27^^N^^^^^FUT_APDIR_DT^Next Call Date yyyymmdd^Next Call Date yyyymmdd^Next Call Date yyyymmdd^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^Enter Next Call Date yyyymmdd^^^^^^^N^
+SLSPERSON^FUT_TMM01^028^C^^3028^ine_slsperson^0^^^28^^N^^^^^FUT_SLSPERSON^Slsperson^Slsperson^Slsperson^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^N^
+PLAN_DT^FUT_TMM01^029^C^^3029^ine_plan_dt^0^^^29^^N^^^^^FUT_PLAN_DT^Order Date TM yyyymmdd^Order Date Tm yyyymmdd^Order Date Tm yyyymmdd^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^Enter Order Date TM yyyymmdd^^^^^^^N^
+GOALS_DT^FUT_TMM01^030^C^^3030^ine_goals_dt^0^^^30^^N^^^^^FUT_GOALS_DT^CSR Rep^Csr Rep^Csr Rep^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^Enter CSR Rep^^^^^^^N^
+UST_ID^FUT_TMM01^031^C^^3031^ine_ust_id^0^^^31^^N^^^^^FUT_UST_ID^Ust Id^Quote Follow up Date^Quote Follow up Date^C^^E^^^^^^^^^^^^^^^^^^^^^^^16^^^^^^^^^^^0^Enter Quote Follow-up Date^^^^^^^N^
+QSTNR_DT^FUT_TMM01^032^C^^3032^ine_qstnr_dt^0^^^32^^N^^^^^FUT_QSTNR_DT^Start Date yyyymmdd^Start Date yyyymmdd^Start Date yyyymmdd^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^Enter Start Date yyyymmdd^^^^^^^N^
+AVAILABLE1^FUT_TMM01^033^C^^3033^ine_available1^0^^^33^^N^^^^^FUT_AVAILABLE1^Available1^Fax Telephone Number^Fax Telephone Number^C^^E^^^^0^-1^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Fax Telephone Number^^^^^^^N^
+SEND_LIT^FUT_TMM01^034^C^^3034^ine_send_lit^0^^^34^^N^^^^^FUT_SEND_LIT^Send Literature^Send Literature^Send Literature^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Send Literature^^^^^^^N^
+QUOTE_DT^FUT_TMM01^035^C^^3035^ine_quote_dt^0^^^35^^N^^^^^FUT_QUOTE_DT^Quotation Date yyyymmdd^Quotation Date yyyymmdd^Quotation Date yyyymmdd^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^Enter Quotation Date yyyymmdd^^^^^^^N^
+APDIR_FLAG^FUT_TMM01^036^C^^3036^ine_apdir_flag^0^^^36^^N^^^^^FUT_APDIR_FLAG^Dear (Salutation)^Dear (Salutation)^Dear (Salutation)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Dear (Salutation)^^^^^^^N^
+PLAN_FLAG^FUT_TMM01^037^C^^3037^ine_plan_flag^0^^^37^^N^^^^^FUT_PLAN_FLAG^Plan Flag^Plan Flag^Plan Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+GOALS_FLAG^FUT_TMM01^038^C^^3038^ine_goals_flag^0^^^38^^N^^^^^FUT_GOALS_FLAG^Goals Flag^Goals Flag^Goals Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+QSTNR_FLAG^FUT_TMM01^039^C^^3039^ine_qstnr_flag^0^^^39^^N^^^^^FUT_QSTNR_FLAG^Qstnr Flag^Qstnr Flag^Qstnr Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+LINK_FLAG^FUT_TMM01^040^C^^3040^ine_link_flag^0^^^40^^N^^^^^FUT_LINK_FLAG^Link Flag^Link Flag^Link Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+BBLIST_FLAG^FUT_TMM01^041^C^^3041^ine_bblist_flag^0^^^41^^N^^^^^FUT_BBLIST_FLAG^Bblist Flag^Bblist Flag^Bblist Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+FAX_NUM^FUT_TMM01^042^C^^3042^ine_fax_num^0^^^42^^N^^^^^FUT_FAX_NUM^Fax Num^Fx Num^Fx Num^C^^E^^^^^^^^^^^^^^^^^^^^^^^14^^^^^^^^^^^2^^^^^^^^N^
+ADDRESS_3^FUT_TMM01^043^C^^3043^ine_address_3^0^^^43^^N^^^^^FUT_ADDRESS_3^Address 3^Address 3^Address 3^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^2^^^^^^^^N^
+ADDRESS_4^FUT_TMM01^044^C^^3044^ine_address_4^0^^^44^^N^^^^^FUT_ADDRESS_4^Address 4^Address 4^Address 4^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^2^^^^^^^^N^
+DEALER_STR^FUT_TMM01^045^C^^3045^ine_dealer_str^0^^^45^^N^^^^^FUT_DEALER_STR^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Reserved For Dealer Use^^^^^^^Y^
+USR_DEF_MEMO^FUT_TMM01^046^C^^3046^ine_usr_def_memo^0^^^46^^N^^^^^FUT_USR_DEF_MEMO^User Defined Memo (25 ea)^User Defined Memo (25 ea)^User Defined Memo (25 ea)^C^^E^^^^^^^^^^^^^^^^^^^^^^^50^^^^^^^^^^^0^Enter User Defined Memo (25 ea^^^^^^^Y^
+USR_DEF_DT^FUT_TMM01^047^C^^3047^ine_usr_def_dt^0^^^47^^N^^^^^FUT_USR_DEF_DT^User Defined Dates (8 ea)^User Defined Dates (8 ea)^User Defined Dates (8 ea)^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^Enter User Defined Dates (8 ea^^^^^^^Y^
+OSAS_RSL_YN^FUT_TMM01^048^C^^3048^ine_osas_rsl_yn^0^^^48^^N^^^^^FUT_OSAS_RSL_YN^Osas Rsl Yn^Osas Rsl Yn^Osas Rsl Yn^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+ADDON_RSL_YN^FUT_TMM01^049^C^^3049^ine_addon_rsl_yn^0^^^49^^N^^^^^FUT_ADDON_RSL_YN^Addon Rsl Yn^Addon Rsl Yn^Addon Rsl Yn^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+PVX_YN^FUT_TMM01^050^C^^3050^ine_pvx_yn^0^^^50^^N^^^^^FUT_PVX_YN^Pvx Yn^Pvx Yn^Pvx Yn^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+SSI_RSL_YN^FUT_TMM01^051^C^^3051^ine_ssi_rsl_yn^0^^^51^^N^^^^^FUT_SSI_RSL_YN^Ssi Rsl Yn^Ssi Rsl Yn^Ssi Rsl Yn^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+RICHTER_EU_YN^FUT_TMM01^052^C^^3052^ine_richter_eu_yn^0^^^52^^N^^^^^FUT_RICHTER_EU_Y^Richter Eu Yn^Richter Eu Yn^Richter Eu Yn^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+TBRED_YN^FUT_TMM01^053^C^^3053^ine_tbred_yn^0^^^53^^N^^^^^FUT_TBRED_YN^Tbred Yn^Tbred Yn^Tbred Yn^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+HSD_EU_YN^FUT_TMM01^054^C^^3054^ine_hsd_eu_yn^0^^^54^^N^^^^^FUT_HSD_EU_YN^Hsd Eu Yn^Hsd Eu Yn^Hsd Eu Yn^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+SSI_EU_YN^FUT_TMM01^055^C^^3055^ine_ssi_eu_yn^0^^^55^^N^^^^^FUT_SSI_EU_YN^User Defined y/n (1 ea)^User Defined y/n (1 ea)^User Defined y/n (1 ea)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter User Defined y/n (1 ea)^^^^^^^Y^
+USR_DEF_NUM^FUT_TMM01^056^C^^3056^inn_usr_def_num^0^^^56^^N^^^^^FUT_USR_DEF_NUM^User Defined Numbers (10 ea)^User Defined Numbers (10 ea)^User Defined Numbers (10 ea)^N^^N^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^2^Enter User Defined Numbers (10^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_TMM01^PRIMARY^FUT_TMM01.FIRM_ID                       FUT_TMM01.CUSTOMER_NBR                  FUT_TMM01.TM_NUMBER                     ^FUT_TMM01.FIRM_ID$+FUT_TMM01.CUSTOMER_NBR$+FUT_TMM01.TM_NUMBER$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.CUSTOMER_NBR$+RD_REC_DATA.TM_NUMBER$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.CUSTOMER_NBR$               RD_REC_DATA.TM_NUMBER$                  
+{KeyDefsEnd}
+{GridCols}
+001FUT_TMM01.FIRM_ID                       ;002FUT_TMM01.NAME_SORT                     ;003FUT_TMM01.CONTACT_SORT                  ;004FUT_TMM01.PHONE_NUMBER                  ;005FUT_TMM01.CONT_NAME                     ;006FUT_TMM01.CONT_TITLE                    ;007FUT_TMM01.CONT_FIRM                     ;008FUT_TMM01.ADDRESS_1                     ;009FUT_TMM01.ADDRESS_2                     ;010FUT_TMM01.CITY                          ;011FUT_TMM01.STATE                         ;012FUT_TMM01.ZIP_CODE                      ;013FUT_TMM01.LANG_CODE                     ;014FUT_TMM01.AVAILABLE                     ;015FUT_TMM01.CUSTOMER_NBR                  ;016FUT_TMM01.RECORD_ID_L                   ;017FUT_TMM01.CUST_TYPE                     ;018FUT_TMM01.RECORD_ID_I                   ;019FUT_TMM01.DISC_CODE                     ;020FUT_TMM01.RECORD_ID_A                   ;021FUT_TMM01.TERMS_CODE                    ;022FUT_TMM01.TM_NUMBER                     ;023FUT_TMM01.COUNTRY_CODE                  ;024FUT_TMM01.DISC_CODE_A                   ;025FUT_TMM01.AVAILABLE0                    ;026FUT_TMM01.TERRITORY                     ;027FUT_TMM01.APDIR_DT                      ;028FUT_TMM01.SLSPERSON                     ;029FUT_TMM01.PLAN_DT                       ;030FUT_TMM01.GOALS_DT                      ;031FUT_TMM01.UST_ID                        ;032FUT_TMM01.QSTNR_DT                      ;033FUT_TMM01.AVAILABLE1                    ;034FUT_TMM01.SEND_LIT                      ;035FUT_TMM01.QUOTE_DT                      ;036FUT_TMM01.APDIR_FLAG                    ;037FUT_TMM01.PLAN_FLAG                     ;038FUT_TMM01.GOALS_FLAG                    ;039FUT_TMM01.QSTNR_FLAG                    ;040FUT_TMM01.LINK_FLAG                     ;041FUT_TMM01.BBLIST_FLAG                   ;042FUT_TMM01.FAX_NUM                       ;043FUT_TMM01.ADDRESS_3                     ;044FUT_TMM01.ADDRESS_4                     ;045FUT_TMM01.DEALER_STR                    ;046FUT_TMM01.USR_DEF_MEMO                  ;047FUT_TMM01.USR_DEF_DT                    ;048FUT_TMM01.OSAS_RSL_YN                   ;049FUT_TMM01.ADDON_RSL_YN                  ;050FUT_TMM01.PVX_YN                        ;051FUT_TMM01.SSI_RSL_YN                    ;052FUT_TMM01.RICHTER_EU_YN                 ;053FUT_TMM01.TBRED_YN                      ;054FUT_TMM01.HSD_EU_YN                     ;055FUT_TMM01.SSI_EU_YN                     ;056FUT_TMM01.USR_DEF_NUM                   ;
+{GridColsEnd}

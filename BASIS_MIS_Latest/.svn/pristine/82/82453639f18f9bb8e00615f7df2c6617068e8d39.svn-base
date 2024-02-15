@@ -1,0 +1,101 @@
+rem ' upload a file to Google docs when provided with a username, password, folder and the document location
+rem ' program: gDocs_upload.src
+
+use ::gapps.bbj::GDocsService
+use ::gapps.bbj::GDoc
+use ::gapps.bbj::GDocSaveDialog
+
+declare GDoc doc!
+declare GDocsService docsService!
+declare GDocSaveDialog saveDialog!
+
+seterr error_handler
+setesc escape_trap
+
+enter username$, password$, folder$, document$, docTitle$, status, quiet
+
+rem ' status = 0 - success
+rem ' status = 2 - hard failure on login - problem is reported in a msgbox
+rem ' status = 3 - hard failure on upload - problem is reported in a msgbox
+
+if quiet = 0 then
+	saveDialog! = new GDocSaveDialog()
+	saveDialog!.setDefaultFolder(folder$)
+	saveDialog!.setDefaultDocument(docTitle$)
+	saveDialog!.setDefaultType(GDoc.getPDF_TYPE())
+	rc = saveDialog!.doModal()
+
+	if (rc = GDocSaveDialog.getSELECTED())
+	        title$ = saveDialog!.getDocumentTitle()
+	        type$ = saveDialog!.getDocumentType()
+	        folder$ = saveDialog!.getDocumentFolder()
+	        docsService! = saveDialog!.getGDocsService()
+	        convert=0
+	        
+	 	success = 0
+	 	while 1
+	 		doc! = docsService!.uploadDocument(document$, title$, type$, folder$, convert, err=*break)
+			success = 1
+			break
+		wend
+
+		if success then
+			status = 0
+		else
+			msg$="Encountered a problem with the Google Docs service uploading (" + document$ + "). Error message is: (" + errmes(-1) + ")"
+			status = 3
+			i = msgbox(msg$,16,"Problem")
+		endif			
+	endif
+else
+
+	rem ' upload quiet without a user interface
+	rem ' login
+	docsService! = new GDocsService()
+	docsService!.setUserCredentials(username$, password$)
+	loggedIn = docsService!.isAuthenticated(0)
+
+	rem ' did it succeed
+	if loggedIn then
+
+		rem ' do not convert
+		convert = 0
+	
+		if cvs(document$(len(document$)-2,3),4) = "PDF" then
+			type$="pdf"
+		else
+			type$="file"
+		fi
+	
+		rem ' upload it
+		success = 0
+		while 1
+	                doc! = docsService!.uploadDocument(document$, docTitle$, type$, folder$, convert, err=*break)
+			success = 1
+			break
+		wend
+		
+		if success then
+			status = 0
+		else
+			status = 3
+		endif			
+
+	else
+
+		rem ' login failed
+		status = 2
+	endif
+
+endif
+
+pgm_exit:
+	exit
+
+error_handler:
+	exit err
+
+escape_trap:
+	exit 127
+	
+	

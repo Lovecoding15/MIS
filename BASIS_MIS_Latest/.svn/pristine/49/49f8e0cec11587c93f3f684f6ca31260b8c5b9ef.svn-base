@@ -1,0 +1,68 @@
+advantage.label=Advantage Kundenzeitschrift zusenden
+announcements.label=BASIS Marketing Ankündigungen
+save.button=Speichern 
+comp.name.label=Firmenname:
+contact.name.label=Ansprechpartner:
+addr.one.label=Addresszeile 1:
+addr.two.label=Addresszeile 2:
+addr.three.label=Addresszeile 3:
+city.label=Ort:
+state.label=Bundesland:
+postal.code.label=Postleitzahl:
+country.label=Land:
+email.label=Email-Adresse:
+phone.number.label=Telefon:
+industry.label=Branche:
+other.desc.label=Weitere Beschreibung:
+basis.prod.label=Genutztes BASIS Produkt:
+app.mod.used.label=Genutzte Anwendungsmodule:
+select.eu.label=Gespeicherten Endkunden wählen\:
+refNbr.label=Referenznummer:
+reset.button=Formular l\u00F6schen
+req.label=Erforderlich
+toggle.button=Sortierreihenfolge ändern
+toggle.button.tip=Klicken Sie hier, um die Sortierreihenfolge zwischen Alphanumerisch und Numerisch umzuschalten.
+eu.serial.nbrs=Seriennummern des Endkunden:
+unlnked.serial.nbrs=Ihre unverknüpften Seriennummern:
+menu.file=Datei
+menu.save.cur.eu=Endkundendaten speichern
+menu.exit=Beenden
+menu.edit=Ändern
+menu.tools=Tools
+menu.prep.file=Datei für Upload vorbereiten
+menu.toggle.list.order=Reihenfolge der Auswahlliste ändern
+
+window.header=Endkundendaten mit Seriennummern verknüpfen
+
+save.changes.msg=Änderungen speichern?
+
+save.changes.title=Endkundendaten speichern
+
+no.records.msg=Keine Datensätze in der Datei.
+
+no.records.title=Keine Datensätze
+
+notice.title=Hinweis
+
+prep.file.notice=Dieser Vorgang löscht alle unverknüpften Seriennummern aus der {0} Datei, sodaß nur diese Datensätze gesendet werden, wenn Sie Uploaden. Fortsetzen?
+
+ready.title=Bereit für Upload
+
+ready.upload.message=Die fertigen Dateien {0} und {1} laden Sie bitte in der b-commerce - Anwendung hoch. Beide Dateien sind f\u00FCr erfolgreichen Upload und Update erforderlich.
+
+required.missing.title=Erforderliche Angaben fehlen
+
+required.missing.msg=Einige erforderliche Angaben fehlen. Diese sind mit 'Erforderlich' gekennzeichnet. Bitte ergänzen Sie die Daten, bevor der Datensatz gespeichert werden kann.
+
+menu.language=Sprache
+
+menu.english=Englisch
+
+menu.german=Deutsch
+
+menu.french=Französisch
+
+
+menu.upload=Upload
+
+upload.instructions=Hinweise zum Upload

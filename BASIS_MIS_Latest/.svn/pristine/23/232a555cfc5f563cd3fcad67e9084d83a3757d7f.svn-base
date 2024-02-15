@@ -1,0 +1,13 @@
+0010 REM TAOS2 - set up for Taos calls
+0040 ENTER FILENAME$,PARAM$
+0080 REM First, check if this has already been done
+0090 LET A$=STBL("BBEXT",ERR=0100); GOTO 0140
+0100 CALL "/local/pro5105/ext/_acu.utl"
+0140 REM 
+0160 CALL STBL("BBEXT")+"_lkeymap.utl"
+0170 CALL STBL("BBEXT")+"_rsteus.utl"
+0180 CALL STBL("BBEXT")+"_setpath.utl",FILENAME$
+0185 CALL FILENAME$,PARAM$
+0210 CALL STBL("BBEXT")+"_rstold.utl"
+0220 CALL STBL("BBEXT")+"_cleanup.utl"
+0240 EXIT 

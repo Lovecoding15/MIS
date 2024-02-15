@@ -1,0 +1,317 @@
+rem ' retrieve license history for a serial number sn$
+
+enter sn$, text$
+
+rem ' set the path
+
+	rem ' bambam2
+	rem ' pqyPath$="/<bambam2>/basisaon/aon/ADATA/"
+	rem ' pqyPgmPathEC$="/<bambam2>/basisaon/EC/"
+	rem ' pqyPgmPathBas$="/<bambam2>/basisaon/aon/bas/"
+	rem ' pqyFlexHome$="/<bambam2>/u/docfiles/flexlic/"
+
+	
+	rem ' kazoo2
+	rem ' pqyPath$="/<kazoo2-a>/basisaon/aon/ADATA/"
+	rem ' pqyPgmPathEC$="/<kazoo2-a>/basisaon/EC/"
+	rem ' pqyPgmPathBas$="/<kazoo2-a>/basisaon/aon/bas/"
+	rem ' pqyFlexHome$="/<kazoo2-a>/u/docfiles/flexlic/"
+
+	pqyPath$=stbl("PQY_SERVER_DATA")
+	pqyPgmPathEC$=stbl("PQY_SERVER_EC")
+	pqyPgmPathBas$=stbl("PQY_SERVER_BAS")
+	pqyFlexHome$=stbl("PQY_SERVER_FLEX")
+
+
+rem ' open the files
+	logextract = unt
+
+	open(logextract)pqyPath$+"logextract.dat"
+	call pqyPgmPathBas$+"templates.pgm::LOGEXTRACT"
+	
+	sn_license = unt
+	open(sn_license)pqyPath$+"sn_license.dat"
+	call pqyPgmPathBas$+"templates.pgm::SN_LICENSE"
+	
+	license_reset = unt
+	open(license_reset)pqyPath$+"license_reset.dat"
+	call pqyPgmPathBas$+"templates.pgm::LICENSE_RESET"
+
+	are83 = unt
+	open(are83)pqyPath$+"ARE-83"
+	call pqyPgmPathBas$+"templates.pgm::ARE83"
+
+	snt01 = unt
+	open(snt01)pqyPath$+"SNT-01"
+	call pqyPgmPathBas$+"templates.pgm::SNT01"
+	
+	snm01 = unt
+	open(snm01)pqyPath$+"SNM-01"
+	call pqyPgmPathBas$+"templates.pgm::SNM01"
+
+	sn_host = unt
+	open(sn_host)pqyPath$+"sn_host.dat"
+	call pqyPgmPathBas$+"templates.pgm::SN_HOST"
+
+rem ' read the serial number file
+	read record(snm01,key=sn$)snm01$
+
+rem ' build the license history text
+
+	let ichan=logextract
+	let temp_item$=""
+	let lbox$=""
+	let l_hostid$=""
+	let l_hostname$=""
+	let l_auth$=""
+	
+	dim tmpl$:fattr(logextract$) 
+	gosub build_temp_item
+
+	let ichan=sn_license
+	dim tmpl$:fattr(sn_license$)
+	gosub build_temp_item
+
+	let ichan=license_reset
+	lrx$=cvs(fattr(license_reset$),4)
+	p=pos("RESET_DATE"=lrx$)
+	if p then lrx$=lrx$(1,p-1)+lrx$(p+6)
+	p=pos("RESET_TIME"=lrx$)
+	if p then lrx$=lrx$(1,p-1)+lrx$(p+6)
+	resets=0
+	dim tmpl$:lrx$
+	gosub build_temp_item
+
+	if len(temp_item$)<50 then goto current_status 
+
+
+let temp_item$=ssort(temp_item$,50)
+let holddate$=""
+let fill$=fill(65,"_")
+
+while len(temp_item$)
+
+	date$=temp_item$(1,8)
+	time$=temp_item$(9,6)
+	ichan=num(temp_item$(15,2))
+	k$=cvs(temp_item$(17,34),2)
+	temp_item$=temp_item$(51)
+
+	if holddate$=date$ then 
+		let lbox$=lbox$+$0a$
+	else 
+		let lbox$=lbox$+fill$+$0a$+date$(5,2)+"/"+date$(7,2)+"/"+date$(1,4)+$0a$
+	fi
+
+	let holddate$=date$,time$=time$(1,2)+":"+time$(3,2)
+
+	switch ichan
+		case logextract; dim tmpl$:fattr(logextract$); break
+		case sn_license; dim tmpl$:fattr(sn_license$); break
+		case license_reset; dim tmpl$:lrx$; break
+	swend
+
+	read record(ichan,key=k$)tmpl$
+	let lbox$=lbox$+"  "
+
+	switch ichan
+	case logextract 
+		let lbox$=lbox$+"License Request Received"+$0a$
+		let x$=cvs(tmpl.firstname$+tmpl.lastname$,35),y$=cvs(tmpl.company$,3)
+		if x$<>"" and y$<>"" then let x$=x$+"/"
+		if x$+y$<>"" then let lbox$=lbox$+"        From: "+x$+y$+$0a$
+		if cvs(tmpl.email$,2)<>"" then let lbox$=lbox$+"       Email: "+tmpl.email$+$0a$
+		if cvs(tmpl.fax$,2)<>"" then let lbox$=lbox$+"         Fax: "+tmpl.fax$+$0a$
+		if cvs(tmpl.hostname$,2)<>"" then 
+			let lbox$=lbox$+"    HostName: "+tmpl.hostname$+$0a$
+			l_hostname$=tmpl.hostname$
+		fi
+		let lbox$=lbox$+"      HostId: "+tmpl.hostid$+$0a$
+		let lbox$=lbox$+"      Auth #: "+tmpl.authnum$+$0a$
+		break
+	case sn_license
+		dim sn_host$:fattr(sn_host$)
+		readrecord(sn_host,key=tmpl$(1,26),dom=*next)sn_host$
+		l_hostid$=tmpl.hostid$,xx$=""
+		if cvs(sn_host.hostid1$,3)<>"" then
+		  xx$=$0a$
+		  l_hostid$=cvs(sn_host.hostname1$,3)+" "+cvs(sn_host.hostid1$,3)+","+$0a$
+		  l_hostid$=l_hostid$+cvs(sn_host.hostname2$,3)+" "+cvs(sn_host.hostid2$,3)+","
+		  l_hostid$=l_hostid$+$0a$+cvs(sn_host.hostname3$,3)+" "+cvs(sn_host.hostid3$,3)
+		fi
+		let lbox$=lbox$+"License Generated"+$0a$
+		let lbox$=lbox$+"      HostId: "+xx$+l_hostid$+$0a$
+		let lbox$=lbox$+"      Auth #: "+tmpl.authnum$+fill(12)+"Revision: "+tmpl.prod_rev$+$0a$,l_auth$=tmpl.authnum$
+		let lbox$=lbox$+"       Users: "+str(tmpl.users:"###0")+fill(15)+"LicenseType: "+tmpl.prod_type$+$0a$
+		if cvs(tmpl.expire$,2)<>"" then let lbox$=lbox$+"     Expires: "+tmpl.expire$+$0a$
+		break
+	case license_reset
+		xx$="",p=pos(tmpl.reset_code$=reset_code_list$)
+		if p>2 then
+		  p1=pos($0a$=reset_reason_list$,1,int(p/2))
+		  if p1 then 
+		    xx$=" ("+reset_reason_list$(p1+1)
+		    p=pos($0a$=xx$)
+		    if p then xx$=xx$(1,p-1)+")"
+		  fi
+		fi
+		let lbox$=lbox$+"License Status Reset by "+tmpl.reset_by$+xx$+$0a$
+		break
+	swend
+
+wend
+
+current_status:
+	s$="" 
+	gosub license_status
+
+	while 1
+		if license_status<0 then break
+
+		let s$=$0a$+"Current License Status: "+str(license_status)
+	
+		if snm01.active_flag$="Y" then 
+			if license_status then
+				let s$=s$+" (Licensed)"
+			else 
+				let s$=s$+" (Ready for licensing)"
+			fi
+		fi
+		s$=s$+$0a$+"Resets for this License: "+str(resets)+$0a$+fill$+$0a$
+		break
+	wend
+	
+if s$<>"" then lbox$=s$+lbox$+$0a$
+
+rem ' this the the code that gets the license file
+
+filelocations$ = "lic/|lic_old/|"
+while len(filelocations$) > 0
+
+	p = pos("|"=filelocations$)
+	if p > 0 then
+		location$ = filelocations$(1,p - 1)
+		filelocations$ = filelocations$(p + 1)
+	else
+		break
+	fi
+	
+	x$=pqyFlexHome$ + location$ + cvs(sn$,3) + ".lic"
+	let l$=""
+	let sz=0
+	lchan=unt
+	open(lchan,err=*continue)x$
+
+	fin$=fin(lchan)
+	sz=dec(fin$(1,4))
+	if sz=0 then continue
+	read record (lchan,siz=sz,err=*next)l$
+
+	
+	fileInfo! = bbjapi().getFileSystem().getFileInfo(lchan)
+	modDate! = new java.util.Date(fileInfo!.getLastModified())
+
+	
+
+	lbox$=lbox$+fill(65,"=")+$0a$+"License file from our server:"
+	lbox$=lbox$+$0a$+modDate!.toString()+" "+fileInfo!.getFilename()+$0a$+$0a$
+	lbox$=lbox$+l$+$0a$
+
+	close (lchan,err=*next)
+	break
+wend
+
+rem ' program exit
+	close(logextract,err=*next)
+	close(sn_license,err=*next)
+	close(license_reset,err=*next)
+	close(are83,err=*next)
+	close(snt01,err=*next)
+	close(snm01,err=*next)
+	close(sn_host,err=*next)
+	if cvs(lbox$,3)="" then
+		text$="No license history available."
+	else
+		text$=lbox$
+	fi
+exit
+
+
+build_temp_item: 
+	read (ichan,key=cvs(sn$,2),dom=*next)
+	while 1
+		let k$=key(ichan,end=*break)
+		if pos(cvs(sn$,2)=k$)<>1 then break
+  		read record(ichan,key=k$)tmpl$
+  		
+  		if ichan=license_reset then 
+    			if tmpl.reset_to$="0" then 
+    				resets=resets+1 
+    			else 
+    				continue
+    			fi
+		fi
+		
+  		let time$=pad(tmpl.time$,6)
+  		let p=pos(":"=time$)
+
+  		if p then 
+  			let time$=time$(1,p-1)+time$(p+1)+" "
+  		fi
+
+		if ichan=logextract then 
+			let time$="00000"+tmpl.seq_num$
+			let x$=pad(k$,34)
+			temp_item$=temp_item$+tmpl.date$+time$+str(ichan:"00")+x$
+		fi
+	wend
+return
+
+license_status:
+	let license_status=-1
+	license_status_channel=0
+
+	read (are83,key="",dom=*next)
+
+	while 1
+		k$=key(are83,end=*break)
+		read record(are83,key=k$)are83$
+
+		if cvs(sn$,2) <> cvs(are83.serial_nbr$,2) or are83.snhist_flag$="Y" or len(cvs(are83.auth_code$,3)) <> 10 then 
+			continue
+		fi
+
+		if are83.action$="D" then 
+			license_status=-1
+			continue
+		fi
+
+		let license_status=are83.license_cnt
+		let license_status_channel=are83
+		let license_status_key$=k$
+		let l_auth$=are83.auth_code$
+		contune
+	wend
+
+	if license_status < 0 then 
+
+		read (snt01,key=cvs(sn$,2),err=*next)
+
+
+		while 1
+			k$=key(snt01,end=*break)
+
+			read record(snt01,key=k$)snt01$
+			if pos(cvs(sn$,2)=snt01.serial_nbr$) <> 1 then break
+			if len(cvs(snt01.auth_code$,3)) <> 10 then continue
+
+			if snt01.action$<>"D" then
+				let license_status=snt01.license_cnt
+				let license_status_channel=snt01
+				let license_status_key$=k$
+				let l_auth$=snt01.auth_code$
+			fi
+		wend
+	fi
+
+return

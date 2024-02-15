@@ -1,0 +1,111 @@
+rem  ' query for serial numbers associated with a reseller
+
+enter pqyResellerNbr$, pqyNumUser$, pqyContext, pqySerGridID, pqySerHistoryID
+
+rem ' build the query
+    if pqyResellerNbr$="" then pqyResellerNbr$="NO_NUM"
+    sql$ = "SELECT t1.SERIAL_NBR, "
+    sql$ = sql$ + "DATE(t1.ORIG_SALE_DATE, '%Mz/%Dz/%Y') as SALE_DATE, "
+    sql$ = sql$ + "t1.USERS, t1.PORT_ID, IFF(t2.DESCRIPTION IS NULL, '', t2.DESCRIPTION) as DESCRIPTION, "
+    sql$ = sql$ + "CONCAT(CONCAT(CONCAT(CONCAT(SUBSTRING(t3.EXPIRE_ON_DT,5,2),'-'),SUBSTRING(t3.EXPIRE_ON_DT,7,2)),'-'),LEFT(t3.EXPIRE_ON_DT,4)) as SAM_EXPIRES "
+    sql$ = sql$ + "FROM SNM01 t1 "
+    sql$ = sql$ + "LEFT OUTER JOIN CSM03 t2 ON t1.FIRM_ID = t2.FIRM_ID AND t1.OS_LEVEL = t2.OS_LEVEL AND t1.PORT_ID = t2.PORT_ID "
+    sql$ = sql$ + "LEFT OUTER JOIN SMC01 t3 on t1.CONTRACT = t3.CONTRACT "
+    sql$ = sql$ + "WHERE t1.ACTIVE_FLAG = 'Y' AND t1.FIRM_ID = '01' AND "
+    sql$ = sql$ + "t1.USERS >= " + pqyNumUser$ + " AND "
+    sql$ = sql$ + "t1.CUSTOMER_NBR =  '" +pqyResellerNbr$ + "' "
+    sql$ = sql$ + "ORDER BY t1.SERIAL_NBR"
+
+rem ' get the recordset
+	rem ' bambam2
+	rem ' connect_str$ = "jdbc:basis:bambam2:2001?DATABASE=Add on&USER=admin&PWD=admin123"
+	rem ' kazoo2
+	rem ' connect_str$ = "jdbc:basis:kazoo2-a:2001?DATABASE=AddOnData&USER=admin&PWD=newone"
+	connect_str$=stbl("PQY_CONNECT")
+	
+	pqySerialNbrs!=bbjapi().createSQLRecordSet(connect_str$,"",sql$)
+
+rem ' bind the grid
+    pqyWindow!=bbjapi().getSysGui().getWindow(pqyContext)
+    pqySerGrid!=pqyWindow!.getControl(pqySerGridID)
+    pqySerHistory!=pqyWindow!.getControl(pqySerHistoryID)
+    pqySerGrid!.setEnabled(0)
+    pqySerHistory!.setEnabled(0)
+    pqySerHistory!.setText("")
+    
+    rem ' unbind first
+    pqySerGrid!.unbindRecordSet(err=*next)
+
+    rem ' now bind it
+    pqySerGrid!.bindRecordSet(pqySerialNbrs!)
+
+
+    rem ' set up grid columns
+	
+	rem ' col 0 serial nbr
+	colNum=0
+	pqySerGrid!.setColumnAlignment(colNum, pqySerGrid!.GRID_ALIGN_LEFT)
+	pqySerGrid!.setColumnHeaderCellAlignment(colNum, pqySerGrid!.GRID_ALIGN_LEFT)
+	pqySerGrid!.setColumnWidth(colNum,80)
+		
+	rem ' col 1 original sale date
+	colNum=1
+	pqySerGrid!.setColumnAlignment(colNum, pqySerGrid!.GRID_ALIGN_CENTER)
+	pqySerGrid!.setColumnHeaderCellAlignment(colNum, pqySerGrid!.GRID_ALIGN_CENTER)
+	pqySerGrid!.setColumnWidth(colNum,120)
+	rem ' waiting on QA Memo 20924
+	rem ' pqySerGrid!.setColumnStyle(colNum,pqySerGrid!.GRID_STYLE_INPUTD)
+	rem ' pqySerGrid!.setColumnMask(colNum,"%Mz/%Dz%Y")
+
+	rem ' col 2 users
+	colNum=2
+	pqySerGrid!.setColumnAlignment(colNum, pqySerGrid!.GRID_ALIGN_CENTER)
+	pqySerGrid!.setColumnHeaderCellAlignment(colNum, pqySerGrid!.GRID_ALIGN_CENTER)
+	pqySerGrid!.setColumnWidth(colNum,60)
+
+	rem ' col 3 port id
+	colNum=3
+	pqySerGrid!.setColumnAlignment(colNum, pqySerGrid!.GRID_ALIGN_CENTER)
+	pqySerGrid!.setColumnHeaderCellAlignment(colNum, pqySerGrid!.GRID_ALIGN_CENTER)
+	pqySerGrid!.setColumnWidth(colNum,60)
+
+	rem ' col 4 port description
+	colNum=4
+	pqySerGrid!.setColumnAlignment(colNum, pqySerGrid!.GRID_ALIGN_LEFT)
+	pqySerGrid!.setColumnHeaderCellAlignment(colNum, pqySerGrid!.GRID_ALIGN_LEFT)
+	pqySerGrid!.setColumnWidth(colNum,200)
+
+	rem ' col 5 sam expire date
+	colNum=5
+	pqySerGrid!.setColumnAlignment(colNum, pqySerGrid!.GRID_ALIGN_CENTER)
+	pqySerGrid!.setColumnHeaderCellAlignment(colNum, pqySerGrid!.GRID_ALIGN_CENTER)
+	pqySerGrid!.setColumnWidth(colNum,120)
+
+
+	pqyColHeaders!=bbjapi().makeVector()
+	pqyColHeaders!.add("Serial Nbr")
+	pqyColHeaders!.add("Orig Sale Date")
+	pqyColHeaders!.add("Users")
+        pqyColHeaders!.add("Port Id")
+	pqyColHeaders!.add("Port Description")
+	pqyColHeaders!.add("Sam Exp")
+	pqySerGrid!.setColumnHeaderText(pqyColHeaders!)
+
+    pqySerGrid!.setEnabled(1)
+    pqySerGrid!.setEditable(0)
+
+    rem ' populate the license history
+	if pqySerialNbrs!.isEmpty() then
+		pqyLicHist$="" 
+	else
+		pqyRecordData! = pqySerialNbrs!.getCurrentRecordData()
+		pqySerialNbr$ = pqyRecordData!.getFieldValue("SERIAL_NBR")
+		call stbl("PQY_PROGRAMS")+"pqy_license_history.src", pqySerialNbr$, pqyLicHist$
+	fi
+
+	pqySerHistory!.setText(pqyLicHist$)
+	pqySerHistory!.setEnabled(1)
+eoj:
+
+exit
+

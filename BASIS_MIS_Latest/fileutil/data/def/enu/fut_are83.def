@@ -1,0 +1,40 @@
+Table Definition Module
+FUT_ARE83 - SN Hist
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_ARE83^/mnt/data/aon_prod/apps/fileutil/;^BSHO;^^^SN Hist^SN Hist^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_ARE83^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+AR_TYPE^FUT_ARE83^002^C^^3002^ine_ar_type^0^^^2^^Y^^^^^FUT_AR_TYPE^AR Type^AR Type^AR Type^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+CUSTOMER_NBR^FUT_ARE83^003^C^^3003^dis_customer_nbr^0^^^3^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^^^^0^^^^N^
+ORDER_NUMBER^FUT_ARE83^004^C^^3004^ine_order_number^0^^^4^^Y^^^^^FUT_ORDER_NUMBER^Order Number^Order Number^Order Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^^^^^^^^N^
+LINE_NUMBER^FUT_ARE83^005^C^^3005^ine_line_number^0^^^5^^Y^^^^^FUT_LINE_NUMBER^Line Number^Line Number^Line Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^3^^^^^^^^N^
+LICENSE_SEQ^FUT_ARE83^006^C^^3006^ine_license_seq^0^^^6^^Y^^^^^FUT_LICENSE_SEQ^License Seq^License Seq^License Seq^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^3^^^^^^^^N^
+SEQUENCE_NBR^FUT_ARE83^007^C^^3007^ine_sequence_nbr^0^^^7^^Y^^^^^FUT_SEQUENCE_NBR^Sequence Number^Sequence Number^Sequence Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^Y^
+ACTION^FUT_ARE83^008^C^^3008^ine_action^0^^^8^^N^^^^^FUT_ACTION^Modify, Activate, Deactivate^Modify, Activate, Deactivate^Modify, Activate, Deactivate^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+SNHIST_FLAG^FUT_ARE83^009^C^^3009^ine_snhist_flag^0^^^9^^N^^^^^FUT_SNHIST_FLAG^Snhist Flag^Snhist Flag^Snhist Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^1^^^^^^^^N^
+AUTH_CODE^FUT_ARE83^010^C^^3010^ine_auth_code^0^^^10^^N^^^^^FUT_AUTH_CODE^Authorization Code^Authorization Code^Authorization Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^15^^^^^^^^^^^0^^^^^^^^N^
+UPG_TO_PRODUCT^FUT_ARE83^011^C^^3011^ine_upg_to_product^0^^^11^^N^^^^^FUT_UPG_TO_PRODU^Upg To Product^Upg To Product^Upg To Product^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^3^^^^^^^^N^
+UPG_TO_REV^FUT_ARE83^012^C^^3012^ine_upg_to_rev^0^^^12^^N^^^^^FUT_UPG_TO_REV^Upg To Rev^Upg To Rev^Upg To Rev^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^3^^^^^^^^N^
+AVAILABLE^FUT_ARE83^013^C^^3013^ine_available^0^^^13^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^9^^^^^^^^^^^0^^^^^^^^N^
+CONTRACT^FUT_ARE83^014^C^^3014^ine_contract^0^^^14^^N^^^^^FUT_CONTRACT^SAM/Developer Contract^SAM/Developer Contract^SAM/Developer Contract^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^2^^^^^^^^N^
+SAM_ACTIVE^FUT_ARE83^015^C^^3015^ine_sam_active^0^^^15^^N^^^^^FUT_SAM_ACTIVE^SAM Contract Active^SAM Contract Active^SAM Contract Active^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+DEALER_STR^FUT_ARE83^016^C^^3016^ine_dealer_str^0^^^16^^N^^^^^FUT_DEALER_STR^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^C^^E^^^^0^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^Y^
+SERIAL_NBR^FUT_ARE83^017^C^^3017^ine_serial_nbr^0^^^17^^N^^^^^FUT_SERIAL_NBR^Serial Number (Basis)^Serial Number (Basis)^Serial Number (Basis)^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^^^^^^^^Y^
+LICENSE_CNT^FUT_ARE83^018^C^^3018^inn_license_cnt^0^^^18^^N^^^^^FUT_LICENSE_CNT^License Count^License Count^License Count^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^^^^^^^^Y^
+DEALER_NUM_1^FUT_ARE83^019^C^^3019^inn_dealer_num_1^0^^^19^^N^^^^^FUT_DEALER_NUM_1^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^Y^
+DEALER_NUM_2^FUT_ARE83^020^C^^3020^inn_dealer_num_2^0^^^20^^N^^^^^FUT_DEALER_NUM_2^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_ARE83^PRIMARY^FUT_ARE83.FIRM_ID                       FUT_ARE83.AR_TYPE                       FUT_ARE83.CUSTOMER_NBR                  FUT_ARE83.ORDER_NUMBER                  FUT_ARE83.LINE_NUMBER                   FUT_ARE83.LICENSE_SEQ                   FUT_ARE83.SEQUENCE_NBR                  ^FUT_ARE83.FIRM_ID$+FUT_ARE83.AR_TYPE$+FUT_ARE83.CUSTOMER_NBR$+FUT_ARE83.ORDER_NUMBER$+FUT_ARE83.LINE_NUMBER$+FUT_ARE83.LICENSE_SEQ$+FUT_ARE83.SEQUENCE_NBR$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.AR_TYPE$+RD_REC_DATA.CUSTOMER_NBR$+RD_REC_DATA.ORDER_NUMBER$+RD_REC_DATA.LINE_NUMBER$+RD_REC_DATA.LICENSE_SEQ$+RD_REC_DATA.SEQUENCE_NBR$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.AR_TYPE$                    RD_REC_DATA.CUSTOMER_NBR$               RD_REC_DATA.ORDER_NUMBER$               RD_REC_DATA.LINE_NUMBER$                RD_REC_DATA.LICENSE_SEQ$                RD_REC_DATA.SEQUENCE_NBR$               
+{KeyDefsEnd}
+{GridCols}
+001FUT_ARE83.FIRM_ID                       ;002FUT_ARE83.AR_TYPE                       ;003FUT_ARE83.CUSTOMER_NBR                  ;004FUT_ARE83.ORDER_NUMBER                  ;005FUT_ARE83.LINE_NUMBER                   ;006FUT_ARE83.LICENSE_SEQ                   ;007FUT_ARE83.SEQUENCE_NBR                  ;008FUT_ARE83.ACTION                        ;009FUT_ARE83.SNHIST_FLAG                   ;010FUT_ARE83.AUTH_CODE                     ;011FUT_ARE83.UPG_TO_PRODUCT                ;012FUT_ARE83.UPG_TO_REV                    ;013FUT_ARE83.AVAILABLE                     ;014FUT_ARE83.CONTRACT                      ;015FUT_ARE83.SAM_ACTIVE                    ;016FUT_ARE83.DEALER_STR                    ;017FUT_ARE83.SERIAL_NBR                    ;018FUT_ARE83.LICENSE_CNT                   ;019FUT_ARE83.DEALER_NUM_1                  ;020FUT_ARE83.DEALER_NUM_2                  ;
+{GridColsEnd}

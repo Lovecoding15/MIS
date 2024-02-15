@@ -1,0 +1,429 @@
+// Generate FLEX license or reset counter <aonserm_7>
+
+screen_desc$="GENERATE FLEX LICENSE";
+u1$="ahoffmanhschmitz";
+u$="gparra  sportwo sjohnso plewis  thines  cdinkel kpeterl jmills  jsheldo kosborn grobled lguiney rdelpre "+u1$;
+if pos(info(3,2)=u$)=0 then
+{
+pause/message="Restricted to customer service, sales & tech support";
+exit;
+}
+
+gosub clear_form;
+
+repeat   
+{
+display/form="MAS_HEAD" screen_desc=screen_desc$ firm_name="";
+gosub display_form;
+lic_option=5;
+prompt for /prompt=
+	"1=Generate lic  2=Email  3=Fax  4=Reset counter  5=Exit"
+	/nobox /row=22 /drop /len=1
+	lic_option;
+
+switch lic_option
+	{
+	case 1: gosub gen_license;
+	case 2: gosub email_file;
+	case 3: gosub fax_file;
+	case 4: {gosub gen_license; pause/time=1;gosub clear_form;}
+	case 5: goto the_end;
+	}
+}
+the_end:
+exit ;
+
+subroutine display_form
+{
+display/form="aonserm_7" /nodrop
+	serial_num=serial_num$
+	rev_level=rev_level$
+	prod_type=prod_type$
+	tot_users=tuser
+	auth_num=authorization_num$
+	host_id=host_id$
+	host_name=host_name$
+	company=company$
+	lastname=l_name$ 
+	firstname=f_name$
+	faxnum=faxnum$ 
+	email=email$
+	lic_count=liccount
+	line_1=fline$[1]
+	line_2=fline$[2]
+	line_3=fline$[3]
+	line_4=fline$[4]
+	line_5=fline$[5]
+	line_6=fline$[6]
+	line_7=fline$[7]
+	line_8=fline$[8]
+	line_9=fline$[9] ;
+}
+
+subroutine call_flexlic
+{
+call/nowindow "(FLEXHOME)bin/flexlic.bbx",authorization_num$,serial_num$,host_id$,license$;
+if cvs(license$,3)="" or pos("ERROR"=cvs(license$,4)) then 
+	{
+	license$="NO LICENSE GENERATED FROM THIS DATA";
+	ext$=".err";
+	gosub find_lic_or_err;
+	}
+gosub format_license;
+flxfil$=stbl("FLEXHOME")+"lic/"+cvs(serial_num$,3)+".lic";
+}
+
+subroutine gen_license
+{
+if pos(info(3,2)=u1$) and lic_option<>4 then
+	{pause/message="Restricted to tech support";break;}
+get_serialnum:
+found_sn=0;
+gosub clear_form;
+gosub display_form;
+prompt for/form="aonserm_7" serial_num=serial_num$;
+if ctl()=6 then break;
+serial_num$=serial_num$+fill(20);serial_num$=serial_num$(1,20);
+// Check ARE-83  first in case it's in the order/invoice process
+for each are83 where serial_nbr=serial_num$ and snhist_flag<>"Y"
+and cvs(auth_code,2)<>""
+	{found_sn=1;
+	authorization_num$=are83.auth_code;
+	liccount=are83.license_cnt;
+	ctr_key$=are83$(1,26);ctr_file$="ARE83";
+	k$=are83$(1,20);
+	}
+if found_sn=0 then goto get_snm01;	
+found_sn=0;
+find/noerror are73 using k$;
+  if available(are73)=0 then goto end_find;
+tuser=are73.users;
+find/noerror are13 using k$;
+  if available(are13)=0 then goto end_find;
+item_num$=are13.item_number; 
+if are73.type_of_sale<>"ADD" then goto item_ok;
+// If adduser, rev and users not found in the item # 
+// Check if this was an adduser to a SN created/updated in previous line
+prev_ln: lnum=num(k$(18,3))-1;if lnum<=0 then goto find_snm01;
+k$=k$(1,17)+str(lnum:"000");
+find/noerror are13 using k$;
+	if available(are13)=0 then goto prev_ln;
+item_num$=are13.item_number; 
+// be sure SN from prev line matches
+prvsn$="";
+find/next/noerror are83 using k$;
+repeat 	{
+	if available(are83)=0 or pos(k$=are83$)<>1 then break; 
+	if are83.serial_nbr=serial_num$ then 
+		{prvsn$=serial_num$; break;}
+	find/next/noerror are83;
+	}
+if prvsn$<>serial_num$ then goto prev_ln; 
+find/noerror are73 using k$;
+  if available(are73)=0 then goto end_find;
+tuser=tuser+are73.users;
+goto item_ok;
+// If not in prev line then look in SNM01
+find_snm01:
+find/noerror snm01 using serial_num$;
+if available(snm01) then 
+	{
+	item_num$=snm01.product+platform+os_level+product_rev+license_type;
+	tuser=tuser+snm01.users;goto item_ok;
+	}
+else goto end_find;
+
+item_ok: 
+gosub get_rev_level;
+prod_type$=item_num$(13,3);
+found_sn=1;
+goto end_find;
+get_snm01:
+find/noerror snm01 using serial_num$;
+if available(snm01) and active_flag<>"N" then 
+	{
+	found_sn=1;
+	item_num$=snm01.product+platform+os_level+product_rev+license_type; 
+	tuser=snm01.users;
+	init snt01;
+	init hold_detail$:fattr(snt01$);
+	find/next/noerror snt01 using serial_num$;
+	repeat	{
+		if available(snt01)=0 or 
+		snt01.serial_nbr<>serial_num$ then break;	
+		if cvs(snt01.auth_code$,2)<>"" then 
+			hold_detail$=field(snt01$);
+		find/next/noerror snt01;
+		}
+	authorization_num$=hold_detail.auth_code$;
+	liccount=hold_detail.license_cnt;
+	gosub get_rev_level;
+	prod_type$=item_num$(13,3);
+	ctr_key$=hold_detail$(1,28);ctr_file$="SNT01";
+	goto end_find;
+	}
+
+oemsn$=serial_num$+fill(9);oemsn$=serial_num$(1,9);
+find/next/noerror oem_sn_trans using oemsn$;
+nxt_oem:
+if available(oem_sn_trans)=0 or 
+	oem_sn_trans.serial_num<>oemsn$ then goto end_find;
+if oem_sn_trans.active_flag="N" then {found_sn=0;goto end_find;}
+authorization_num$=oem_sn_trans.lic_auth;
+liccount=oem_sn_trans.lic_count;
+tuser=oem_sn_trans.new_user;
+rev_level$=oem_sn_trans.rev_level;
+prod_type$="STD";if pos(oem_sn_trans.tran_type="U D") then prod_type$="DEMO";
+ctr_key$=oem_sn_trans.serial_num+tran;
+ctr_file$="oem_sn_trans";
+found_sn=1;
+find/next/noerror oem_sn_trans;
+goto nxt_oem;
+
+end_find:
+if found_sn=0 then 
+	{ 
+	pause/message="Serial # "+serial_num$+
+		" Not Found or Inactive";
+	goto get_serialnum;
+	}
+//w$="License has already been generated for this Authorization and Serial # ";
+//if liccount>1 then w$=w$+" "+str(liccount)+" times";
+if liccount then 
+	{
+	ext$=".lic"; gosub find_lic_or_err; gosub format_license;
+	h=pos("HOSTID="=license$);
+	if h then {host_id$=license$(h+7);
+	 	   h=pos(" ck="=host_id$);
+	 	   if h=0 then h=pos(" \"=host_id$);
+			if h then host_id$=host_id$(1,h-1);
+	 	   }
+	if cvs(host_id$,7)="ANY" then
+		{ h=pos("this_host "=license$);
+		if h then 
+		   { host_id$=license$(h+10);
+		     h=pos($0a$=hostid$);
+			if h then host_id$=host_id$(1,h-1);
+	 	   }
+		}
+	//pause/message=w$;
+	}
+gosub display_form;
+holdid$=host_id$;
+if lic_option=1 then
+	{
+	prompt for/form="aonserm_7" 
+	auth_num=authorization_num$
+	host_id=host_id$
+	host_name=host_name$;
+	if ctl()=6 then break;
+	choose/yesno/nobox/prompt="Generate license? "
+		/default=yes/row=18/drop/nobreak/black yorn;
+	if ctlval=6 or yorn=0 then break;
+	gosub call_flexlic;
+	}
+else
+	{
+	reset_prompt:
+      hold_liccount=liccount;
+	prompt for/form="aonserm_7" 
+	lic_count=liccount;
+	if ctl()=6 or liccount=hold_liccount then break;
+	if liccount<>0 and liccount<>1 then goto reset_prompt;
+	if ctr_file$="ARE83" then
+		{
+		find are83 using ctr_key$;
+		if are83.license_cnt<>liccount then 
+			{are83.license_cnt=liccount;
+			update are83; gosub write_log;}
+		}
+	if ctr_file$="SNT01" then
+		{
+		find snt01 using ctr_key$;
+		if snt01.license_cnt<>liccount then 
+			{snt01.license_cnt=liccount;update snt01;
+			gosub write_log;}
+		}
+	if ctr_file$="oem_sn_trans" then
+		{
+		find oem_sn_trans using ctr_key$;
+		if oem_sn_trans.lic_count<>liccount then 
+			{oem_sn_trans.lic_count=liccount;
+			update oem_sn_trans;
+			gosub write_log;}
+		}
+	}
+}
+
+subroutine write_log
+{
+tm$=date(0:"%Hz:%mz:%sz");
+license_reset.serial_nbr=serial_num$;
+license_reset.reset_date=date(0:"%Y%Mz%Dz");
+license_reset.reset_time=date(0:"%Hz%mz%sz");
+license_reset.reset_by=info(3,2);
+license_reset.reset_to=str(liccount);
+license_reset.available=fill(16);
+insert/update license_reset;
+}
+
+subroutine get_rev_level
+{ find/noerror csm04 using "01"+item_num$(10,3);
+if available(csm04)=0 then {rev_level$=item_num$(10,3); break;}   
+rev_level$=cvs(csm04.description,3);p=pos(" "=rev_level$);
+if p=0 then p=len(rev_level$);
+rev_level$=rev_level$(1,p);
+}
+
+subroutine format_license
+{
+templic$=license$+" ";
+repeat
+	{
+	a=pos($09$=templic$);
+	if a=0 then break;
+	if a>1 then templic$=templic$(1,a-1)+"    "+templic$(a+1);
+		else templic$="    "+templic$(a+1);
+	}
+ln=1;
+repeat
+	{ 
+	if ln>8 and len(templic$) then 
+		{ fline$[ln]=" (too many lines to display)";
+		break; }
+	a=pos($0A$=templic$);
+	if a=0 then 
+		{ fline$[ln]=templic$;
+		break; }
+	if a>1 then 
+		{ 
+		fline$[ln]=templic$(1,a-1);
+		//if len(fline$[ln])>80 then 
+		//	fline$[ln]=fline$[ln](1,65)+" (...more)";
+		ln=ln+1; 
+		}
+	templic$=templic$(a+1);
+	}
+}
+
+subroutine find_lic_or_err
+{
+snfile$=stbl("FLEXHOME")+"lic/"+cvs(serial_num$,3)+ext$;
+sndata$="";
+#3glbegin
+snchn=unt;open(snchn,err=nosnfile)snfile$
+fin$=fin(snchn);sz=dec(fin$(1,4))
+readrecord(snchn,siz=sz,err=endsn)sndata$
+endsn:
+license$=license$+$0A$+sndata$
+close(snchn)
+rem if ext$=".err" then erase snfile$,err=nosnfile
+nosnfile:
+#3glend
+}
+
+subroutine email_file
+{
+if pos(info(3,2)=u1$) then break;
+email_in:
+prompt for/form="aonserm_7"
+	company=company$
+	lastname=l_name$ 
+	firstname=f_name$
+	email=email$;
+if ctl(6) or email$="" then break;
+choose/yesno/nobox/prompt="OK? "
+	/default=yes/row=18/drop/nobreak/black yorn;
+if yorn=0 then goto email_in;
+lic_delivery$="email";
+gosub mail_autoresponder;
+}
+
+subroutine fax_file 
+{
+if pos(info(3,2)=u1$) then break;
+fax_in:
+prompt for/form="aonserm_7"
+	company=company$
+	lastname=l_name$ 
+	firstname=f_name$
+	faxnum=faxnum$ 
+	;
+if ctl(6) or faxnum$="" then break;
+f$="";a=1;
+repeat {if a>len(faxnum$) then break;
+	if pos(faxnum$(a,1)="0123456789") 
+		then f$=f$+faxnum$(a,1);
+	a=a+1;
+	}
+if len(f$)<7 then break;
+If f$(1,1)="1" or f$(1,3)="011" or len(f$)=7 then goto faxit;
+if len(f$)<>10 then f$="011"+f$;
+if len(f$)=10 then 
+	{ if f$(1,3)="525" then f$="011"+f$; 
+	  else f$="1"+f$;}
+faxit:
+faxnum$=f$;
+gosub display_form;
+choose/yesno/nobox/prompt="OK? "
+	/default=yes/row=18/drop/nobreak/black yorn;
+if yorn=0 then goto fax_in;
+lic_delivery$="fax";
+gosub mail_autoresponder;
+}
+
+subroutine mail_autoresponder
+{
+mailtext$="To: license@basis.cloud"+$0a$+"From: cust@basis.cloud"+$0a$+"Subject: License"+$0a$+$0a$;
+mailtext$=mailtext$+"Company          : "+company$+$0a$;
+mailtext$=mailtext$+"Last Name        : "+l_name$+$0a$;
+mailtext$=mailtext$+"First Name       : "+f_name$+$0a$;
+mailtext$=mailtext$+"Phone Number     : "+$0a$;
+mailtext$=mailtext$+"Fax Number       : "+cvs(faxnum$,3)+$0a$;
+mailtext$=mailtext$+"Email Address    : "+cvs(email$,3)+$0a$;
+mailtext$=mailtext$+"Host Name        : "+cvs(host_name$,3)+$0a$;
+mailtext$=mailtext$+"Host ID          : "+cvs(host_id$,3)+$0a$;
+mailtext$=mailtext$+"Serial Number    : "+cvs(serial_num$,3)+$0a$;
+mailtext$=mailtext$+"License Auth Num : "+authorization_num$+$0a$;
+mailtext$=mailtext$+"License Delivery : "+lic_delivery$+$0a$;
+a=1;
+flxfil$=stbl("AON")+"tmp/"+cvs(serial_num$,3)+".txt";
+#3glbegin
+erase flxfil$,err=stringit
+stringit:
+string flxfil$
+flxchn=unt
+open(flxchn,err=end3gl)flxfil$
+writerecord(flxchn)mailtext$
+close(flxchn)
+a=scall("/usr/lib/sendmail -t < "+flxfil$)
+erase flxfil$,err=end3gl
+end3gl:
+#3glend
+if a then pause/message=lic_delivery$+" attempt failed";
+else pause/message=lic_delivery$+"ed to: "+faxnum$+email$;
+//authorization_num$="none";
+}
+
+subroutine clear_form
+{
+init fline$[9];
+serial_num$="";
+rev_level$="";
+prod_type$="";
+tuser=0;
+authorization_num$="";
+host_id$="";
+host_name$="";
+liccount=0;
+license$="";
+f_name$="";
+l_name$="";
+company$="";
+faxnum$="";
+email$="";
+}
+
+#include (LIBRARY)syseldev.h
+
+//

@@ -1,0 +1,55 @@
+begin
+seterr eoj
+
+sn$=cvs(argv(1),7)
+outfile$=cvs(argv(2),3)
+call "ec_open::sn_license"
+call "ec_open::license_reset"
+
+rem ' get the date and time of the last reset
+read (license_reset,key=sn$,dom=*next)
+while 1
+	read record(license_reset,end=*break)license_reset$
+	if pos(sn$=license_reset.serial_nbr$)<>1 then break
+	date$ = license_reset.reset_date$
+	time$ = license_reset.reset_time$
+wend
+
+rem ' get the hostid of the last non DEMO7 license generation
+read (sn_license,key=sn$,dom=*next)
+while 1
+  read record (sn_license,end=*break)sn_license$
+  if pos(sn$=sn_license.serial_num$)<>1 then break
+  if pos("DEMO7"=cvs(sn_license.prod_type$,7)) then continue
+  hostid$=sn_license.hostid$
+  date_snl$=sn_license.date$
+  time_snl$=sn_license.time$
+  k$=sn_license.serial_num$+date_snl$+time_snl$
+wend
+
+if cvs(hostid$,7)="REDUNDANT" then
+  call "ec_open::sn_host"
+  readrecord(sn_host,key=k$)sn_host$
+  hostid$=cvs(sn_host.hostname1$,3)+" "+cvs(sn_host.hostid1$,3)+","
+  hostid$=hostid$+cvs(sn_host.hostname2$,3)+" "+cvs(sn_host.hostid2$,3)+","
+  hostid$=hostid$+cvs(sn_host.hostname3$,3)+" "+cvs(sn_host.hostid3$,3)
+fi  
+
+if outfile$<>"" then
+  outchn=unt, exist=0
+  open(outchn,err=*next)outfile$;exist=1
+  if exist=0 then
+    string outfile$,err=*next
+    open(outchn,err=*next)outfile$
+  fi  
+  print(outchn,err=*next)hostid$
+  print(outchn,err=*next)date$
+  print(outchn,err=*next)time$
+fi
+
+eoj:
+close(outchn,err=*next)
+close(sn_license,err=*next)
+close(sn_host,err=*next)
+
+release

@@ -1,0 +1,70 @@
+0010 REM "DDM - Data Expansion Code Maintenance Listing"
+0020 REM "Program DDM.EB"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.1.0 - 01Apr99 |"
+0026 REM "|         Copyright (c) 1999 ADD+ON Software, Inc.          |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files"
+0170 CALL "SYC.GA",7,1,"","",STATUS
+0175 IF STATUS THEN GOTO 9900
+0200 REM " --- IOLists"
+0210 DDM20A: IOLIST A0$(1),A1$(1),A2$(1)
+0500 REM " --- Init Data"
+0510 LET H0=80,H=0,L9=59,L=L9+1,HEADINGS=2,WHEN$=F0$(7,3),CLOCK$="",T0=0
+0520 DIM HEADINGS$[2]
+0530 LET HEADINGS$[0]=N1$,HEADINGS$[1]=N4$+" Listing"
+0700 REM " --- Background
+0720 CALL "SYC.NB","Printing",12,COLUMN
+0900 REM " --- Position file
+0910 READ (DDM20_DEV,KEY="",DOM=1000)
+1000 REM " --- Main Read"
+1020 READ (DDM20_DEV,END=4000)IOL=DDM20A
+1030 PRINT @(COLUMN,11),A0$,
+2000 REM " --- Print"
+2010 LET T0=T0+1,LINES=LEN(FNP$(A2$))/60,LINES=INT(LINES)+SGN(FPT(LINES))
+2020 IF L+2+LINES>L9 THEN GOSUB 5000
+2030 PRINT (7)'LF',@(0),A0$,@(14),A1$
+2040 LET L=L+2+LINES,X=0
+2050 WHILE X<LINES
+2060 PRINT (7)@(14),A2$(X*60+1,60)
+2070 LET X=X+1
+2080 WEND
+2900 GOTO 1000
+4000 REM " --- Options"
+4010 IF L+2>L9 THEN GOSUB 5000
+4020 PRINT (7)'LF',@(10),"Total Records:",T0
+4100 GOTO 9900
+5000 REM " --- Heading"
+5010 LET L=HEADINGS+1
+5020 CALL "SYC.HA",7,HEADINGS$[ALL],2,H,H0,WHEN$,CLOCK$,STATUS
+5030 IF STATUS>0 THEN EXITTO 9900
+5060 PRINT (7)"Code",@(14),"Description/Expansion Instructions"
+5070 PRINT (7)FILL(H0,"-")
+5080 LET L=L+2
+5090 RETURN 
+8000 REM " --- Functions"
+8070 DEF FNP$(Q$)=CVS(Q$,2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END

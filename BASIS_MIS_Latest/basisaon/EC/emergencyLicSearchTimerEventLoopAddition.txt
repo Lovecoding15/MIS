@@ -1,0 +1,13 @@
+Code to add to the event loop when using a timer
+
+insert it immediately following these lines
+
+   rem ' Track whether event was handled
+   gb__event_handled=0
+
+
+   rem ' Handle a timer event
+   if gb__event.code$ = "T" then
+   	gosub timeExpired
+   	gb__event_handled=1
+   fi

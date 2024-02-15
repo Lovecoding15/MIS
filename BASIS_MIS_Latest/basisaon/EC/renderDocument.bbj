@@ -1,0 +1,36 @@
+rem ' ***********************************************
+rem ' * render DocOut document
+rem ' ***********************************************
+
+seterr error_trap
+
+declare BBjNamespace docNS!
+
+if argc > 1 then
+	documentTag$ = argv(1)
+	docNS! = bbjAPI().getNamespace("basis.mis.document", documentTag$, 0)
+	doc! = docNS!.getValue(documentTag$)
+	doc!.process()
+fi
+
+release
+
+error_trap:
+	msg$ = "An error " + str(err) + " occurred on line " + str(tcb(5)) + " message: " + errmes(-1)
+	msg = msgbox(msg$,0,"Error")
+	release
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

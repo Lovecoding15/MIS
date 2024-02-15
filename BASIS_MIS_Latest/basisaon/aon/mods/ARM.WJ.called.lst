@@ -1,0 +1,454 @@
+REM /**
+REM  * ARM.WJ.called.lst
+REM  * Displays 2 licensing widgets
+REM  * @author kwilliams
+REM  *
+REM  */
+
+seterr pgmErr
+
+enter firmId$, custNum$
+
+rem ' erase "/tmp/ARMWJ_Trace.txt", err=*next
+rem ' string "/tmp/ARMWJ_Trace.txt"
+rem ' trace = unt
+rem ' open(trace)"/tmp/ARMWJ_Trace.txt"
+rem ' settrace(trace)
+
+declare BBjSysGui sysgui!
+sysgui! = BBjAPI().getSysGui()
+oldContext = sysgui!.getContext()
+rem ' xresp = msgbox("old context " + str(oldContext),0,"debug")
+
+rem Use statements
+use ::dashboard/dashboard.bbj::Dashboard
+use ::dashboard/dashboard.bbj::DashboardCategory
+use ::dashboard/dashboard.bbj::DashboardWidget
+use ::dashboard/dashboard.bbj::WidgetControl
+use ::dashboard/widget.bbj::Widget
+use ::dashboard/widget.bbj::ChartWidget
+use ::dashboard/widget.bbj::PieChartWidget
+use ::dashboard/widget.bbj::BarChartWidget
+use ::BBUtils.bbj::BBUtils
+use ::BBXImage.bbj::BBXImageFactory
+use ::BBXImage.bbj::BBXImage
+use ::bbwindowutils.bbj::BBWindowUtils
+
+use java.awt.TexturePaint
+use java.awt.geom.Rectangle2D
+use java.awt.image.BufferedImage
+use java.util.LinkedHashMap
+
+rem Database stuff
+use java.sql.DriverManager
+use java.sql.Connection
+call "ec_open::ARM01"
+call "ec_open::ARM02"
+call "ec_open::ARM06"
+
+
+if (firmID$ <> "" and custNum$ <> "")
+	rem Create the connect string
+	rem host$ = "upgrade.basis.cloud"
+	host$ = "localhost"
+	db$ = "AddOnData"
+    uid$ = "basisaon"
+    pwd$ = "kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww"
+	ssl$ = "true"
+	connectString$="jdbc:basis:" + host$ + "?database=" + db$ + "&user=" + uid$ + "&pwd=" + pwd$ + "&ssl=" + ssl$
+    rem ' connectString$ = "jdbc:basis:" + server$ + ":2001?database=" + dbName$ + "&user=" + uid$ + "&pwd=" + pwd$ + "&ssl=true"
+    rem ' xresp = msgbox(connectString$,0,"debug")
+	
+else
+	goto finished
+endif
+
+rem ' licensing widget, perpetual, virutal and annual
+
+	rem Create the SQL string
+	group$ = firmID$ + custNum$
+	num_to_list$ = "5"
+	masks$ = ""
+	barista_wd$ = ""
+	all_prod_types$ = ""
+	
+	read record(arm01, key = firmID$ + custNum$)arm01$
+	custName$ = cvs(arm01.cust_name$,3)
+	
+	sql$="CALL LICTYPE_CUST_SBR_60 ('"+group$+"', '"+num_to_list$+"', '"+masks$+"', '"+barista_wd$+"', '"+all_prod_types$+"')"
+	
+	rem Create a window
+	width=900
+	height=420
+	context = sysgui!.getAvailableContext()
+	rem ' xresp = msgbox("new context " + str(context),0,"debug")
+	window! = sysgui!.addWindow(context,200,200,width,height,"Licensing Summary for " + custName$,$01000010$)
+	createWidgetStatic! = window!.addStaticText(100,10,10,90,20,"Creating Widgets")
+	BBWindowUtils.centerWindow(window!)
+	window!.setVisible(1)
+	
+	rem Make sure the JDBC driver is loaded
+	java.lang.Class.forName("com.basis.jdbc.BasisDriver")
+
+	rem Make connection, prepare the statement, and execute the query
+	c! = DriverManager.getConnection(connectString$)
+	p! = c!.prepareStatement(sql$)
+	r! = p!.executeQuery()
+    
+	rem Create the dashboard and category
+	dashboard! = new Dashboard("Customer Licenses","License Summary")
+	dashboardCategory! = dashboard!.addDashboardCategory("Customer Licenses","License Summary")
+	dashboardCategory!.setWidgetTitlebarNameBackColor(bbjapi().makeColor(215,215,215))
+	dashboardCategory!.setWidgetTitlebarDecorationBackColor(bbjapi().makeColor(225,225,225))    
+
+	rem Create the widget
+	widgetName$ = "LicRegSummary"
+	title$ = "License Type Perpetual, Virtual and Annual For " + custName$ 
+	previewText$ = "Click the Close Button (X) on any widget to close the dashboard."
+	previewImage$ = ""
+	chartTitle$ = ""
+	domainTitle$ = ""
+	rangeTitle$ = ""
+	flat = 0
+	legend = 1
+	dashboardWidget! = dashboardCategory!.addStackedBarChartDashboardWidget(widgetName$,title$,previewText$,previewImage$,chartTitle$,domainTitle$,rangeTitle$,flat,orientation,legend)
+	widget! = dashboardWidget!.getWidget()
+            
+        rem Get the background image
+	declare BBXImage xImage!
+	xImage! = BBXImageFactory.createImageFromServerFile(System.getProperty("basis.BBjHome") + "/utils/dashboard/images/chartBG.jpg")
+	xImage!.setOpacity(20)
+	tr! = new Rectangle2D.Double(0, 0, xImage!.getWidth(), xImage!.getHeight())
+	chartTexturePaint! = new TexturePaint(xImage!.getBufferedImage(BufferedImage.TYPE_INT_ARGB), tr!)
+            
+	rem Customize the chart
+	widget!.setDomainLabelAngle(1)
+	widget!.setFontScalingFactor(0.75)
+	rem ' chrtTtl$ = "License Registration Breakdown For " + custName$
+	rem ' widget!.setChartTitle(chrtTtl$)
+
+	widget!.setChartBackground(chartTexturePaint!)
+	rem ' widget!.setPlotPadding(.06)
+	rem ' colors! = ChartWidget.getVectorOfJavaColorsFromHexColorStrings(4, "#f5bcbc", "#861313", .65, .65)
+	rem ' colors!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#169c16", 0.65))
+	rem ' colors!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#1d56c9", 0.65))
+	rem ' widget!.setChartColors(colors!)
+	rem ' widget!.setLegendPosition(ChartWidget.getSideLeft(), ChartWidget.getHAlignRight(), ChartWidget.getVAlignCenter())
+            
+	rem Get the  data
+	count = 0
+	nodata = 0
+	while r!.next()
+		regType$ = r!.getObject(1)
+		bar$ = r!.getObject(2)
+		total$ = r!.getObject(3)
+		total = num(total$)
+		widget!.setDataSetValue(regType$, bar$, total)
+		count = count + 1
+	wend
+	if count = 0 then 
+		widget!.setDataSetValue("Perpetual, Healthy", "Perpetual", 0 )
+	fi
+
+	widgetControl! = new WidgetControl(dashboardWidget!,window!,601,0,300,210,$$)
+	widgetControl!.setMoveParentWindow(1)
+            
+	closeButton! = widgetControl!.getBBjControl(WidgetControl.getDASHBOARD_WIDGET_CLOSE_BUTTON_NAME())
+	closeButton!.setCallback(BBjToolButton.ON_TOOL_BUTTON_PUSH,"Finished")
+
+rem ' licensing widget, perpetual, virutal, annual and other
+
+	rem Create the SQL string
+	group$ = firmID$ + "IO" + custNum$
+	num_to_list$ = "5"
+	masks$ = ""
+	barista_wd$ = ""
+	all_prod_types$ = ""
+	
+	sql$="CALL LICTYPE_CUST_SBR_60 ('"+group$+"', '"+num_to_list$+"', '"+masks$+"', '"+barista_wd$+"', '"+all_prod_types$+"')"
+
+	rem prepare the statement, and execute the query
+	p1! = c!.prepareStatement(sql$)
+	r1! = p1!.executeQuery()
+
+	rem Create the widget
+	widgetName$ = "LicRegSummaryWOther"
+	title$ = "License Type Perpetual, Virtual,Annual and Other For " + custName$ 
+	previewText$ = "Click the Close Button (X) on any widget to close the dashboard."
+	previewImage$ = ""
+	chartTitle$ = ""
+	domainTitle$ = ""
+	rangeTitle$ = ""
+	flat = 0
+	legend = 1
+	dashboardWidget1! = dashboardCategory!.addStackedBarChartDashboardWidget(widgetName$,title$,previewText$,previewImage$,chartTitle$,domainTitle$,rangeTitle$,flat,orientation,legend)
+	widget1! = dashboardWidget1!.getWidget()
+
+        rem Get the background image
+	declare BBXImage xImage1!
+	xImage1! = BBXImageFactory.createImageFromServerFile(System.getProperty("basis.BBjHome") + "/utils/dashboard/images/chartBG.jpg")
+	xImage1!.setOpacity(20)
+	tr1! = new Rectangle2D.Double(0, 0, xImage!.getWidth(), xImage1!.getHeight())
+	chartTexturePaint1! = new TexturePaint(xImage1!.getBufferedImage(BufferedImage.TYPE_INT_ARGB), tr!)
+	widget1!.setChartBackground(chartTexturePaint1!)
+
+	rem Customize the chart
+	widget1!.setDomainLabelAngle(1)
+	widget1!.setFontScalingFactor(0.75)
+	rem ' chrtTtl$ = "License Registration Breakdown For " + custName$
+	rem ' widget1!.setChartTitle(chrtTtl$)
+
+	rem Get the  data
+	count = 0
+	nodata = 0
+	while r1!.next()
+		regType$ = r1!.getObject(1)
+		bar$ = r1!.getObject(2)
+		total$ = r1!.getObject(3)
+		total = num(total$)
+		widget1!.setDataSetValue(regType$, bar$, total)
+		count = count + 1
+	wend
+	if count = 0 then 
+		widget1!.setDataSetValue("Perpetual, Healthy", "Perpetual", 0 )
+	fi
+
+	rem Add to a window
+	widgetControl1! = new WidgetControl(dashboardWidget1!,window!,301,0,300,210,$$)
+	widgetControl1!.setMoveParentWindow(1)
+
+	closeButton1! = widgetControl1!.getBBjControl(WidgetControl.getDASHBOARD_WIDGET_CLOSE_BUTTON_NAME())
+	closeButton1!.setCallback(BBjToolButton.ON_TOOL_BUTTON_PUSH,"Finished")
+
+rem ' license status pie chart - by license
+
+	rem Create the SQL string
+	sql$ = "CALL LICSTATUS_PIE_60('" + firmId$ + "', '" + custNum$ + "', 'license')"
+
+	rem prepare the statement, and execute the query
+	p2! = c!.prepareStatement(sql$)
+	r2! = p2!.executeQuery()
+    
+
+	rem Create the widget
+	widgetName2$ = "LicenseStatusLicense"
+	title$ = "License Status by License Count " + custName$
+	previewText$ = "Click the Close Button (X) on any widget to close the dashboard."
+	previewImage$ = ""
+	chartTitle$ = ""
+	flat = 1 
+	legend = 0
+	numSlices = 5
+	dashboardWidget2! = dashboardCategory!.addPieChartDashboardWidget(widgetName2$,title$,previewText$,previewImage$,chartTitle$,flat,legend,numSlices)
+	widget2! = dashboardWidget2!.getWidget()
+            
+	rem Get the background image for the License Status Pie chart
+	declare BBXImage xImage2!
+	xImage2! = BBXImageFactory.createImageFromServerFile(System.getProperty("basis.BBjHome") + "/utils/dashboard/images/chartBG.jpg")
+	xImage2!.setOpacity(20)
+	tr2! = new Rectangle2D.Double(0, 0, xImage!.getWidth(), xImage2!.getHeight())
+	chartTexturePaint2! = new TexturePaint(xImage2!.getBufferedImage(BufferedImage.TYPE_INT_ARGB), tr!)
+            
+	rem Customize the chart
+	widget2!.setLabelFormat("{0}: {1} ({2})", java.text.NumberFormat.getIntegerInstance(), java.text.NumberFormat.getPercentInstance())
+	widget2!.setChartBackground(chartTexturePaint2!)
+	widget2!.setPlotPadding(.06)
+	rem ' colors2! = ChartWidget.getVectorOfJavaColorsFromHexColorStrings(4, "#f5bcbc", "#861313", .65, .65)
+	rem ' colors2!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#169c16", 0.65))
+	rem ' colors2!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#1d56c9", 0.65))
+	rem ' widget2!.setChartColors(colors!)
+	rem widget2!.setLegendPosition(ChartWidget.getSideLeft(), ChartWidget.getHAlignRight(), ChartWidget.getVAlignCenter())
+        
+	rem Get the  data
+	while r2!.next()
+		status$ = r2!.getObject(1)
+		count$ = r2!.getObject(2)
+		count = num(count$)
+		widget2!.setDataSetValue(status$, count)
+		count = count + 1
+	wend
+	if count = 0 then 
+		widget2!.setDataSetValue("New", 0)
+	fi
+	
+	rem Add to a window
+	widgetControl2! = new WidgetControl(dashboardWidget2!,window!,0,0,300,210,$$)
+	widgetControl2!.setMoveParentWindow(1)
+
+	closeButton2! = widgetControl2!.getBBjControl(WidgetControl.getDASHBOARD_WIDGET_CLOSE_BUTTON_NAME())
+	closeButton2!.setCallback(BBjToolButton.ON_TOOL_BUTTON_PUSH,"Finished")
+
+rem ' license status pie chart - by user
+
+	rem Create the SQL string
+	sql$ = "CALL LICSTATUS_PIE_60('" + firmId$ + "', '" + custNum$ + "', 'user')"
+
+	rem prepare the statement, and execute the query
+	p3! = c!.prepareStatement(sql$)
+	r3! = p3!.executeQuery()
+    
+
+	rem Create the widget
+	widgetName3$ = "LicenseStatusUser"
+	title$ = "License Status by User Count " + custName$
+	previewText$ = "Click the Close Button (X) on any widget to close the dashboard."
+	previewImage$ = ""
+	chartTitle$ = ""
+	flat = 1 
+	legend = 0
+	numSlices = 5
+	dashboardWidget3! = dashboardCategory!.addPieChartDashboardWidget(widgetName3$,title$,previewText$,previewImage$,chartTitle$,flat,legend,numSlices)
+	widget3! = dashboardWidget3!.getWidget()
+            
+	rem Get the background image for the License Status Pie chart
+	declare BBXImage xImage3!
+	xImage3! = BBXImageFactory.createImageFromServerFile(System.getProperty("basis.BBjHome") + "/utils/dashboard/images/chartBG.jpg")
+	xImage3!.setOpacity(20)
+	tr3! = new Rectangle2D.Double(0, 0, xImage!.getWidth(), xImage3!.getHeight())
+	chartTexturePaint3! = new TexturePaint(xImage3!.getBufferedImage(BufferedImage.TYPE_INT_ARGB), tr!)
+            
+	rem Customize the chart
+	widget3!.setLabelFormat("{0}: {1} ({2})", java.text.NumberFormat.getIntegerInstance(), java.text.NumberFormat.getPercentInstance())
+	widget3!.setChartBackground(chartTexturePaint2!)
+	widget3!.setPlotPadding(.06)
+	rem ' colors3! = ChartWidget.getVectorOfJavaColorsFromHexColorStrings(4, "#f5bcbc", "#861313", .65, .65)
+	rem ' colors3!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#169c16", 0.65))
+	rem ' colors3!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#1d56c9", 0.65))
+	rem ' widget3!.setChartColors(colors!)
+	rem widget3!.setLegendPosition(ChartWidget.getSideLeft(), ChartWidget.getHAlignRight(), ChartWidget.getVAlignCenter())
+        
+	rem Get the  data
+	while r3!.next()
+		status$ = r3!.getObject(1)
+		count$ = r3!.getObject(2)
+		count = num(count$)
+		widget3!.setDataSetValue(status$, count)
+		count = count + 1
+	wend
+	if count = 0 then 
+		widget3!.setDataSetValue("New", 0)
+	fi
+	
+	rem Add to a window
+	widgetControl3! = new WidgetControl(dashboardWidget3!,window!,0,211,300,210,$$)
+	widgetControl3!.setMoveParentWindow(1)
+
+	closeButton3! = widgetControl3!.getBBjControl(WidgetControl.getDASHBOARD_WIDGET_CLOSE_BUTTON_NAME())
+	closeButton3!.setCallback(BBjToolButton.ON_TOOL_BUTTON_PUSH,"Finished")
+
+rem ' sales by type (NEW, UPGRADE and SAM)
+
+	rem Create the widget
+	widgetName$ = "CustSalesByYearBySaleType"
+	title$ = "Sales by Year by Sale Type For " + custName$ 
+	previewText$ = "Click the Close Button (X) on any widget to close the dashboard."
+	previewImage$ = ""
+	chartTitle$ = ""
+	domainTitle$ = ""
+	rangeTitle$ = ""
+	flat = 0
+	legend = 1
+	dashboardWidget4! = dashboardCategory!.addStackedBarChartDashboardWidget(widgetName$,title$,previewText$,previewImage$,chartTitle$,domainTitle$,rangeTitle$,flat,orientation,legend)
+	widget4! = dashboardWidget4!.getWidget()
+
+        rem Get the background image
+	declare BBXImage xImage4!
+	xImage4! = BBXImageFactory.createImageFromServerFile(System.getProperty("basis.BBjHome") + "/utils/dashboard/images/chartBG.jpg")
+	xImage4!.setOpacity(20)
+	tr4! = new Rectangle2D.Double(0, 0, xImage!.getWidth(), xImage4!.getHeight())
+	chartTexturePaint4! = new TexturePaint(xImage4!.getBufferedImage(BufferedImage.TYPE_INT_ARGB), tr4!)
+	widget4!.setChartBackground(chartTexturePaint4!)
+
+	rem Customize the chart
+	widget4!.setDomainLabelAngle(1)
+	widget4!.setFontScalingFactor(0.75)
+	widget4!.setChartRangeAxisToCurrency()
+	rem ' chrtTtl$ = "Sales Breakdonw for " + custName$
+	rem ' widget1!.setChartTitle(chrtTtl$)
+
+	rem Get the  data
+	sn_stats02 = unt
+	open(sn_stats02)"sn_stats02.dat"
+	dim sn_stats02$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),YEAR:C(4),NEW_SALES:N(10*=10),UPGRADE_SALES:N(10*=10),SAM_SALES:N(10*=10)"
+	read record(sn_stats02, key = firmID$ + custNum$, dom = *next)sn_stats02$
+	count = 0
+	nodata = 0
+	while 1
+		read record(sn_stats02, dom = *break)sn_stats02$
+		if pos(firmID$ + custNum$ = sn_stats02$) <> 1 then break
+		
+		if sn_stats02.sam_sales > 0 then
+			saleType$ = "SAM"
+			bar$ = sn_stats02.year$
+			total = sn_stats02.SAM_sales
+			widget4!.setDataSetValue(saleType$, bar$, total)
+			count = count + 1
+		fi
+
+		if sn_stats02.upgrade_sales > 0 then
+			saleType$ = "Upgrade"
+			bar$ = sn_stats02.year$
+			total = sn_stats02.upgrade_sales
+			widget4!.setDataSetValue(saleType$, bar$, total)
+			count = count + 1
+		fi
+
+		if sn_stats02.new_sales > 0 then
+			saleType$ = "New"
+			bar$ = sn_stats02.year$
+			total = sn_stats02.new_sales
+			widget4!.setDataSetValue(saleType$, bar$, total)
+			count = count + 1
+		fi
+		
+	wend
+	if count = 0 then 
+		emptyYear$ = date(0:"%Y")
+		widget4!.setDataSetValue("New", emptyYear$, 0 )
+	fi
+
+	rem Add to a window
+	createWidgetStatic!.setVisible(0)
+	widgetControl4! = new WidgetControl(dashboardWidget4!,window!,301,211,300,210,$$)
+	widgetControl4!.setMoveParentWindow(1)
+
+	closeButton4! = widgetControl4!.getBBjControl(WidgetControl.getDASHBOARD_WIDGET_CLOSE_BUTTON_NAME())
+	closeButton4!.setCallback(BBjToolButton.ON_TOOL_BUTTON_PUSH,"Finished")
+
+        process_events
+    
+pgmErr:
+    xresp = msgbox("Error: " + str(err) + " stmt: " + str(tcb(5)) + " " + errmes(-1),0,"debug")
+
+
+Finished:
+	rem Clean up
+	
+	sysgui!.setContext(oldContext)
+	
+	window!.setVisible(0, err=*next)
+	window!.destroy(err=*next)
+	window! = null()
+	
+	r!.close(err=*next)
+	p!.close(err=*next)
+	c!.close(err=*next)
+	p1!.close(err=*next)
+	r1!.close(err=*next)
+	p2!.close(err=*next)
+	r1!.close(err=*next)
+
+
+	close(arm01, err=*next)
+	close(arm02, err=*next)
+	close(arm06, err=*next)
+	close(sn_stats02, err=*next)
+
+	rem ' endtrace
+	
+exit
+
+
+
+
+

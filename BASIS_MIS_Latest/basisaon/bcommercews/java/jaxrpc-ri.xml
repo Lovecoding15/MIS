@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<webServices xmlns="http://java.sun.com/xml/ns/jax-rpc/ri/dd" 
+ version="1.0" targetNamespaceBase="http://www.basis.com/BCommerceWS" 
+ typeNamespaceBase="http://www.basis.com/BCommerceWS/type" urlPatternBase="/BCommerceWS">
+    <endpoint name="BCommerceWS" 
+     displayName="BCommerceWS" 
+     interface="com.basis.BCommerceWSInter" 
+     implementation="com.basis.BCommerceWSImpl"
+     model="/WEB-INF/model.xml.gz"/>     
+    <endpointMapping endpointName="BCommerceWS" urlPattern="/BCommerceWS" />
+</webServices>

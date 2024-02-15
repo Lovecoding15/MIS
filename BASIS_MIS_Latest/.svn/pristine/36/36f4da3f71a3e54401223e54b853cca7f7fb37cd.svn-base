@@ -1,0 +1,220 @@
+begin
+
+rem --- build the sn_stats01 table
+
+seterr err_trap
+
+rem ' run only on Friday
+day$ = date(0:"%Ds")
+if day$ <> "Fri" then run "buildSN_Stats02.src"
+
+rem '  copy the sn_stats.dat to the sn_stats_archive
+
+use java.text.SimpleDateFormat
+use java.util.Date
+use java.util.Locale
+
+declare java.util.Date fileDate!
+declare java.text.SimpleDateFormat format!
+declare BBjString dateString!
+
+sn_stats01% = unt
+open(sn_stats01%)"sn_stats01.dat"
+fileDate! = new java.util.Date(BBjAPI().getFileSystem().getFileInfo(sn_stats01%).getLastModified())
+rem ' format! = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", java.util.Locale.ENGLISH)
+format! = new SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.ENGLISH)
+dateString! = format!.format(fileDate!)
+
+cmd$ = "cp /mnt/data/basisaon/aon/ADATA/sn_stats01.dat /mnt/data/basisaon/aon/ADATA/sn_stats_archive/sn_stats01." + dateString! + ".dat"
+a = scall(cmd$)
+cmd$ = "chmod 444 /mnt/data/basisaon/aon/ADATA/sn_stats_archive/sn_stats01." + dateString! + ".dat"
+a = scall(cmd$)
+close(sn_stats01%)
+
+INITFILE "sn_stats01.dat"
+call "ec_open::SN_STATS01"
+rem ' sn_stats01 = unt
+rem ' open(sn_stats01)"sn_stats01.dat"
+rem ' dim sn_stats01$:"SERIAL_NBR:C(20),FIRM_ID:C(2),CUSTOMER_NBR:C(6),STATUS:C(1),USERS:C(5)"
+
+call "ec_open::SNM01"
+call "ec_open::SMC01"
+call "ec_open::SNT01"
+call "ec_open::SN_LICENSE"
+
+
+rem --- one year ago
+today = jul(0,0,0)
+oneYear = today - 365
+today$ = date(today:"%Y%Mz%Dz")
+oneYear$ = date(oneYear:"%Y%Mz%Dz")
+
+while 1
+	read record(snm01, end = *break)snm01$
+	
+	rem ' only active serial numbers
+	if snm01.active_flag$ <> "Y" then continue
+	
+	rem ' exclude TAOS
+	if snm01.product$ = "TAO" then continue
+	
+	rem ' exclude CLIB, TVS
+	if snm01.serial_nbr$(1,3) = "CLB" then continue
+	if snm01.serial_nbr$(1,3) = "TVS" then continue
+
+	rem ' included serial number prefixes
+	rem ' BBJ BBX BOD DVK EDU OSH PRO
+	
+	dim sn_stats01$:fattr(sn_stats01$)
+	
+	sn_stats01.serial_nbr$ = snm01.serial_nbr$
+	sn_stats01.firm_id$ = snm01.firm_id$
+	sn_stats01.customer_nbr$ = snm01.customer_nbr$
+	
+	sn_stats01.users$ = str(snm01.users)
+	
+	rem --- find the status
+	while 1
+
+		rem --- status values
+		rem --- 1 = new (license orginated in the last year
+		rem --- 2 = upgraded (added users, sam bought back or upgraded in the last year)
+		rem --- 3 = old - on SAM (all of these would be perpetual, annual or virtual because renewing SAM requires a registration)
+		rem --- 4 = old - perpetual no SAM
+		rem --- 5 = old - no perpetual registration 
+		
+		rem --- is it new
+		orig_sale$ = snm01.orig_sale_date$
+		unpdate$ = fnc$(orig_sale$)
+		bornOnDate$ = date(jul(fnyy_year(fnyear_yy21$(num(unpdate$(5,2)))), num(unpdate$(1,2)), num(unpdate$(3,2))):"%Y%Mz%Dz")
+		if bornOnDate$ >= OneYear$ then
+			sn_stats01.status$ = "1"; rem ---new
+			break
+		fi
+		
+		rem --- check for status 2 upgraded - has ADD, UPD or TRD type of sale in the last year
+		read record(snt01, key = snm01.serial_nbr$, dom=*next)snt01$
+		gotone = 0
+		while 1
+			read record(snt01, end=*break)snt01$
+			if snm01.serial_nbr$ <> snt01.serial_nbr$ then break
+			
+			rem ' unpack the trans date
+			trans_date$ = snt01.trans_date$
+			unpdate$ = fnc$(trans_date$)
+			trans_date$ = date(jul(fnyy_year(fnyear_yy21$(num(unpdate$(5,2)))), num(unpdate$(1,2)), num(unpdate$(3,2))):"%Y%Mz%Dz")
+			if oneYear$ > trans_date$ then continue
+			rem ' within one year
+			if pos(snt01.type_of_sale$ = "ADD|UPD|TRD") = 0 then continue
+			rem ' gotone
+			gotone = 1
+			break
+		wend
+		if gotone then 
+			sn_stats01.status$ = "2"; rem ---upgraded
+			break
+		fi
+		
+		rem --- check for on SAM, status 3 old, on SAM
+		if cvs(snm01.contract$,3) <> "" then
+			found = 0
+			read record(smc01, key = snm01.contract$, dom=*next)smc01$; found = 1
+			if found then
+				if today$ <= smc01.expire_on_dt$ and smc01.sam_active$ <> "N" then
+					sn_stats01.status$ = "3"; rem ---old on SAM
+					break
+				fi
+			fi
+		fi
+
+		rem -- not on SAM from here forward
+		
+		rem --- check for perpetual, annual, virtual
+		perpetual = 0; rem ' perpetual includes annual and virtual
+		if snm01.media_type$ = "VIR" then
+			perpetual = 1
+		else
+			read record(sn_license, key = cvs(snm01.serial_nbr$,3), dom=*next)sn_license$
+			dim last_sn_license$:fattr(sn_license$)
+			while 1
+				read record(sn_license, end=*break)sn_license$
+				if cvs(snm01.serial_nbr$,3) <> cvs(sn_license.serial_num$,3) then break
+				last_sn_license$ = sn_license$
+			wend
+			if last_sn_license.perpetual$ = "Y" then
+				perpetual = 1
+			else 
+				if last_sn_license.annual$ = "Y" then
+					perpetual = 1
+				fi
+			fi
+		fi
+		if perpetual then
+			sn_stats01.status$ = "4"; rem ---perpetual, no SAM
+			break
+		fi
+		
+		rem --- at this point the status is 5 --- old, no perpetual registration
+		sn_stats01.status$ = "5"; rem ---old, no SAM, no perpetual registration
+		break
+
+	wend
+	
+	write record(sn_stats01)sn_stats01$
+	count = count + 1
+wend
+
+rem ' send success email
+subj$ = "sn_stats01.dat rebuilt"
+to$ = "kurt.e.williams@comcast.net"
+from$ = "customer-service@basis.cloud"
+cc$ = ""
+bcc$ = ""
+msg$ = "sn_stats01.dat successfully archived and rebuilt, " + str(count) + " records"
+call "sendEmail.src", from$,to$,cc$, bcc$, subj$, msg$, ""
+
+rem ' release
+run "buildSN_Stats02.src"
+
+rem --- user defined functions
+rem ' low level unpacking function, one date component done
+DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+rem ' unpack a date into mmddyy format
+DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+DEF FNYY_YEAR(Q1$)
+LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+RETURN Q
+FNEND
+rem ' --- FNYEAR_YY21$ Convert Numeric Year to 21st Century 2-Char Year"
+DEF FNYEAR_YY21$(Q)=FNYY_YY21$(STR(MOD(Q,100):"00"))
+rem ' --- FNYY21_YY$ Un-Convert 21st Century 2-Char Year to 2-Char Year"
+DEF FNYY21_YY$(Q1$)
+LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+rem ' --- FNYY_YY21$ Convert 2-Char Year to 21st Century 2-Char Year"
+DEF FNYY_YY21$(Q1$)
+LET Q3$=" ABCDE56789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+rem ' the above line changes to the following line for extending the scheme out to 2029
+rem ' note the 2 in Q3$ becomes a C
+rem ' LET Q3$=" ABC3456789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+
+err_trap:
+	rem ' send error email
+	seterr release_pgm
+	subj$ = "sn_stats01.dat rebuild error"
+	to$ = "kurt.e.williams@comcast.net"
+	from$ = "customer-service@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	msg$ = "sn_stats01.dat rebuild Error " +str(err) + " " + errmes(-1) + " in " + str(tcb(5)) + " of " + pgm(-2)
+	call "sendEmail.src", from$,to$,cc$, bcc$, subj$, msg$, ""
+	
+	run "buildSN_Stats02.src"
+	
+release_pgm:
+release
+
+end	

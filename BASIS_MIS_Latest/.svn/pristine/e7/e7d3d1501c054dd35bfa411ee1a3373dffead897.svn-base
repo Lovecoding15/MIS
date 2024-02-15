@@ -1,0 +1,409 @@
+0010 REM "OPR - Invoice entry/generation for Audev LLC"
+0020 REM "Program OPR.4A"
+0070 BEGIN
+0085 SETESC err_rtn
+0090 SETERR err_rtn
+0100 REM " --- Open/Lock Files "
+0105 LET FILES=14
+0110 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0120 LET FILES$[1]="ARE-03",FILES$[2]="ARE-04",FILES$[3]="ARE-07"
+0130 LET FILES$[4]="ARE-13",FILES$[5]="ARE-43",FILES$[6]="SYS-01"
+0140 LET FILES$[7]="ARM-01",FILES$[8]="ARM-02",FILES$[9]="ARM-2A"
+0150 LET FILES$[10]="ARM-10",FILES$[11]="ARS-10",FILES$[12]="IVM-01"
+0160 LET FILES$[13]="TMM-01",FILES$[14]="GLM-01"
+0170 CALL "SYC.DA",1,1,files,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],0,STATUS
+0180 IF STATUS>0 THEN GOTO end_pgm
+0200 ARE03_DEV=CHANNELS[1],ARE04_DEV=CHANNELS[2],ARE07_DEV=CHANNELS[3]
+0210 ARE13_DEV=CHANNELS[4],ARE43_DEV=CHANNELS[5],SYS01_DEV=CHANNELS[6]
+0220 ARM01_DEV=CHANNELS[7],ARM02_DEV=CHANNELS[8],ARM2A_DEV=CHANNELS[9]
+0230 ARM10_DEV=CHANNELS[10],ARS10_DEV=CHANNELS[11],IVM01_DEV=CHANNELS[12]
+0240 TMM01_DEV=CHANNELS[13],GLM01_DEV=CHANNELS[14]
+0300 REM " --- IOLists"
+0310 call "templates.pgm::ARM01"
+0320 call "templates.pgm::ARM02"
+0330 call "templates.pgm::ARM10A"
+0340 call "templates.pgm::ARM10B"
+0350 call "templates.pgm::ARM10E"
+0360 call "templates.pgm::ARM10F"
+0370 call "templates.pgm::ARM10I"
+0380 call "templates.pgm::TMM01"
+0390 call "templates.pgm::ARE03"
+0400 call "templates.pgm::ARE04"
+0410 call "templates.pgm::ARE07"
+0420 call "templates.pgm::ARE13"
+0430 call "templates.pgm::ARE43"
+0440 call "templates.pgm::ARS10N"
+0450 call "templates.pgm::IVS01"
+0460 call "templates.pgm::IVM01"
+0470 call "templates.pgm::ARM2A"
+0480 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$,F6$
+0490 GLM01A: IOLIST Z1$,Z2$
+0495 GLS01A: IOLIST X$,X$,G2$,X$,X$,G5$
+0500 REM " --- Parameters"
+0510 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=par_err)IOL=SYS01T
+0520 LET N0$=F0$(16,2),N2$="AR"
+0530 if n0$<>"04" then goto end_pgm
+0540 FIND (SYS01_DEV,KEY=N0$+"GL00",DOM=par_err)IOL=GLS01A
+0600 REM " --- Init Data"
+0630 tot_amt=0,dms_amt=0,crm_amt=0,oth_amt=0,com1$="",com2$=""
+0640 m0$="######",m1$="#,###,###.00-"
+0650 dms_acct$="4002000000",crm_acct$="4005000000",oth_acct$="4014000000"
+0660 x1=16,x2=39,x3=65
+0800 REM " --- Background"
+0810 CALL "SYC.WC",1,0,80,0,0,6,0
+0820 PRINT 'SB',@(0,3),"      Customer:",@(0,4),"      SharePct:",@(0,5)," Exchange Rate:",
+0830 PRINT @(0,7),"  Total Amount:",@(30,7),"   In $:",@(55,7)," Share $:",
+0840 PRINT @(0,9),"    DMS Amount:",@(30,9),"   In $:",@(55,9)," Share $:",
+0845 PRINT @(0,10),"   DMS Account:"
+0850 PRINT @(0,11),"    CRM Amount:",@(30,11),"   In $:",@(55,11)," Share $:",
+0855 PRINT @(0,12),"   CRM Account:"
+0860 PRINT @(0,13),"  Other Amount:",@(30,13),"   In $:",@(55,13)," Share $:",
+0865 PRINT @(0,14)," Other Account:"
+0880 PRINT @(0,16),"     Comment 1:",@(0,17),"     Comment 2:",
+0890 PRINT 'SF',
+1000 customer: 
+1010 LET v2$=k0$,V0$="M",V1$="KCE^",V3$=M0$,V4$="Customer# <F3>=Lookup",V0=6,V1=x1,V2=3
+1020 gosub input_rtn
+1030 IF V3=4 THEN GOTO end_pgm
+1040 IF V3=3 THEN V$="";CALL "SYC.LC",V$
+1050 IF NUM(V$,ERR=*next)=0 THEN GOTO customer
+1060 LET K0$=V$
+1070 PRINT @(V1,V2),FNF$(K0$,M0$)
+1080 FIND record(ARM01_DEV,KEY=N0$+k0$,DOM=customer)ARM01$
+1090 FIND record(ARM02_DEV,KEY=N0$+k0$+"  ",DOM=customer)ARM02$
+1100 FIND record(ARM2A_DEV,KEY=N0$+k0$,DOM=customer)arm2a$
+1110 if arm2a.exch_rate<=0 then arm2a.exch_rate=1
+1150 if k0$="040001" then dms_acct$="4002100000",crm_acct$="4005100000"
+1190 gosub display_screen
+1200 V0$="N",V1$="C",V2$=STR(arm2a.exch_rate),V3$=M1$,V1=x1,V2=5,V4$="Exchange rate (Amount of other currency equal to $1)"
+1210 gosub input_rtn
+1220 IF V3=4 THEN GOTO customer
+1230 if v<=0 then goto customer
+1240 if v<>arm2a.exch_rate then 
+1250   arm2a.exch_rate=v 
+1260   arm2a$=field(arm2a$)
+1270   write record(ARM2A_DEV)arm2a$
+1280 fi
+1300 gosub display_screen
+2000 tot_amt:
+2010 LET I0=0,V0$="N",V1$="C",V2$=STR(tot_amt),V3$=M1$,V1=x1,V2=7,V4$="Total Amount (before share%)"
+2020 gosub input_rtn
+2025 if v3=4 then goto customer
+2030 tot_amt=v
+2040 gosub display_screen
+2090 if v then goto next_field else goto tot_amt
+2100 dms_amt:
+2110 LET V0$="N",V1$="C",V2$=STR(dms_amt),V3$=M1$,V1=x1,V2=9,V4$="DMS Amount"
+2120 gosub input_rtn
+2125 if v3=4 then goto customer
+2130 dms_amt=v
+2140 gosub display_screen
+2190 goto next_field
+2200 crm_amt:
+2210 LET V0$="N",V1$="C",V2$=STR(crm_amt),V3$=M1$,V1=x1,V2=11,V4$="CRM Amount"
+2220 gosub input_rtn
+2225 if v3=4 then goto customer
+2230 crm_amt=v
+2240 gosub display_screen
+2290 goto next_field
+2300 dms_acct:
+2305 if dms_amt=0 then goto next_field
+2310 LET V0$="M",V1$="C",V2$=dms_acct$,V3$="",V0=10,V1=x1,V2=10,V3$=G5$,V4$="<F3>=GL Account Lookup"
+2320 GOSUB input_rtn
+2330 IF V3=3 THEN CALL "SYC.LG",V$
+2340 IF V$="" THEN GOTO dms_acct
+2350 gosub validate_acct
+2360 if z1$="" then goto dms_acct 
+2370 dms_acct$=v$
+2380 PRINT @(v1,v2),FNF$(v$,G5$)," ",desc$
+2390 goto next_field
+2400 crm_acct:
+2405 if crm_amt=0 then goto next_field
+2410 LET V0$="M",V1$="C",V2$=crm_acct$,V3$="",V0=10,V1=x1,V2=12,V3$=G5$,V4$="<F3>=GL Account Lookup"
+2420 GOSUB input_rtn
+2430 IF V3=3 THEN CALL "SYC.LG",V$
+2440 IF V$="" THEN GOTO crm_acct
+2450 gosub validate_acct
+2460 if z1$="" then goto crm_acct 
+2470 crm_acct$=v$
+2480 PRINT @(v1,v2),FNF$(v$,G5$)," ",desc$
+2490 goto next_field
+2500 oth_acct:
+2505 if oth_amt=0 then goto next_field
+2510 LET V0$="M",V1$="C",V2$=oth_acct$,V0=10,V1=x1,V2=14,V3$=G5$,V4$="<F3>=GL Account Lookup"
+2520 GOSUB input_rtn
+2530 IF V3=3 THEN CALL "SYC.LG",V$
+2540 IF V$="" THEN GOTO oth_acct
+2550 gosub validate_acct
+2560 if z1$="" then goto oth_acct 
+2570 oth_acct$=v$
+2580 PRINT @(v1,v2),FNF$(v$,G5$)," ",desc$
+2590 goto next_field
+2600 com1:
+2610 LET V0$="S",V1$="C",V2$=com1$,V3$="",V0=40,V1=x1,V2=16,V4$="Comment line 1"
+2620 GOSUB input_rtn
+2630 com1$=v$
+2640 PRINT @(v1,v2),com1$
+2690 goto next_field
+2700 com2:
+2710 LET V0$="S",V1$="C",V2$=com2$,V0=40,V1=x1,V2=17,V3$="",V4$="Comment line 2"
+2720 GOSUB input_rtn
+2730 com2$=v$
+2740 PRINT @(v1,v2),com2$
+2790 goto next_field
+3900 Next_Field:
+3905 IF V3=4 THEN GOTO ok
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3950 IF ABS(I0)>1000 THEN GOTO ok
+3960 ON I0 GOTO tot_amt,dms_amt,dms_acct,crm_amt,crm_acct,oth_acct,com1,com2,ok
+4000 OK:
+4010 if tot_amt=0 or dms_amt+crm_amt+oth_amt=0 then goto tot_amt
+4020 if dms_amt and dms_acct$="" or crm_amt and crm_acct$="" or oth_amt and oth_acct$="" then goto tot_amt
+4030 LET V0$="S",V1$="C^",V2$="Y",V3$="",V4$="Is The Above Information Correct (Y/N)?",V0=7,V1=FNV(V4$),V2=22
+4040 GOSUB input_rtn
+4050 if v3=4 then GOTO customer
+4060 ON POS(V$="YN") GOTO ok,begin_order,customer
+5000 display_screen:
+5005 precision 2
+5010 print @(23,3),arm01.cust_name$,@(x1,4),arm2a.share_pct:m1$,@(x1,5),arm2a.exch_rate:m1$,
+5015 pct=arm2a.share_pct/100,xr=arm2a.exch_rate
+5020 dms_tot=dms_amt*pct/xr,crm_tot=crm_amt*pct/xr,oth_amt=tot_amt-dms_amt-crm_amt,oth_tot=oth_amt*pct/xr
+5025 invoice_tot=dms_tot+crm_tot+oth_tot
+5030 print @(x1,7),tot_amt:m1$,@(x2,7),tot_amt/xr:m1$,@(x3,7),invoice_tot:m1$,
+5035 print @(x1,9),dms_amt:m1$,@(x2,9),dms_amt/xr:m1$,@(x3,9),dms_tot:m1$,
+5040 v$=dms_acct$;gosub validate_acct;PRINT @(x1,10),FNF$(dms_acct$,G5$)," ",desc$
+5045 print @(x1,11),crm_amt:m1$,@(x2,11),crm_amt/xr:m1$,@(x3,11),crm_tot:m1$,
+5050 v$=crm_acct$;gosub validate_acct;PRINT @(x1,12),FNF$(crm_acct$,G5$)," ",desc$
+5055 print @(x1,13),oth_amt:m1$,@(x2,13),oth_amt/xr:m1$,@(x3,13),oth_tot:m1$,
+5060 v$=oth_acct$;gosub validate_acct;PRINT @(x1,14),FNF$(oth_acct$,G5$)," ",desc$
+5070 print @(x1,16),com1$,@(x1,17),com2$
+5090 return
+6000 validate_acct:
+6005 z1$="",desc$=""
+6010 FIND (GLM01_DEV,KEY=N0$+V$,DOM=*next)IOL=GLM01A
+6020 if z1$=n0$+v$ then desc$=z2$(1,35)
+6030 return
+7000 input_rtn: REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO input_rtn
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO input_rtn
+8000 REM " --- Functions"
+8070 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF:
+8245 LET Q=1,Q0=0
+8250 WHILE LEN(Q2$(Q))
+8255 IF POS(Q2$(Q,1)="-()") THEN LET Q0=Q0+1 ELSE LET Q2$(Q,1)="X"
+8260 LET Q=Q+1
+8265 WEND
+8270 IF LEN(Q1$)>LEN(Q2$)-Q0 THEN LET Q1$=Q1$(1,LEN(Q2$)-Q0)
+8280 RETURN STR(Q1$:Q2$)
+8290 FNEND
+8400 def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+9000 err_rtn: REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR err_rtn
+9290 GOTO end_pgm
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN
+9800 par_err: REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 end_pgm:
+9910 RUN "SYS.AA"
+9999 END
+10000 BEGIN_ORDER:
+10010 read record (SYS01_DEV,key=n0$+"IV00")ivs01$
+10020 read record (arm10_dev,key=n0$+"E"+"S")arm10e$
+10030 read record (arm10_dev,key=n0$+"I"+arm02.disc_code$)arm10i$
+10040 terms$=arm02.terms_code$
+10050 read record(arm10_dev,key=n0$+"A"+terms$)arm10a$
+10060 precision 6
+10070 read record (arm10_dev,key=n0$+"B"+arm02.tax_code$)arm10b$
+10080 read record (arm10_dev,key=n0$+"F"+arm02.slspsn_code$,err=*next)arm10f$
+10090 precision 2
+10110 gosub get_order_number
+10120 gosub do_order
+10200 msgfile$=stbl("TEMP")+"audevllc"+date(0:"%Y%Mz%Dz")+".txt"
+10210 erase msgfile$,err=*next
+10220 string msgfile$
+10230 txtchan=unt
+10240 open(txtchan)msgfile$
+10250 print(txtchan)n0$," ",k0$," ",order_num$," ",invoice_num$+": "+com1$+": "+com2$
+10260 BEGIN EXCEPT msgfile$
+10270 call "OPR.4B",msgfile$
+10290 goto end_pgm
+10400 get_order_number:
+10420 extract record (ars10_dev,key=n0$+"N",tim=5,err=get_ars10n_locked)ars10n$
+10430 if ars10n.next_inv_nbr>9999999 then let ars10n.next_inv_nbr=1000
+10440 invoice_num$=str(ars10n.next_inv_nbr:"0000000")
+10450 ars10n.next_inv_nbr=ars10n.next_inv_nbr+1
+10460 order_num$ = str(ars10n.nxt_ord_nbr:"0000000")
+10470 ars10n.nxt_ord_nbr = ars10n.nxt_ord_nbr + 1
+10480 ars10n$ = field(ars10n$)
+10490 write record (ars10_dev,key=n0$+"N")ars10n$
+10500 return
+10600 get_ars10n_locked:
+10610 if err=0 then wait 1; retry else goto err_rtn
+12000 do_order:
+12005 taxable=0,tax=0,subtotal=0,total=0
+12010 rem ' ARE03 - order header
+12020 are03.firm_id$ = n0$
+12030 are03.ar_type$ = "  "
+12040 are03.customer_nbr$ = k0$
+12050 are03.order_number$ = order_num$
+12060 are03.sequence_000$ = "000"
+12070 are03.invoice_type$ = "S"
+12080 are03.ord_inv_flag$ = "I"
+12090 are03.backord_flag$ = " "
+12100 are03.invoice_date$ = fndate$(jul(0,0,0))
+12110 are03.ar_ship_date$ = fndate$(jul(0,0,0)+1)
+12120 are03.ar_ship_via$ = fill(10)
+12130 are03.ar_inv_nbr$ = invoice_num$
+12140 are03.ar_po_number$ = com2$
+12150 are03.slspsn_code$ = arm02.slspsn_code$
+12160 are03.terms_code$ = terms$
+12170 are03.rel_to_ship$ = "Y"
+12180 are03.reserved_str_2$=fill(9)
+12190 are03.disc_code$ = arm10i.disc_code$
+12200 are03.dist_code$ = arm02.dist_code$
+12210 are03.ord_prt_flag$ = "N"
+12220 are03.ord_lock$ = "Y"; rem ' lock until all related records are updated
+12230 are03.message_code$ = arm02.message_code$
+12240 are03.territory$ = arm02.territory$
+12250 are03.list_prc_cde$ = "  "
+12260 are03.date_ordered$ = fndate$(jul(0,0,0))
+12270 are03.tax_code$ = arm02.tax_code$
+12280 are03.pricing_code$ = arm02.pricing_code$
+12290 are03.ar_job_nbr$ = fill(10)
+12300 are03.ord_taken_by$ = f0$(4,3)
+12310 are03.cash_sale$ = "N"
+12320 are03.reprint_flag$ = " "
+12330 are03.ord_cred_flg$ = " "
+12340 are03.shipto_nbr$ = fill(6)
+12350 are03.tax_amount = tax
+12360 are03.freight_amt = 0
+12370 are03.discount_amt = 0
+12380 are03.comm_percent = 0
+12390 are03.taxable_amt = taxable
+12400 are03.comm_amt = 0
+12410 are03.total_sales = invoice_tot
+12420 are03.total_cost = 0
+12430 are03_key$ = are03.firm_id$+are03.ar_type$+are03.customer_nbr$+are03.order_number$+are03.sequence_000$
+12440 are03$ = field(are03$)
+12450 write record (are03_dev,key=are03_key$)are03$
+12460 rem ' ARE04 - pick ticket
+12470 are04.firm_id$ = are03.firm_id$
+12480 are04.ord_inv_flag$ = are03.ord_inv_flag$
+12490 are04.ar_type$ = are03.ar_type$
+12500 are04.customer_nbr$ = are03.customer_nbr$
+12510 are04.order_number$ = are03.order_number$
+12520 are04_key$ = are04.firm_id$+are04.ord_inv_flag$+are04.ar_type$+are04.customer_nbr$+are04.order_number$
+12530 are04$ = field(are04$)
+12540 write record (are04_dev,key=are04_key$)are04$
+12550 rem ' ARE43 = open orders
+12560 are43.firm_id$ = are03.firm_id$
+12570 are43.ar_type$ = are03.ar_type$
+12580 are43.customer_nbr$ = are03.customer_nbr$
+12590 are43.order_number$ = are03.order_number$
+12600 are43_key$ = are43.firm_id$+are43.ar_type$+are43.order_number$+are43.customer_nbr$
+12610 are43$ = field(are43$)
+12620 write record (are43_dev,key=are43_key$)are43$
+12640 line$="",line_num=0,a$="\"
+12650 if cvs(com1$,3)<>"" then line$=line$+"M0"+$0a$+" "+$0a$+cvs(com1$,3)+a$
+12660 if cvs(com2$,3)<>"" then line$=line$+"M0"+$0a$+" "+$0a$+cvs(com2$,3)+a$
+12665 line$=line$+"M0"+$0a$+" "+$0a$+" "+a$
+12670 if dms_tot then line$=line$+"2"+str(dms_tot)+$0a$+dms_acct$+$0a$+"CarIT DMS License Fees"+a$
+12680 if crm_tot then line$=line$+"2"+str(crm_tot)+$0a$+crm_acct$+$0a$+"CarIT CRM License Fees"+a$
+12690 if oth_tot then line$=line$+"2"+str(oth_tot)+$0a$+oth_acct$+$0a$+"Other Applications"+a$
+12700 while 1
+12710 p=pos(a$=line$); if p=0 then break
+12715 temp$=line$(1,p-1),line$=line$(p+1)
+12720 line_cd$=temp$(1,1),temp$=temp$(2),price=0,acct$="",memo$=""
+12725 p=pos($0a$=temp$);if p then price=num(temp$(1,p-1),err=*next),temp$=temp$(p+1)
+12730 p=pos($0a$=temp$);if p then acct$=temp$(1,p-1),memo$=temp$(p+1)
+12740 subtotal=subtotal+price,line_num=line_num+5
+12750 rem ' ARE13 - Order Line Detail
+12760 are13.firm_id$ = are03.firm_id$
+12770 are13.ar_type$ = are03.ar_type$
+12780 are13.customer_nbr$ = are03.customer_nbr$
+12790 are13.order_number$ = are03.order_number$
+12800 are13.line_number$ = str(line_num:"000")
+12810 are13.line_code$ = line_cd$
+12820 are13.man_price$ = "N"
+12830 are13.product_type$ = "   "
+12840 are13.pull_assmble$ = "P"
+12850 are13.warehouse_id$ = ivs01.warehouse_id$
+12860 are13.item_number$ = fill(20)
+12870 are13.order_memo$ = memo$
+12880 are13.est_shp_date$ = fndate$(jul(0,0,0)+1)
+12890 are13.commit_flag$ = "Y"
+12900 are13.pick_flag$ = " "
+12905 are13.gl_acct$ = acct$
+12910 are13.reserved_str_2$=fill(19)
+12920 are13.unit_cost = 0
+12930 are13.unit_price = 0
+12940 are13.qty_ordered = 0
+12950 are13.qty_backord = 0
+12960 are13.qty_shipped = 0
+12970 are13.std_list_prc = 0
+12980 are13.ext_price = price
+12990 if arm10e.taxable_flag$="Y" then are13.taxable_amt = are13.ext_price else are13.taxable_amt = 0
+13000 are13.disc_percent = 0
+13010 are13.comm_percent = 0
+13020 are13.comm_amt = 0
+13030 are13.spl_comm_pct = 0
+13040 are13.disc_cust = 0
+13050 are13_key$ = are13.firm_id$+are13.ar_type$+are13.customer_nbr$+are13.order_number$+are13.line_number$
+13060 are13$ = field(are13$)
+13070 write record (are13_dev,key=are13_key$)are13$
+13080 rem ' ARE07 = open order lines (items)
+13090 are07.firm_id$ = are13.firm_id$
+13100 are07.warehouse_id$ = are13.warehouse_id$
+13110 are07.item_number$ = are13.item_number$
+13120 are07.ar_type$ = are13.ar_type$
+13130 are07.order_number$ = are13.order_number$
+13140 are07.line_number$ = are13.line_number$
+13150 are07.customer_nbr$ = are13.customer_nbr$
+13160 are07_key$ = are07.firm_id$+are07.warehouse_id$+are07.item_number$+are07.ar_type$+are07.order_number$+are07.line_number$+are07.customer_nbr$
+13170 are07$ = field(are07$)
+13180 write record (are07_dev,key=are07_key$)are07$
+13200 wend
+13580 taxable = subtotal
+13585 precision 6
+13590 tax=taxable*arm10b.tax_rate/100
+13595 precision 2
+13600 total = subtotal + tax
+13610 are03.tax_amount = tax
+13620 are03.taxable_amt = taxable
+13630 are03.total_sales = total
+13640 are03.ord_lock$ = "N"; rem ' unlock the order header
+13650 are03$ = field(are03$)
+13660 write record (are03_dev,key=are03_key$)are03$
+13670 return

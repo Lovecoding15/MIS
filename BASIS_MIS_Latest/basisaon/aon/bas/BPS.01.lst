@@ -1,0 +1,68 @@
+0010 REM "Determine current printer - allow printer reselection if PF or
+0015 REM "PX or printer/font option isn't valid
+0020 REM "Program BPS.01"
+0030 REM "FONT: font desired (1-standard, 3-compressed)
+0035 REM "      font=0-just call printer select and return null in prtr$
+0040 REM "PRTR$: selected printer and font - returned
+0050 REM "STATUS: status code - returned (0-OK ,1 error)
+0060 REM "Called by programs that must be printed compressed or must be
+0065 REM "printed standard -SYC.GA then called with override printer/font
+0080 SETERR 9000
+0085 SETESC 9000
+0090 ENTER FONT,PRTR$,STATUS
+0100 REM " --- Open files"
+0105 LET FILES=2
+0110 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 LET FILES$[1]="SYS-01",FILES$[2]="SYM-17"
+0160 CALL "SYC.DA",1,1,2,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0170 IF STATUS>0 THEN GOTO 9900
+0180 LET SYS01_DEV=CHANNELS[1],SYM17_DEV=CHANNELS[2]
+0200 REM " --- IOLIST's"
+0260 SYS01T: IOLIST X$,F0$,F1$,F2$,F3$,F4$,F5$
+0270 SYM17A: IOLIST C0$,C1$,C2$,C3$
+0400 LET PRTR$=""; IF FONT=0 THEN GOSUB 1000; GOTO 9900
+0420 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0440 FX=pos(F0$(13,2)="PFPX",2);if FX THEN GOSUB 1000
+0450 LET PRTR$=F0$(13,2); IF FX THEN GOTO 9900
+0460 LET PRTR$=PRTR$(1,2)+STR(FONT)
+0500 FIND (SYM17_DEV,KEY=PRTR$,DOM=550)IOL=SYM17A
+0510 GOTO 9900
+0550 REM "Printer option not found 
+0555 REM "not all printers have font option 3 as compressed- try 2
+0560 IF FONT=3 THEN LET FONT=2; GOTO 0460
+0570 IF FONT=2 THEN GOSUB 1000
+0575 REM "Ignore font=1 and no record found - default is standard print
+0600 GOTO 9900
+1000 REM " --- Printer select
+1010 DIM OPTION$[2]
+1030 CALL "SYC.QP",STAT,OPTION$[ALL]
+1050 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+1060 PRINT 'SB',@(74,1),FILL(4),@(74,1),F0$(13,2)
+1070 IF FX=0 THEN PRINT @(76,1),"-",F0$(25,1),
+1080 PRINT 'SF',
+1090 RETURN
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN
+9800 REM " --- Return error"
+9810 LET STATUS=1
+9900 REM " --- Return to calling program"
+9910 FOR X=1 TO FILES
+9920 CLOSE (CHANNELS[X],ERR=9921)
+9930 NEXT X
+9950 EXIT
+9999 END

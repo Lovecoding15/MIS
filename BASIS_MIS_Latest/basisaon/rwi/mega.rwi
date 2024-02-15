@@ -1,0 +1,188 @@
+// <mega.rwi>
+
+sdate$=date(0:"0101%Y");
+edate$=date(0:"%Mz%Dz%Y");
+datesin:
+prompt for/row=5/nobox/nodrop/prompt="Starting date for report: "/len=8 sdate$;
+prompt for/row=7/nobox/nodrop/prompt="  Ending date for report: "/len=8 edate$;
+call/nowindow "(BBX)aondate.bbx",edate$,enddate$,"P";
+call/nowindow "(BBX)aondate.bbx",sdate$,startdate$,"P";
+call/nowindow "(BBX)aondate.bbx",enddate$,disp_edate$,"U";
+call/nowindow "(BBX)aondate.bbx",startdate$,disp_sdate$,"U";
+
+choose/yesno/row=15/prompt="Dates Correct? "
+/drop /default=yes
+datesok;
+
+if datesok=0 then goto datesin;
+
+t=num(disp_edate$(7,4))+1;
+td$="01/01/"+str(t:"0000");
+call/nowindow "(BBX)aondate.bbx",td$,totdate$,"P";
+
+create temporary table megatable
+	ym char(2)
+	ugroup char(1)
+	type char(3)
+	lic num(5)
+	users num(5)
+	bucks num(10)
+	index (ym,ugroup,type) ;
+
+gosub pick_output_dev;
+
+pause/message "Compiling report . . .";
+
+firm$="01";
+
+for each snm01 
+where pos(snm01.license_type="STDSQLRTMROO",3)
+and snm01.active_flag="Y" 
+and users>0
+and snm01.product<>"VPC"
+and firm_id=firm$
+{
+utot=0;
+for each snt01 of snm01
+	{
+	if snt01.firm_id<>firm$ then continue;
+	if snt01.users<0 then continue;
+	if snt01.ext_price<0 then continue;
+	if snt01.action="D" then continue;
+	if pos(snt01.type_of_sale="NEWADDUG4UG3UPD,3")=0 then continue;
+	if snt01.trans_date<=enddate$ then utot=utot+snt01.users;
+	if snt01.trans_date between startdate$ and enddate$ 
+		{
+		if snt01.type_of_sale="UPD" and ext_price=0 then continue;
+		// probably should be UNC
+/*
+kx$=snt01.firm_id+"  "+customer_nbr+ar_inv_nbr+"000";
+find/noerror art03 using kx$;
+//find/noerror/index=indx2 art03 using kx$;
+if available(art03)=0 then 
+{
+display/notitle "**" snt01.serial_nbr kx$;
+continue;
+}
+*/
+		init megatable;
+		megatable.ym=trans_date(1,2);
+		t$=snt01.type_of_sale;
+		if pos(t$="UG3UG4") then t$="UPG";
+		megatable.type=t$;
+		usr=snt01.users;
+		if pos(t$="UPDUPG") then usr=utot;
+		if usr>snm01.users then usr=snm01.users;
+		u=1;
+		if usr>4 then u=2;
+		if usr>10 then u=3;
+		if usr>25 then u=4;
+		if usr>50 then u=5;
+		if usr>99 then u=6;
+		megatable.ugroup=str(u);
+		gosub megaupdate;
+/*
+avg=0;if usr then avg=snt01.ext_price/usr;
+if t$="NEW" and u>4 then display/notitle snt01.serial_nbr snm01.users usr/len=5 snt01.users ext_price avg;
+*/
+		megatable.ym=totdate$(1,2);
+
+		gosub megaupdate;
+		//pause/message "Checking "+snm01.serial_nbr;
+		}
+	}
+}
+
+month$="JanFebMarAprMayJunJulAugSepOctNovDec";
+h1$="Sales by Type with Average Price per User for "+disp_sdate$+" - "+disp_edate$;
+h2$="             NEW SALES         UPDATES           UPGRADES         ADD USERS";
+h3$="Users     #Lic  AvgPrice    #Lic  AvgPrice    #Lic  AvgPrice    #Lic  AvgPrice";
+m8$="#######0";
+m10$="###,###.00";
+holdd$="";
+init ln$[6];
+z$=str(0:m8$)+str(0:m10$);
+z$=z$+z$;
+z$=z$+z$;
+mcount=7;
+pg=1;
+for each megatable
+{
+d$=megatable.ym+chr(33);
+call/nowindow "(BBX)aondate.bbx",d$,dt$,"U";
+m=num(dt$(1,2));d$=month$(3*m-2,3)+" "+dt$(7);
+if holdd$="" then holdd$=d$;
+if holdd$<>d$ then gosub display_month; 
+avg=0;
+if megatable.users then avg=megatable.bucks/megatable.users; 
+x$=str(megatable.lic:m8$)+str(avg:m10$);
+if megatable.type="NEW" then p=1;
+if megatable.type="UPD" then p=19;
+if megatable.type="UPG" then p=37;
+if megatable.type="ADD" then p=55;
+ln=num(megatable.ugroup);
+if ln$[ln]="" then ln$[ln]=z$;
+ln$[ln](p,18)=x$;
+}
+holdd$="Total   ";
+gosub display_month;
+
+subroutine megaupdate
+{
+megatable.lic=1;
+megatable.users=usr;
+megatable.bucks=snt01.ext_price;
+find/noerror megatable;
+if available(megatable) then
+	{
+	megatable.lic=megatable.lic+1;
+	megatable.users=megatable.users+usr;
+	megatable.bucks=megatable.bucks+snt01.ext_price;
+	}
+insert/update megatable;
+}
+
+subroutine display_month
+{
+mcount=mcount+1;
+if mcount>7 then
+	{ if pg>1 then display/newpage;
+	display h1$+" Page "+str(pg);
+	display/skip h2$;display/skip/after h3$;
+	mcount=1;pg=pg+1;}
+display/notitle holdd$;
+ln=1;
+repeat/until ln>6
+	{ 
+	if ln=1 then u$="  1-4";
+	if ln=2 then u$=" 5-10";
+	if ln=3 then u$="11-25";
+	if ln=4 then u$="26-50";
+	if ln=5 then u$="51-99";
+	if ln=6 then u$="100 +";
+	display/notitle u$+" "+ln$[ln];
+	ln$[ln]=z$;
+	ln=ln+1;
+	}
+display $$;
+holdd$=d$;
+}
+
+subroutine pick_output_dev
+{
+style=1;
+terminal_device$=term();
+device_name$=terminal_device$;
+
+gosub select_device;
+if device_type$="F" then dev$="FILE";
+if device_type$="P" then dev$="PRINTER "+device_name$;
+if device_type$="T" then dev$="VIDEO";
+if style=2 then set display/compress device_name$;
+	else set display device_name$;
+display/form="MAS_HEAD" screen_desc="Mega Report" printer=dev$ firm_name="";
+}
+
+#include (LIBRARY)syseldev.h
+
+//

@@ -1,0 +1,372 @@
+REM /**
+REM  * blmBlockPerpetExpireWarning.src
+REM  * @author kurtwilliams
+REM  *
+REM  */
+
+begin
+
+rem ' run by scheduled task shorly after midnight
+
+call "ec_open::SNM01"
+call "ec_open::ARM01"
+call "ec_open::ARM02"
+call "ec_open::ARM10F"
+call "ec_open::TMM05"
+call "ec_open::TMM03"
+call "ec_open::logextract"
+call "ec_open::SNMEL"
+call "ec_open::SNMEU"
+call "ec_open::SN_LICENSE"
+
+sqlChan = sqlunt
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+today = jul(0,0,0)
+beginDate$ = date(today - 14:"%Y%Mz%Dz") + "000000"
+sql$ = "SELECT DISTINCT t1.serial_nbr, t2.serial_nbr as serial_nbr_block FROM SN_LIC_REG_ERR t1 "
+sql$ = sql$ + "LEFT OUTER JOIN SNM01_BLS t2 on t1.serial_nbr = t2.serial_nbr "
+sql$ = sql$ + "where t1.prob_msg like '%previously registered%' and t1.reg_time >= '" + beginDate$ +"'"
+sqlprep(sqlChan)sql$
+sqlexec(sqlchan)
+dim inrec$:sqltmpl(sqlchan)
+
+countrisk = 0, countremoved = 0, risk$ = "", removed$ = ""
+while 1
+    rem ' breaking on this sqlfetch means no BLM blocks found
+    inrec$ = sqlfetch(sqlChan,end=*break)
+    
+    rem ' when was the last successful registration with the BLM
+    sqlChan1 = sqlunt
+    sqlopen(sqlChan1,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+    sql1$ = "SELECT SERIAL_NUM, convert(DATE, SQL_CHAR) as theDate, TIME, PROD_TYPE, PROD_REV, HOSTID, AUTHNUM, EXPIRE, "
+    sql1$ = sql1$ + "LIC_PROPERTY1, LIC_PROPERTY2, FIRM_ID, CUSTOMER_NBR, PERPETUAL, NOTICE, ANNUAL ,NOTICEA, OPEN_STRING, "
+    sql1$ = sql1$ + "USERS, LIC_COUNT, USERS2, OPEN_NUM "
+    sql1$ = sql1$ + "FROM SN_LICENSE where serial_num = '"
+    sql1$ = sql1$ + cvs(inrec.serial_nbr$,3) + "' and len(trim(hostid)) != 16 order by date desc, time desc"
+    sqlprep(sqlChan1)sql1$
+    sqlexec(sqlchan1)
+    dim licenseRec$:sqltmpl(sqlchan1)
+    licenseRec$ = sqlfetch(sqlChan1,end=*break)
+    sqlClose(sqlChan1)
+    
+    expire$ = licenseRec.expire$
+    expireDisplay$ = ""
+
+    gosub convertExpire
+    if expireJul < today then continue
+    daysToExpire = expireJul - today
+        
+    rem ' print licenseRec.serial_num$, " ", licenseRec.theDate$, " ", expire$
+
+    readSerialNbr$ = cvs(inrec.serial_nbr$,3) + fill(20," ")
+    readSerialNbr$ = readSerialNbr$(1,20)
+    read record(snm01, key = readSerialNbr$)snm01$
+    read record(arm01, key = snm01.firm_id$ + snm01.customer_nbr$)arm01$
+    read record(arm02, key = snm01.firm_id$ + snm01.customer_nbr$ + "  ")arm02$
+    read record(arm10F, key = snm01.firm_id$ + "F" + arm02.slspsn_code$)arm10F$
+    
+    if snm01.active_flag$ = "N" then continue
+    
+    block$ = cvs(inrec.serial_nbr_block$,3)
+    if block$ = "" then
+        countremoved = countremoved + 1
+        removed$ = removed$ + str(countremoved:"#0") + ". " + cvs(inrec.serial_nbr$,3) + " " + snm01.firm_id$ + snm01.customer_nbr$
+        removed$ = removed$ +  " " + cvs(arm01.cust_name$,3) + " " + cvs(arm10f.slspsn_name$,3) + $0A$
+    else
+        countrisk = countrisk + 1
+        risk$ = risk$ + str(countrisk:"#0") + ". " + cvs(inrec.serial_nbr$,3)  + " " + snm01.firm_id$ + snm01.customer_nbr$ 
+        risk$ = risk$ + ", last successful BLM reg: " + licenseRec.theDate$ + ", " + " BLM expires: " + expire$ + ", days to expire: " + str(daysToExpire) 
+        risk$ = risk$  +  ", " + cvs(arm01.cust_name$,3) + ", " + cvs(arm10f.slspsn_name$,3) + $0A$ + $0A$
+    
+        if daysToExpire = 7 or daysToExpire = 1 then 
+            gosub sendAnEmail
+        fi
+    fi
+wend
+
+msg$ = "Previously Registered with BLS Hostid, BLM Blocked and attempting to register" + $0A$ + $0A$
+msg$ = msg$ + "At Risk Serial Numbers " + $0A$
+msg$ = msg$ + "  -most recent registrtion was a BLS license " +$0A$
+msg$ = msg$ + "  -BLM block is set " + $0A$
+msg$ = msg$ + "  -attempted to register a BLM license and was blocked within the last 14 days " + $0A$ +$0A$
+msg$ = msg$ + risk$ + $0A$
+rem ' msg$ = msg$ + "Had Errors - BLM Block has been removed" + $0A$
+rem ' msg$ = msg$ + removed$ + $0A$ + $0A$
+
+subject$ = "Previously Registered with BLS Hostid, BLM is Blocked and attempting to register " + date(0:"%Y-%Mz-%Dz")
+
+from$ = "customer-service@basis.cloud"
+rem ' live
+to$ = "sales@basis.cloud, support@basis.cloud, customer-service@basis.cloud, eu.sales@basis.cloud, eu.support@basis.cloud"
+cc$ = "misdev@basis.cloud"
+bcc$ = ""
+
+rem ' test'
+rem ' to$ = "kw5121151@gmail.com"
+rem ' cc$ = ""
+bcc$ = ""
+
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msg$, ""
+
+rem ' clean up sql channels
+sqlclose(sqlunt, err=*next)
+
+stop
+
+convertExpire:
+    expireJul = 0 
+
+    rem ' convert expire to a usable format'
+    if cvs(licenseRec.expire$,3) <> "" then
+        expire$ = cvs(licenseRec.expire$,3)
+        wrkExpire$ = expire$
+        if len(wrkExpire$)> 11 or len(wrkExpire$) < 10 then return
+
+        p0 = pos("-" = wrkExpire$)
+        if p0 = 0 then return
+        theDay$ = wrkExpire$(1, p0 - 1), wrkExpire$ = wrkExpire$(p0 + 1)
+        converted = 0
+        theDay = num(theDay$, err = *next); converted = 1
+        if !converted then return
+        
+        p0 = pos("-" = wrkExpire$)
+        if p0 = 0 return
+        theMonth$ = wrkExpire$(1, p0 - 1), wrkExpire$ = wrkExpire$(p0 + 1)
+        if len(theMonth$) <> 3 then return
+        months$ = "janfebmaraprmayjunjulaugsepoctnovdec"
+        p0 = pos(theMonth$ = months$)
+        if p0 = 0 then return
+        theMonth = int(p0/3) + 1 
+       
+        rem ' year'
+        if len(wrkExpire$) <> 4 then return
+        converted = 0
+        theYear = num(wrkExpire$, err = *next); converted = 1
+        if !converted then return
+        
+        expireJul = jul(theYear, theMonth, theDay) 
+        expire$ = date(expireJul:"%Y-%Mz-%Dz")
+        if licenseRec.firm_id$ = "01" then
+            expireDisplay$ = expire$(6,2) + "/" + expire$(9,2) + "/" + expire$(1,4)
+        else
+            expireDisplay$ = expire$(9,2) + "." + expire$(6,2) + "." + expire$(1,4)
+        fi
+
+return
+
+sendAnEmail:
+
+    hostname$ = ""
+    
+    gosub lookup_enduser_data
+    gosub lookup_email_addresses
+    
+    rem ' un-rem for test'
+    rem ' print "from: ",from$
+    rem ' print "to: ",to$
+    rem ' print "cc: ",cc$
+    rem ' print "bcc: ",bcc$
+   
+    gosub parse_email
+    
+    rem ' un-rem for test'
+    rem ' from$ = "customer-service@basis.cloud"
+    rem ' to$ = "kw5121151@gmail.com"
+    rem ' cc$ = "jaya@basis.cloud"
+    rem ' bcc$ = ""
+    
+    bcc$ = "kw5121151@gmail.com"
+
+    subject$ = cvs(snm01.serial_nbr$,3) + " is attempting to register a BLM HostId, BLM block is in place"
+    
+    call "sendEmailHtml.src", from$, to$, cc$, bcc$, subject$, emailText$, ""
+    
+return
+
+lookup_email_addresses:
+
+    ap_contact$ = ""
+    sam_contact$ = ""
+    main_contact$ = ""
+    perpet_contact$ = ""
+    backup_address$ = stbl("+SALES")+", mscully@basis.cloud"
+    cc$ = ""
+    bcc$ = ""
+    recipient$ = ""
+
+    key$ = snm01.firm_id$ + snm01.customer_nbr$
+    
+    rem ' find the main contact
+    read(tmm05, key = key$, dom=*next)
+    while 1
+        readrecord(tmm05, end =*break)tmm05$
+        if pos(key$ = tmm05$) <> 1 then break
+        main_contact$ = cvs(tmm05.email$,3)
+        break
+    wend
+
+    rem ' lookup addresses in the TMM Contact table
+    read(tmm03, key = key$,dom = *next)
+    while 1
+        read record(tmm03, end = *break)tmm03$
+        if pos(key$ = tmm03$) <> 1 then break
+        if tmm03.sam_contact$ = "Y" then sam_contact$ = cvs(tmm03.e_mail$,3)
+        if tmm03.primary_contact$ = "Y" and cvs(main_contact$,3) = "" then main_contact$ = cvs(tmm03.e_mail$,3)
+        if tmm03.ap_contact$ = "Y" then ap_contact$ = cvs(tmm03.e_mail$,3)
+        if tmm03.perpet_notice$ = "Y" then 
+            if perpet_contact$ = "" then 
+                perpet_contact$ = cvs(tmm03.e_mail$,3)
+            else
+                perpet_contact$ = perpet_contact$ + "," + cvs(tmm03.e_mail$,3)
+            fi
+        fi
+    wend
+
+    rem ' lookup up email address, and most recent hostname from the log extract table
+    date$="00000000"
+
+    read(logextract, key = cvs(snm01.serial_nbr$(1,12),3), dom = *next)
+    while 1
+        readrecord(logextract, end =*break)logextract$
+        if pos(logextract.serialnum$=snm01.serial_nbr$) = 0 then break
+        if date$<logextract.date$ and cvs(logextract.email$,3) <> "" then
+            date$=logextract.date$
+            em$=cvs(logextract.email$,3)
+            if em$ <> "" and pos("@"=em$) then recipient$ = em$ 
+        fi
+        if cvs(logextract.hostname$,3) <> "" then
+            hostname$ = cvs(logextract.hostname$,3)
+        fi
+    wend
+    
+    if date$ <> "00000000" and recipient$ <> "" then
+        jul_dt = jul(num(date$(1,4)), num(date$(5,2)), num(date$(7,2)))
+        today = jul(0, 0, 0)
+        rem 'if last reg. email is older than 2 years (730 days ago), don't use it
+        if today - jul_dt > 730 then recipient$=""
+    fi
+    
+    rem ' set the from email address
+    from$="customer-service@basis.cloud"
+    
+    rem ' set the to email address
+    rem ' convert any ; to ,
+    addr$ = main_contact$ + "," + sam_contact$ + "," + recipient$ + ","
+    if enduseremail$ <> "" then addr$ = addr$ + enduseremail$ + ","
+    if perpet_contact$ <> "" then addr$ = addr$ + perpet_contact$ + ","
+    while 1
+        p = pos(";" = addr$)
+        if p = 0 then break
+        addr$(p,1) = ","
+    wend
+    addr$=cvs(addr$,43)
+    
+    rem ' clean up the to email address
+    eaddr$=""
+    while 1
+        p = pos("," = addr$)
+        if p=0 then break
+        if p > 1 then t1$ = cvs(addr$(1,p - 1), 3) else t1$ = ""
+        addr$ = addr$(p + 1)
+        if pos(t1$ = addr$) = 0 and pos("@" = t1$) then eaddr$ =eaddr$ + "," + t1$
+    wend
+    l=len(eaddr$)
+    rem ' trim a trailing comma
+    if l and eaddr$(l,1)="," then eaddr$(l,1)=" "
+    rem ' trim a leading comma
+    if l and eaddr$(1,1)="," then eaddr$(1,1)=" "
+    eaddr$ = cvs(eaddr$, 3)
+    
+    if eaddr$="" then eaddr$ = backup_address$
+    to$ = eaddr$
+    
+    rem ' set the cc address
+    if snm01.firm_id$ = "01" then 
+        if cvs(arm10f.e_mail$,3) = "" then 
+            cc$ = "sales@basis.cloud, support@basis.cloud"
+        else
+            cc$ = cvs(arm10f.e_mail$,3) + ", " + "support@basis.cloud"
+        fi
+    fi
+    
+    if snm01.firm_id$ = "02" then
+        cc$="eu.sales@basis.cloud, support@basis.cloud"
+    fi
+    
+return
+
+lookup_enduser_data:
+    rem ' get end user name if present
+    endusername$="", enduseremail$=""
+    read record(snmel, key = snm01.serial_nbr$, dom=done_enduser)snmel$
+    read record(snmeu, key = snmel.end_user_nbr$, dom=done_enduser)snmeu$
+    endusername$=cvs(snmeu.company_name$,3)
+    enduseremail$=cvs(snmeu.email_address$,3)
+    done_enduser:
+return
+
+parse_email:
+
+emailText = unt
+if snm01.firm_id$ = "01" then
+    open(emailText)"blmBlockPerpetExpireWarningBAS-Email.txt"
+else
+    open(emailText)"blmBlockPerpetExpireWarningBSE-Email.txt"
+fi
+
+sz=0
+emailText$ = ""
+f$=fin(emailText),sz=dec(f$(1,4))
+if sz then readrecord(emailText,siz=sz)emailText$
+close(emailText,err=*next)
+
+p0 = pos("<%SN%>" = emailText$)
+emailText$ = emailText$(1,p0-1) + cvs(snm01.serial_nbr$,3) + emailText$(p0+6)
+
+p0 = pos("<%SN1%>" = emailText$)
+insertText$ = cvs(snm01.serial_nbr$,3)
+if cvs(hostname$,3) <> "" then insertText$ = insertText$ + ", Hostname " + cvs(hostname$,3) + ","  
+emailText$ = emailText$(1,p0-1) + insertText$ + emailText$(p0+7)
+
+p0 = pos("<%BLMHostID%>" = emailText$)
+emailText$ = emailText$(1,p0-1) + cvs(licenseRec.hostid$,3) + emailText$(p0+13)
+
+p0 = pos("<%expireDate%>" = emailText$)
+emailText$ = emailText$(1,p0-1) + expireDisplay$ + emailText$(p0+14)
+
+p0 = pos("<%urgency%>" = emailText$)
+if daysToExpire <= 2 then 
+    emailText$ = emailText$(1,p0-1) + "immediately" + emailText$(p0+11)
+else
+    emailText$ = emailText$(1,p0-1) + "soon" + emailText$(p0+11)
+fi
+
+rem ' find the bls hostid'
+thiskey$ = snm01.serial_nbr$(1,12)
+read record(sn_license, key = thisKey$, dom=*next)sn_license$
+dim sn_license01$:fattr(sn_license$)
+sn_license01.serial_num$ = thiskey$
+sn_license01.hostid$ = "Not Found"
+while 1
+    read record(sn_license, end=*break)sn_license$
+    if thisKey$ <> sn_license.serial_num$ then break
+    sn_license01$ = sn_license$
+wend
+blsHostid$ = sn_license01.hostid$
+
+p0 = pos("<%BLSHostId%>" = emailText$)
+emailText$ = emailText$(1,p0-1) + cvs(blsHostid$,3) + emailText$(p0+13)
+
+if cvs(endusername$,3) <> "" then
+    p0 = pos("<%endusername%>"=emailText$)
+    emailText$ = emailText$(1,p0-1) + "<p>This serial number is associated with " + endusername$ + ".</p>" + emailText$(p0+15)
+else
+    p0 = pos("<%endusername%>"=emailText$)
+    emailText$ = emailText$(1,p0-1) + emailText$(p0+15)
+fi
+
+return
+ 
+
+end
+

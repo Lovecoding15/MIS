@@ -1,0 +1,117 @@
+REM /**
+REM  * CustomerDiscount.src
+REM  * @author kwilliams
+REM  *gathers the a specified customers discounts and calculates a price discount when asked
+REM  */
+
+use ::BasisPriceEngine.src::PriceElement
+
+class public CustomerDiscount
+
+    field private BBjString firmID!
+    field private BBjString customerNbr!
+    field private BBjNumber standardDiscount!
+    field private BBjNumber samDiscount!
+
+    method public CustomerDiscount(BBjString firmID!, BBjString customerNbr!)
+    
+        #firmID! = firmID!
+        #customerNbr! = customerNbr!
+        
+        rem ' get the discounts
+        call "ec_open::ARM02"
+        read record (arm02, key = #firmID! + #customerNbr! + "  ", dom=*next)arm02$
+        call "ec_open::ARM10I"
+        
+        #standardDiscount! = 0
+        dim arm10i$:fattr(arm10i$)
+        read record(arm10i, key = #firmID!+ "I" + arm02.disc_code$, dom = *next)arm10i$
+        #standardDiscount! = arm10i.disc_percent
+        
+        #samDiscount! = 0
+        dim arm10i$:fattr(arm10i$)
+        read record(arm10i, key = #firmID!+ "I" + arm02.disc_code_a$, dom = *next)arm10i$
+        #samDiscount! = arm10i.disc_percent
+        if #samDiscount! = 0 then
+            #samDiscount!= #standardDiscount!
+        endif
+            
+        close(arm02, err = *next)
+        close(arm10i, err = *next)
+        
+    methodend
+    
+    method public PriceElement calculateDiscount(PriceElement pel!)
+    
+        rem ' price element must be discountable and price must have been calculated
+        if pel!.getDiscountable() = 1 and pel!.getPriceCalculated() = 1 then
+            
+            rem ' SM1 type of sale get the SAM Discount
+            if pel!.getTypeOfSale() = "SM1" and #samDiscount!<> 0 then
+                precision 3
+                discountedPrice = pel!.getListPrice() * (1 - (#samDiscount! / 100))
+                precision 2
+                pel!.setDiscountedPrice(discountedPrice)
+                pel!.setDiscountUsed(#samDiscount!)
+            else
+                if #standardDiscount! <> 0 then
+                    precision 3
+                    discountedPrice = pel!.getListPrice() * (1 - (#standardDiscount! / 100))
+                    precision 2
+                    pel!.setDiscountedPrice(discountedPrice)
+                    pel!.setDiscountUsed(#standardDiscount!)
+                else
+                    pel!.setDiscountedPrice(pel!.getListPrice())
+                    pel!.setDiscountUsed(0)
+                endif
+            endif
+        else
+            if pel!.getDiscountable() = 0 and pel!.getPriceCalculated() = 1 then
+            	rem ' price was calculated, but is not discountable
+            	pel!.setDiscountedPrice(pel!.getListPrice())
+            	pel!.setDiscountUsed(0)
+            endif
+        endif
+    
+        methodret pel!
+        
+    methodend
+    
+    method public PriceElement calculateSAMDiscountforNewAndAdd(PriceElement pel!)
+    
+        rem ' for new and add transaction SAM is discount at the Standard Discount and not the 
+        rem ' SAM discount
+        
+        rem ' price element must be discountable and price must have been calculated
+        rem ' only concerned with SAM prices
+        if pel!.getDiscountable() = 1 and pel!.getPriceCalculated() = 1 and pel!.getTypeOfSale() = "SM1" then
+            
+            if #standardDiscount! <> 0 then
+                precision 3
+                discountedPrice = pel!.getListPrice() * (1 - (#standardDiscount! / 100))
+                precision 2
+                pel!.setDiscountedPrice(discountedPrice)
+                pel!.setDiscountUsed(#standardDiscount!)
+            else
+                pel!.setDiscountedPrice(pel!.getListPrice())
+                pel!.setDiscountUsed(0)
+            endif
+        endif
+    
+        methodret pel!
+
+    methodend
+    
+    method public BBjNumber getStandardDiscount()
+    
+        methodret #standardDiscount!
+        
+    methodend
+    
+    method public BBjNumber getSamDiscount()
+    
+        methodret #samDiscount!
+        
+    methodend
+    
+classend

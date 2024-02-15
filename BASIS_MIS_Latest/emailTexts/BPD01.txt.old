@@ -1,0 +1,755 @@
+PD1_EN:
+{
+Subject: BASIS invoice past due - <cust>
+
+Our records indicate that payment is past due on the <custname> invoice(s) referenced below. If you are not the individual in your organization responsible for processing invoice(s), please forward this e-mail to them and contact BASIS with the new Accounts Payable contact information.
+
+     Invoice #     Invoice Date     PO #           Balance
+      <invoice>     <date>          <po>        <balance>
+
+BASIS extended standard credit terms of <terms> to your company so please remit payment for this invoice(s). If an unusual circumstance is delaying your payment, please reply by e-mail describing the situation. If you already sent payment for the invoice(s), please disregard this notice.
+
+Thank you,
+
+
+BASIS International Ltd.
+Customer Service Credit Control
+customer-service@basis.cloud
+ 1.505.938.6121 (US)
++1.505.338.4188 (International)
+}
+PD2_EN:
+{
+Subject: 2nd notice from BASIS - <cust>
+
+
+BASIS notified you 15 days ago that your account is past due. If you have contacted BASIS regarding payment or already sent payment for the invoice(s) listed below, please disregard this notice. Otherwise, please process payment for the following outstanding <custname> invoice(s) as soon as possible.
+
+     Invoice #     Invoice Date     PO #           Balance
+      <invoice>     <date>          <po>        <balance>
+
+
+Thank you,
+
+
+BASIS International Ltd.
+Customer Service Credit Control
+customer-service@basis.cloud
+ 1.505.938.6121 (U.S.)
++1.505.338.4188 (International)
+}
+PD3_EN:
+{
+Subject: BASIS orders on hold - <cust>
+
+
+This is notice that BASIS has stopped processing all future <custname> orders until payment arrangements are made for your past due invoices. 
+
+     Invoice #     Invoice Date     PO #           Balance
+      <invoice>     <date>          <po>        <balance>
+
+Please pay these invoices or contact BASIS to discuss payment options. If you already sent payment or have contacted BASIS regarding payment, order processing will resume upon receipt of your payment. 
+
+Sincerely,
+
+
+BASIS International Ltd.
+Customer Service Credit Control
+customer-service@basis.cloud
+ 1.505.938.6121 (U.S.)
++1.505.338.4188 (International)
+}
+
+PD1_IT:
+{
+Subject: SOLLECITO PAGAMENTO dalla BASIS EUROPE - <cust>
+
+
+Dall`esame delle nostre risultanze contabili risulta che le nostre fatture elencati per <custname> non sono state ancora pagate.
+Se Lei non è la persona addetto per i pagamenti, si prega di mandare la presente alla persona incaricata e farci sapere i vostri dati relativi del vs. reparto per le contabilità/pagamenti.
+
+     No. fattura.    Data          No.ordine      Importo dovuto
+      <invoice>      <date>        <po>               <balance>
+
+
+Come condizioni abbiamo accordato <terms> con la Vs. Azienda. Vi invitiamo a farci pervenire il pagamento della suddetta fattura. Se ci sono delle circostanze imprevedibile, si prega di dare una breve risposta su questa Email.
+
+Se nel frattempo aveste già provveduto al pagamento, Vi preghiamo di considerare nullo il presente sollecito.
+
+Certi di un Vostro cortese e sollecito riscontro Vi porgiamo 
+distinti saluti.
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+
+Italy:
++39 2 40 70 81 75
+}
+
+PD1_DE:
+{
+Subject: Zahlungserinnerung von BASIS Europe - <cust>
+
+
+Nach unseren Unterlagen ist die Zahlung untenstehender Rechnung(en) unter Ihrer Kundennummer für <custname> überfällig. 
+Falls Sie in Ihrem Unternehmen nicht der Ansprechpartner für den Zahlungsverkehr sind, leiten Sie bitte diese Mail an die zuständige Stelle weiter und teilen Sie uns bitte die Kontaktdaten Ihrer Kreditorenbuchhaltung mit.
+
+     Rechnung Nr.    Datum          Bestellnr.   offener Betrag
+      <invoice>      <date>         <po>             <balance>
+
+Als Zahlungsbedingungen haben wir <terms> mit Ihrem Unternehmen vereinbart. Bitte veranlassen Sie daher nun die Zahlung für diese Rechnung(en). Falls irgendein außerordentlicher Umstand Ihre Zahlung verzögert, so geben Sie uns bitte  eine kurze Antwort auf diese Mail.
+Sollte sich Ihre Zahlung mit dieser Nachricht überschnitten haben, so 
+betrachten Sie diese Mail bitte als erledigt.
+
+Vielen Dank und herzliche Grüße
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+
+PD2_IT:
+{
+Subject: SECONDO SOLLECITO PAGAMENTO dalla BASIS EUROPE - <cust>
+
+Con la presente esprimiamo il nostro vivo rincrescimento per il Vostro silenzio alla 
+nostra lettera di due settimane fa, di sollecito di pagamento delle seguente fatture:
+
+     No. fattura.    Data          No.ordine      Importo dovuto
+      <invoice>      <date>        <po>               <balance>
+
+
+
+Se nel frattempo aveste già provveduto al pagamento, Vi preghiamo di considerare nullo il presente sollecito, altrimenti Vi invitiamo a farci pervenire al più presto il pagamento delle suddette fatture.
+
+Distinti saluti
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+
+Italy:
++39 2 40 70 81 75
+}
+
+PD2_DE:
+{
+Subject: zweite Zahlungserinnerung von BASIS Europe- <cust>
+
+
+Vor zwei Wochen haben wir Ihnen mitgeteilt, daß nach unseren Unterlagen überfällige Rechnungen unter Ihrer Kundennummer vorliegen. Falls Sie uns bereits hierzu kontaktiert haben oder die Zahlung veranlasst haben, so betrachten Sie diese Mail bitte als erledigt.
+Andernfalls bitten wir Sie, nun Ihre Zahlung für alle offenen Rechnungen an <custname> alsbald zu Veranlassen.
+
+     Rechnung Nr.    Datum          Bestellnr.   offener Betrag
+      <invoice>      <date>         <po>             <balance>
+
+
+Mit freundlichen Grüßen
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+
+PD3_IT:
+{
+Subject: Sospeso la fornitura di BASIS EUROPE - <cust>
+
+
+Con la presente Email Vi informiamo, che è sospeso la fornitura dei nostri prodotti a <custname> finchè le seguente fatture sono state compensate:
+
+     No. fattura.    Data          No.ordine      Importo dovuto
+      <invoice>      <date>        <po>               <balance>
+
+Vi invitiamo a provvedere al pagamento oppure contattarci per accordare un piano del pagamento.
+Se nel frattempo aveste già provveduto al pagamento, riprendiamo nuovamente la fornitura appena le importi dovute sono sul ns. conto corrente.
+
+
+Distinti saluti
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+
+Italy:
++39 2 40 70 81 75
+}
+
+PD3_DE:
+{
+Subject: BASIS Europe Lieferungen gestoppt - <cust>
+
+
+Mit dieser Email teilen wir Ihnen mit, daß die Auslieferung unserer Produkte an <custname> zurückgestellt wird, bis wir den Zahlungseingang für nachfolgende Rechnungen verbuchen können:
+
+     Rechnung Nr.    Datum          Bestellnr.   offener Betrag
+      <invoice>      <date>         <po>             <balance>
+
+Bitte veranlassen Sie die Zahlung für diese Rechnungen oder nehmen Sie mit uns Kontakt auf, um einen Zahlungsplan zu vereinbaren.
+Falls sich Ihre Zahlung mit dieser Benachrichtigung überschnitten haben sollte, so werden wir die Belieferung wieder aufnehmen, sobald Ihre Zahlung bei uns eingegangen ist.
+
+
+Mit freundlichen Grüßen
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+PD1_FR:
+{
+Subject: Dépassement d'échéance pour la facture BASIS - <cust>
+
+Notre base de données indique que la(les) facture(s) listée(s) ci-dessous pour le client <custname> reste(nt) impayés à ce jour. Si vous n'êtes pas la personne responsable du paiement des factures pour votre société veuillez faire suivre cet e-mail à la personne en charge des factures ainsi qu'à BASIS afin de corriger nos informations de contact à ce sujet.
+
+     Facture #     Date facture     Numéro commande         Solde
+      <invoice>     <date>          <po>               <balance>
+
+Les moyens de paiement convenus sont <terms>. Veuillez procéder au paiement des factures.
+Si des circonstances inhabituelles retardent votre paiement veuillez répondre à cet e-mail en décrivant ces circonstances.  
+Si vous avez déjà effectué le règlement de ces factures veuillez ignorer cet e-mail
+
+Merci,
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+PD2_FR:
+{
+Subject: Rappelle - Facture BASIS - <cust>
+
+
+BASIS vous a informé il y a 15 jours d'un retard de paiement. Si vous avez contacté BASIS a ce sujet ou si vous avez déjà effectué le paiement des factures listées ci-dessous veuillez ne pas tenir compte de cet e-mail, 
+dans le cas contraire veuillez procéder au paiement des factures pour le client <custname> dans les meilleurs délais.
+
+     Facture #     Date facture     Numéro commande           Solde
+      <invoice>      <date>         <po>                 <balance>
+
+
+Merci,
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+PD3_FR:
+{
+Subject: Commande BASIS suspendu  - <cust>
+
+Cette notice vous informe que BASIS a suspendu le traitement des commandes pour client <custname> jusqu'à ce qu'un arrangement soit trouvé concernant les factures impayées listées ci-dessous.
+
+     Facture #     Date facture     Numéro commande        Solde
+      <invoice>     <date>          <po>              <balance>
+
+Veuillez procéder au paiement des factures ou contacter BASIS pour discuter des possibilités de paiement. Si vous avez déjà effectué le paiement ou contacter BASIS au sujet du paiement, le traitement de vos commandes reprendra dès la réception de votre paiement.
+
+
+Cordialement,
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+PD1_NL:
+{
+Subject: BASIS betalingsherrinnering - <cust>
+
+Uit onze administratie blijkt, dat er een betalingsachterstand is voor onderstaande <custname> fakturen. Als u niet degene bent in de organisatie die verantwoordelijk is voor de betaling van fakturen, stuurt u deze e-mail dan door naar de juiste persoon en neemt u aub kontakt op met Basis betreffende de juiste contactinformatie van de krediteurenadministratie.
+
+    Faktuur #     Faktuurdatum     Order #          Saldo
+     <invoice>     <date>          <po>        <balance>
+
+BASIS heeft de standaard betalingstermijn verlengd en wij verzoeken u onderstaande fakturen te betalen. Als onvoorziene omstandigheden een betaling vertragen, antwoord u dan op deze e-mail met een verklaring. Indien uw betaling inmiddels onderweg is, kunt u deze herrinering als niet verzonden beschouwen.
+
+Dank u,
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+PD2_NL:
+{
+Subject: 2e betalingsherrinering van BASIS - <cust>
+
+
+BASIS informeerde u 15 dagen geleden, dat u een betalingsachterstand hebt. Als u al kontakt heeft opgenomen met BASIS betreffende de betaling of indien u deze fakturen inmiddels heeft betaald, kunt u deze herrinering als niet verzonden beschouwen. In alle andere gevallen verzoeken wij u onderstaande <custname> fakturen per omgaande te voldoen.
+
+    Faktuur #     Faktuurdatum     Order #          Saldo
+     <invoice>     <date>          <po>        <balance>
+
+
+Dank u,
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+PD3_NL:
+{
+Subject: BASIS orders 'on hold' - <cust>
+
+
+Hierbij delen wij u mee, dat BASIS alle toekomstige <custname> orders niet meer in behandeling neemt, totdat betaling van onderstaande fakturen heeft plaatsgevonden. 
+
+    Faktuur #     Faktuurdatum     Order #          Saldo
+     <invoice>     <date>          <po>        <balance>
+
+Betaalt u aub deze openstaande fakturen of neem kontakt op met BASIS voor een betalingsregeling. Als u al kontakt heeft opgenomen met BASIS betreffende de betaling of indien u deze fakturen inmiddels heeft betaald, worden orders weer in  behandeling genomen na ontvangst van uw betaling. 
+
+Hoogachtend,
+
+
+BASIS Europe Distribution GmbH
+Nell-Breuning-Allee 6, D-66115 Saarbruecken / Germany
+http://www.basis-europe.eu
+
+Germany:     
++49 681 968 14-0
++49 681 968 14-33 Fax
+
+Netherlands: 
++31 2 08 90 81 33
+
+Belgium:     
++32 2 747 02 01
+
+France:      
++33 1 70 61 03 74 
+}
+SM1_EN:
+{
+Subject: BASIS invoice past due - <cust>
+
+
+Our records indicate that payment is past due on the invoice(s) referenced below. 
+
+ Invoice #     Invoice Date     PO #           Balance
+   <invoice>    <date>          <po>        <balance>
+
+==> If you are not the individual in your organization responsible for processing invoice(s), please forward this e-mail to the appropriate person and contact BASIS with the correct Accounts Payable contact information.
+
+==> If you already sent payment for the invoice(s), please disregard this notice.
+
+==> If you have not paid this invoice, please remit payment promptly or pay online through b-commerce® at www.poweredbybbj.com. Once the invoice is paid, BASIS will  reinstate all SAM benefits for this license. If an unusual circumstance is delaying payment, please reply to this e-mail with an explanation. 
+
+==> If you intend to let the SAM coverage expire, please generate a credit invoice to cancel this outstanding invoice at www.poweredbybbj.com. Note that reinstating cancelled/expired SAM coverage at a later date or updating a license will cost a reinstatement fee (12% of the cost of a new license) plus SAM coverage for the lapsed period of time.
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+
+Thank you,
+
+
+BASIS International Ltd.
+Customer Service Credit Control
+customer-service@basis.cloud
+ 1.505.938.6121 (US)
++1.505.338.4188 (International)
+}
+SM2_EN:
+{
+Subject: 2nd notice from BASIS - <cust>
+
+
+BASIS notified you 15 days ago that your account is past due and the following <custname> invoice(s) are unpaid: 
+
+     Invoice #     Invoice Date     PO #           Balance
+      <invoice>     <date>          <po>        <balance>
+
+==> If you already contacted BASIS regarding payment or sent payment for these invoice(s), please disregard this notice.
+
+==> If you have not submitted a payment, please pay the invoice(s) listed above promptly by check or online through b-commerce® at www.poweredbybbj.com. Once paid, BASIS will reinstate all SAM benefits.
+
+==> If you choose not to renew the SAM plan, please generate a credit invoice to cancel your SAM renewal invoice at www.poweredbybbj.com. Also, note that reinstating cancelled/expired SAM coverage in the future or updating a license requires purchasing SAM coverage from the expiration date to the current date, a minimum of one year coverage, and SAM reinstatement fee (12% of the cost of a new license). To avoid this fee and continue the benefits below, renew SAM coverage today.
+
+
+For more information, please contact BASIS Sales via e-mail at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Thank you,
+
+
+BASIS International Ltd.
+Customer Service Credit Control
+customer-service@basis.cloud
+ 1.505.938.6121 (U.S.)
++1.505.338.4188 (International)
+}
+SM1_IT:
+{
+Subject: SOLLECITO PAGAMENTO dalla BASIS EUROPE - <cust>
+
+Dall`esame delle nostre risultanze contabili risulta che le nostre fatture elencati non sono state ancora pagate:
+
+    No. fattura.     Data          No.ordine    Importo dovuto
+      <invoice>      <date>        <po>             <balance>
+
+
+==> Se Lei non è la persona addetto per i pagamenti, si prega di mandare la presente alla persona incaricata e farci sapere i vostri dati relativi del vs. reparto per le contabilità/pagamenti.
+
+==> Se nel frattempo aveste già provveduto al pagamento, Vi preghiamo di considerare nullo il presente sollecito.
+
+==> Se la fattura non è pagata, Vi invitiamo a provvedere il pagamento sul sito b-commerce® bei www.poweredbybbj.com. Non appena provveduto il pagamento, BASIS liberà il servizio SAM. Se ci sono delle circostanze imprevedibile, si prega di dare una breve risposta su questa Email.
+
+==> Se Lei ha l`intensione di non continuare l`assistenza SAM, si prega di generare sul sito www.poweredbybbj.com una nota di credito, per chiudere la contabilità. Per attivare nuovamente un contratto SAM, viene applicato un prezzo pari al 12% dal costo di una nuova licenza attuale più il costo per la copertura dei SAM precedenti.
+
+
+Per informazioni, si prega di contattare il ns. ufficio commerciale BASIS via 
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+Cordiali saluti
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+SM1_DE:
+{
+Subject: Zahlungserinnerung von BASIS Europe - <cust>
+
+Nach unseren Unterlagen ist Ihre Zahlung für die folgenden Rechnungen überfällig:
+
+     Re.-Nr.       Datum 	   Text #          Saldo
+     <invoice>   <date>          <po>        <balance>
+
+==> Falls Sie in Ihrem Hause nicht für Rechnungen zuständig sind, leiten Sie diese Mail bitte an die betreffende Person weiter. Geben Sie BASIS bitte die richtigen Kontaktdaten weiter.
+
+==> Sollten Sie die Rechnung mittlerweile bezahlt haben, dann ignorieren Sie diese Nachricht.
+
+==> Wenn Sie die Rechnung noch nicht bezahlt haben, holen Sie die Zahlung bitte unverzüglich über b-commerce® bei www.poweredbybbj.com nach. Sobald die Rechnung bezahlt ist, schaltet BASIS alle SAM-Services wieder frei. Wenn die Zahlung durch ungewöhnliche Umstände verhindert wird, dann senden Sie uns bitte eine E-Mail-Antwort an diese Adresse mit einer entsprechenden Erläuterung. 
+
+==> Falls Sie die Absicht haben, Ihren SAM-Schutz nicht zu verlängern, dann generieren Sie bitte unter www.poweredbybbj.com eine Kredit-Rechnung, um den offenen Saldo zu schließen. Beachten Sie bitte: Einen erloschenen SAM-Vertrag später wieder zu aktivieren, ist mit einer Aktivierungsgebühr in Höhe von 12% der Kosten einer neuen Lizenz verbunden. Ferner muss der SAM-Schutz für die Zwischenzeit erworben werden. 
+
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren BASIS Vertrieb.
+ Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+Herzlichen Gruß!
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+SM2_IT:
+{
+Subject: SECONDO SOLLECITO PAGAMENTO dalla BASIS EUROPE - <cust>
+
+Con la presente esprimiamo il nostro vivo rincrescimento per il Vostro silenzio alla 
+nostra lettera di due settimane fa, di sollecito di pagamento delle seguente fatture:
+
+    No. fattura.    Data          No.ordine      Importo dovuto
+      <invoice>     <date>        <po>               <balance>
+
+
+==> Se nel frattempo aveste già provveduto al pagamento, Vi preghiamo di considerare nullo il presente sollecito.
+
+==> Se la fattura non è pagata, Vi invitiamo a provvedere al più presto il pagamento. Non appena provveduto il pagamento, BASIS liberà il servizio SAM. Se ci sono delle circostanze imprevedibile, si prega di dare una breve risposta su questa Email.
+
+==> Se Lei ha l`intensione di non continuare l`assistenza SAM, si prega di generare sul sito www.poweredbybbj.com una nota di credito, per chiudere la contabilità. Per attivare nuovamente un contratto SAM, viene applicato un prezzo pari al 12% dal costo di una nuova licenza attuale più il costo per la copertura dei SAM precedenti.
+
+
+Per informazioni, si prega di contattare il ns. ufficio commerciale BASIS via 
+        E-Mail: eu.sales@basis.cloud. 
+                    oppure 
+        al numero telefonico: +49 681 96814-0
+
+Grazie!
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+SM2_DE:
+{
+Subject: zweite Zahlungserinnerung von BASIS Europe- <cust>
+
+BASIS hat Ihnen vor zwei Wochen die Nachricht geschickt, dass die Zahlung für die folgende(n) Rechnung(en) noch aussteht:
+
+     Re.-Nr.       Datum 	 Text #          Saldo
+     <invoice>   <date>        <po>       <balance>
+
+==> Wenn Sie BASIS wegen der Zahlung kontaktiert oder die Zahlung bereits getätigt haben, brauchen Sie diese Mail nicht zu beachten. 
+
+==> Falls Sie noch keine Zahlung geleistet haben, zahlen Sie die oben genannte(n) Rechnung(en) bitte unverzüglich per Überweisung. Nach Eingang der Zahlung wird Ihr SAM-Vertrag von BASIS wieder aktiviert.
+
+==> Falls Sie den SAM-Wartungsplan nicht verlängern möchten, generieren Sie bitte unter www.poweredbybbj.com eine Kredit-Rechnung zum Ausgleich des offenen Saldos. Beachten Sie bitte: Einen erloschenen SAM-Vertrag später wieder zu aktivieren, ist mit einer Aktivierungsgebühr in Höhe von 12% der Kosten einer neuen Lizenz verbunden. Ferner muss der SAM-Schutz für die Zwischenzeit erworben werden. Wenn Sie diese zusätzlichen Kosten vermeiden wollen, erneuern Sie Ihren SAM-Wartungsvertrag noch heute! 
+
+
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren BASIS Vertrieb.
+ Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+
+Herzlichen Dank!
+
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}
+
+SM1_FR:
+{
+Subject: Dépassement d'échéance pour la facture BASIS - <cust>
+
+Nos registres nous indiquent que la (les) facture(s) ci-dessous, due(s) au indiquer la date, reste(nt) impayée(s).
+
+     Facture #  Date facture   PO #        Montant (euros)
+     <invoice>   <date>        <po>           <balance>
+
+==> Si vous n’êtes pas responsable du paiement des factures au sein de votre entreprise, merci de faire suivre cet email à la personne appropriée, et de transmettre à BASIS le bon contact pour les questions de comptabilité 
+
+==> Si vous avez déjà réglé ces factures, ne tenez pas compte de ce message.
+
+==> Si vous n’avez pas encore payé cette facture, merci d'effectuer ce paiement rapidement par virement. Dès que la facture aura été payée, BASIS réinstallera tous les avantages SAM pour cette licence. Si des circonstances exceptionnelles retardent votre paiement, merci de répondre à cette email en donnant une explication.
+
+==> Si vous comptez laisser expirer la couverture SAM, merci de créer un avoir afin d'annuler cette facture ouverte sur le site www.poweredbybbj.com. Nous vous rappelons que la réactivation ultérieure d'une couverture SAM qui a été annulée ou a expiré, ou la mise à jour d’une licence, comprennent des frais de réactivation (12% du prix d’une nouvelle licence) et le prix de la couverture SAM pour la période écoulée.
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +33 (0)1 70 61 03 74 
+
+Merci
+
+Cordialement
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++33 (0)1 70 61 03 74
+}
+
+SM2_FR:
+{
+Subject: Rappelle - Facture BASIS - <cust>
+
+BASIS vous a prévenu il y a 15 jours que votre contrat a expiré, et que la (les) facture(s) suivante(s) indiquer les informations est (sont) ouverte(s) :
+
+ Facture #   Date facture   PO #        Montant (euros)
+  <invoice>   <date>        <po>           <balance>
+
+
+==> Si vous avez déjà contacté BASIS au sujet de ce paiement, ou réglé le paiement de cette (ces) facture(s), ne tenez pas compte de ce message.
+
+==> Si vous n’avez pas effectué le paiement, merci de payer rapidement la (les) facture(s) indiquée(s) ci-dessus par virement. Dès que le paiement aura été effectué, BASIS réinstallera les avantages SAM.
+
+==> Si vous choisissez de ne pas renouveler votre plan SAM, merci de créer un avoir afin d’annuler votre facture de renouvellement SAM sur le site www.poweredbybbj.com. Par ailleurs, nous vous rappelons que la réinstallation ultérieure d’une couverture SAM annulée ou qui a expiré, et la mise à jour d’une licence, comprennent le prix de la couverture SAM pour la période écoulée, avec un minimum d’un an de couverture, et des frais de réinstallation (12% du prix d’une nouvelle licence).
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +33 (0)1 70 61 03 74 
+
+Merci beaucoup,
+
+Cordialement
+
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++33 (0)1 70 61 03 74
+}
+
+SM1_NL:
+{
+Subject: BASIS betalingsherrinnering - <cust>
+
+Uit onze administratie blijkt, dat de betalingstermijn voor onderstaande fakturen is verstreken.
+
+       Faktuur      Faktuur      Omschrijving     Faktuur
+       nummer        datum                          saldo
+      <invoice>    <date>        <po>          <balance>
+
+==> Als u niet degene bent in de organisatie die verantwoordelijk is voor de betaling van fakturen, stuurt u deze e-mail dan door naar de juiste persoon en neemt u aub kontakt op met Basis betreffende de juiste contactinformatie van de krediteurenadministratie.
+
+==> Indien uw betaling inmiddels onderweg is, kunt u deze herrinering als niet verzonden beschouwen.
+
+==> Als u deze faktuur nog niet heeft betaald, zorgt u dan per omgaande voor betaling.
+Als de faktuur is betaald, zal BASIS alle SAM voordelen heraktiveren voor deze licentie. Als onvoorziene omstandigheden een betaling vertragen, antwoord u dan op deze e-mail met een verklaring.
+
+==> Als u voornemens bent de SAM-overeenkomst te laten expireren, genereert u dan aub een credit-nota om deze openstaande faktuur te laten vervallen op www.poweredbybbj.com. Houdt u er rekening mee, dat er voor het heraktiveren van de SAM of de upgrade van een licentie in de toekomst een SAM-overeenkomst vereist is van de expiratiedatum tot de toekomstige datum, met een minimum van 1 jaar, plus heraktiveringskosten ter hoogte van 12% van een nieuwe licentie.
+
+Voor meer informatie kunt u kontakt opnemen met BASIS Europe:
+
+E-mail 	eu.sales@basis.cloud
+Telefoon	+31(0)20-8908133 ( Nederland )
++49(0)681-968140 ( Europa ) 
+
+
+BASIS Europe
+}
+
+SM2_NL:
+{
+Subject: 2e betalingsherrinering van BASIS - <cust>
+
+BASIS informeerde u 15 dagen geleden, dat de volgende openstaande fakturen nog niet voldaan zijn: 
+
+       Faktuur      Faktuur     Omschrijving     Faktuur
+       nummer       datum			         saldo
+      <invoice>    <date>       <po>          <balance>
+
+==> Als u al kontakt heeft opgenomen met BASIS betreffende de betaling of indien u deze fakturen inmiddels heeft betaald, kunt u deze herrinering als niet verzonden beschouwen.
+
+==> Als u deze faktuur nog niet heeft betaald, zorgt u dan per omgaande voor betaling.
+Als de faktuur is betaald, zal BASIS alle SAM voordelen heraktiveren voor deze licentie. Als onvoorziene omstandigheden een betaling vertragen, antwoord u dan op deze e-mail met een verklaring.
+
+==> Als u er voor kiest de SAM-overeenkomst niet te vernieuwen, genereert u dan aub een credit-nota om deze openstaande faktuur te laten vervallen op www.poweredbybbj.com. Houdt u er tevens rekening mee, dat er voor het heraktiveren van de SAM of de upgrade van een licentie in de toekomst een SAM-overeenkomst vereist is van de expiratiedatum tot de toekomstige datum, met een minimum van 1 jaar, plus heraktiveringskosten ter hoogte van 12% van een nieuwe licentie. Om deze kosten te voorkomen en te blijven profiteren van de voordelen van een SAM, vernieuw uw SAM vandaag nog. 
+
+Voor meer informatie kunt u kontakt opnemen met BASIS Europe:
+
+E-mail 	eu.sales@basis.cloud
+Telefoon	+31(0)20-8908133 ( Nederland )
++49(0)681-968140 ( Europa ) 
+
+
+BASIS Europe
+}

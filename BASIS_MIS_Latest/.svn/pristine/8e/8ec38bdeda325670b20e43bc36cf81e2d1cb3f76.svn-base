@@ -1,0 +1,137 @@
+// <ordhist>
+
+enter k3$,b$,c$;
+find/noerror are03 using k3$;
+if available(are03)=0 then exit;
+
+create temporary table invtbl
+	idx char(5)/index
+	sn char(20)
+	fld char(70);
+ctr=0;
+invtbl.sn="";
+call/nowindow "(BBX)aondate.bbx",are03.invoice_date,dt$,"U";
+invtbl.fld="Invoice: "+are03.ar_inv_nbr+"   Order: "+are03.order_number+"   Date: "+dt$;
+gosub addrec;
+invtbl.fld="PO #: "+are03.ar_po_number+fill(20)+"Ship Via: "+are03.ar_ship_via;
+gosub addrec;
+init arm10a;
+find/noerror arm10a using are03.firm_id+"A"+are03.terms_code;
+init arm10f;
+find/noerror arm10f using are03.firm_id+"F"+are03.slspsn_code;
+invtbl.fld="Sales Rep: "+are03.slspsn_code+"-"+arm10f.slspsn_name
+	+" Terms: "+are03.terms_code+"-"+arm10a.code_desc;
+gosub addrec;
+invtbl.fld="Sold to: "+are03.customer_nbr+fill(21)+"Ship to:";
+gosub addrec;
+//gosub sold_ship;
+invtbl.fld="  "+b$(1,30)+"      "+c$(1,30);
+gosub addrec;
+a=0;
+repeat/until a=5
+{
+invtbl.fld="  "+b$(30*a+31,30)+"      "+c$(30*a+31,30);
+if cvs(invtbl.fld,2)<>"" then gosub addrec;
+a=a+1;
+}
+invtbl.fld="";gosub addrec;
+if are03.invoice_type="V" then
+	{
+	invtbl.fld="  ** VOID - This invoice was deleted **";
+	gosub addrec;
+	goto chooserec;
+	}
+invtbl.fld="Line  Product        SaleType Users Port   Qty     Price    Extension";
+gosub addrec;
+invtbl.fld=fill(70,"-");gosub addrec;
+find/next/noerror are13 using are03.firm_id+"  "+customer_nbr+order_number;
+repeat
+{
+if available(are13)=0 or are13.order_number<>are03.order_number then break;
+find/noerror are73 using are13$(1,20);
+if available(are73)=0 then init are73;
+port$=fill(5);
+find/noerror csm03 using are13.firm_id+are13.item_number(7,3);
+if available(csm03) then port$=csm03.port_id;
+invtbl.fld=are13.line_number+" "+line_code+" "+are13.item_number
++are73.type_of_sale+str(are73.users:"#####-")+" "+port$
++str(are13.qty_ordered:"####0-")+str(unit_price:"##,###.00-")
++str(ext_price:"#,###,###.00-");
+if cvs(are13.item_number,2)="" then 
+	invtbl.fld=are13.line_number+" "+line_code+" "+are13.order_memo
+	+str(unit_price:"##,###.00-")+str(ext_price:"#,###,###.00-");
+gosub addrec;
+find/noerror ivm01 using are13.firm_id+item_number;
+if available(ivm01) then {invtbl.fld=fill(6)+ivm01.item_desc;gosub addrec;}
+if cvs(are13.order_memo,2)<>"" and cvs(are13.item_number,2)<>""
+and cvs(are13.order_memo,2)<>cvs(ivm01.item_desc,2) then 
+	{invtbl.fld="      "+are13.order_memo; gosub addrec;}
+d$=fill(6)+"Media: "+are73.media_type;
+if are73.media_sets then d$=d$+" Qty:"+str(are73.media_sets:"###0");
+	else d$=d$+fill(9);
+if are73.fixed_float="F" then d$=d$+" Lic: Floating";
+	else d$=d$+" Lic: Fixed   ";
+if cvs(are73.data_server,2)<>"" then
+	{invtbl.sn=are73.data_server;d$=d$+"  Link to: "+invtbl.sn;}
+if available(are73) then {invtbl.fld=d$;gosub addrec;}
+find/next/noerror are83 using are13$(1,20);
+repeat
+	{
+	if available(are83)=0 or are83.order_number<>are13.order_number
+	or are83.line_number<>are13.line_number then break;
+	invtbl.sn=are83.serial_nbr;
+	act$="Activated";
+	if are83.action="M" then act$="Modified";
+	if are83.action="D" then act$="Deactivated";
+	act$=act$+fill(14);act$=act$(1,14);
+	invtbl.fld=act$+auth_code;
+	gosub addrec;
+	find/next/noerror are83;
+	}
+invtbl.sn="";
+invtbl.fld="";gosub addrec;
+find/next/noerror are13;
+}
+m$="##,###,###.00-";
+tot=are03.tax_amount+freight_amt+total_sales;
+invtbl.fld=fill(44)+"Net Invoice:"+str(are03.total_sales:m$);
+if are03.total_sales and are03.total_sales<>tot then gosub addrec;
+invtbl.fld=fill(48)+"Freight:"+str(are03.freight_amt:m$);
+if are03.freight_amt then gosub addrec;
+invtbl.fld=fill(52)+"Tax:"+str(are03.tax_amount:m$);
+if are03.tax_amount then gosub addrec;
+invtbl.fld=fill(42)+"Invoice Total:"+str(tot:m$);
+gosub addrec;
+
+chooserec:
+choose/record/rewind/nowrap/gosub=lines/display=line$
+	/black/border
+	/col=5/cols=70/row=2/rows=20/title="Current Order/Invoice"
+	/help="Scroll w/arrows, <(#F43)>=More info on serial#, <(#F2)>=Done"
+	/update=sn_detail
+	invtbl;
+if ctl()=2 then exit;
+
+goto chooserec;
+
+subroutine sn_detail
+{
+if invtbl.sn<>"" then call/window "(BBX)snquery.bbx",invtbl.sn;
+}
+
+subroutine lines
+{
+line$="";
+if pos("Link"=invtbl.fld)=0 and
+	cvs(invtbl.sn,2)<>"" then line$=fill(6)+invtbl.sn;
+line$=line$+invtbl.fld;
+invtbl.sn="" ;
+}
+
+subroutine addrec
+{
+ctr=ctr+1;
+invtbl.idx=str(ctr:"00000");
+insert invtbl;
+}
+//

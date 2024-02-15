@@ -1,0 +1,204 @@
+0010 REM "ADM - Operator Default Maintenance"
+0020 REM "Program: ADM.CA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0040 REM 
+0041 REM "MCT|03/18/94|Write Back To SYM-02 - 220,4130-4160
+0042 REM "KJS|10/16/96|ADD+ON 6.0 version
+0049 SETERR 9000
+0050 ON O0 GOTO 0051,0051,0051,0051,0051,0051,0051,0051,0051,0500
+0060 BEGIN 
+0100 REM "----  Open/Lock Files"
+0110 OPEN (1)"ADS-01"; REM "--- ADministator Parameter File"
+0120 OPEN (2)"SYM-02"; REM "--- ADD+ON User ID Code File"
+0140 OPEN (3)"SYM-06"; REM "--- ADD+ON Firm File
+0160 OPEN (6)"ADS-01"; REM "--- ADministrator Params - Second Channel"
+0200 REM "----  IOlists"
+0210 ADS01U: IOLIST A0$(1),A1$(1),A2$(1),A3$(1),A4$(1),A[0],A[1],A[2],A[3],A[4]
+0220 SYM02: IOLIST B0$(1),B1$(1),B[0],B[1],B[2],B[3],B[4]
+0230 ADS01P: IOLIST P0$,P1$(1),P2$,P3$,P4$,P5$,P6$,P[ALL]
+0240 SYM06: IOLIST C0$,C1$(1)
+0400 REM "----  Parameters"
+0420 LET PGM$=PGM(-2); RUN "ADS.01"
+0500 REM "----  System Parameter Check"
+0510 IF STATUS<>0 THEN GOTO 9900
+0600 REM "---- Local Variables"
+0620 DIM A0$(15),A1$(40),A2$(20),A3$(30),A[4],A4$(30)
+0630 DIM B0$(3),B1$(128),B[4],P0$(8),P[4]
+0700 REM "---- Background"
+0720 PRINT 'SB',@(2,3),"DOS/Unix User ID:",@(4,4),"ADD+ON User ID:",@(2,5),"Verify ADD+ON ID:",@(0,6),"Default Printer ID:",@(6,7),"Default Mode:",@(3,8),"Printer Options:",@(2,9),"Selected Printer:",@(5,10),"Selected Mode:",@(8,11),"PF File ID:",@(3,12),"Default Menu ID:",@(0,13),"Default Company ID:",@(2,14),"Default Division:",@(4,15),"O/P Station ID:",
+0740 REM "CALL "ADC.WC",1,1,0,11,18,10,0
+0790 PRINT 'SF',
+0900 REM "---- Positioning Read"
+0920 READ (1,KEY="U",DOM=0921,END=0980)
+0930 LET K$=KEY(1,END=0980)
+0940 IF K$(1,1)<>"U" THEN GOTO 0980
+0950 GOTO 1000
+0980 GOSUB 6600; REM "---- Create blank user record using defaults"
+1010 PRINT 'CF',
+1100 REM "---- Key"
+1130 DIM A0$(15); LET A0$(1,1)="U"
+1140 LET V2$=KEY(1,END=0900)
+1150 IF V2$(1,1)<>"U" THEN LET V2$=""; GOTO 1180
+1160 LET A0$(2)=V2$(2),V2$=V2$(2,8)
+1170 GOTO 1200
+1180 LET A0$(2)="",V2$=""
+1200 REM "---- Logname"
+1220 LET V0$="S",V1$="KC",V3$="",V4$="8 Character Login Name (Derived From The LOGNAME O/S Variable), <F4>=End",V0=8,V1=20,V2=3; GOSUB 7000; IF V$="" AND V3<>4 THEN GOTO 1200
+1230 IF V3=4 THEN GOTO 9900
+1240 LET A0$(2,8)=V$
+1400 REM "---- Main Read"
+1440 READ (1,KEY=A0$,DOM=1500)IOL=ADS01U
+1450 IF FNP$(A1$(16,2)+A1$(21,1))="" THEN LET A1$(16,2)=A1$(9,2),A1$(21,1)=A1$(14,1); WRITE (1,KEY=A0$)IOL=ADS01U; REM "Set default print, mode
+1460 GOSUB 5000; REM "Display
+1480 GOTO 4000
+1500 REM "---- New Record?"
+1520 LET V0$="S",V1$="C",V2$="Y",V3$="YNyn",V4$="Is This A New Record? <Y/N>: ",V0=1,V1=40+INT(LEN(V4$)/2)+2,V2=22; GOSUB 7000; LET V$=FNU$(V$)
+1540 IF V$<>"Y" THEN GOTO 1000
+1600 REM "---- New Record Setup"
+1620 DIM A1$(40),A2$(20),A[4],A3$(30),A4$(30)
+2000 REM "---- ADD+ON User ID"
+2020 LET V0$="S",V1$="C",V2$=A1$(1,3),V3$="",V4$="Enter A Valid ADD+ON ID Code, <F3>=Lookup",V0=3,V1=20,V2=4,I0=0; GOSUB 7000
+2040 REM IF V3=3 THEN LET V4=1,V5=2,V6=2 ,V7=3,V8=5,V9=20,V5$="A",X$="",V$="NO COMPANY"; CALL "ADC.LK",V1,V2,V4,V5,V6,V7,V8,V9,V$,V5$,X$; IF V$="" OR V$="END" THEN GOTO 2000 FI
+2041 IF V3=3 THEN LET V4=2,V5=2,V6=1,V7=3,V8=1,V9=24,X$="",V$="NO COMPANY"; CALL "ADC.LK",V1,V2,V4,V5,V6,V7,V8,V9,V$,V5$,X$; IF V$="" OR V$="END" THEN GOTO 2000 FI
+2050 FIND (2,KEY=V$,DOM=2000)IOL=SYM02
+2060 PRINT @(24,4),B1$(1,24),
+2080 LET A1$(1,3)=V$
+2090 GOTO 3900
+2100 REM "---- Verify Flag"
+2120 LET V0$="Y",V1$="C",V2$=A1$(8,1),V3$="",V4$="Verify The ADD+ON User ID Upon Entry? <Y/N>",V0=1,V1=20,V2=5; GOSUB 7000
+2150 IF V3=2 OR V3=4 THEN GOTO 3900
+2160 LET A1$(8,1)=V$
+2190 GOTO 3900
+2200 REM "---- Default Printer"
+2220 LET V0$="S",V1$="C",V2$=A1$(9,2),V3$="",V4$="Default Printer Setting Upon Entry, <F3>=Lookup",V0=2,V1=20,V2=6; GOSUB 7000
+2230 IF V$="PF" THEN PRINT @(24,6),'CL',; GOTO 2260
+2240 IF V3=3 THEN CALL "ADC.05","10",V$,X$; IF V$="" OR V$="END" THEN GOTO 2200 FI; PRINT @(20,6),V$,
+2245 DIM P0$(8),P1$(30); LET P0$(1)="P"+V$; FIND (6,KEY=P0$,DOM=2200)IOL=ADS01P
+2250 PRINT @(24,6),P1$,
+2260 LET A1$(9,2)=V$
+2290 GOTO 3900
+2300 REM "Default Mode"
+2310 IF POS(A1$(9,2)="PFPZ",2)>0 THEN LET A1$(14,1)=""; GOTO 3900
+2320 LET V0$="S",V1$="C",V2$=A1$(14,1),V3$="",V4$="Enter Default Printer Font ID, <F3>=Lookup",V0=1,V1=20,V2=7; GOSUB 7000
+2330 IF V3=3 THEN CALL "ADC.05","21",A1$(9,2),V$; IF V$="" OR V$="END" THEN GOTO 2300 ELSE PRINT @(20,7),V$,
+2340 DIM P0$(8),P1$(30); LET P0$(1)="P"+A1$(9,2),P0$(7,1)=V$; FIND (6,KEY=P0$,DOM=2300)IOL=ADS01P
+2350 PRINT @(24,7),P1$,
+2380 LET A1$(14,1)=V$
+2390 GOTO 3900
+2400 REM "---- Valid Printer Options"
+2420 LET V0$="S",V1$="C",V2$=A2$,V3$="",V4$="Enter The Valid Printer Options For This User",V0=20,V1=20,V2=8; GOSUB 7000
+2440 LET A2$=V$
+2490 GOTO 3900
+2500 REM "---- Order Processing Station ID"
+2520 LET V0$="S",V1$="C",V2$=A1$(23,2),V3$="",V4$="Enter A Valid Order Processing Station ID For This User",V0=2,V1=20,V2=15; GOSUB 7000
+2560 LET A1$(23,2)=V$
+2590 GOTO 3900
+2600 REM "---- PF File ID"
+2620 LET V0$="S",V1$="C",V2$=A1$(28,3),V3$="",V4$="Enter The Unix PF File Identifier For This User",V0=3,V1=20,V2=11; GOSUB 7000
+2660 LET A1$(28,3)=V$
+2690 GOTO 3900
+2700 REM "---- Default ADD+ON Menu ID"
+2720 LET V0$="S",V1$="C",V2$=A1$(33,3),V3$="",V4$="Enter The Default Menu ID For This User",V0=3,V1=20,V2=12; GOSUB 7000
+2780 LET A1$(33,3)=V$
+2790 GOTO 3900
+2800 REM "---- Default Company ID"
+2820 LET V0$="Z",V1$="C",V2$=A1$(36,2),V3$="",V4$="Enter The Default Company ID For This User",V0=2,V1=20,V2=13; GOSUB 7000
+2840 DIM C1$(30); FIND (3,KEY=V$,DOM=2800)IOL=SYM06
+2850 PRINT @(24,13),C1$(1,30),
+2880 LET A1$(36,2)=V$
+2890 GOTO 3900
+2900 REM "---- Default Division"
+2920 LET V0$="S",V1$="C",V2$=A1$(38,2),V3$="",V4$="Enter The Division Number Default For This User",V0=2,V1=20,V2=14; GOSUB 7000
+2960 LET A1$(38,2)=V$
+2990 GOTO 3900
+3900 REM "---- Sequence Control"
+3910 IF V3=2 THEN GOTO 3940
+3920 LET I0=I0+1
+3930 GOTO 3960
+3940 IF I0>0 THEN LET I0=I0-1
+3960 ON I0 GOTO 2000,2100,2200,2300,2400,2600,2700,2800,2900,2500,3000,3200,4000
+4020 LET V0$="S",V1$="C",V2$="Y",V3$="",V4$="Is The Above Information Correct? <Y/N/DELETE>: ",V0=6,V1=40+INT(LEN(V4$)/2)+2,V2=22; GOSUB 7000
+4030 IF V$="DELETE" THEN GOTO 4200
+4060 IF V$="N" THEN GOTO 2000
+4100 REM "---- Write"
+4120 WRITE (1,KEY=A0$)IOL=ADS01U
+4130 DIM B0$(3),B1$(128),B[4]
+4140 READ (2,KEY=A1$(1,3),DOM=4190)IOL=SYM02
+4150 LET B1$(101,3)=A1$(28,3),B1$(104,3)=A1$(33,3); REM "Default PF file, Menu
+4160 WRITE (2,KEY=B0$)IOL=SYM02
+4190 GOTO 1000
+4200 REM "---- Delete"
+4220 REMOVE (1,KEY=A0$,DOM=4221)
+4290 GOTO 1000
+5000 REM "---- Display Record"
+5020 DIM B1$(128); FIND (2,KEY=A1$(1,3),DOM=5021)IOL=SYM02
+5040 PRINT 'SF',@(20,4),A1$(1,3),@(24,4),B1$(1,24),
+5060 PRINT @(20,5),A1$(8,1),
+5080 DIM P0$(8),P1$(60); LET P0$(1,3)="P"+A1$(9,2); FIND (6,KEY=P0$,DOM=5081)IOL=ADS01P
+5100 PRINT @(20,6),A1$(9,2),@(24,6),FNP$(P1$),
+5120 DIM P0$(8),P1$(60); LET P0$(1,3)="P"+A1$(9,2),P0$(7,1)=A1$(14,1); FIND (6,KEY=P0$,DOM=5121)IOL=ADS01P
+5140 PRINT @(20,7),A1$(14,1),@(24,7),FNP$(P1$),@(20,8),A2$,
+5160 DIM P0$(8),P1$(60); LET P0$(1,3)="P"+A1$(16,2); FIND (6,KEY=P0$,DOM=5161)IOL=ADS01P
+5170 PRINT @(20,9),A1$(16,2),@(24,9),FNP$(P1$),
+5180 DIM P0$(8),P1$(60); LET P0$(1,3)="P"+A1$(16,2),P0$(7,1)=A1$(21,1); FIND (6,KEY=P0$,DOM=5181)IOL=ADS01P
+5190 PRINT @(20,10),A1$(21,1),@(24,10),FNP$(P1$),@(20,11),A1$(28,3),@(20,12),A1$(33,3),
+5200 DIM C1$(30); FIND (3,KEY=A1$(36,2),DOM=5201)IOL=SYM06
+5220 PRINT @(20,13),A1$(36,2),@(24,13),C1$(1,30),@(20,14),A1$(38,2),@(20,15),A1$(23,2),
+5290 RETURN 
+6600 REM "---- Set Default Logname Record"
+6620 CALL "ADC.03",LOGNAME$,LNAME$,STATUS
+6630 IF STATUS<>0 THEN EXITTO 9700
+6640 DIM A0$(15),A1$(40),A2$(20),A4$(30),A[4]
+6650 LET A0$(1)="U"+LOGNAME$
+6660 LET A1$(8,1)="Y",A1$(9,2)="PF",A2$(1,2)="PF"
+6670 WRITE (1,KEY=A0$)IOL=ADS01U
+6680 READ (1,KEY="U",DOM=6681)
+6790 RETURN 
+7000 REM " --- User Input Routine"
+7020 CALL "ADC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7040 IF V3=5 THEN GOTO 7100
+7050 IF V3=6 THEN GOTO 7200
+7085 LET I$=V$
+7090 RETURN 
+7100 REM " --- Error During Input"
+7200 REM " --- Escape Requested"
+7210 PRINT @(0,22),'CL','CURSOR'("ON"),
+7220 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR((ASC(Q$)-32)*POS(" "<>Q2$(2,1)):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8030 DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+8040 DEF FND$(Q$)=CHR(NUM(Q$(5,2))+32)+CHR(NUM(Q$(1,2))+32)+CHR(NUM(Q$(3,2))+32)
+8050 DEF FNE$(Q$)=STR(INT(TIM):"00")+":"+STR(FPT(TIM)*60:"00")
+8060 DEF FNF$(Q$,Q1$)=STR(-NUM(Q$):Q1$)
+8070 DEF FNG$(Q$)=STR((ASC(Q$)-32)*POS(" "<>Q$):"000")
+8090 DEF FNP$(Q$)=CVS(Q$,2)
+8180 DEF FNU$(Q$)=CVS(Q$,4)
+9000 REM "---- Errors"
+9010 LET ER0$=LST(PGM(TCB(5))),ER1$=STR(TCB(5)),ER2$=PGM(-1),ER0=ERR,ER1=0
+9020 IF ER0=0 AND POS(" (PTR"=ER0$)>0 THEN GOTO 9600
+9030 IF ER0=14 AND O0<>0 THEN LET O0=1; GOTO 0001
+9040 CALL "ADC.EA",ERR=9080,ER0$,ER1$,ER2$,ER0,ER1
+9050 IF ER1=1 THEN GOTO 9100
+9060 IF ER1=3 THEN GOTO 9800
+9080 PRINT @(0,22),'CL',ER0$,'LF','LF',; ESCAPE
+9100 REM "---- Retry"
+9120 RETRY
+9200 REM "---- Printer Offline"
+9220 CALL "ADS.EB",V3
+9230 IF V3=4 THEN GOTO 9900
+9240 IF V3=6 THEN ESCAPE
+9290 RETRY
+9700 REM "---- Error Message Exit"
+9720 LET V0$="S",V1$="C",V2$="",V3$="",V4$=$07$+"Operating System Information Missing! <CR>=Exit: ",V0=1,V1=40+INT(LEN(V4$)/2)+2,V2=22; GOSUB 7000
+9790 GOTO 9900
+9800 REM "---- Error Exit"
+9820 IF ER0$="" THEN LET STATUS=ERR ELSE LET STATUS=ER0
+9900 REM "---- Exit"
+9990 RUN "ADS.AA"
+9999 END

@@ -1,0 +1,329 @@
+// Driver for international paperwork printing-addon version  <aonintr_1>
+// Nov 1995-Print a separate commercial invoice for each drop ship
+// Oct 1997-Print invoices for domestics doing int'l drop ship (zip="")
+
+firm$="01";
+terminal$="T"+term();
+
+find/noerror sys01t using terminal$;
+if available(sys01t) then firm$=sys01t.firm_id;
+
+display/form="MAS_HEAD"/nodrop firm_name=""
+	screen_desc="INTERNATIONAL PAPERWORK";
+
+create temporary table t1
+	tinvoice char(7)/index
+	tfirm char(2)
+	tcust_num char(6)/index
+	tship_nbr char(6)
+	torder char(7)
+	tcom_inv_group char(37)/index
+	tform char(3);
+
+create global temporary table com_line_item
+	counter char(4)/index
+	product_class char(2)/index
+	line_type char(1)
+	item_num char(15)
+	desc char(50)
+	comment char(30)
+	qty num(5)
+	unit_price num(7)/precision=2
+	extension num(9)/precision=2;
+
+// Load media table with codes and declared values.  
+//Load product description tables.
+//init media_table$[20,1];
+init media_table$[6,1];
+init description_table$[20,1];
+//init conversion_table$[3,1];
+
+#3glbegin
+dread media_table$[all]
+rem media codes
+data "HD5","1","HD3","1","MT3","1","QTC","15","DAT","5","CDR","2","",""
+
+dread description_table$[all]
+rem  Product descriptions
+data "10","Interpretive programming language"
+data "10","for use in business;"
+data "10","display carton, media"
+rem data "10","Printed technical reference manual"
+data "11","C Library: Programs"
+data "11","for use in business;"
+data "11","display carton, media"
+data "12","Data Server software"
+data "12","for use in business; media"
+rem data "12","Printed technical reference manual"
+data "15","TAOS: Fourth-generation programming"
+data "15","language for use in business;"
+data "15","display carton, media"
+rem data "15","Printed technical reference manual"
+data "16","TAOS/Views: Report writer"
+data "16","software for use in business;"
+data "16","display carton, media"
+rem data "16","Printed technical reference manual"
+data "MS","Printed technical reference manual"
+data "14","BASIS ODBC Driver:"
+data "14","software for use in business"
+data "MEDIA CD-ROM","Non-activated software products"
+data "MEDIA CD-ROM","for use in business; media value"
+data "MEDIA CD-ROM","only for customs purposes"
+data "",""
+#3glend
+/*
+restore conversion_data
+dread conversion_table$[all]
+conversion_data:
+data "QR","MS"
+data "",""
+data "",""
+data "",""
+#3glend
+*/
+/*
+choose
+	/traditional
+	/title= "@CHOOSE FORM TYPE TO PRINT"
+	/black
+	/drop
+	a from
+	"COMMERCIAL INVOICE"
+	"SHIPPER'S EXPORT DECLARATION";
+if a=0 then form$="COM"; else form$="SED";
+*/
+
+form$="COM";
+signer$="James Davis";
+prompt for
+	/prompt="ENTER NAME OF PERSON SIGNING FORMS"
+	/len=30
+	/black
+	/drop
+	signer$;
+
+title$="Shipping";
+prompt for
+	/prompt="ENTER TITLE OF PERSON SIGNING FORMS"
+	/len=20
+	/black
+	/drop
+	title$;
+call/nowindow "(BBEXT)_prntsel.utl",device_name$;
+if device_name$=$$ or device_name$="NO_DEVICE" then exit;
+
+pause/message "LOOKING FOR INTERNATIONAL INVOICES";
+
+for each are03 where firm_id="01" and ord_inv_flag="I"
+{
+find arm02 using are03.firm_id+are03.customer_nbr+are03.ar_type;
+	{
+	t1.tinvoice=are03.ar_inv_nbr;
+	t1.torder=are03.order_number;ordnum$=t1.torder;
+	t1.tfirm=are03.firm_id;
+	t1.tcust_num=are03.customer_nbr;
+	t1.tship_nbr=are03.shipto_nbr;
+	t1.tform=form$;
+	prev_cust_num$=t1.tfirm+t1.tcust_num;ship_nbr$=t1.tship_nbr;
+	gosub build_address_block;
+	t1.tcom_inv_group=tcust_num+shipname$;
+	if pos(arm02.cust_type="DSIRSIEUI",3)
+	or cvs(shipcountry$,2)<>""
+		then insert/update t1;
+	}
+}
+find/first/noerror t1;
+if available(t1)=0 then
+{
+pause/message="NO INTERNATIONAL INVOICES.  PRESS <ENTER> TO CONTINUE.";
+break;
+}
+first_time_sw$="";
+for each t1 where tform=form$
+group by tcom_inv_group
+group by tinvoice
+{
+// Check for break on customer+ship-to name
+if first_of(tcom_inv_group) and first_time_sw$="N" then
+	gosub customer_break_driver;
+else
+	prev_cust_num$=tfirm+tcust_num;
+ordnum$=torder;
+ship_nbr$=tship_nbr;
+if first_time_sw$<>"N" then
+	{
+	first_invoice$=tinvoice;
+	first_order$=torder;
+	first_time_sw$="N";
+	}
+
+last_invoice$=tinvoice;
+find are03 using t1.tfirm+"  "+t1.tcust_num+t1.torder+"000";
+freight_accum=freight_accum+freight_amt;
+
+for each are13 where firm_id=are03.firm_id 
+and order_number=are03.order_number {gosub handle_line_item; }
+}
+
+gosub customer_break_driver;
+
+subroutine handle_line_item
+{
+if form$="COM" then
+call/nowindow "(BBX)aonintr_11.bbx",are13,media_table$[all],
+	description_table$[all],media_accum;
+/*
+else if form$="SED" and invoice_reg_item.item_num(1,1)="1" then
+	{
+	sed_customer_accum=sed_customer_accum+invoice_reg_item.extension;
+	sed_units = sed_units + (invoice_reg_item.qty_shipped *
+					invoice_reg_item.unit_conversion);
+	}
+*/
+}
+
+subroutine customer_break_driver
+{
+#3glbegin
+print 'goto'(0)
+#3glend
+
+if form$="SED" then
+	{
+	gosub sed_customer_break;
+	break;
+	}
+
+//If a customer has just bought users, there won't be anything to report,
+// so take special precautions for those situations
+find/noerror/first com_line_item;
+if available(com_line_item) then gosub com_customer_break;
+else
+	{
+	freight_accum=0;
+	media_accum=0;
+	prev_cust_num$=tfirm+tcust_num;
+	ship_nbr$=tship_nbr;
+	first_invoice$=tinvoice;
+	first_order$=torder;
+	}
+pause/message "LOOKING FOR INTERNATIONAL INVOICES";
+for each com_line_item delete com_line_item;
+}
+
+subroutine com_customer_break
+{
+gosub build_address_block;
+if freight_accum>0 gosub add_freight_line;
+call/nowindow "(BBX)aonintr_13.bbx",prev_cust_num$,first_order$,shipname$,quit$;
+if quit$="Y" then exit;
+call/nowindow "(BBX)aonintr_15.bbx",prev_cust_num$,first_invoice$,
+last_invoice$,address_block$[all],signer$,title$,media_accum,device_name$;
+
+freight_accum=0;
+media_accum=0;
+prev_cust_num$=tfirm+tcust_num;
+ship_nbr$=tship_nbr;
+first_invoice$=tinvoice;
+first_order$=torder;
+}
+
+subroutine sed_customer_break
+{
+#3glbegin
+print 'goto'(0),
+#3glend
+if sed_customer_accum => 2500 then
+	{
+	gosub build_address_block;
+	call/nowindow "(BBX)intr_16.bbx",prev_cust_num$,address_block$[all],title$,
+		sed_customer_accum,sed_units;
+	}
+sed_customer_accum=0;
+sed_units=0;
+prev_cust_num$=tfirm+tcust_num;
+ship_nbr$=tship_nbr;
+}
+
+subroutine build_address_block
+{
+foundaddr=0;
+shipname$="";shipadd1$="";shipadd2$="";shipadd3$="";shipadd4$="";
+shipcity$="";shipst$="";shipcountry$="";
+if cvs(ship_nbr$,2)="" then
+	{find/next/index=indx3/noerror tmm01 using prev_cust_num$;
+	if available(tmm01) and tmm01.customer_nbr=prev_cust_num$(3) then 
+		{shipname$=tmm01.cont_firm; shipadd1$=tmm01.address_1;
+		shipadd2$=tmm01.address_2; shipadd3$=tmm01.address_3;
+		shipadd4$=tmm01.address_4; shipcity$=tmm01.city;
+		shipst$=tmm01.state; shippost$=tmm01.zip_code;
+		shipcountry$=tmm01.country; foundaddr=1;
+		}
+	else	{find/noerror arm01 using prev_cust_num$; 
+		if available(arm01) then
+			{
+		shipname$=arm01.cust_name; shipadd1$=arm01.addr_line_1;
+		shipadd2$=arm01.addr_line_2; shipadd3$=arm01.addr_line_3;
+		shippost$=arm01.zip_code; shipcountry$=arm01.country;
+		foundaddr=1;
+			}
+		}
+	}
+
+if cvs(ship_nbr$,2)<>"" then
+	{find/noerror arm03 using prev_cust_num$+ship_nbr$; 
+	if available(arm03) then 
+		{shipname$=arm03.ship_to_name; shipadd1$=arm03.address_1;
+		shipadd2$=arm03.address_2; shipadd3$=arm03.address_3;
+		shipcity$=arm03.city; shipst$=arm03.state;
+		shippost$=arm03.zip_code;
+		shipcountry$=arm03.country; foundaddr=1;
+		}
+	else 	{find/noerror are33 using prev_cust_num$+ordnum$; 
+		if available(are33) then 
+			{shipname$=are33.ship_to_name; 
+			shipadd1$=are33.address_1;
+			shipadd2$=are33.address_2; shipadd3$=fill(30);
+			shipcity$=are33.city; shipst$=are33.state;
+			shippost$=are33.zip_code;
+			shipcountry$=are33.country; foundaddr=1;
+			}
+		}
+	}
+init address_block$[6]; i=0;
+if foundaddr=0 then break;
+source$=shipname$; gosub build_address_line;
+source$=shipadd1$; gosub build_address_line;
+source$=shipadd2$; gosub build_address_line;
+source$=shipadd3$; gosub build_address_line;
+source$=shipadd4$; gosub build_address_line;
+pc$="A";
+find/noerror countries using shipcountry$;
+if available(countries) then pc$=countries.postcode_pos;
+if pc$="A" then source$=cvs(shipcity$+" "+shipst$+" "+shippost$,35);
+	else source$=cvs(shippost$+" "+shipcity$+" "+shipst$,35);
+gosub build_address_line;
+source$=shipcountry$; gosub build_address_line;
+}
+
+subroutine build_address_line
+{
+if cvs(source$,3)<>$$ then { i=i+1; address_block$[i]=source$;}
+}
+
+subroutine add_freight_line
+{
+find/last/noerror com_line_item;
+counter=str(num(counter)+1:"0000");
+product_class="ZZ";
+line_type="F";
+item_num="FREIGHT";
+desc="Freight";
+comment=fill(30);
+qty=1;
+unit_price=freight_accum;
+extension=freight_accum;
+insert com_line_item;
+}
+
+//

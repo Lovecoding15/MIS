@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADQ_FAXEMAIL</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<FIRM_ID>  </FIRM_ID>
+		<DOC_PROC_SEQ>          </DOC_PROC_SEQ>
+		<DOC_NO>          </DOC_NO>
+		<DOC_EXT>   </DOC_EXT>
+		<DOC_PROC_TYPE> </DOC_PROC_TYPE>
+		<DOC_PRIORITY> </DOC_PRIORITY>
+		<MAX_ATTEMPTS>00</MAX_ATTEMPTS>
+		<ATTEMPTED>00</ATTEMPTED>
+		<TRANS_USER_ID>                </TRANS_USER_ID>
+		<TRANS_DATE>        </TRANS_DATE>
+		<TRANS_TIME>      </TRANS_TIME>
+		<FAX_NOS>                                                            </FAX_NOS>
+		<FROM_COMPANY>                              </FROM_COMPANY>
+		<FROM_NAME>                              </FROM_NAME>
+		<FAX_TO_ORG>                              </FAX_TO_ORG>
+		<FAX_TO_NAME>                                                            </FAX_TO_NAME>
+		<EMAIL_ACCOUNT>          </EMAIL_ACCOUNT>
+		<EMAIL_FROM>                                                                                </EMAIL_FROM>
+		<EMAIL_REPLYTO>                                                                                </EMAIL_REPLYTO>
+		<EMAIL_TO>                                                                                </EMAIL_TO>
+		<EMAIL_CC>                                                                                </EMAIL_CC>
+		<EMAIL_BCC>                                                                                </EMAIL_BCC>
+		<SUBJECT>                                                            </SUBJECT>
+		<MESSAGE>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </MESSAGE>
+		<DOC_PROC_STATUS> </DOC_PROC_STATUS>
+		<DOC_PROC_COMMENT>                                                            </DOC_PROC_COMMENT>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

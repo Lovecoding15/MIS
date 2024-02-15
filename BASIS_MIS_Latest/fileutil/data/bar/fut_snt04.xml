@@ -1,0 +1,378 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<FUT_SNT04>
+	<ALIAS id="ddm_tables">
+		<ID id="ddm_tables">DDM_TABLES</ID>
+		<RECORD id="ddm_tables.fut_snt04">
+			<DD_TABLE_ALIAS id="ddm_tables.fut_snt04">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_ALIAS_DESC id="ddm_tables.fut_snt04">SN Vendor Features</DD_ALIAS_DESC>
+			<DD_FILE_NAME id="ddm_tables.fut_snt04">SNT-04</DD_FILE_NAME>
+			<DD_TABLE_PATH id="ddm_tables.fut_snt04">[FILEUTIL]</DD_TABLE_PATH>
+			<DD_ALIAS_TYPE id="ddm_tables.fut_snt04">X</DD_ALIAS_TYPE>
+			<DD_KEY_LENGTH id="ddm_tables.fut_snt04">0</DD_KEY_LENGTH>
+			<DD_NBR_RECORD id="ddm_tables.fut_snt04">0</DD_NBR_RECORD>
+			<DD_RECORD_LEN id="ddm_tables.fut_snt04">0</DD_RECORD_LEN>
+			<DD_SYSTEM_REC id="ddm_tables.fut_snt04">N</DD_SYSTEM_REC>
+			<ASC_COMP_ID id="ddm_tables.fut_snt04">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_tables.fut_snt04">FUT</ASC_PROD_ID>
+			<ASC_VERSION_ID id="ddm_tables.fut_snt04">1.0</ASC_VERSION_ID>
+			<DD_EXPORT_DATA id="ddm_tables.fut_snt04">Y</DD_EXPORT_DATA>
+			<DD_CREATE_DATE id="ddm_tables.fut_snt04">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_tables.fut_snt04">20130801</DD_LSTREV_DATE>
+			<DD_LSTSYNC_DATE id="ddm_tables.fut_snt04">20130801</DD_LSTSYNC_DATE>
+			<DD_LSTSYNC_TIME id="ddm_tables.fut_snt04">111900</DD_LSTSYNC_TIME>
+			<DD_ATTR_CPGM id="ddm_tables.fut_snt04">/mnt/data/aon_prod/v1110/fileutil/;</DD_ATTR_CPGM>
+			<DD_ATTR_FTYP id="ddm_tables.fut_snt04">T</DD_ATTR_FTYP>
+			<DD_ATTR_WINT id="ddm_tables.fut_snt04">SN Vendor Features</DD_ATTR_WINT>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_cpro">
+		<ID id="ddm_table_cpro">DDM_TABLE_CPRO</ID>
+		<RECORD id="ddm_table_cpro.fut_snt04bdeq">
+			<DD_TABLE_ALIAS id="ddm_table_cpro.fut_snt04bdeq">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_ATTR_CPRO id="ddm_table_cpro.fut_snt04bdeq">BDEQ</DD_ATTR_CPRO>
+		</RECORD>
+		<RECORD id="ddm_table_cpro.fut_snt04bsho">
+			<DD_TABLE_ALIAS id="ddm_table_cpro.fut_snt04bsho">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_ATTR_CPRO id="ddm_table_cpro.fut_snt04bsho">BSHO</DD_ATTR_CPRO>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_tpls">
+		<ID id="ddm_table_tpls">DDM_TABLE_TPLS</ID>
+		<RECORD id="ddm_table_tpls.fut_snt04">
+			<DD_TABLE_ALIAS id="ddm_table_tpls.fut_snt04">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_FILE_NAME id="ddm_table_tpls.fut_snt04">SNT-04</DD_FILE_NAME>
+			<DD_TABLE_TPL id="ddm_table_tpls.fut_snt04">serial_nbr:c(20),feature:c(30),feature_rev:c(5),user_based:c(1),prod_code:c(3),type_of_sale:c(3),expire_on_dt:c(8),fax_flag:c(1),available:c(24*),users:n(5*),available_num:n(7*)</DD_TABLE_TPL>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_keys">
+		<ID id="ddm_keys">DDM_KEYS</ID>
+		<RECORD id="ddm_keys.fut_snt0400">
+			<DD_TABLE_ALIAS id="ddm_keys.fut_snt0400">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_keys.fut_snt0400">00</DD_KEY_NUMBER>
+			<DD_KEY_ID id="ddm_keys.fut_snt0400">INDX1           </DD_KEY_ID>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_key_segs">
+		<ID id="ddm_key_segs">DDM_KEY_SEGS</ID>
+		<RECORD id="ddm_key_segs.fut_snt040001">
+			<DD_TABLE_ALIAS id="ddm_key_segs.fut_snt040001">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_key_segs.fut_snt040001">00</DD_KEY_NUMBER>
+			<DD_SEGMENT_SEQ id="ddm_key_segs.fut_snt040001">01</DD_SEGMENT_SEQ>
+			<DD_SEGMENT_COL id="ddm_key_segs.fut_snt040001">SERIAL_NBR      </DD_SEGMENT_COL>
+			<DD_SEGMENT_POS id="ddm_key_segs.fut_snt040001">1</DD_SEGMENT_POS>
+			<DD_SEGMENT_OFF id="ddm_key_segs.fut_snt040001">0</DD_SEGMENT_OFF>
+			<DD_SEGMENT_LEN id="ddm_key_segs.fut_snt040001">20</DD_SEGMENT_LEN>
+			<DD_SEGMENT_SORT id="ddm_key_segs.fut_snt040001">N</DD_SEGMENT_SORT>
+			<DD_SEGMENT_UNIQ id="ddm_key_segs.fut_snt040001">Y</DD_SEGMENT_UNIQ>
+			<DD_SEGMENT_MATH id="ddm_key_segs.fut_snt040001">N</DD_SEGMENT_MATH>
+		</RECORD>
+		<RECORD id="ddm_key_segs.fut_snt040002">
+			<DD_TABLE_ALIAS id="ddm_key_segs.fut_snt040002">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_KEY_NUMBER id="ddm_key_segs.fut_snt040002">00</DD_KEY_NUMBER>
+			<DD_SEGMENT_SEQ id="ddm_key_segs.fut_snt040002">02</DD_SEGMENT_SEQ>
+			<DD_SEGMENT_COL id="ddm_key_segs.fut_snt040002">FEATURE         </DD_SEGMENT_COL>
+			<DD_SEGMENT_POS id="ddm_key_segs.fut_snt040002">1</DD_SEGMENT_POS>
+			<DD_SEGMENT_OFF id="ddm_key_segs.fut_snt040002">20</DD_SEGMENT_OFF>
+			<DD_SEGMENT_LEN id="ddm_key_segs.fut_snt040002">30</DD_SEGMENT_LEN>
+			<DD_SEGMENT_SORT id="ddm_key_segs.fut_snt040002">N</DD_SEGMENT_SORT>
+			<DD_SEGMENT_UNIQ id="ddm_key_segs.fut_snt040002">Y</DD_SEGMENT_UNIQ>
+			<DD_SEGMENT_MATH id="ddm_key_segs.fut_snt040002">N</DD_SEGMENT_MATH>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_cols">
+		<ID id="ddm_table_cols">DDM_TABLE_COLS</ID>
+		<RECORD id="ddm_table_cols.fut_snt04001">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04001">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04001">001</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04001">FUT_SERIAL_NBR  </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04001">SERIAL_NBR      </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04001">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04001">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04001">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04001">20</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04001">1</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04002">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04002">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04002">002</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04002">FUT_FEATURE     </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04002">FEATURE         </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04002">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04002">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04002">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04002">30</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04002">2</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04003">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04003">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04003">003</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04003">FUT_FEATURE_REV </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04003">FEATURE_REV     </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04003">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04003">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04003">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04003">5</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04003">3</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04004">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04004">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04004">004</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04004">FUT_USER_BASED  </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04004">USER_BASED      </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04004">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04004">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04004">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04004">1</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04004">4</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04005">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04005">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04005">005</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04005">FUT_PROD_CODE   </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04005">PROD_CODE       </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04005">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04005">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04005">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04005">3</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04005">5</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04006">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04006">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04006">006</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04006">FUT_TYPE_OF_SALE</DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04006">TYPE_OF_SALE    </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04006">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04006">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04006">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04006">3</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04006">6</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04007">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04007">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04007">007</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04007">FUT_EXPIRE_ON_DT</DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04007">EXPIRE_ON_DT    </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04007">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04007">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04007">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_LABL id="ddm_table_cols.fut_snt04007">Expire On Date</DD_ATTR_LABL>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04007">8</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04007">7</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04008">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04008">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04008">008</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04008">FUT_FAX_FLAG    </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04008">FAX_FLAG        </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04008">N</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04008">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04008">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04008">1</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04008">8</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04009">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04009">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04009">009</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04009">FUT_AVAILABLE   </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04009">AVAILABLE       </DD_DVAR_NAME>
+			<DD_COL_REPEATS id="ddm_table_cols.fut_snt04009">24</DD_COL_REPEATS>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04009">Y</DD_FIELD_DELIM>
+			<DD_DELIM_CHAR id="ddm_table_cols.fut_snt04009">0A</DD_DELIM_CHAR>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04009">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04009">20110607</DD_LSTREV_DATE>
+			<DD_ATTR_COLW id="ddm_table_cols.fut_snt04009">0</DD_ATTR_COLW>
+			<DD_ATTR_MLAN id="ddm_table_cols.fut_snt04009">N</DD_ATTR_MLAN>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04009">24</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04009">9</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04010">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04010">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04010">010</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04010">FUT_USERS       </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04010">USERS           </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04010">Y</DD_FIELD_DELIM>
+			<DD_DELIM_CHAR id="ddm_table_cols.fut_snt04010">0A</DD_DELIM_CHAR>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04010">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04010">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04010">5</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04010">10</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.fut_snt04011">
+			<DD_TABLE_ALIAS id="ddm_table_cols.fut_snt04011">FUT_SNT04       </DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.fut_snt04011">011</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.fut_snt04011">FUT_AVAILABLE_NU</DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.fut_snt04011">AVAILABLE_NUM   </DD_DVAR_NAME>
+			<DD_FIELD_DELIM id="ddm_table_cols.fut_snt04011">Y</DD_FIELD_DELIM>
+			<DD_CREATE_DATE id="ddm_table_cols.fut_snt04011">20100514</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.fut_snt04011">20100514</DD_LSTREV_DATE>
+			<DD_ATTR_MAXL id="ddm_table_cols.fut_snt04011">7</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.fut_snt04011">11</DD_ATTR_TIND>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_elements">
+		<ID id="ddm_elements">DDM_ELEMENTS</ID>
+		<RECORD id="ddm_elements.fut_serial_nbr">
+			<DD_DATA_NAME id="ddm_elements.fut_serial_nbr">FUT_SERIAL_NBR  </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_serial_nbr">Serial Number (Basis)</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_serial_nbr">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_serial_nbr">20</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_serial_nbr">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_serial_nbr">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_serial_nbr">20100520</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_serial_nbr">20100520</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_serial_nbr">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_serial_nbr">Serial Number (Basis)</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_serial_nbr">Serial Number (Basis)</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_serial_nbr">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_feature">
+			<DD_DATA_NAME id="ddm_elements.fut_feature">FUT_FEATURE     </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_feature">Feature Name</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_feature">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_feature">30</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_feature">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_feature">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_feature">20101109</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_feature">20101109</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_feature">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_feature">Feature</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_feature">Feature</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_feature">2</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_feature_rev">
+			<DD_DATA_NAME id="ddm_elements.fut_feature_rev">FUT_FEATURE_REV </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_feature_rev">Feature Revision</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_feature_rev">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_feature_rev">5</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_feature_rev">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_feature_rev">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_feature_rev">20101109</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_feature_rev">20101109</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_feature_rev">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_feature_rev">Feature Rev</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_feature_rev">Feature Rev</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_feature_rev">2</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_user_based">
+			<DD_DATA_NAME id="ddm_elements.fut_user_based">FUT_USER_BASED  </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_user_based">User Based</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_user_based">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_user_based">1</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_user_based">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_user_based">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_user_based">20101109</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_user_based">20101109</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_user_based">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_user_based">User Based</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_user_based">User Based</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_user_based">2</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_prod_code">
+			<DD_DATA_NAME id="ddm_elements.fut_prod_code">FUT_PROD_CODE   </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_prod_code">Prod Code</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_prod_code">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_prod_code">3</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_prod_code">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_prod_code">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_prod_code">20101109</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_prod_code">20101109</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_prod_code">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_prod_code">Prod Code</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_prod_code">Prod Code</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_prod_code">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_type_of_sale">
+			<DD_DATA_NAME id="ddm_elements.fut_type_of_sale">FUT_TYPE_OF_SALE</DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_type_of_sale">Configurator Type of Sale ID</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_type_of_sale">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_type_of_sale">3</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_type_of_sale">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_type_of_sale">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_type_of_sale">20100520</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_type_of_sale">20100520</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_type_of_sale">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_type_of_sale">Configurator Type of Sale Id</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_type_of_sale">Configurator Type of Sale Id</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_type_of_sale">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_expire_on_dt">
+			<DD_DATA_NAME id="ddm_elements.fut_expire_on_dt">FUT_EXPIRE_ON_DT</DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_expire_on_dt">Expire On Dt</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_expire_on_dt">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_expire_on_dt">8</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_expire_on_dt">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_expire_on_dt">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_expire_on_dt">20101109</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_expire_on_dt">20101109</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_expire_on_dt">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_expire_on_dt">Expire On Dt</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_expire_on_dt">Expire On Dt</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_expire_on_dt">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_fax_flag">
+			<DD_DATA_NAME id="ddm_elements.fut_fax_flag">FUT_FAX_FLAG    </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_fax_flag">Fax Flag</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_fax_flag">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_fax_flag">1</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_fax_flag">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_fax_flag">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_fax_flag">20101109</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_fax_flag">20101109</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_fax_flag">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_fax_flag">Fax Flag</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_fax_flag">Fax Flag</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_fax_flag">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_available">
+			<DD_DATA_NAME id="ddm_elements.fut_available">FUT_AVAILABLE   </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_available">Available</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_available">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_available">1</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_available">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_available">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_available">20121126</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_available">20130912</DD_LSTREV_DATE>
+			<DD_ATTR_CTLW id="ddm_elements.fut_available">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_elements.fut_available">0</DD_ATTR_CTLH>
+			<DD_ATTR_CTYP id="ddm_elements.fut_available">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_available">Available</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_available">Available</DD_ATTR_LABS>
+			<DD_ATTR_MAXL id="ddm_elements.fut_available">0</DD_ATTR_MAXL>
+			<DD_ATTR_MAXR id="ddm_elements.fut_available">0</DD_ATTR_MAXR>
+			<DD_ATTR_MINL id="ddm_elements.fut_available">0</DD_ATTR_MINL>
+			<DD_ATTR_PREC id="ddm_elements.fut_available">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_users">
+			<DD_DATA_NAME id="ddm_elements.fut_users">FUT_USERS       </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_users">Number of users</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_users">N</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_users">5</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_users">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_users">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_users">20100520</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_users">20100520</DD_LSTREV_DATE>
+			<DD_ATTR_CTLW id="ddm_elements.fut_users">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_elements.fut_users">0</DD_ATTR_CTLH>
+			<DD_ATTR_CTYP id="ddm_elements.fut_users">N</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_users">Number of users</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_users">Number of users</DD_ATTR_LABS>
+			<DD_ATTR_MAXR id="ddm_elements.fut_users">0</DD_ATTR_MAXR>
+			<DD_ATTR_MINL id="ddm_elements.fut_users">0</DD_ATTR_MINL>
+			<DD_ATTR_PREC id="ddm_elements.fut_users">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.fut_available_nu">
+			<DD_DATA_NAME id="ddm_elements.fut_available_nu">FUT_AVAILABLE_NU</DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.fut_available_nu">Available Num</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.fut_available_nu">N</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.fut_available_nu">7</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.fut_available_nu">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.fut_available_nu">FUT</ASC_PROD_ID>
+			<DD_CREATE_DATE id="ddm_elements.fut_available_nu">20101109</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.fut_available_nu">20101109</DD_LSTREV_DATE>
+			<DD_ATTR_CTYP id="ddm_elements.fut_available_nu">N</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.fut_available_nu">Available Num</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.fut_available_nu">Available Num</DD_ATTR_LABS>
+			<DD_ATTR_PREC id="ddm_elements.fut_available_nu">2</DD_ATTR_PREC>
+		</RECORD>
+	</ALIAS>
+</FUT_SNT04>

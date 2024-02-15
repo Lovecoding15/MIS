@@ -1,0 +1,1294 @@
+[Program]
+Creation Date=2007-04-13
+Creation Time=17:44:39
+Last Build Date=2008-02-29
+Last Build Time=15:21:38
+Precision=99
+Program Name=C:\CVS\basisaon\EC\editEndUserData
+Remarks=Yes
+Resource File=editEndUserData.arc
+Show Forms=All
+
+[Init]
+ourAPI!=BBjAPI()
+ourSysGui!=ourAPI!.getSysGui()
+ourSystemMetrics!=ourSysGui!.getSystemMetrics()
+scrDimension!=ourSystemMetrics!.getScreenSize()
+ourContext=ourSysGui!.getContext()
+ourWindow!=ourSysGui!.getWindow(ourContext)
+ourWinID=num(gb__win_id$)
+gosub open_files
+translator!.translateWindow(ourWindow!)
+gosub center_window
+ourWindow!.setVisible(1)
+
+rem ' set cursor to hour glass
+ourWindow!.setCursor(3)
+
+rem ' controls the order of end user selection
+usingCompanyOrder=1
+
+gosub transfer_controls_to_hashmap
+gosub load_lists
+gosub set_form_clean
+
+endUserSerialNbrs!=ourAPI!.makeVector()
+
+ourWindow!.setText(ourWindow!.getText() + " - " + customerNbr$)
+
+rem ' all done with init return cursor to standard pointer
+ourWindow!.setCursor(0)
+
+def FNgetSelectedEndUserNbr$(endUserNbrList$,selected)
+    wrkList$=endUserNbrList$
+    for x = 0 to selected
+        rpos=pos($0A$=wrkList$)
+        selected$=wrkList$(1,rpos-1)
+        wrkList$=wrkList$(rpos+1)
+    next x
+    endUserNbr$=selected$
+    return endUserNbr$
+fnend
+
+rem ' get index of an item from $0A$ delimited list 
+def FNgetIndex(target$, in_list$)
+    wrkList$=in_list$
+    out_index=-1
+    while 1
+        rpos=pos($0A$=wrklist$)
+        if rpos then
+            out_index=out_index+1
+            this_target$=wrkList$(1,rpos-1)
+            wrkList$=wrkList$(rpos+1)
+            if target$=this_target$ then 
+                break
+            fi
+        else
+            out_index=-1
+            break
+        fi
+    wend
+    return out_index
+fnend
+
+rem ' get index of an item from a BBjVector!
+def FNfindSelectedIndexForListButton(target$, itemVector!)
+    if itemVector!.size() > 0 then
+        for testIdx=0 to itemVector!.size()-1
+            if cvs(target$,3)=cvs(cast(BBjString, itemVector!.getItem(testIdx)),3) then
+                break
+            fi
+        next testIdx
+        if testIdx >= itemVector!.size() then testIdx=-1
+    else
+        testIdx=-1
+    fi
+    return testIdx
+fnend
+
+rem ' replace \n with $0A$
+def FNunescLf$(xx_inStr$)
+    sgb_temp$=xx_inStr$,xx_outStr$=""
+    while len(sgb_temp$)
+        sgb_pos=pos("\n"=sgb_temp$)
+        if sgb_pos=0 then
+            xx_outStr$=xx_outStr$+sgb_temp$+$0A$,sgb_temp$=""
+        else
+            xx_outStr$=xx_outStr$+sgb_temp$(1,sgb_pos-1)+$0A$,sgb_temp$=sgb_temp$(sgb_pos+2)
+        fi
+    wend
+    return xx_outStr$
+fnend
+
+rem ' replace $0A$ with \n
+def FNescLf$(xx_inStr$)
+    sgb_temp$=xx_inStr$,xx_outStr$=""
+    while len(sgb_temp$)
+        sgb_pos=pos($0A$=sgb_temp$)
+        if sgb_pos=0 Then
+            xx_outStr$=xx_outStr$+sgb_temp$+"\n",sgb_temp$=""
+        else
+            xx_outStr$=xx_outStr$+sgb_temp$(1,sgb_pos-1)+"\n",sgb_temp$=sgb_temp$(sgb_pos+1)
+        fi
+    wend
+    return xx_outStr$
+fnend
+
+def FNgetMathcingItem$(List1$, List2$, xMatch$)
+    wrkList1$=List1$, wrkList2$=List2$
+    xresult$=""
+    xOffset=0
+    while len(wrkList1$)
+        xOffset=xOffset+1
+        rpos=pos($0a$=wrkList1$)
+        xtarget$=wrkList1$(1,rpos-1)
+        wrkList1$=wrkList1$(rpos+1)
+        if xtarget$=xMatch$ then
+            for x = 1 to xOffset
+                dpos=pos($0a$=wrkList2$)
+                xresult$=wrkList2$(1,dpos-1)
+                wrkList2$=wrkList2$(dpos+1)
+            next x
+            break
+        fi
+    wend
+    return xresult$
+fnend
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+rem ' this will give them the oppurtunity to save an unsaved work
+gosub clear_form
+
+if wasCleared then
+    goto gb__eoj
+fi
+
+[Event Win=101 ID=100 Code=N2:19 <LIST_SELECT> (W101_C100_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+selected = cast(BBjListButton, controls!.get("endUserList")).getSelectedIndex()
+gosub clear_form
+if wasCleared then
+    if usingCompanyOrder then
+        endUserNbr$=FNgetSelectedEndUserNbr$(endUserNbrListComp$,selected)
+    else
+        endUserNbr$=FNgetSelectedEndUserNbr$(endUserNbrListRef$,selected)
+    fi
+    gosub retrieve_and_load_enduser
+else
+    cast(BBjListButton, controls!.get("endUserList")).deselect()
+    cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+fi
+
+[Event Win=101 ID=101 Code=e <EDIT_CHANGE> (W101_C101_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=102 Code=C <MENU_SELECT> (W101_C102_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+rem ' this will give them the oppurtunity to save an unsaved work
+gosub clear_form
+if wasCleared then
+    goto gb__eoj
+else
+    cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+fi
+
+[Event Win=101 ID=102 Code=e <EDIT_CHANGE> (W101_C102_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=103 Code=C <MENU_SELECT> (W101_C103_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+gosub save_form
+
+[Event Win=101 ID=103 Code=e <EDIT_CHANGE> (W101_C103_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=104 Code=e <EDIT_CHANGE> (W101_C104_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=105 Code=C <MENU_SELECT> (W101_C105_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+gosub reset_form
+
+[Event Win=101 ID=105 Code=e <EDIT_CHANGE> (W101_C105_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=106 Code=e <EDIT_CHANGE> (W101_C106_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=107 Code=C <MENU_SELECT> (W101_C107_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+gosub prep_file_for_upload
+
+[Event Win=101 ID=107 Code=e <EDIT_CHANGE> (W101_C107_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=108 Code=C <MENU_SELECT> (W101_C108_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+
+gosub change_list_select_order
+
+[Event Win=101 ID=108 Code=N2:19 <LIST_SELECT> (W101_C108_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=109 Code=e <EDIT_CHANGE> (W101_C109_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=110 Code=C <MENU_SELECT> (W101_C110_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+if usingLanguage$<>"EN" then
+    gosub clear_form
+    if wasCleared then
+        usingLanguage$="EN"
+        gosub change_language
+    fi
+fi
+
+[Event Win=101 ID=110 Code=N2:19 <LIST_SELECT> (W101_C110_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=111 Code=C <MENU_SELECT> (W101_C111_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+if usingLanguage$<>"DE" then
+    gosub clear_form
+    if wasCleared then
+        usingLanguage$="DE"
+        gosub change_language
+    fi
+fi
+
+[Event Win=101 ID=111 Code=e <EDIT_CHANGE> (W101_C111_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=112 Code=C <MENU_SELECT> (W101_C112_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+if usingLanguage$<>"FR" then
+    gosub clear_form
+    if wasCleared then
+        usingLanguage$="FR"
+        gosub change_language
+    fi
+fi
+
+[Event Win=101 ID=112 Code=e <EDIT_CHANGE> (W101_C112_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=113 Code=N2:19 <LIST_SELECT> (W101_C113_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+
+idx=cast(BBjListButton, controls!.get("Industry")).getSelectedIndex()
+selIndustry$=cast(BBjListButton, controls!.get("Industry")).getItemAt(idx)
+
+if selIndustry$="Other" then
+    cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(1)
+else
+    cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(0)
+    cast(BBjEditBox, controls!.get("OtherDesc")).setText("")
+fi
+
+[Event Win=101 ID=114 Code=C <MENU_SELECT> (W101_C114_MENU_SELECT)]
+rem ' Menu selection made
+rem ' gb__event! = cast(BBjMenuItemSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Shift pressed: gb__event!.isShiftDown()
+rem ' Ctrl pressed: gb__event!.isControlDown()
+rem ' Item is checked: gb__event!.isSelected()
+
+gosub prep_file_for_upload
+
+[Event Win=101 ID=114 Code=e <EDIT_CHANGE> (W101_C114_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=115 Code=N2:19 <LIST_SELECT> (W101_C115_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=116 Code=e <EDIT_CHANGE> (W101_C116_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=117 Code=c0 <CHECK_OFF> (W101_C117_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=117 Code=c1 <CHECK_ON> (W101_C117_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=118 Code=c0 <CHECK_OFF> (W101_C118_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=118 Code=c1 <CHECK_ON> (W101_C118_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=119 Code=B <PUSH_BUTTON> (W101_C119_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub save_form
+
+[Event Win=101 ID=123 Code=B <PUSH_BUTTON> (W101_C123_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub reset_form
+
+[Event Win=101 ID=125 Code=B <PUSH_BUTTON> (W101_C125_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub change_list_select_order
+
+[Event Win=101 ID=145 Code=B <PUSH_BUTTON> (W101_C145_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub add_serial_numbers
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=146 Code=B <PUSH_BUTTON> (W101_C146_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub remove_serial_numbers
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+
+[Function (Declarations)]
+rem ' -----------------------------------------------------------------rem ' Declarationsrem ' -----------------------------------------------------------------
+
+Declarations:
+
+USE java.util.HashMap
+USE ::LanguageTranslator.src::LanguageTranslator
+
+rem ' general objects
+DECLARE BBjAPI ourAPI!
+DECLARE BBjSysGui ourSysGui!
+DECLARE BBjWindow ourWindow!
+DECLARE BBjFileInfo fileInfo!
+DECLARE BBjVector itemVector!
+DECLARE LanguageTranslator translator!
+
+rem ' control objects
+DECLARE BBjVector ourControlVector!
+DECLARE BBjControl control!
+
+DECLARE BBjFileInfo statesFileInfo!
+DECLARE BBjRecordSet statesRecordSet!
+DECLARE BBjFileInfo countriesFileInfo!
+DECLARE BBjRecordSet countriesRecordSet!
+DECLARE BBjFileInfo productsFileInfo!
+DECLARE BBjRecordSet productsRecordSet!
+DECLARE BBjFileInfo industriesFileInfo!
+DECLARE BBjRecordSet industriesRecordSet!
+DECLARE BBjFileInfo endUserFileInfo!
+DECLARE BBjRecordSet endUserRecordSet!
+DECLARE BBjFileInfo serialNbrFileInfo!
+DECLARE BBjRecordData recordData!
+
+DECLARE BBjVector wrkVector1!
+DECLARE BBjVector wrkVector2!
+DECLARE BBjVector endUserSerialNbrs!
+DECLARE BBjVector params!
+DECLARE BBjInt index!
+
+DECLARE HashMap controls!
+
+return
+
+[Function (add_serial_numbers)]
+rem ' -----------------------------------------------------------------rem ' add_serial_numbersrem ' -----------------------------------------------------------------
+
+add_serial_numbers:
+
+wrkVector1!=cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).getSelectedIndices()
+wrkVector2!=cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).getAllItems()
+
+if wrkVector1!.size() then
+    for x = 0 to wrkVector1!.size()-1
+        index!=cast(BBjInt, wrkVector1!.getItem(x))
+        wrkString$=cast(BBjString, wrkVector2!.getItem(index!))
+        if endUserSerialNbrs!.size() > 0 then
+            rem ' put it in the right order
+            inserted=0
+            for y = 0 to endUserSerialNbrs!.size()-1
+                targetStr$=cast(BBjString, endUserSerialNbrs!.getItem(y))
+                if wrkString$ <= targetStr$ then
+                    endUserSerialNbrs!.insertItem(y, wrkString$)
+                    inserted=1
+                    break
+                fi
+            next y
+            if !inserted then
+                endUserSerialNbrs!.insertItem(endUserSerialNbrs!.size(), wrkString$)
+            fi
+        else
+            endUserSerialNbrs!.addItem(wrkString$)
+        fi
+    next x
+
+    rem ' remove the serial numbers
+    for x = wrkVector1!.size()-1 to 0 step -1
+        index!=cast(BBjInt, wrkVector1!.getItem(x))
+        wrkVector2!.removeItem(index!)
+    next x
+    cast(BBjListBox, controls!.get("linkedSerialNbrs")).removeAllItems()
+    cast(BBjListBox, controls!.get("linkedSerialNbrs")).insertItems(0, endUserSerialNbrs!)
+    cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).removeAllItems()
+    cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).insertItems(0, wrkVector2!)
+
+fi
+
+return
+
+[Function (center_window)]
+rem ' -----------------------------------------------------------------rem ' center_windowrem ' -----------------------------------------------------------------
+
+center_window:
+
+width = scrDimension!.width
+height = scrDimension!.height
+winWidth = ourWindow!.getWidth()
+winHeight = ourWindow!.getHeight()
+
+x = int((width-winWidth)/2)
+y = int((height-winHeight)/2)
+
+ourWindow!.setLocation(x,y)
+
+return
+
+[Function (change_language)]
+rem ' -----------------------------------------------------------------
+rem ' change_language
+rem ' -----------------------------------------------------------------
+
+change_language:
+
+rem ' destroy the existing window
+ourWindow!.destroy()
+
+rem ' create a new one
+ourWindow!=ourSysGui!.createTopLevelWindow(gb__handle, ourWinID)
+
+rem ' translate the window
+gosub open_language_properties
+translator!.translateWindow(ourWindow!)
+ourWindow!.setText(ourWindow!.getText() + " - " + customerNbr$)
+
+rem ' position it
+gosub center_window
+
+rem ' other housekeeping
+gosub transfer_controls_to_hashmap
+gosub load_lists
+gosub set_form_clean
+
+ourWindow!.setVisible(1)
+
+return
+
+[Function (change_list_select_order)]
+rem ' -----------------------------------------------------------------rem ' change_list_select_orderrem ' -----------------------------------------------------------------
+
+change_list_select_order:
+
+if usingCompanyOrder then
+    usingCompanyOrder=0
+    cast(BBjListButton, controls!.get("endUserList")).removeAllItems()
+    cast(BBjListButton, controls!.get("endUserList")).insertItems(0,endUserListRef$)
+else
+    usingCompanyOrder=1
+    cast(BBjListButton, controls!.get("endUserList")).removeAllItems()
+    cast(BBjListButton, controls!.get("endUserList")).insertItems(0,endUserListComp$)
+fi
+
+return
+
+[Function (clear_form)]
+rem ' -----------------------------------------------------------------rem ' clear_formrem ' -----------------------------------------------------------------
+
+clear_form:
+
+rem ' need to ask if save needed when dirty flag set
+wasCleared=1
+if formDirty then
+    msg$=translator!.getMessage("save.changes.msg")
+    title$=translator!.getMessage("save.changes.title")
+    response=msgbox(msg$, 4+32, title$)
+    if response=6 then
+       gosub save_form
+       if !wasSaved then
+            wasCleared=0
+            return
+       fi
+    fi
+fi
+
+ourWindow!.setCursor(3)
+
+endUserNbr$=""
+
+cast(BBjEditBox, controls!.get("referenceNbr")).setText("")
+cast(BBjEditBox, controls!.get("CompName")).setText("")
+cast(BBjEditBox, controls!.get("endUserNumber")).setText("")
+cast(BBjEditBox, controls!.get("ContactName")).setText("")
+cast(BBjEditBox, controls!.get("AddrLnOne")).setText("")
+cast(BBjEditBox, controls!.get("AddrLnTwo")).setText("")
+cast(BBjEditBox, controls!.get("AddrLnThree")).setText("")
+cast(BBjEditBox, controls!.get("City")).setText("")
+cast(BBjListButton, controls!.get("State")).deselect()
+cast(BBjEditBox, controls!.get("PostalCode")).setText("")
+cast(BBjListButton, controls!.get("Country")).deselect()
+cast(BBjEditBox, controls!.get("EmailAddress")).setText("")
+cast(BBjEditBox, controls!.get("PhoneNumber")).setText("")
+cast(BBjListButton, controls!.get("Industry")).deselect()
+cast(BBjEditBox, controls!.get("OtherDesc")).setText("")
+cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(0)
+cast(BBjListButton, controls!.get("BasisProduct")).deselect()
+cast(BBjCEdit, controls!.get("AppModulesUsed")).setText("")
+cast(BBjCheckBox, controls!.get("Advantage")).setSelected(0)
+cast(BBjCheckBox, controls!.get("Announcements")).setSelected(0)
+
+
+cast(BBjStaticText, controls!.get("compNameReq")).setVisible(0)
+cast(BBjStaticText, controls!.get("countryReq")).setVisible(0)
+
+endUserSerialNbrs!.clear()
+cast(BBjListBox, controls!.get("linkedSerialNbrs")).removeAllItems()
+
+ourWindow!.setCursor(0)
+cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+
+gosub set_form_clean
+
+return
+
+[Function (get_end_user_list)]
+rem ' -----------------------------------------------------------------rem ' get_end_user_listrem ' -----------------------------------------------------------------
+
+get_end_user_list:
+
+endUserListComp$=""
+endUserListRef$=""
+endUserNbrListComp$=""
+endUserNbrListRef$=""
+
+read record(endUser,key="",err=*next)
+dim endUser$:endUserFileInfo!.getText()
+
+read (endUser,key="",knum=2,dom=*next)junk$
+while 1
+    read record(endUser,end=*break)endUser$
+    wrk$=cvs(endUser.company_name$,3)
+    if cvs(endUser.contact$,3)<>"" then wrk$=wrk$+", "+cvs(endUser.contact$,3)
+    if cvs(endUser.reference_nbr$,3)<>"" then wrk$=wrk$+", "+cvs(endUser.reference_nbr$,3)
+    wrk$=wrk$+" (" + str(num(cvs(endUser.end_user_nbr$(2),3)))+")"
+    endUserListComp$=endUserListComp$+wrk$+$0A$
+    endUserNbrListComp$=endUserNbrListComp$+endUser.end_user_nbr$+$0A$
+wend
+
+read (endUser,key="",knum=1,dom=*next)junk$
+while 1
+    read record(endUser,end=*break)endUser$
+    if cvs(endUser.reference_nbr$,3)<>"" then 
+        wrk$=cvs(endUser.reference_nbr$,3)
+    else
+        wrk$="No Ref"
+    fi
+    wrk$=wrk$+", "+cvs(endUser.company_name$,3)
+    if cvs(endUser.contact$,3)<>"" then wrk$=wrk$+", "+cvs(endUser.contact$,3)
+    wrk$=wrk$+" (" + str(num(cvs(endUser.end_user_nbr$(2),3)))+")"
+    endUserListRef$=endUserListRef$+wrk$+$0A$
+    endUserNbrListRef$=endUserNbrListRef$+endUser.end_user_nbr$+$0A$
+wend
+
+rem ' put channel back on knum 0
+read(endUser,key="",knum=0,dom=*next)junk$
+
+if usingCompanyOrder then
+    cast(BBjListButton, controls!.get("endUserList")).removeAllItems()
+    cast(BBjListButton, controls!.get("endUserList")).insertItems(0,endUserListComp$)
+else
+    cast(BBjListButton, controls!.get("endUserList")).removeAllItems()
+    cast(BBjListButton, controls!.get("endUserList")).insertItems(0,endUserListRef$)
+fi
+
+return
+
+[Function (get_unlinked_serial_numbers)]
+rem ' -----------------------------------------------------------------rem ' get_unlinked_serial_numbersrem ' -----------------------------------------------------------------
+
+get_unlinked_serial_numbers:
+
+unlinkedSerialNbrList$=""
+
+read record(serialNbr,key="",err=*next)
+dim serialNbr$:serialNbrFileInfo!.getText()
+
+read (serialNbr,key="",dom=*next)junk$
+while 1
+    read record(serialNbr,end=*break)serialNbr$
+    if cvs(serialNbr.end_user_nbr$,3)="" then 
+        unlinkedSerialNbrList$=unlinkedSerialNbrList$+cvs(serialNbr.serial_nbr$,3)+$0A$
+    fi
+wend
+
+cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).removeAllItems()
+if len(unlinkedSerialNbrList$)>0 then
+    cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).insertItems(0,unlinkedSerialNbrList$)
+fi
+
+return
+
+[Function (load_lists)]
+rem ' -----------------------------------------------------------------rem ' load_listsrem ' -----------------------------------------------------------------
+
+load_lists:
+
+modes$=""
+
+statesRecordSet!=ourAPI!.createFileRecordSet(statesFileInfo!.getFilename(),modes$,statesFileInfo!.getText())
+cast(BBjListButton, controls!.get("State")).fillFromRecordSet(statesRecordSet!,"state")
+statesRecordSet!.close()
+
+countriesRecordSet!=ourAPI!.createFileRecordSet(countriesFileInfo!.getFilename(),modes$,countriesFileInfo!.getText())
+cast(BBjListButton, controls!.get("Country")).fillFromRecordSet(countriesRecordSet!,"country")
+countriesRecordSet!.close()
+
+productsRecordSet!=ourAPI!.createFileRecordSet(productsFileInfo!.getFilename(),modes$,productsFileInfo!.getText())
+cast(BBjListButton, controls!.get("BasisProduct")).fillFromRecordSet(productsRecordSet!,"product")
+productsRecordSet!.close()
+
+industriesRecordSet!=ourAPI!.createFileRecordSet(industriesFileInfo!.getFilename(),modes$,industriesFileInfo!.getText())
+cast(BBjListButton, controls!.get("Industry")).fillFromRecordSet(industriesRecordSet!,"industry")
+industriesRecordSet!.close()
+
+industryIdList$=""
+industryList$=""
+dim indRec$:industriesFileInfo!.getText()
+read record(industries,key="",err=*next)indRec$
+while 1
+    read record(industries,end=*break)indRec$
+    industryList$=industryList$+indRec.industry$+$0A$
+    industryIdList$=industryIdList$+indRec.industry_id$+$0A$
+wend
+
+gosub get_end_user_list
+gosub get_unlinked_serial_numbers
+
+return
+
+[Function (no_records)]
+rem ' -----------------------------------------------------------------rem ' no_recordsrem ' -----------------------------------------------------------------
+
+no_records:
+
+msg$=translator!.getMessage("no.records.msg")
+title$=translator!.getMessage("no.records.title")
+response=msgbox(msg$,48,title$)
+
+return
+
+[Function (open_files)]
+rem ' -----------------------------------------------------------------rem ' open_filesrem ' -----------------------------------------------------------------
+
+open_files:
+
+ecConfig=unt
+open(ecConfig)"ECconfig"
+read(ecConfig)customerNbr$
+read(ecConfig)usingLanguage$
+prefix$="EC"+customerNbr$
+
+gosub open_language_properties
+
+states=unt
+open(states)prefix$+"VALIDSTATES.vky"
+statesFileInfo!=ourAPI!.getFileSystem().getFileInfo(states)
+
+countries=unt
+open(countries)prefix$+"VALIDCOUNTRIES.vky"
+countriesFileInfo!=ourAPI!.getFileSystem().getFileInfo(countries)
+
+products=unt
+open(products)prefix$+"VALIDPRODUCTS.vky"
+productsFileInfo!=ourAPI!.getFileSystem().getFileInfo(products)
+
+industries=unt
+open(industries)prefix$+"VALIDINDUSTRIES.vky"
+industriesFileInfo!=ourAPI!.getFileSystem().getFileInfo(industries)
+
+endUser=unt
+open(endUser)prefix$+"ENDUSERS.vky"
+endUserFileInfo!=ourAPI!.getFileSystem().getFileInfo(endUser)
+dim endUser$:endUserFileInfo!.getText()
+
+serialNbr=unt
+open(serialNbr)prefix$+"SERIALNUMBERS.vky"
+serialNbrFileInfo!=ourAPI!.getFileSystem().getFileInfo(serialNbr)
+
+return
+
+[Function (open_language_properties)]
+rem ' -----------------------------------------------------------------rem ' open_language_propertiesrem ' -----------------------------------------------------------------
+
+open_language_properties:
+
+translator! = new LanguageTranslator("editEndUserData."+usingLanguage$+".properties")
+
+return
+
+[Function (prep_file_for_upload)]
+rem ' -----------------------------------------------------------------rem ' prep_file_for_uploadrem ' -----------------------------------------------------------------
+
+prep_file_for_upload:
+
+rem ' gosub clear_form
+
+rem ' if wasCleared then
+
+rem '     if endUserFileInfo!.getCurrentRecords()=0 then
+
+rem '         gosub no_records
+
+rem '     else
+rem '         params! = ourAPI!.makeVector()
+rem '         params!.add(prefix$+"SERIALNUMBERS.vky")
+rem '         msg$=translator!.getMessage("prep.file.notice", params!)
+rem '         title$=translator!.getMessage("notice.title")
+rem '         response = msgbox(msg$,3+32+256,title$)
+
+rem '         rem ' set cursor to hour glass
+rem '         ourWindow!.setCursor(3)
+
+rem '         if response = 6 then
+
+rem '             read record(serialNbr,key="",knum=0,err=*next)
+
+rem '             while 1
+rem '                 thisKey$=key(serialNbr,end=*break)
+rem '                 read record(serialNbr,key=thisKey$)serialNbr$
+rem '                 rem ' the required fields are
+rem '                 if cvs(serialNbr.end_user_nbr$,3)="" then
+rem '                     remove(serialNbr,key=thisKey$)
+rem '                 fi
+rem '             wend
+
+            params! = ourAPI!.makeVector()
+            params!.add(0, prefix$+"SERIALNUMBERS.vky")
+            params!.add(1, prefix$+"ENDUSERS.vky")
+            msg$=translator!.getMessage("ready.upload.message", params!)
+            title$=translator!.getMessage("ready.title")
+            response = msgbox(msg$,64,title$)
+
+            gosub get_unlinked_serial_numbers
+        fi
+
+        ourWindow!.setCursor(0)
+
+    fi
+
+fi
+
+cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+
+return
+
+[Function (remove_serial_numbers)]
+rem ' -----------------------------------------------------------------rem ' remove_serial_numbersrem ' -----------------------------------------------------------------
+
+remove_serial_numbers:
+
+wrkVector1!=cast(BBjListBox, controls!.get("linkedSerialNbrs")).getSelectedIndices()
+wrkVector2!=cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).getAllItems()
+
+if wrkVector1!.size() then
+    for x = 0 to wrkVector1!.size()-1
+        index!=cast(BBjInt, wrkVector1!.getItem(x))
+        wrkString$=cast(BBjString, endUserSerialNbrs!.getItem(index!))
+        if wrkVector2!.size() > 0 then
+            rem ' put it in the right order
+            inserted=0
+            for y = 0 to wrkVector2!.size()-1
+                targetStr$=cast(BBjString, wrkVector2!.getItem(y))
+                if wrkString$ <= targetStr$ then
+                    wrkVector2!.insertItem(y, wrkString$)
+                    inserted=1
+                    break
+                fi
+            next y
+            if !inserted then
+                wrkVector2!.insertItem(wrkVector2!.size(), wrkString$)
+            fi
+        else
+            wrkVector2!.addItem(wrkString$)
+        fi
+    next x
+
+    rem ' remove the serial numbers
+    for x = wrkVector1!.size()-1 to 0 step -1
+        index!=cast(BBjInt, wrkVector1!.getItem(x))
+        endUserSerialNbrs!.removeItem(index!)
+    next x
+    cast(BBjListBox, controls!.get("linkedSerialNbrs")).removeAllItems()
+    cast(BBjListBox, controls!.get("linkedSerialNbrs")).insertItems(0, endUserSerialNbrs!)
+    cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).removeAllItems()
+    cast(BBjListBox, controls!.get("unlinkedSerialNbrs")).insertItems(0, wrkVector2!)
+    formDirty=1
+fi
+
+return
+
+[Function (reset_form)]
+rem ' -----------------------------------------------------------------rem ' reset_formrem ' -----------------------------------------------------------------
+
+reset_form:
+
+gosub clear_form
+cast(BBjEditBox, controls!.get("referenceNbr")).focus()  
+
+return
+
+[Function (retrieve_and_load_enduser)]
+rem ' -----------------------------------------------------------------rem ' retrieve_and_load_enduserrem ' -----------------------------------------------------------------
+
+retrieve_and_load_enduser:
+
+ourWindow!.setCursor(3)
+
+cast(BBjListButton, controls!.get("endUserList")).deselect()
+
+read record(endUser,key=endUserNbr$)endUser$
+
+cast(BBjEditBox, controls!.get("referenceNbr")).setText(cvs(endUser.reference_nbr$,3))
+cast(BBjEditBox, controls!.get("CompName")).setText(endUser.company_name$)
+cast(BBjEditBox, controls!.get("endUserNumber")).setText(cvs(endUser.end_user_nbr$,3))
+cast(BBjEditBox, controls!.get("ContactName")).setText(endUser.contact$)
+cast(BBjEditBox, controls!.get("AddrLnOne")).setText(endUser.addr_1$)
+cast(BBjEditBox, controls!.get("AddrLnTwo")).setText(endUser.addr_2$)
+cast(BBjEditBox, controls!.get("AddrLnThree")).setText(endUser.addr_3$)
+cast(BBjEditBox, controls!.get("City")).setText(endUser.city$)
+
+if cvs(endUser.state$,3)<>"" then
+    selectedIdx=FNfindSelectedIndexForListButton(cvs(endUser.state$,3),cast(BBjListButton, controls!.get("State")).getAllItems())
+    if selectedIdx > -1 then
+        cast(BBjListButton, controls!.get("State")).selectIndex(selectedIdx)
+    else
+        cast(BBjListButton, controls!.get("State")).deselect()
+    fi
+else
+    cast(BBjListButton, controls!.get("State")).deselect()
+fi
+
+cast(BBjEditBox, controls!.get("PostalCode")).setText(endUser.postal_code$)
+
+if cvs(endUser.country$,3)<>"" then
+    selectedIdx=FNfindSelectedIndexForListButton(cvs(endUser.country$,3),cast(BBjListButton, controls!.get("Country")).getAllItems())
+    if selectedIdx > -1 then
+        cast(BBjListButton, controls!.get("Country")).selectIndex(selectedIdx)
+    else
+        cast(BBjListButton, controls!.get("Country")).deselect()
+    fi
+else
+    cast(BBjListButton, controls!.get("Country")).deselect()
+fi
+
+cast(BBjEditBox, controls!.get("EmailAddress")).setText(endUser.email_address$)
+cast(BBjEditBox, controls!.get("PhoneNumber")).setText(endUser.phone_number$)
+
+theIndustry$=FNgetMathcingItem$(industryIdList$, industryList$, endUser.industry$)
+industryIndex=FNgetIndex(theIndustry$, industryList$)
+if industryIndex > -1 then
+    cast(BBjListButton, controls!.get("Industry")).selectIndex(industryIndex)
+else
+    cast(BBjListButton, controls!.get("Industry")).deselect()
+fi
+
+rem ' old way
+rem 'if cvs(endUser.industry$,3)<>"" then
+rem '    selectedIdx=FNfindSelectedIndexForListButton(cvs(endUser.industry$,3),cast(BBjListButton, controls!.get("Industry")).getAllItems())
+rem '    if selectedIdx > -1 then
+rem '        cast(BBjListButton, controls!.get("Industry")).selectIndex(selectedIdx)
+rem '    else
+rem '        cast(BBjListButton, controls!.get("Industry")).deselect()
+rem '    fi
+rem 'else
+rem '    cast(BBjListButton, controls!.get("Industry")).deselect()
+rem 'fi
+
+cast(BBjEditBox, controls!.get("OtherDesc")).setText(endUser.other_industry$)
+if cvs(endUser.industry$,3)="Other" then
+    cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(1)
+else
+    cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(0)
+    cast(BBjEditBox, controls!.get("OtherDesc")).setText("")
+fi
+
+if cvs(endUser.basis_prod$,3)<>"" then
+    selectedIdx=FNfindSelectedIndexForListButton(cvs(endUser.basis_prod$,3),cast(BBjListButton, controls!.get("BasisProduct")).getAllItems())
+    if selectedIdx > -1 then
+        cast(BBjListButton, controls!.get("BasisProduct")).selectIndex(selectedIdx)
+    else
+        cast(BBjListButton, controls!.get("BasisProduct")).deselect()
+    fi
+else
+    cast(BBjListButton, controls!.get("BasisProduct")).deselect()
+fi
+
+cast(BBjCEdit, controls!.get("AppModulesUsed")).setText(FNunescLf$(endUser.app_modules_used$))
+
+if endUser.advantage$="Y" then
+    cast(BBjCheckBox, controls!.get("Advantage")).setSelected(1)
+else
+    cast(BBjCheckBox, controls!.get("Advantage")).setSelected(0)
+fi
+
+if endUser.announcements$="Y" then
+    cast(BBjCheckBox, controls!.get("Announcements")).setSelected(1)
+else
+    cast(BBjCheckBox, controls!.get("Announcements")).setSelected(0)
+fi
+
+rem ' load linked serial numbers
+read (serialNbr,key=endUserNbr$,knum=1,dom=*next)
+endUserSerialNbrs!.clear()
+while 1
+    read record(serialNbr,end=*break)serialNbr$
+    if serialNbr.end_user_nbr$<>endUserNbr$ then break
+    endUserSerialNbrs!.add(cvs(serialNbr.serial_nbr$,3))
+wend
+if endUserSerialNbrs!.size() > 0 then
+    cast(BBjListBox, controls!.get("linkedSerialNbrs")).insertItems(0,endUserSerialNbrs!)
+fi
+
+ourWindow!.setCursor(0)
+cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+
+gosub set_form_clean
+
+return
+
+[Function (save_form)]
+rem ' -----------------------------------------------------------------rem ' save_formrem ' -----------------------------------------------------------------
+
+save_form:
+
+rem ' validate the data we are saving
+gosub validate_form
+
+wasSaved=0
+if isValid then
+    
+    dim endUser$:endUserFileInfo!.getText()
+
+    endUser.end_user_nbr$=endUserNbr$
+    
+    endUser.reference_nbr$=cvs(cast(BBjEditBox, controls!.get("referenceNbr")).getText(),3)
+    endUser.company_name$=cvs(cast(BBjEditBox, controls!.get("CompName")).getText(),3)
+    endUser.contact$=cvs(cast(BBjEditBox, controls!.get("ContactName")).getText(),3)
+    endUser.addr_1$=cvs(cast(BBjEditBox, controls!.get("AddrLnOne")).getText(),3)
+    endUser.addr_2$=cvs(cast(BBjEditBox, controls!.get("AddrLnTwo")).getText(),3)
+    endUser.addr_3$=cvs(cast(BBjEditBox, controls!.get("AddrLnThree")).getText(),3)
+    endUser.city$=cvs(cast(BBjEditBox, controls!.get("City")).getText(),3)
+    
+    idx=cast(BBjListButton, controls!.get("State")).getSelectedIndex()
+    if idx > -1 then endUser.state$=cast(BBjListButton, controls!.get("State")).getItemAt(idx)
+
+    endUser.postal_code$=cvs(cast(BBjEditBox, controls!.get("PostalCode")).getText(),3)
+
+    idx=cast(BBjListButton, controls!.get("Country")).getSelectedIndex()
+    if idx > -1 endUser.country$=cast(BBjListButton, controls!.get("Country")).getItemAt(idx)
+
+    endUser.email_address$=cvs(cast(BBjEditBox, controls!.get("EmailAddress")).getText(),3)
+    endUser.phone_number$=cvs(cast(BBjEditBox, controls!.get("PhoneNumber")).getText(),3)
+
+    idx=cast(BBjListButton, controls!.get("Industry")).getSelectedIndex()
+    if idx > -1 then
+        theIndustry$=cvs(cast(BBjListButton, controls!.get("Industry")).getItemAt(idx),3)
+        endUser.industry$=FNgetMathcingItem$(industryList$, industryIDList$, theIndustry$)
+    fi
+
+    rem ' old way
+    rem 'idx=cast(BBjListButton, controls!.get("Industry")).getSelectedIndex()
+    rem 'if idx > -1 then endUser.industry$=cvs(cast(BBjListButton, controls!.get("Industry")).getItemAt(idx),3)
+
+    endUser.other_industry$=cvs(cast(BBjEditBox, controls!.get("OtherDesc")).getText(),3)
+    
+    idx=cast(BBjListButton, controls!.get("BasisProduct")).getSelectedIndex()
+    if idx > -1 endUser.basis_prod$=cast(BBjListButton, controls!.get("BasisProduct")).getItemAt(idx)
+
+    endUser.app_modules_used$=FNescLf$(cvs(cast(BBjCEdit, controls!.get("AppModulesUsed")).getText(),3))
+
+    if cast(BBjCheckBox, controls!.get("Advantage")).isSelected() then
+        endUser.advantage$="Y"
+    else
+        endUser.advantage$="N"
+    fi
+
+    if cast(BBjCheckBox, controls!.get("Announcements")).isSelected() then
+        endUser.announcements$="Y"
+    else
+        endUser.announcements$="N"
+    fi
+
+    rem ' write the record
+    if cvs(endUser.end_user_nbr$,3)<>"" then
+        rem ' existing
+        write record (endUser)endUser$
+    else
+        if endUserFileInfo!.getCurrentRecords() > 0 then
+            hkey$=keyl(endUser)
+        else
+            hkey$="0"
+        fi
+        hkey$="N" + str(num(hkey$(2))+1:"0000000000"); endUser.end_user_nbr$=hkey$; write record(endUser,dom=*same)endUser$
+    fi
+    wasSaved=1
+
+    rem ' remove the current links
+    read (serialNbr,key=endUser.end_user_nbr$,knum=1,dom=*next)
+    dim serialNbr$:serialNbrFileInfo!.getText()
+    while 1
+        thiskey$=key(serialNbr,end=*break,knum=1)
+        read record(serialNbr,key=thiskey$,knum=1)serialNbr$
+        if serialNbr.end_user_nbr$<>endUser.end_user_nbr$ then break
+        remove(serialNbr,key=serialNbr.serial_nbr$)
+    wend
+
+    rem ' write the link file
+    wrkVector1!=cast(BBjListBox, controls!.get("linkedSerialNbrs")).getAllItems()
+    if wrkVector1!.size() > 0 then
+        for x = 0 to wrkVector1!.size() - 1
+            sfSerialNbr$=cast(BBjString, wrkVector1!.get(x))
+            dim serialNbr$:fattr(serialNbr$)
+            serialNbr.serial_nbr$=sfSerialNbr$
+            serialNbr.active$="Y"
+            serialNbr.end_user_nbr$=endUser.end_user_nbr$
+            write record(serialNbr)serialNbr$
+        next x
+    fi
+
+    gosub set_form_clean
+    gosub clear_form
+
+    gosub get_end_user_list
+
+    cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+
+fi
+
+return
+
+[Function (set_form_clean)]
+rem ' -----------------------------------------------------------------rem ' set_form_cleanrem ' -----------------------------------------------------------------
+
+set_form_clean:
+
+formDirty=0
+cast(BBjButton, controls!.get("Save")).setEnabled(0)
+cast(BBjMenuItem,controls!.get("SaveCurEndUser")).setEnabled(0)
+
+return
+
+[Function (set_form_dirty)]
+rem ' -----------------------------------------------------------------rem ' set_form_dirtyrem ' -----------------------------------------------------------------
+
+set_form_dirty:
+
+formDirty=1
+cast(BBjButton, controls!.get("Save")).setEnabled(1)
+cast(BBjMenuItem,controls!.get("SaveCurEndUser")).setEnabled(1)
+
+return
+
+[Function (transfer_controls_to_hashmap)]
+rem ' -----------------------------------------------------------------rem ' transfer_controls_to_hashmaprem ' -----------------------------------------------------------------
+
+transfer_controls_to_hashmap:
+
+ourControlVector! = ourWindow!.getAllControls()
+controls! = new HashMap()
+
+for i=0 to ourControlVector!.size() - 1
+    control!= cast(BBjControl, ourControlVector!.getItem(i))
+    controls!.put(control!.getName(), control!)
+next i
+
+return
+
+[Function (validate_form)]
+rem ' -----------------------------------------------------------------rem ' validate_formrem ' -----------------------------------------------------------------
+
+validate_form:
+
+isValid=1
+
+rem ' must at least enter a company name
+vCompName$=cvs(cast(BBjEditBox, controls!.get("CompName")).getText(),3)
+if len(vCompName$)=0 then
+    isValid=0
+    cast(BBjStaticText, controls!.get("compNameReq")).setVisible(1)
+else
+    cast(BBjStaticText, controls!.get("compNameReq")).setVisible(0)
+fi
+
+rem ' there must be a country selection
+index=cast(BBjListButton, controls!.get("Country")).getSelectedIndex()
+if index < 0 then 
+    isValid=0
+    cast(BBjStaticText, controls!.get("countryReq")).setVisible(1)
+else
+    cast(BBjStaticText, controls!.get("countryReq")).setVisible(0)
+fi
+
+if !isValid then
+    title$=translator!.getMessage("requried.missing.title")
+    msg$=translator!.getMessage("required.missing.msg")
+    response=msgbox(msg$, 0+64, title$)
+fi
+
+return
+

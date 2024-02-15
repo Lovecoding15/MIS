@@ -1,0 +1,428 @@
+REM Program BSN.20 update SN history when order is invoiced
+REM This program is also on Opus for ecommerce
+msg$=""
+seterr err_exit
+setesc err_exit
+rem if info(3,2)="thines" then escape
+seterr entry_err
+enter firm$,cust$,order$,snm01,snm02,snt01,snt03,are03,are13,are73,are83,ivm01,csm03,smc01
+entry_err:
+seterr err_exit
+REM -firm,cust#,order#,files used (files opened in calling program)
+call "ec_open::INC01"
+call "ec_open::ARE93"
+call "ec_open::SNT04"
+call "templates.pgm::ARE03"
+call "templates.pgm::ARE13"
+call "templates.pgm::ARE73"
+call "templates.pgm::ARE83"
+call "templates.pgm::CSM03"
+call "templates.pgm::IVM01"
+call "templates.pgm::SNM01"
+call "templates.pgm::SNM02"
+call "templates.pgm::SNT01"
+call "templates.pgm::SNT03"
+call "templates.pgm::SMC01"
+dim st3$:fattr(snt03$)
+are03k$=firm$+"  "+cust$+order$+"000"
+support_expire$=date((jul(0,0,0)+365):"%Y%Mz%Dz")
+max_support=5
+read record (are03,key=are03k$,dom=pgm_exit)are03$
+if are03.ord_inv_flag$<>"I" or cvs(are03.ar_inv_nbr$,2)="" then goto pgm_exit
+gosub deactivated_list
+samkeys$=""
+sam_process=0
+prev_support$=""
+dim sn1$:fattr(snm01$)
+oldsc=0
+
+read (are13,key=are03k$(1,17),dom=are13_key)
+
+are13_key:
+gosub promo_calc
+if sam_process then
+ let p=pos($0a$=samkeys$); if p=0 then goto pgm_exit
+ let are13k$=samkeys$(1,p-1),samkeys$=samkeys$(p+1)
+ goto samkeys
+fi
+let are13k$=key(are13,end=sam_exit)
+if are13k$(1,17)<>are03k$(1,17) then goto sam_exit
+samkeys:
+read record (are13,key=are13k$)are13$
+if are13.line_code$="o" then oldsc=are13.ext_price
+read record (are73,key=are13k$,dom=are13_key)are73$
+REM 'Save all SAM transactions for last so total users can be checked to determine if this is a new SAM that gets 5 TS incidents
+if pos("SM"=are73.type_of_sale$)=1 and sam_process=0 then let samkeys$=samkeys$+are13k$+$0a$; goto are13_key
+let iv_desc$=fill(60),ivm_item$=are13.item_number$
+gosub ivm_item
+let iv_desc$=ivm01.item_desc$
+let port$=""
+read record (csm03,key=firm$+are13.item_number$(7,3),dom=*next)csm03$
+if csm03.firm_id$=firm$ and csm03.os_level$=are13.item_number$(7,3) then port$=csm03.port_id$
+let expire=0
+read (are83,key=are13k$,dom=are83_key)
+
+are83_key: let are83k$=key(are83,end=are13_key)
+if pos(are13k$=are83k$)<>1 then goto are13_key
+
+extracted=0,waited=0
+extract record (are83,key=are83k$,err=*next)are83$;extracted=1
+if extracted=0 then
+  wait 1
+  waited=waited+1
+  if waited<5 then retry
+  rem "skip if it can't be extracted & hope the daily update catches it
+  msg$=msg$+"Unable to extract ARE-83 key "+are83k$+$0a$
+  read(are83,end=*next)
+  goto are83_key
+fi
+
+if are83.snhist_flag$="Y" then goto update_flag
+
+feature=0
+read(are93,key=are13k$,dom=*next)
+while 1
+  readrecord(are93,end=*break)are93$
+  if pos(are13k$=are93$)<>1 then break
+  snt04.SERIAL_NBR$=are83.serial_nbr$
+  snt04.FEATURE$=are93.feature$
+  snt04.FEATURE_REV$=are93.feature_rev$
+  snt04.USER_BASED$=are93.user_based$
+  snt04.PROD_CODE$=are93.prod_code$
+  snt04.type_of_sale$=are93.type_of_sale$
+  snt04.expire_on_dt$=are93.expire_on_dt$
+  snt04.FAX_FLAG$=are93.FAX_FLAG$
+  snt04.AVAILABLE$=are93.AVAILABLE$
+  snt04.USERS=are93.users
+  snt04.AVAILABLE_NUM=are93.available_num
+  snt04$=field(snt04$)
+  if snt04.users>0 then 
+    writerecord(snt04,key=snt04$(1,50))snt04$
+  else
+    remove(snt04,key=snt04$(1,50),err=*next)
+  fi
+  if cvs(snt04.FEATURE$,7) <> "SOFTWAREASSETMANAGEMENT" then feature=1
+wend
+
+lic_type$=are73.exp_type$
+if cvs(lic_type$,3)="" then lic_type$=are13.item_number$(13,3)
+
+rev_code$=are13.item_number$(10,3)
+rem ' kew add the next line to prevent writing bad data into snm01.product_rev
+rem ' on SAMBUYBACK and SAMBUYBACKP5 transactions - 04/13/2011
+if rev_code$="K  " or rev_code$ = "KP5" then rev_code$ = "   "
+
+l_prop$=are73.lic_property1$+are73.lic_property2$
+trans_users=are73.users+are73.users2, original_users=0
+trans_is_total=(cvs(are73.available1$,4)="T")
+on pos(are83.action$="AMD") goto are83_key,activate,modify,deactivate
+activate:
+snm01.serial_nbr$=are83.serial_nbr$,snm01.serial_desc$=iv_desc$
+snm01.product$=are13.item_number$(1,3)
+snm01.platform$=are13.item_number$(4,3)
+snm01.os_level$=are13.item_number$(7,3)
+snm01.product_rev$=rev_code$
+snm01.license_type$=lic_type$
+snm01.media_type$=are73.media_type$,snm01.active_flag$="Y"
+snm01.orig_sale_date$=are03.invoice_date$,snm01.customer_nbr$=are03.customer_nbr$
+snm01.port_id$=port$,snm01.firm_id$=are83.firm_id$
+snm01.contract$=are83.contract$,snm01.sam_active$=are83.sam_active$
+snm01.dealer_str$=fill(dec(FATTR(snm01$,"dealer_str")(10,2)))
+snm01.comment$=fill(dec(FATTR(snm01$,"comment")(10,2)))
+snm01.users=trans_users,snm01.dist_reset=0,snm01.avail_support=0
+let expire=1
+if cvs(snm01.contract$,3)<>"" then expire=max_support
+sn1$=field(snm01$)
+goto snt01_rec
+modify:
+rem 'skip the modify routine if this sn will be deactivated later
+rem if pos(are83.serial_nbr$=deactivated_list$) then goto update_flag
+read record (snm01,key=are83.serial_nbr$,dom=write_are83)snm01$
+sn1$=field(snm01$)
+u=trans_users,original_users=snm01.users
+if trans_is_total=0 then u=u+snm01.users
+if pos(are73.type_of_sale$="ADDCON",3) then let snm01.users=u; goto check_contract
+if cvs(are83.auth_code$,2)="" then goto check_contract; REM SAM or SUPPORT
+if rev_code$<>"   " then let snm01.product_rev$=rev_code$
+if lic_type$<>"   " then let snm01.license_type$=lic_type$
+if port$<>"" then let snm01.port_id$=port$
+rem 'Item is a configured inventory item if os_level & port check out
+if pos(" "=are13.item_number$(7,3))=0 and port$<>"" then 
+  let snm01.os_level$=are13.item_number$(7,3)
+  let snm01.product$=are13.item_number$(1,3)
+  if are13.item_number$(4,3) <> "SAM" then 
+  	let snm01.platform$=are13.item_number$(4,3)
+  fi
+fi
+check_contract:
+if are13.ext_price>0 then let expire=1
+if pos("TS"=are73.type_of_sale$)=1 then let expire=2
+if cvs(are83.contract$,3)<>"" then
+  smc01.new_flag$=" " 
+  readrecord (smc01,key=are83.contract$,dom=*next)smc01$
+  if cvs(snm01.contract$,3)="" or smc01.new_flag$="Y" then let expire=max_support
+  snm01.contract$=are83.contract$,snm01.sam_active$=are83.sam_active$
+  rem 'No support when crediting SAM contract
+  if sam_process and are03.terms_code$="08" and are83.sam_active$="N" then snm01.avail_support=0,expire=0
+fi
+if are73.type_of_sale$="RNW" and cvs(are03.ar_po_number$,3) <> "DVK Renew" and cvs(are03.ar_po_number$,3) <> "RNT Renew" then 
+  readrecord (smc01,key=are83.contract$,dom=*next)smc01$
+  if smc01.contract$<>are83.contract$ or pos("DV"=smc01.contr_type$)=0 then goto snt01_rec
+  expire=max_support
+  snm01.contract$=smc01.contract$
+  snm01.sam_active$=""
+  snm01.users=trans_users
+  call "ec_open::csm05"
+  csm05.expire_days=365
+  readrecord(csm05,key=firm$+are13.item_number$(13,3),err=*next)csm05$
+  close(csm05,err=*next)
+  today_jul=jul(0,0,0)
+  an_jul=fnjul(smc01.annual_dt$)
+  ex_jul=an_jul+csm05.expire_days
+  rem 'test for reasonable exp dt to avoid rolling date more than once by mistake
+  if ex_jul-today_jul>csm05.expire_days*1.5 then goto snt01_rec
+  smc01.annual_dt$=date(an_jul+365:"%Yl%Mz%Dz")
+  smc01.expire_on_dt$=date(ex_jul:"%Yl%Mz%Dz")
+  smc01.invoiced_flag$=" "
+  smc01$=field(smc01$)
+  writerecord (smc01,key=smc01.contract$)smc01$
+fi
+goto snt01_rec
+deactivate:
+read record (snm01,key=are83.serial_nbr$,dom=update_flag)snm01$
+let snm01.active_flag$="N"
+snt01_rec:
+rem 'save original support and exp. date in snm02b rec 
+if prev_support$="" then prev_support$=str(snm01.avail_support:"00")+snm01.avail_expire$
+inc01.serial_nbr$=snm01.serial_nbr$,inc01$=field(inc01$)
+if expire then gosub expire
+let snm01$=field(snm01$); write record (snm01,key=snm01.serial_nbr$)snm01$
+if snm01.active_flag$<>"N" then gosub snm02_update
+let snt01.serial_nbr$=are83.serial_nbr$
+snt01.trans_date$=are03.invoice_date$
+snt01.sn_det_seq$="00001"
+if cvs(are83.contract$,3)<>"" then let snt01.contract$=are83.contract$,snt01.sam_active$=are83.sam_active$
+find_snt01: read (snt01,key=snt01$(1,28),dom=snt01_setup)
+let snt01.sn_det_seq$=str(num(snt01.sn_det_seq$)+1:"00000"); goto find_snt01
+snt01_setup:
+let snt01.customer_nbr$=are03.customer_nbr$
+snt01.ar_inv_nbr$=are03.ar_inv_nbr$
+snt01.sequence_nbr$="000"
+snt01.type_of_sale$=are73.type_of_sale$
+snt01.product_rev$=rev_code$
+snt01.auth_code$=are83.auth_code$
+snt01.firm_id$=are83.firm_id$
+snt01.action$=are83.action$
+snt01.fixed_float$=are73.fixed_float$
+snt01.item$=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$
+price=are13.unit_price
+if pos("TS"=are73.type_of_sale$)=1 then price=are13.ext_price*sgn(are13.qty_ordered)
+if are73.type_of_sale$="ADD" and trans_is_total then trans_users=trans_users-original_users
+let snt01.users=trans_users,snt01.ext_price=price*sgn(are13.qty_ordered)
+if feature and cvs(are73.available1$,4)<> "T" then snt01.users=are73.users
+if feature or are73.type_of_sale$="SM1" then snt01.item$=are13.item_number$
+snt01.license_cnt=are83.license_cnt
+if are83.action$="D" then let snt01.users=0,snt01.ext_price=0,snt01.license_cnt=0,snt01.product_rev$="   ",snt01.auth_code$=fill(15)
+let snt01.server_nbr$=fill(dec(FATTR(snt01$,"server_nbr")(10,2)))
+let snt01.dealer_str$=fill(dec(FATTR(snt01$,"dealer_str")(10,2)))
+if are73.type_of_sale$(1,2)="SM" then snt01.dealer_str$(1,1)=are83.dealer_str$
+snt01$=field(snt01$)
+write record (snt01,key=snt01$(1,28))snt01$
+if pos(are83.action$="AM") then gosub snt03_xref
+update_flag: 
+let are83.snhist_flag$="Y"
+write_are83:
+are83$=field(are83$);write record (are83,key=are83k$)are83$
+if are83.snhist_flag$<>"Y" then msg$=msg$+"Update failed for ARE-83 key "+are83k$+$0a$
+goto are83_key
+
+snt03_xref:
+let deact$=deactivated_list$
+nx=pos($0a$=deact$)
+let active_sn$=are83.serial_nbr$
+while nx
+ inactive_sn$=deact$(1,nx-1)
+ deact$=deact$(nx+1)
+ nx=pos($0a$=deact$)
+ if nx=0 then break
+ deactkey$=deact$(1,nx-1)
+ deact$=deact$(nx+1)
+ nx=pos($0a$=deact$)
+ if are83k$(1,20)<>deactkey$(1,20) then continue
+ let snt03.serial_nbr_1$=active_sn$,snt03.sn_activ_seq$="00000"
+ let snt03.serial_nbr_2$=inactive_sn$
+ let snt03.action_date$=are03.invoice_date$
+ let snt03.ar_inv_nbr$=are03.ar_inv_nbr$,snt03.action$="D"
+ gosub write_snt03
+ let snt03.serial_nbr_1$=inactive_sn$,snt03.sn_activ_seq$="00000"
+ let snt03.serial_nbr_2$=active_sn$,snt03.action$=are83.action$
+ gosub write_snt03
+wend
+return
+write_snt03:
+read (snt03,key=snt03.serial_nbr_1$,dom=find_snt03)
+find_snt03: 
+read record (snt03,end=check_seq)st3$
+if snt03.serial_nbr_1$<>st3.serial_nbr_1$ then goto check_seq
+REM Avoid multiple links between the same 2 SN's - might be possible due to updates, deletes, reupdates
+if snt03.serial_nbr_2$=st3.serial_nbr_2$ then remove (snt03,key=st3$(1,25),err=find_snt03) else let snt03.sn_activ_seq$=st3.sn_activ_seq$
+goto find_snt03
+check_seq:
+let snt03.sn_activ_seq$=str(num(snt03.sn_activ_seq$)+1:"00000")
+let snt03.dealer_str$=fill(20),snt03$=field(snt03$)
+write record (snt03,key=snt03$(1,25),dom=check_seq)snt03$
+return
+
+expire: 
+if cvs(snm01.avail_expire$,3)="" or snm01.avail_support=0 then let snm01.avail_expire$=support_expire$
+write record (inc01,key=snm01.serial_nbr$,err=*next)inc01$
+rem "TS incident purchase
+if expire=2 then 
+  let snm01.avail_support=snm01.avail_support+are13.qty_ordered
+  return
+fi
+let snm01.avail_support=snm01.avail_support+expire
+if snm01.avail_support>max_support then let snm01.avail_support=max_support
+snm01.avail_support=max(snm01.avail_support,0)
+if cvs(are83.contract$,3)<>"" then
+ remove (inc01,key=snm01.serial_nbr$,err=*next)
+ let snm01.avail_expire$=fill(8)
+fi
+return
+
+snm02_update:
+if cvs(are83.auth_code$,3)="" then return;rem "SAM transaction
+dim snm02$:fattr(snm02$),snm02b$:fattr(snm02$)
+snm02.serial_nbr$=are83.serial_nbr$,snm02found=0
+readrecord(snm02,key=snm02.serial_nbr$,dom=*next)snm02$;snm02found=1
+
+rem 'Save previous snm02 w/"b" as 1st char of key for backout in in BSN.21
+rem 'Check order# to avoid overwriting record for more than 1 transaction in
+rem 'an order. OK to overwrite in there is another order w/ the same SN.
+snm02b.serial_nbr$="b"+snm02.serial_nbr$
+readrecord(snm02,key=snm02b.serial_nbr$,dom=*next)snm02b$
+hold$=snm02b.available$
+if snm02found then snm02b$=snm02$ 
+if pos(are83.order_number$=hold$)=0 then
+  if snm02b.users1+snm02b.users2=0 then 
+    snm02b.users1=snm01.users
+    if original_users then snm02b.users1=original_users
+  fi
+  snm02b.serial_nbr$="b"+snm02.serial_nbr$
+  snm02b.available$=prev_support$+are83.order_number$
+  snm02b$=field(snm02b$)
+  writerecord(snm02,key=snm02b.serial_nbr$)snm02b$
+fi
+
+q$=are83.upg_to_product$+are73.lic_property1$+are73.lic_property2$+are73.exp_days_dt$
+if cvs(q$,3)="" then return
+snm02.upg_to_product$=are83.upg_to_product$
+snm02.upg_to_rev$=are83.upg_to_rev$
+if cvs(are73.exp_days_dt$,3)<>"" then snm02.exp_days_dt$=are73.exp_days_dt$
+snm02.lic_property1$=are73.lic_property1$
+snm02.users1=are73.users*(are73.lic_property1$<>"  ")
+snm02.lic_property2$=are73.lic_property2$
+snm02.users2=are73.users2*(are73.lic_property2$<>"  ") 
+snm02.odbc_rw$=are73.odbc_rw$
+snm02$=field(snm02$)
+writerecord(snm02,key=snm02.serial_nbr$)snm02$
+return
+
+ivm_item:
+let ivm01.item_desc$="Not Available",ivmok=0
+find record (ivm01,key=are13.firm_id$+ivm_item$,err=*next)ivm01$;ivmok=1
+if ivmok or len(cvs(ivm_item$,3))<15 then return
+ivm_item$(10,3)="CUR"
+if ivm_item$(13,3)<>"STD" and ivm_item$(1,3)="BAS" then ivm_item$(13,3)="EXP"
+find record (ivm01,key=are13.firm_id$+ivm_item$,err=*next)ivm01$;ivmok=1
+return
+
+deactivated_list:
+deactivated_list$=""
+read (are83,key=are03k$(1,17),dom=*next)
+while 1
+  are83k$=key(are83,end=*break)
+  read record (are83,key=are83k$)are83$
+  if pos(are03k$(1,17)=are83k$)<>1 then break
+  if are83.action$<>"D" then continue
+  deactivated_list$=deactivated_list$+are83.serial_nbr$+$0a$+are83k$+$0a$
+wend
+return
+ 
+def fnjul(yyyymmdd$)
+  xjul=0,xy=0,xm=0,xd=0
+  xy=NUM(yyyymmdd$(1,4),ERR=*next)
+  xm=NUM(yyyymmdd$(5,2),ERR=*next)
+  xd=NUM(yyyymmdd$(7,2),ERR=*next)
+  if xy*xm*xd then xjul=jul(xy,xm,xd)
+  return xjul
+fnend
+
+promo_calc:
+if cvs(sn1.serial_nbr$,3)="" then return
+st=pos(are73.type_of_sale$="UG4,UPD,TRD,EXC,CON")
+if st=0 then return
+firm_id$=are03.firm_id$
+if firm_id$<>"01" then return
+online_dsc=0
+cust_num$=are03.customer_nbr$
+invoice$=are03.ar_inv_nbr$
+invdate$=are03.invoice_date$
+new_item$=are13.item_number$
+std_tot_users=are73.users,ent_tot_users=are73.users2
+if pos("E"=are73.lic_property1$) or pos("S"=are73.lic_property2$) then ent_tot_users=are73.users,std_tot_users=are73.users2
+snlist$=sn1.serial_nbr$+$0a$
+if st>8 then 
+  snlist$=""
+  tmplist$=deactivated_list$
+  while 1
+    p=pos($0a$=tmplist$)
+    if p=0 then break
+    tmp$=snlist$+tmplist$(1,p)
+    tmplist$=tmplist$(p+1)
+    p=pos($0a$=tmplist$)
+    if p=0 then break
+    if pos(are13$(1,20)=tmplist$)=1 then snlist$=snlist$+tmp$
+    tmplist$=tmplist$(p+1)
+  wend
+fi
+promocall:
+rem call "promo_calc.bbj",firm_id$,cust_num$,csm03,ivm01,smc01,snm01,snm02,snt01,snlist$,new_item$,ent_tot_users,std_tot_users,sn1$,invoice$,invdate$,online_dsc
+dim sn1$:fattr(snm01$)
+return
+
+sam_exit:
+if oldsc then online_dsc=oldsc;gosub promocall
+if samkeys$="" then goto pgm_exit
+let sam_process=1; goto are13_key
+
+pgm_exit:
+close (inc01,err=*next)
+close (are93,err=*next)
+close (snt04,err=*next)
+if msg$="" then exit
+
+err_exit:
+
+if msg$="" then msg$ = "Err " + str(err) + " in " + str(tcb(5)) + " " + errmes(-1) 
+
+rem ' hdr$="To: mis@basis.cloud"+$0A$+"From: customer-service@basis.cloud"+$0A$
+rem ' hdr$=hdr$+"Subject: BSN.20 hiccup"+$0A$+$0A$+msg$
+rem ' email$=stbl("TEMP")+"bsn20_err.txt"
+rem ' erase email$,err=*next
+rem ' string email$
+rem ' em=unt
+rem ' open(em)email$
+rem ' writerecord(em)hdr$
+rem ' close(em)
+rem ' let a=scall("/usr/lib/send mail -t < "+email$)
+
+from$ = "customer-service@basis.cloud"
+to$ = "mis@basis.cloud"
+cc$ = ""
+bcc$ = ""
+subj$ = "BSN.20 hiccup"
+attachfile$ = ""
+call "sendEmail.src", from$, to$, cc$, bcc$, subj$, msg$, attachfile$
+
+exit

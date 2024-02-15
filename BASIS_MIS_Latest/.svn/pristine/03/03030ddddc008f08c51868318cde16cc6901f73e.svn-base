@@ -1,0 +1,93 @@
+rem ' log a transaction on a end user serial number link
+
+class public EndUserLogger
+
+    field private BBjString dburl!
+    field private BBjString sqlFrag!
+
+    method public EndUserLogger(BBjString dburl!)
+
+        seterr eulError
+            #dburl! = dburl!
+            #sqlFrag! = "INSERT INTO SNMEU_LOG VALUES ( '"
+
+            methodret
+
+        eulError:
+            throw "Error Constructing the EU Logger.",err
+
+    methodend 
+
+    method public void makeLinkEntry(BBjString serialNbr!, BBjString endUserNbr!, BBjString firmID!, BBjString customerNbr!)
+
+       seterr mleError
+           #executeSQL(#buildSQL(serialNBr!, endUserNbr!, firmID!, customerNbr!, "L"))
+
+           methodret
+       
+        mleError:
+            throw "An Error occurred linking the entry",err
+
+    methodend
+
+    method public void makeUnlinkEntry(BBjString serialNbr!, BBjString endUserNbr!, BBjString firmID!, BBjString customerNbr!)
+        
+        seterr muleError
+           #executeSQL(#buildSQL(serialNBr!, endUserNbr!, firmID!, customerNbr!, "U"))
+
+            methodret
+
+        muleError:
+            throw "An Error occurred unlinking the entry.",err
+    methodend
+
+    method private BBjString buildSQL(BBjString serialNbr!, BBjString endUserNbr!, BBjString firmID!,BBjString customerNbr!, BBjString type!)
+
+        seterr bsError
+            rem ' get next seq
+            udfChan=sqlunt
+            sqlopen(udfChan)#dburl!
+            thisSQL$="SELECT SNMEU_LOG_SEQ.NEXTVAL AS NEXTKEY"
+            sqlprep(udfChan)thisSQL$
+            nextKey$=sqlfetch(udfChan)
+            sqlclose(udfChan)
+            seq$=str(num(cvs(nextKey$,3)):"0000000000")
+
+            rem ' build sql
+            sep$="', '"
+            sql$=sql$+#sqlFrag!
+            sql$=sql$+seq$+sep$
+            sql$=sql$+serialNbr!+sep$
+            sql$=sql$+endUserNbr!+sep$
+            sql$=sql$+firmID!+sep$
+            sql$=sql$+customerNbr!+sep$
+            sql$=sql$+Date(0,"%Y-%Mz-%Dz %Hz:%mz:%sz")+sep$
+            sql$=sql$+type!+"')"
+
+            methodret sql$
+        
+        bsError:
+            throw "An Error occurred building the sql.", err
+
+    methodend
+             
+    method private void executeSQL(BBjString sql!)
+
+        seterr esError
+            udfChan=sqlunt
+            sqlopen(udfChan)#dburl!
+            sqlprep(udfChan)sql!
+            sqlexec(udfChan)
+            sqlClose(udfChan)
+        
+            methodret
+
+        esError:
+            throw "An error occurred executing the sql.",err
+
+    methodend
+
+classend
+                       
+
+

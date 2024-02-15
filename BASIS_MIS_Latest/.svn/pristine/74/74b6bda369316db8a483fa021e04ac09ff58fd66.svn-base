@@ -1,0 +1,24 @@
+begin
+path$="/basisaon/aon/ADATA/"
+
+call "ec_open::tmm01"
+call "ec_open::tmm03"
+while 1
+  readrecord(tmm01,end=*break)tmm01$
+  if pos("NA"=tmm01.cust_type$)=0 then continue
+  k$=tmm01.firm_id$+tmm01.customer_nbr$+tmm01.tm_number$
+  read(tmm03,key=k$,dom=*next)
+  while 2
+    readrecord(tmm03,end=*break)tmm03$
+    if tmm03.firm_id$+tmm03.customer_nbr$+tmm03.tm_number$<>k$ then break
+    if tmm03.send_lit$="N" and tmm03.announcements$="N" then continue
+    tmm03.send_lit$="N" 
+    tmm03.announcements$="N" 
+    tmm03$=field(tmm03$)
+    ?k$
+    ?tmm01.cust_type$
+    input xx$
+    rem writerecord(tmm03)tmm03$
+  wend
+wend
+end

@@ -1,0 +1,143 @@
+rem ' input google docs email address and password
+rem ' program: gDocs_auth.src
+
+seterr error_handler
+setesc escape_trap
+
+enter windowTitle$, username$, password$, folder$, quiet
+
+rem ' look up previous entries based on the aon user id
+	call "ec_open::SYS01T"
+	read record(sys01t,key="T" + FID(0))sys01t$
+	call "ec_open::SYM02_GDOCS"
+	read record (sym02_gdocs,key=cvs(sys01t.operator_id$,3),dom=*next)sym02_gdocs$
+	username$=sym02_gdocs.username$, password$=sym02_gdocs.password$, folder$=sym02_gdocs.folder$
+
+rem ' use the passed in windowTitle$ if there
+	if cvs(windowTitle$,3)<> "" then
+		title$=windowTitle$
+	else
+		title$="Google Docs Default Folder"
+	endif
+
+rem ' create a base window
+	print 'WINDOW'(5,5,70,13,title$)
+	wFin$=fin(0)
+	scrollWin = dec(wFin$(9,2))
+	print 'sf',@(1,1),"Username: ",@(1,3),"Password: ",@(3,5),"Folder:   ",folder$,@(4,7),"Quiet:   ",
+	print @(0,0),'CURSOR'("ON")
+	
+
+rem ' username and password will no longer be input
+rem ' put it back in 10/18/2011 kew
+rem ' username$ = "", password$=""
+rem ' goto username_password_bypass
+
+rem ' prep for password input
+	if password$ <> "" then pmask$=fill(len(password$),"*")
+	passwordChan = unt
+	open(passwordChan)fid(0)
+
+
+rem ' input username$
+	print @(13,9),'cl','sf',"Enter username or (CR) to accept the default.",
+	while 1
+		print @(13,0),'sf',username$,
+		input (0,siz=30)@(13,1),'cl','sf',uname$
+		if uname$ <> "" then username$ = uname$
+		print @(13,0),'cl',@(13,1),'cl','sf',username$
+		if username$<>"" then break
+	wend
+
+rem ' input password$
+	print @(13,9),'cl','sf',"Enter password or (CR) to accept the previous password.",
+	while 1
+		print @(13,2),'sf',pmask$,@(13,3),'cl',
+		while 1
+			read record(passwordChan,siz=1)pchar$
+			pchar = dec(pchar$)
+			
+			if (pchar >= 1 and pchar <= 7) or (pchar >= 9 and pchar <= 12) or (pchar >= 14 and pchar <= 32) or pchar >= 127 then
+				rem ' eat it up
+				print @(13,3),'cl','sf',pmask$,
+			else
+				if pchar > 32 and pchar < 127 then
+					rem ' add it to the password
+					pword$ = pword$ + pchar$
+					pmask$ = fill(len(pword$),"*")
+					print @(13,3),'cl','sf',pmask$,
+				else
+					if pchar = 8 then
+						if len(pword$) > 0 then
+							pword$ = pword$(1,len(pword$)-1)
+						fi
+						pmask$ = fill(len(pword$),"*")
+						print @(13,3),'cl','sf',pmask$,
+					else
+						rem ' terminate input
+						if pword$ <> "" then password$ = pword$
+						pmask$ = fill(len(password$),"*")
+						print @(13,2),'cl',@(13,3),'cl','sf',pmask$,
+						break
+					fi
+				fi
+			fi
+		wend			
+		if password$<>"" then break
+	wend
+
+username_password_bypass:
+
+rem ' input folder
+	print @(13,9),'cl','sf',"Enter folder name or (CR) to accept the default.",
+	while 1
+		print @(13,4),'sf',folder$,
+		input (0,siz=30)@(13,5),'cl','sf',fold$
+		if fold$ <> "" then folder$ = fold$
+		print @(13,4),'cl',@(13,5),'cl','sf',folder$
+		if folder$<>"" then break
+	wend
+	
+rem ' input quiet mode
+	print @(13,9),'cl','sf',"Perform upload in quiet mode? (CR = Y/N)",
+	while 1
+		input (0,siz=30)@(13,7),'cl','sf',quiet$
+		quiet$ = cvs(quiet$,4)
+		if quiet$ = "Y" or quiet$ = "" then 
+			quiet = 1
+			break
+		else
+			if quiet$ = "N" then
+				quiet = 0
+				break
+			fi
+		fi
+	wend
+
+rem ' save it for the next time
+	sym02_gdocs.user_id$=cvs(sys01t.operator_id$,3)
+	sym02_gdocs.username$ = username$
+	sym02_gdocs.password$ = password$
+	sym02_gdocs.folder$ = folder$
+	sym02_gdocs$ = field(sym02_gdocs$)
+	write record(sym02_gdocs,key=sym02_gdocs.user_id$)sym02_gdocs$
+
+goto pgm_exit
+
+error_handler:
+	print (0,err=*next)'drop'(scrollWin),
+	print @(0,0),'CURSOR'("OFF")
+	exit err	
+	
+escape_trap:
+	goto pgm_exit
+
+pgm_exit:
+	rem ' close the files
+	close(sys01t,err=*next)
+	close(sym02_gdocs,err=*next)
+
+	rem ' drop the window
+	print (0,err=*next)'drop'(scrollWin),
+	print @(0,0),'CURSOR'("OFF")
+	exit	

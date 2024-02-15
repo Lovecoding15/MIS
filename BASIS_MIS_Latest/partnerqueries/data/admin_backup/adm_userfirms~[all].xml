@@ -1,0 +1,349 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_USERFIRMS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<USER_ID>BHIPPLE         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GROBLED         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GUEST           </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GUEST           </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GUEST           </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GUEST           </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GUEST           </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GUEST           </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>IROESCH         </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>JKARASZ         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KKING           </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KKING           </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KKING           </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KKING           </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KKING           </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KKING           </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<FIRM_ID>06</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCHUR           </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCHUR           </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCHUR           </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCHUR           </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCHUR           </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCHUR           </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LGUINEY         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LGUINEY         </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>MREIMANN        </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>NSPENCE         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>NSPENCE         </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>NSPENCE         </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>NSPENCE         </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>NSPENCE         </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>NSPENCE         </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PLEWIS          </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PLEWIS          </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PLEWIS          </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PLEWIS          </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PLEWIS          </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PLEWIS          </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PYEOMANS        </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>RBUTLER         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SDARLIN         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SDARLIN         </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SVOLUPAS        </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWALD           </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<FIRM_ID>01</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<FIRM_ID>02</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<FIRM_ID>03</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<FIRM_ID>04</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<FIRM_ID>05</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<FIRM_ID>06</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<FIRM_ID>99</FIRM_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

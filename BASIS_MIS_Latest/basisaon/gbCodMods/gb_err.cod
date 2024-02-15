@@ -1,0 +1,18 @@
+rem gb_err.cod - GUIBuilder generated programs: Error handler
+rem Copyright (C) 1998-2009 BASIS International Ltd.  All rights reserved.
+rem
+rem ***** E R R O R   H A N D L E R ************************************
+rem
+gb__err:
+   
+   rem ' terminate on Network Lost Errors
+   if err = 71 or err = 72 then goto gb__eoj
+
+   gb__temp=msgbox(errmes(-1)+" ("+str(err)+")"+
+:      " occurred at line "+str(tcb(5))+
+:      " in program "+pgm(-2),5+48,"Error handler")
+
+   if gb__temp=4 then
+:     retry
+:  else
+:     goto gb__eoj

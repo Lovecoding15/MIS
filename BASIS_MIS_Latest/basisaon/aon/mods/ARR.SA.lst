@@ -1,0 +1,266 @@
+0010 REM "ARR - SAM Disbursement Transactions Report
+0020 REM "Program ARR.SA"
+0050 BEGIN
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files "
+0110 LET FILES=4
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 LET FILES$[1]="ARM-01",FILES$[2]="SMC-02",FILES$[3]="SYS-01",files$[4]="ART-03"
+0140 CALL "SYC.DA",1,1,4,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0150 IF STATUS>0 THEN GOTO 9900
+0160 LET ARM01_DEV=CHANNELS[1],SMC02_DEV=CHANNELS[2],SYS01_DEV=CHANNELS[3],art03_dev=channels[4]
+0200 REM " --- IOLists"
+0210 ARM01A: IOLIST *,X0$
+0220 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0230 ARS01A: IOLIST P0$,P1$,P2$,P3$,P4$,M0$,M1$,M2$,M3$
+0240 DIM SMC02$:"AR_INV_NBR:C(7),LINE_NUMBER:C(3),FIRM_ID:C(2),CUSTOMER_NBR:C(6),ITEM_NUMBER:C(20),DIST_CODE:C(2),LAST_TRANS_DT:C(8),UNEARNED_BAL:C(10),DAYS_REMAINING:C(7),SLSPSN_CODE:C(3),MTD_EARNED:C(10),NMTD_EARNED:C(10),YTD_EARNED:C(10),ORIG_AMOUNT:C(10),ANNUAL_DT:C(8),AVAILABLE:C(12)"
+0250 DIM ART03$:"FIRM_ID:C(2),AR_TYPE:C(2),CUSTOMER_NBR:C(6),AR_INV_NBR:C(7),SEQUENCE_000:C(3),INVOICE_TYPE:C(1),ORD_INV_FLAG:C(1),BACKORD_FLAG:C(1),INVOICE_DATE:C(3),AR_SHIP_DATE:C(3),RESERVED_STR_1:C(2),AR_SHIP_VIA:C(10),ORDER_NUMBER:C(7),AR_PO_NUMBER:C(10),SLSPSN_CODE:C(3),TERMS_CODE:C(2),DISC_CODE:C(2),DIST_CODE:C(2),ORD_PRT_FLAG:C(1),ORD_LOCK:C(1),MESSAGE_CODE:C(2),TERRITORY:C(3),LIST_PRC_CDE:C(2),ORDER_DATE:C(3),TAX_CODE:C(2),PRICING_CODE:C(4),AR_JOB_NBR:C(10),ORD_TAKEN_BY:C(3),CASH_SALE:C(1),REPRINT_FLAG:C(1),ORD_CRED_FLG:C(1),SHIPTO_NBR:C(6),RESERVED_STR_2:C(10*=10),TAX_AMOUNT:N(7*=10),FREIGHT_AMT:N(7*=10),DISCOUNT_AMT:N(7*=10),COMM_PERCENT:N(7*=10),TAXABLE_AMT:N(7*=10),COMM_AMT:N(7*=10),TOTAL_SALES:N(7*=10),TOTAL_COST:N(7*=10),RESERVED_NUM_1:N(1*=10),RESERVED_NUM_2:N(1*=10),RESERVED_NUM_3:N(1*=10)"
+0400 REM " --- Parameters"
+0420 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0430 LET firm_id$=F0$(16,2),N1$=F4$,N2$="AR",N3$=F5$,R9$="N",IH$="N",LS$="N",LF$="N",BR$="N",GL$="N",JN$="N",SA$="N"
+0440 FIND (SYS01_DEV,KEY=firm_id$+N2$+"00",DOM=9800)IOL=ARS01A
+0500 REM " --- Initialize Data"
+0510 LET L9=58,L=L9+1,HEADINGS=3,WIDTH=132,PAGE=0,pgm_end$=""
+0515 total_mtd=0,total_nmtd=0,total_ytd=0,total_unearned=0,cust_mtd=0,cust_nmtd=0,cust_ytd=0,cust_unearned=0
+0520 DIM HEADINGS$[HEADINGS]
+0530 LET HEADINGS$[0]=N1$,HEADINGS$[1]=N3$,CLOCK$="",WHEN$=F0$(7,3),keynum=1
+0580 CALL "SYC.RM",M1$,M1,11,11
+0590 LET M0=LEN(M0$)
+0700 REM " --- Background"
+0750 PRINT 'SB',@(20,3),"Beginning Customer:",@(23,5),"Ending Customer:",'SF',
+0760 begin_cust$="",end_cust$=""
+1000 REM " --- Beginning Customer"
+1005 beginning_cust:
+1010 LET V0$="M",V1$="CE",V2$=begin_cust$,V3$=M0$,V4$="Enter A Valid Customer Number (<F1>=First/<F3>=Lookup)",V0=6,V1=40,V2=3,I0=0
+1020 GOSUB 7000
+1025 IF V3=4 THEN GOTO 9900
+1030 IF V3<>3 THEN GOTO 1040
+1032 CALL "SYC.LC",V$
+1034 IF V$="" THEN GOTO beginning_cust
+1040 IF V3=1 THEN LET V$=""
+1045 IF V$="" THEN PRINT @(V1,V2),"First",'CL',; LET begin_cust$="000000"; GOTO ending_cust
+1050 LET V=num(V$,err=beginning_cust),v$=str(v:"000000")
+1060 FIND (ARM01_DEV,KEY=firm_id$+V$,DOM=beginning_cust)IOL=ARM01A
+1070 PRINT @(V1,V2),V$,@(V1+M0+1,V2),X0$(1,30),
+1080 LET begin_cust$=V$
+1100 REM " --- Ending Customer"
+1110 ending_cust:
+1120 V0$="M",V1$="CE",V2$=end_cust$,V3$=M0$,V4$="Enter A Valid Customer Number (<F1>=Last/<F3>=Lookup)",V0=6,V1=40,V2=5
+1130 GOSUB 7000
+1140 if v3=4 then goto 9900
+1150 IF V3<>3 THEN GOTO 1180
+1160 CALL "SYC.LC",V$
+1170 IF V$="" THEN GOTO ending_cust
+1180 IF V3=1 THEN LET V$=""
+1190 IF V$="" THEN PRINT @(V1,V2),"Last",'CL',; LET end_cust$="999999"; GOTO data_correct
+1200 LET V=num(V$,err=ending_cust),v$=str(v:"000000")
+1210 IF V$<begin_cust$ THEN GOTO ending_cust
+1220 FIND (ARM01_DEV,KEY=firm_id$+V$,DOM=ending_cust)IOL=ARM01A
+1230 PRINT @(V1,V2),V$,@(V1+M0+1,V2),X0$(1,30),
+1240 LET end_cust$=V$
+1300 REM " --- Correct?"
+1310 data_correct:
+1320 LET V4$="Is The Above Information Correct (Y/N)?"
+1330 LET V0$="Y",V1$="C^",V2$="Y",V3$="",V0=1,V1=FNV(V4$),V2=22
+1340 GOSUB 7000
+1350 IF V3=4 THEN GOTO 9900
+1360 ON POS(V$="YN") GOTO data_correct,get_printer,beginning_cust
+1400 REM " --- get printer"
+1405 get_printer:
+1410 rem ' CALL "BPS.01",3,PRTR$,STATUS; IF STATUS THEN GOTO 9900
+1420 rem ' CALL "SYC.GA",7,1,"",PRTR$,STATUS
+1430 rem ' IF STATUS THEN GOTO 9900
+1431 rem ' converted to docout 07/2014 kew - use the DocoutWrapper
+1432 use ::DocoutWrapper.bbj::DocoutWrapper
+1433 declare DocoutWrapper report!
+1434 xUserName$ = stbl("SYSTEMUID"), xPassword$ = stbl("SYSTEMPWD")
+
+1436 docname$ = "_MonthlySAMDisbursement"
+1438 if firm_id$ = "01" then docname$ = "BAS" + docname$ else docname$ = "BSE" + docname$
+
+1440 report! = new DocoutWrapper(firm_id$, "MonDetSAMDisb", docname$, xUserName$, xPassword$)
+
+1442 gosub setOutputAction
+1443 gosub addColumns
+1444 gosub addHeadings
+1445 LET HEADINGS$[2]="Detailed SAM Disbursement"
+
+1450 PRINT @(26,10),"Printing SAM Disbursement...",
+1500 REM " --- Initial Read"
+1505 initial_read:
+1510 read(smc02_dev,key=firm_id$+begin_cust$,knum=keynum,dom=*next)
+1520 cust_num$=""
+1600 REM " --- Main Read"
+1605 READ_LOOP:
+1610 READ RECORD(SMC02_DEV,END=finish)SMC02$
+1620 IF SMC02.FIRM_ID$<>firm_id$ THEN GOTO READ_LOOP
+1625 if smc02.customer_nbr$>end_cust$ then goto finish
+1630 if cust_num$="" then gosub print_cust_heading; cust_num$=smc02.customer_nbr$
+1640 if cust_num$<>smc02.customer_nbr$ then gosub print_summary; cust_num$=smc02.customer_nbr$
+1650 NBR_DAYS=NUM(SMC02.DAYS_REMAINING$),orig_amt=num(smc02.orig_amount$)
+1660 if orig_amt=0 then orig_amt$="N/A" else orig_amt$=str(orig_amt:m1$)
+1670 if cvs(smc02.annual_dt$,2)="" then annual_dt$="" else annual_dt$=smc02.annual_dt$(5,2)+"/"+smc02.annual_dt$(7,2)+"/"+smc02.annual_dt$(1,4)
+1680 mtd_earned=num(smc02.mtd_earned$),nmtd_earned=num(smc02.nmtd_earned$)
+
+1690 UNEARNED_bal=NUM(SMC02.UNEARNED_BAL$),ytd_earned=num(smc02.ytd_earned$)
+1691 rem ' unearned_bal = unearned_bal + nmtd_earned, nmtd_earned = 0 
+1692 rem ' if firm_id$ = "02" and smc02.last_trans_dt$ > "20220930" and smc02.last_trans_dt$ <= "20221007" then nbr_days = nbr_days + num(smc02.last_trans_dt$(7,2))
+1693 rem ' if firm_id$ = "01" and smc02.last_trans_dt$ > "20220930" and smc02.last_trans_dt$ < "20221007" then nbr_days = nbr_days + num(smc02.last_trans_dt$(7,2))
+
+1700 gosub get_invoice_dt;gosub print_detail
+1710 goto read_loop
+4000 REM " --- Totals"
+4005 finish:
+4010 pgm_end$="Y"
+4015 gosub print_summary
+4020 IF L>L9 THEN GOSUB print_new_page
+4030 rem ' PRINT (7)'lf',@(39),FILL(93,"-"),'LF',@(16),"SAM Totals:",@(38+12-M1),total_mtd:M1$,@(50+12-M1),total_nmtd:M1$,@(62+12-M1),total_ytd:m1$,@(74+12-m1),total_unearned:m1$
+4031 report!.addBlankRow(); dashLine$ = fill(11,"-")
+4032 dim row$:rowTemplate$; row.column03$ = dashLine$ + $00$ + "R", row.column04$ = dashLine$ + $00$ + "R", row.column05$ = dashLine$ + $00$ + "R", row.column06$ = dashLine$ + $00$ + "R", row.column07$ = dashLine$ + $00$ + "R", row.column08$ = dashLine$ + $00$ + "R"
+4033 report!.addRow(row$)
+4034 dim row$:rowTemplate$; row.column01$ = "SAM Totals:" + $00$ + "R", row.column03$ = cvs(str(total_mtd:M1$),3) + $00$ + "R", row.column04$ = cvs(str(total_nmtd:M1$),3) + $00$ + "R", row.column05$ = cvs(str(total_ytd:m1$),3) + $00$ + "R", row.column06$ = cvs(str(total_unearned:m1$),3) + $00$ + "R"
+4035 report!.addRow(row$)
+4036 report!.renderReport()
+4090 goto 9900
+5000 REM " --- Heading"
+5005 print_new_page:
+5006 rem ' not used in docout
+5010 rem ' CALL "SYC.HA",7,HEADINGS$[ALL],HEADINGS,PAGE,WIDTH,WHEN$,CLOCK$,STATUS
+5015 rem ' IF STATUS>0 THEN EXITTO 9900
+5020 LET L=HEADINGS+1
+5025 rem ' PRINT (7)""
+5030 rem ' PRINT (7)@(0),"Customer No. & Name",@(40+M1-4),"MTD",@(52+M1-5),"NMTD",@(62+m1-4),"ToDate",@(76+M1-9),"Unearned",@(88+m1-9),"Original",@(100+M1-5),"Days",@(112+m1-7),"Annual"
+5040 rem ' PRINT (7)@(7),"Invoice-Line   Date",@(40+M1-7),"Earned",@(52+M1-7),"Earned",@(64+m1-7),"Earned",@(76+M1-8),"Balance",@(88+m1-7),"Amount",@(100+M1-10),"Remaining",@(112+m1-5),"Date",'LF'
+5080 rem ' LET L=L+3
+5090 RETURN 
+6000 REM " --- Find Customer"
+6005 find_customer:
+6010 DIM cust_name$(30)
+6070 LET cust_name$(1)="Not On File"
+6080 FIND (ARM01_DEV,KEY=firm_id$+SMC02.CUSTOMER_NBR$,DOM=6090)IOL=ARM01A
+6085 cust_name$(1)=x0$(1,30)
+6090 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8070 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+8090 def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+8145 REM " --- FNYY21_YY$ Un-Convert 21st Century 2-Char Year to 2-Char Year"
+8150 DEF FNYY21_YY$(Q1$)
+8155 LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+8160 RETURN Q1$
+8165 FNEND
+8170 REM " --- FNYY_YEAR Convert 2-Char Year to 21st Century Numeric Year"
+8175 DEF FNYY_YEAR(Q1$)
+8180 LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+8185 RETURN Q
+8190 FNEND
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+8245 LET Q=1,Q0=0
+8250 WHILE LEN(Q2$(Q))
+8255 IF POS(Q2$(Q,1)="-()") THEN LET Q0=Q0+1 ELSE LET Q2$(Q,1)="X"
+8260 LET Q=Q+1
+8265 WEND
+8270 IF LEN(Q1$)>LEN(Q2$)-Q0 THEN LET Q1$=Q1$(1,LEN(Q2$)-Q0)
+8280 RETURN STR(Q1$:Q2$)
+8290 FNEND
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 RUN "SYS.AA"
+9999 END
+10100 print_detail:
+10110 IF L+1>L9 THEN GOSUB print_new_page
+10120 rem ' PRINT (7)@(7),SMC02.AR_INV_NBR$,"-",SMC02.LINE_NUMBER$,"  ",invoice_dt$,@(38+12-M1),mtd_earned:M1$,@(50+12-M1),nmtd_earned:M1$,@(62+12-M1),ytd_earned:m1$,@(74+12-m1),unearned_bal:m1$,@(86+12-len(orig_amt$)),orig_amt$,@(98+12-4),NBR_DAYS:"###0",@(110+12-10),annual_dt$
+10121 dim row$:rowTemplate$; row.column01$ = SMC02.AR_INV_NBR$ + "-" + SMC02.LINE_NUMBER$ + $00$ + "R", row.column02$ = invoice_dt$, row.column03$ = cvs(str(mtd_earned:M1$),3) + $00$ + "R", row.column04$ = cvs(str(nmtd_earned:M1$),3) + $00$ + "R", row.column05$ = cvs(str(ytd_earned:m1$),3) + $00$ + "R", row.column06$ = cvs(str(unearned_bal:m1$),3) + $00$ + "R", row.column07$ = orig_amt$ + $00$ + "R", row.column08$ = cvs(str(NBR_DAYS:"###0"),3) + $00$ + "R", row.column09$ = annual_dt$ + $00$ + "R"
+10122 report!.addRow(row$)
+10130 LET L=L+1
+10140 cust_mtd=cust_mtd+mtd_earned,cust_nmtd=cust_nmtd+nmtd_earned,cust_ytd=cust_ytd+ytd_earned,cust_unearned=cust_unearned+unearned_bal
+10150 return
+10200 print_summary:
+10210 if l+2>l9 then gosub print_new_page
+10220 rem ' print (7)@(39),FILL(93,"-"),'LF',@(11),"Customer Totals:",@(38+12-M1),cust_mtd:M1$,@(50+12-M1),cust_nmtd:M1$,@(62+12-M1),cust_ytd:m1$,@(74+12-m1),cust_unearned:m1$
+10221 dashLine$ = fill(11,"-")
+10222 dim row$:rowTemplate$; row.column03$ = dashLine$ + $00$ + "R", row.column04$ = dashLine$ + $00$ + "R", row.column05$ = dashLine$ + $00$ + "R", row.column06$ = dashLine$ + $00$ + "R", row.column07$ = dashLine$ + $00$ + "R", row.column08$ = dashLine$ + $00$ + "R"
+10223 report!.addRow(row$)
+10224 dim row$:rowTemplate$; row.column01$ = "Customer Totals:" + $00$ + "R", row.column03$ = cvs(str(cust_mtd:M1$),3) + $00$ + "R", row.column04$ = cvs(str(cust_nmtd:M1$),3) + $00$ + "R", row.column05$ = cvs(str(cust_ytd:m1$),3) + $00$ + "R", row.column06$ = cvs(str(cust_unearned:m1$),3) + $00$ + "R"
+10225 report!.addRow(row$)
+10230 l=l+2
+10240 total_mtd=total_mtd+cust_mtd,total_nmtd=total_nmtd+cust_nmtd,total_ytd=total_ytd+cust_ytd,total_unearned=total_unearned+cust_unearned
+10250 if pgm_end$="" then gosub print_cust_heading
+10260 cust_mtd=0,cust_nmtd=0,cust_ytd=0,cust_unearned=0
+10290 return
+10300 print_cust_heading:
+10310 if l+2>l9 then gosub print_new_page
+10320 gosub find_customer
+10330 rem ' print (7)'lf',@(0),smc02.customer_nbr$," ",cust_name$
+10331 report!.addBlankRow(); dim row$:rowTemplate$; row.column01$ = smc02.customer_nbr$ + " " + cust_name$
+10332 report!.addRow(row$)
+10340 l=l+2
+10350 return
+10400 get_invoice_dt:
+10410 invoice_dt$=""
+10420 find record(art03_dev,key=smc02.firm_id$+"  "+smc02.customer_nbr$+smc02.ar_inv_nbr$+"000",dom=invoice_done)art03$
+10430 invoice_dt$=fnb$(art03.invoice_date$)
+10440 invoice_done:
+10450 return
+10500 setOutputAction:
+10510 rem ' indicates individual out put fields may contain special formatting
+10520 report!.setOutputAction("FORMAT")
+10530 return
+10600 addColumns:
+10610 rem ' add columns to the Report
+10620 report!.addColumn("Customer No. & Name^Invoice-Line","C",19,0,"","R^R","")
+10630 report!.addColumn("^Date","C",9,0,"","L^L","")
+10640 report!.addColumn("MTD^Earned","C",11,0,"","R^R","")
+10650 report!.addColumn("NMTD^Earned","C",11,0,"","R^R","")
+10660 report!.addColumn("To Date^Earned","C",11,0,"","R^R","")
+10670 report!.addColumn("Unearned^Balance","C",11,0,"","R^R","")
+10680 report!.addColumn("Original^Amount","C",11,0,"","R^R","")
+10690 report!.addColumn("Days^Remaining","C",11,0,"","R^R","")
+10700 report!.addColumn("Annual^Date","C",11,0,"","R^R","")
+10710 columnCount = report!.getColumnCount()
+10720 rowTemplate$ = report!.getRowTemplate()
+10730 dim row$:rowTemplate$
+10740 return
+10800 addHeadings:
+10810 report!.addHeading(N1$)
+10820 report!.addHeading(N3$)
+10830 report!.addHeading("Detailed SAM Disbursement")
+10840 return

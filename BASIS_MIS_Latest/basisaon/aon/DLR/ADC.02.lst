@@ -1,0 +1,20 @@
+0010 REM "ADS - Special Input Routine - Slide Large Variable In Little Window"
+0020 REM "Program: ADC.02"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0050 SETERR 9800
+0060 SETESC 9700
+0100 ENTER TYPE$,PROMPT$,DEFAULT$,MASK$,HELP$,PROG$,ILEN,ICOL,IROW,UINPUT$,UINPUT,CONTROL,DLEN
+1040 CALL "ADC.IA",TYPE$,PROMPT$,DEFAULT$,MASK$,HELP$,PROG$,ILEN,ICOL,IROW,UINPUT$,UINPUT,CONTROL,DLEN
+1080 GOTO 9900
+4990 GOTO 9900
+9700 REM "---- Escape Exit"
+9720 LET CONTROL=5; GOTO 9900
+9800 REM "---- Error Exit"
+9820 LET CONTROL=6; GOTO 9900
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

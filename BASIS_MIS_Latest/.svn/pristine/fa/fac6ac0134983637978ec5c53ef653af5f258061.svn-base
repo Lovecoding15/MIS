@@ -1,0 +1,359 @@
+0010 REM "BPD - Send invoice past due notices"
+0020 REM "Program BPD.01"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| November 2003                                             |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM
+0080 begin 
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files"
+0110 LET FILES=11 
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 FILES$[1]="ARM-02",FILES$[2]="ART-01",FILES$[3]="ART-11",FILES$[4]="SYS-01"
+0140 FILES$[4]="SYS-01",FILES$[5]="TMM-05",files$[6]="ARM-10",files$[7]="TMM-03"
+0150 files$[8]="ARM-01",files$[9]="ART-03",files$[10]="TMM-01",files$[11]="country.dat"
+0160 CALL "SYC.DA",1,1,files,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0170 IF STATUS>0 THEN GOTO 9900
+0180 ARM02_DEV=CHANNELS[1],ART01_DEV=CHANNELS[2],ART11_DEV=CHANNELS[3],SYS01_DEV=CHANNELS[4],TMM05_DEV=CHANNELS[5]
+0190 arm10_dev=channels[6],tmm03_dev=channels[7],arm01_dev=channels[8],art03_dev=channels[9]
+0195 tmm01_dev=channels[10],country_dev=channels[11]
+0200 REM " --- IOLists
+0210 call "templates.pgm::ARM02"
+0220 call "templates.pgm::ART01"
+0230 call "templates.pgm::ART11"
+0240 call "templates.pgm::TMM05"
+0250 call "templates.pgm::ARM10F"
+0255 call "templates.pgm::ARM10A"
+0260 call "templates.pgm::SYS01T"
+0270 call "templates.pgm::TMM03"
+0280 call "templates.pgm::ARM01"
+0290 call "templates.pgm::ART03"
+0300 call "templates.pgm::TMM01"
+0310 call "templates.pgm::country"
+0400 REM " --- Parameters"
+0410 FIND record(SYS01_DEV,KEY="T"+FID(0),DOM=9800)sys01t$
+0420 LET firm_id$=sys01t.firm_id$
+0500 firm_loop: REM " --- Initializations"
+0510 pd1Table!=new java.util.TreeMap()
+0520 pd2Table!=new java.util.TreeMap()
+0530 pd3Table!=new java.util.TreeMap()
+0540 sm1Table!=new java.util.TreeMap()
+0545 sm2Table!=new java.util.TreeMap()
+0550 today_jul=jul(0,0,0)
+0560 bpd01_txt$=""
+0570 tmpchan=unt
+0580 open(tmpchan)"BPD01.txt"
+0590 f1$=fin(tmpchan),s=dec(f1$(1,4))
+0600 readrecord(tmpchan,siz=s)bpd01_txt$
+0610 close(tmpchan)
+0620 good_term$="03050620",dtmsk$="%Dz %Ms %Y",msk$="-######.00",cr$=$0d0a$,lf$=$0a$
+0630 if firm_id$="02" then good_term$="030515";rem ,dtmsk$="%Dz.%Mz.%Y"
+0700 REM " --- Background"
+0710 call "SYC.WA",mode,54,5,18,10,"",name$
+0715 response = msgbox("Are you ready to proceed with past due notices?",4+32+256,"Ready to Proceed")
+0716 if response = 7 then goto 9900
+0720 message$="Checking Customer:  "
+0730 print 'sb',@(27-int((len(message$)+9)/2),1),message$,'sf',
+1000 rem " --- Position customer file
+1010 read(arm02_dev,key=firm_id$,dom=*next)
+1020 rem " --- Customer loop
+1030 customer_loop:
+1040 read record(arm02_dev,end=done)arm02$
+1050 if arm02.firm_id$<>firm_id$ then goto done
+1060 if arm02.send_notice$="N" then goto customer_loop
+1070 print @(38,1),'cl',arm02.customer_nbr$,
+1080 gosub check_credit
+1090 if total_owed<=0 then goto customer_loop
+1100 if pd1Table!.size() then pd1Table!.clear()
+1110 if pd2Table!.size() then pd2Table!.clear()
+1120 if pd3Table!.size() then pd3Table!.clear()
+1130 if sm1Table!.size() then sm1Table!.clear()
+1140 if sm2Table!.size() then sm2Table!.clear()
+1200 rem " --- Position open invoice file
+1210 read(art01_dev,key=firm_id$+"  "+arm02.customer_nbr$,dom=*next)
+1220 REM " --- Loop thru Open Invoice Header
+1230 open_invoice_loop:
+1240 sam_renew=0;dvk_renew=0;rnt_renew=0;dim ponum$(10)
+1250 READ record(ART01_DEV,end=process_msgs)art01$
+1260 if art01.customer_nbr$<>arm02.customer_nbr$ then goto process_msgs
+1270 due_jul=fnj3(art01.due_date$,err=open_invoice_loop)
+1280 invoice_date$=date(fnj3(art01.invoice_date$):dtmsk$)
+1290 if due_jul+5>=today_jul or art01.late_notice$="3" or art01.ar_inv_nbr$(1,2)="OA" then goto open_invoice_loop
+1300 dim art03$:fattr(art03$)
+1310 read record(ART03_dev,key=art01$(1,19)+"0",dom=*next)art03$
+1320 tmp$=cvs(art03.ar_po_number$,1+2+4)
+1330 sam_renew=pos("SAM RENEW"=tmp$)
+1331 dvk_renew=pos("DVK RENEW"=tmp$)
+1332 rnt_renew=pos("RNT RENEW"=tmp$)
+1333 if pos(art03.terms_code$="000104",2) then goto open_invoice_loop
+1340 ponum$(1)=art03.ar_po_number$
+1350 total_pay=0
+1360 rem " --- position detail file
+1400 READ (ART11_DEV,KEY=firm_id$+"  "+arm02.customer_nbr$+art01.ar_inv_nbr$,DOM=*next)
+1410 REM " --- Read ART-11 AR Open Invoice Detail
+1420 detail_loop:
+1430 read record(art11_dev,end=check_amount)art11$
+1440 if firm_id$+"  "+arm02.customer_nbr$+art01.ar_inv_nbr$<>art11.firm_id$+"  "+art11.customer_nbr$+art11.ar_inv_nbr$ then goto check_amount
+1470 total_pay=total_pay+art11.trans_amt+art11.adj_disc_amt
+1480 goto detail_loop
+1490 REM " --- check balance due
+1500 check_amount:
+1510 if art01.invoice_amt+total_pay<=0 then goto open_invoice_loop
+1540 notice_key$=art01.ar_inv_nbr$
+1550 notice_value$=invoice_date$+ponum$+str(art01.invoice_amt+total_pay:msk$)
+1560 on pos(art01.late_notice$="123") goto first_notice,second_notice,third_notice,open_invoice_loop
+1570 first_notice:
+1580 if sam_renew then sm1Table!.put(notice_key$,notice_value$) else pd1Table!.put(notice_key$,notice_value$)
+1590 art01.late_notice$="1"
+1600 goto update_open_inv
+1610 second_notice:
+1620 if due_jul+20>=today_jul then goto open_invoice_loop
+1650 if sam_renew then sm2Table!.put(notice_key$,notice_value$) else pd2Table!.put(notice_key$,notice_value$)
+1660 art01.late_notice$="2"
+1670 goto update_open_inv
+1680 third_notice:
+1690 if due_jul+30>=today_jul then goto open_invoice_loop
+1700 if sam_renew then goto open_invoice_loop
+1701 if dvk_renew then goto open_invoice_loop
+1702 if rnt_renew then goto open_invoice_loop
+1710 pd3Table!.put(notice_key$,notice_value$)
+1720 art01.late_notice$="3"
+1730 update_open_inv:
+1740 art01$=field(art01$)
+1750 write record(art01_dev,key=art01$(1,19))art01$
+1760 goto open_invoice_loop
+1770 process_msgs:
+1790 tc$=arm02.terms_code$
+
+1798 rem ' removed this good_term$ check 5/28/2014 kew
+1800 rem ' if pos(tc$=good_term$,2)=0 then tc$="03"
+
+1810 dim arm10a$:fattr(arm10a$)
+1820 find record(arm10_dev,key=firm_id$+"A"+tc$,dom=*next)arm10a$
+1830 terms_desc$=cvs(arm10a.code_desc$,3)
+1840 gosub get_emails
+1850 gosub language
+1855 searchlist$="PD1PD2PD3SM1SM2"
+1860 while searchlist$<>""
+1865 rem ' start$=""; call"emailEncoding.src::encode_start",start$
+
+1868 rem ' converted to email.bbj 11/17/2014 kew
+1869 rem ' for customer 001081 and 009080 BCC nspence@basis.cloud
+1870 if firm_id$ = "01" and (arm02.customer_nbr$ = "001081" or arm02.customer_nbr$ = "009080") then bcc$ = "nspence@basis.cloud, kurt.e.williams@comcast.net" else bcc$ = "kurt.e.williams@comcast.net"
+1871 rem ' msg$=start$ + sendto$ + cr$ + from$ + cr$ + reply$ + cr$ + cc$ + cr$ + bcc$ + cr$,search$=""
+
+1880 search$=searchlist$(1,3),searchlist$=searchlist$(4)
+1890 if search$="PD1" and pd1Table!.size()=0 then continue
+1900 if search$="PD2" and pd2Table!.size()=0 then continue
+1910 if search$="PD3" and pd3Table!.size()=0 then continue
+1920 if search$="SM1" and sm1Table!.size()=0 then continue
+1930 if search$="SM2" and sm2Table!.size()=0 then continue
+1940 gosub parse_bpd01_txt
+1950 rem ' msg$=msg$+subject$ + cr$ + cr$
+1952 rem ' middle$=""; call "emailEncoding.src::encode_middle", middle$
+1954 rem ' msg$ = msg$ + middle$ + head$
+1955 msg$ = head$
+1960 if search$="PD1" then keys!=pd1Table!.keySet()
+1970 if search$="PD2" then keys!=pd2Table!.keySet()
+1980 if search$="PD3" then keys!=pd3Table!.keySet()
+1990 if search$="SM1" then keys!=sm1Table!.keySet()
+2000 if search$="SM2" then keys!=sm2Table!.keySet()
+2010 e!=keys!.iterator()
+2020 while (e!.hasNext())
+2030   invoice$ = e!.next()
+2040   if search$="PD1" then invoice_line$ = pd1Table!.get(invoice$)
+2050   if search$="PD2" then invoice_line$ = pd2Table!.get(invoice$)
+2060   if search$="PD3" then invoice_line$ = pd3Table!.get(invoice$)
+2070   if search$="SM1" then invoice_line$ = sm1Table!.get(invoice$)
+2080   if search$="SM2" then invoice_line$ = sm2Table!.get(invoice$)
+2090   gosub format_inv_line
+2100 wend
+2120 rem ' msg$ = msg$ + body$ + cr$ + cr$
+2121 msg$ = msg$ + body$
+2122 rem ' ending$=""; call "emailEncoding.src::encode_ending", ending$
+2124 rem ' msg$ = msg$ + ending$
+2130 gosub send_mail
+2140 if search$<>"PD3" then continue
+2150 arm02.cred_hold$="Y"
+2160 arm02$=field(arm02$)
+2170 write record(arm02_dev)arm02$
+2180 wend
+2190 goto customer_loop
+3000 done:
+3010 call "SYC.WD",name$
+3020 if firm_id$="01" then firm_id$="02";goto firm_loop
+3090 GOTO 9900
+4000 parse_bpd01_txt:
+4010 head$="",body$="",dt1=0,invoice1=0,po1=0,balance1=0
+4020 sr$=search$+"_"+lang$+":"
+4030 while 1
+4040   p0=pos(sr$=cvs(bpd01_txt$,4));if p0=0 then break
+4050   txt$=bpd01_txt$(p0)
+4060   p0=pos("{"=txt$);if p0=0 then break
+4070   txt$=txt$(p0+1),p0=pos("}"=txt$)
+4080   if p0=0 then break
+4090   txt$=txt$(1,p0-1)
+4092   rem ' remove the extra line feed that comes before the subject
+4094   p0=pos(lf$=txt$)
+4096   txt$=txt$(p0+1)
+4100   p0=pos("<cust>"=txt$)
+4110   if p0 then txt$=txt$(1,p0-1)+arm01.customer_nbr$+txt$(p0+6)
+4112   rem ' pull out the subject
+4113   subject$=""
+4114   p1 = pos(lf$=txt$)
+4116   subject$ = txt$(1,p1-1), txt$ = txt$(p1+1)
+4117   if subject$(len(subject$),1) = $0D$ then subject$ = subject$(1,len(subject$)-1)
+4118   rem ' call "emailEncoding.src::encode_subject", subject$
+4119   if cvs(subject$(1,9),4) = "SUBJECT: " subject$ = subject$(10)
+4120   p0=pos("<custname>"=txt$)
+4130   if p0 then txt$=txt$(1,p0-1)+cvs(arm01.cust_name$,3)+txt$(p0+10)
+4140   p0=pos("<terms>"=txt$)
+4150   if p0 then txt$=txt$(1,p0-1)+terms_desc$+txt$(p0+7)
+4160   p0=pos("<invoice>"=txt$); if p0=0 then break
+4170   p1=pos(lf$=txt$(1,p0),-1);if p1=0 then p1=p0-1
+4180   head$=txt$(1,p1),loc$=txt$(p1+1)
+4190   invoice1=pos("<invoice>"=loc$),date1=pos("<date>"=loc$),po1=pos("<po>"=loc$)
+4200   balance1=pos("<balance>"=loc$),p0=pos(lf$=loc$),body$=loc$(p0+1)
+4210   break
+4220 wend
+4230 if head$="" and lang$<>"EN" then lang$="EN";goto parse_bpd01_txt
+4240 while 1
+4250  p=pos($0a$=head$),p1=pos($0d$=head$)
+4260  if p=1 then head$=head$(2);continue
+4270  if p1=1 then head$=head$(2);continue
+4280  break
+4290 wend
+4300 return
+4500 language:
+4510 lang$="EN"
+4520 if firm_id$="01" then return
+4530 dim tmm01$:fattr(tmm01$),country$:fattr(country$)
+4540 readrecord(tmm01_dev,key=firm_id$+arm01.customer_nbr$+"000000",dom=*next)tmm01$
+4550 lang$=cvs(tmm01.lang_code$,7)
+4560 readrecord(country_dev,key=tmm01.country_code$,dom=*next)country$
+4570 tmp$=cvs(country.lang_code$,7)
+4580 if lang$="" then lang$=tmp$
+4590 return
+5000 rem " --- check for credit balance
+5010 check_credit:
+5020 total_owed=0     
+5030 rem " --- Position open invoice file
+5040 read(art01_dev,key=firm_id$+"  "+arm02.customer_nbr$,dom=*next)
+5060 while 1
+5070   READ record(ART01_DEV,end=*break)art01$
+5080   if art01.customer_nbr$<>arm02.customer_nbr$ then break
+5110   rem " --- position detail file
+5120   total_pay=0
+5130   READ (ART11_DEV,KEY=firm_id$+"  "+arm02.customer_nbr$+art01.ar_inv_nbr$,DOM=*next)
+5150   while 2
+5160     read record(art11_dev,end=*break)art11$
+5170     if firm_id$+"  "+arm02.customer_nbr$+art01.ar_inv_nbr$<>art11.firm_id$+"  "+art11.customer_nbr$+art11.ar_inv_nbr$ then break
+5200     total_pay=total_pay+art11.trans_amt+art11.adj_disc_amt
+5210   wend
+5230   REM " --- check balance due
+5250   total_owed=total_owed+art01.invoice_amt+total_pay
+5260 wend
+5280 return
+5500 REM " --- get e-mail addresses
+5510 get_emails:
+5512 dim arm01$:fattr(arm01$)
+5514 find record(arm01_dev,key=firm_id$+arm02.customer_nbr$,dom=*next)arm01$
+5520 dim arm10f$:fattr(arm10f$)
+5530 find record(arm10_dev,key=firm_id$+"F"+arm02.SLSPSN_CODE$,dom=*next)arm10f$
+5540 if cvs(arm10f.e_mail$,1+2)="" then
+5550   cc$="sales@basis.cloud" 
+5560 else
+5570   cc$=cvs(arm10f.e_mail$,1+2)
+5580 endif
+5590 rem ' cc$="Cc: "+cc$+", customer-service@basis.cloud"
+5595 cc$ = cc$ + ", customer-service@basis.cloud"
+5600 dim arm10f$:fattr(arm10f$)
+5610 find record(arm10_dev,key=firm_id$+"FCOL",dom=*next)arm10f$
+5620 collector$=arm10f.slspsn_name$
+5630 col_phone$=arm10f.phone_1$
+5640 rem ' from$="From: "+cvs(arm10f.e_mail$,1+2)
+5641 from$ = cvs(arm10f.e_mail$,1+2)
+5650 reply$="Reply-To: "+cvs(arm10f.e_mail$,1+2)
+5660 first=1,hold$="",sendto$=""
+5670 read(tmm03_dev,key=firm_id$+arm02.customer_nbr$+fill(6,"0"),dom=*next)
+5680 find_ap:
+5690 read record(tmm03_dev,end=company_email)tmm03$
+5700 if tmm03.customer_nbr$<>arm02.customer_nbr$ then
+5710   goto company_email
+5720 endif
+5730 if first then
+5740   hold$=cvs(tmm03.e_mail$,1+2)
+5750   first=0
+5760 endif
+5770 if tmm03.ap_contact$="Y" and cvs(tmm03.e_mail$,1+2)<>"" then
+5780   sendto$=cvs(tmm03.e_mail$,1+2)
+5790   goto set_sendto
+5800 endif
+5810 goto find_ap
+5820 company_email:
+5830 dim tmm05$:fattr(tmm05$)
+5840 find record(tmm05_dev,key=firm_id$+arm02.customer_nbr$+fill(6,"0"),dom=*next)tmm05$
+5850 sendto$=cvs(tmm05.email$,1+2)
+5860 set_sendto:
+5870 if sendto$="" then sendto$=hold$
+5900 if sendto$="" then sendto$=cvs(arm10f.e_mail$,1+2)
+5903 rem ' invoices for 1081 still go to ap contact, statments and past due notice go to jodyf@osas.com
+5905 if firm_id$ = "01" and arm02.customer_nbr$ = "001081" then sendto$ = "jodyf@osas.com"
+5930 rem ' sendto$="To: "+sendto$
+5940 return
+6000 send_mail:
+6010 rem ' outfile$=stbl("TEMP")+search$+firm_id$+arm02.customer_nbr$+".txt"
+6020 rem ' erase outfile$,err=*next
+6030 rem ' string outfile$
+6040 rem ' out_chn=unt;open(out_chn)outfile$
+6050 rem ' WRITE RECORD (out_chn,siz=len(msg$))msg$
+6060 rem ' close(out_chn)
+6065 rem ' unix send mail is no longer used
+6070 rem ' a=scall("/usr/lib/send mail -t < "+outfile$)
+6080 rem ' erase outfile$,err=*next
+
+6100 rem ' next 5 lines for testing
+6110 rem ' finalResp = msgbox("from: " + from$ + " to: " + sendto$ + " cc: " + cc$ + " bcc: " + bcc$,4,"debug")
+6120 rem ' if finalResp = 7 then escape
+6130 rem ' from$="Nico Spence <nspence@basis.cloud>", sendto$ = "kw5121151@gmail.com, kurt.e.williams@comcast.net", cc$ = "williams.kurt@comcast.net", bcc$="check.williams@comcast.net"
+6140 rem ' finalResp = msgbox("from: " + from$ + " to: " + sendto$ + " cc: " + cc$ + " bcc: " + bcc$,4,"debug")
+6150 rem ' if finalResp = 7 then escape
+6160 call "sendEmail.src", from$, sendto$, cc$, bcc$, subject$, msg$, finalFile$
+6170 return
+
+6500 format_inv_line:
+6510 date$=invoice_line$(1,11),po$=invoice_line$(12,10),balance$=invoice_line$(22)
+6520 if firm_id$="02" then balance$(8,1)=","
+6530 line$=fill(100)
+6540 if invoice1 then line$(invoice1,7)=invoice$
+6550 if date1 then line$(date1,11)=date$
+6560 if po1 then line$(po1,10)=po$
+6570 if balance1 then line$(balance1,10)=balance$
+6580 msg$=msg$+cvs(line$,2)+cr$
+6590 return
+8000 REM " --- Functions
+8020 def fnj3(ymd$)=jul(1900+asc(ymd$(1))-32,asc(ymd$(2))-32,asc(ymd$(3))-32)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,lf$
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,lf$
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END
+

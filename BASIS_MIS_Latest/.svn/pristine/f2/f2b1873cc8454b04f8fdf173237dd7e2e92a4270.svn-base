@@ -1,0 +1,250 @@
+0010 REM "RNT - RN Expiration Notices"
+0020 REM "Program RNT.01"
+0040 REM 
+0080 begin 
+0085 SETESC err_rtn
+0090 SETERR err_rtn
+0100 REM " --- Open/Lock Files"
+0110 call "ec_open::TMM01"
+0125 call "ec_open::country"
+0130 call "ec_open::SMC01"
+0140 call "ec_open::SNM01"
+0230 call "ec_open::ARM10F"
+0235 call "ec_open::ARM02"
+0500 REM " --- Initialize Data"
+0520 cr$=$0d0a$,lf$=$0a$,rent_txt$=""
+0530 tmpchan=unt
+0540 open(tmpchan)"rent_notice.txt"
+0550 f1$=fin(tmpchan),s=dec(f1$(1,4))
+0560 readrecord(tmpchan,siz=s)rent_txt$
+0570 close(tmpchan)
+0580 dt_mask$="%Dz %Ms %Y",amt_mask$="#######.00"
+1000 REM " --- Initial Read"
+1010 cnt=0
+1020 today$=date(0:"%Yl%Mz%Dz")
+1030 x=jul(0,0,0)-5
+1040 start_dt$=date(x:"%Yl%Mz%Dz")
+2220 temp_file$=stbl("TEMP")+"rnt"+date(0:"%Y%M%D%H%m")+".dat"
+2230 erase temp_file$,err=*next
+2250 mkeyed temp_file$,[0:1:38],0,100
+2260 tmp_dev=unt;open(tmp_dev)temp_file$
+2270 dim temprec$:"firm:c(2),cust:c(6),type:c(2),exp_dt:c(8),serial_nbr:c(20),contract:c(6),avail:c(1*)"
+2280 gosub do_contracts
+2300 sort$="*",sn_list$=""
+2310 read(tmp_dev,key="",err=*next)
+2320 while 1
+2330   done=1
+2340   dim temprec$:fattr(temprec$)
+2350   readrecord(tmp_dev,end=*next)temprec$;done=0
+2355   if done and sort$="*" then break
+2360   if sort$="*" then sort$=temprec$(1,18)
+2370   if pos(sort$=temprec$)=1 then 
+2380     sn_list$=sn_list$+temprec.serial_nbr$+temprec.contract$
+2390     continue
+2400   fi
+2410   d$=sort$(11,8),exp_jul=jul(num(d$(1,4)),num(d$(5,2)),num(d$(7,2)))+45
+2420   gosub language
+2430   gosub parse_rent_txt
+2440   gosub serial_loop
+2450   gosub do_mail
+2460   if done then break
+2470   sort$=temprec$(1,18)
+2480   sn_list$=temprec.serial_nbr$+temprec.contract$
+2490 wend
+3000 rem 'Done
+3010 close(tmp_dev,err=*next)
+3015 rem ' erase temp_file$,err=*next
+3050 goto 9900
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 rem " --- functions
+8010 def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+8020 def fnj3(ymd$)=jul(1900+asc(ymd$(1))-32,asc(ymd$(2))-32,asc(ymd$(3))-32)
+9000 err_rtn: REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 REM " --- Return to menu"
+9910 CALL "SYC.WD",ERR=*next,NAME$
+9920 CALL "SYC.WB","0",1
+9930 PRINT @(0,20),
+9970 RUN "SYS.AA"
+10000 find_sales:
+10010 dim sales_name$(30)
+10020 find record(arm02,key=smc01.firm_id$+smc01.customer_nbr$+"  ",dom=sales_done)arm02$
+10030 find record(arm10f,key=arm02.firm_id$+"F"+arm02.SLSPSN_CODE$,dom=sales_done)arm10f$
+10040 sales_name$(1)=arm10f.SLSPSN_NAME$
+10050 sales_done:
+10060 return
+10100 serial_loop:
+10105 sn_line$=""
+10110 while sn_list$<>"" 
+10120 sn$=sn_list$(1,20),contract$=sn_list$(21,6),sn_list$=sn_list$(27)
+10130 line$=fill(80)
+10140 if sn1 then line$(sn1)=sn$
+10160 sn_line$=sn_line$+cvs(line$,2)+lf$
+10200 readrecord(smc01,key=contract$,err=*continue)smc01$
+10210 smc01.invoiced_flag$="Y"
+10230 smc01$=field(smc01$)
+10250 write record(smc01)smc01$
+10270 wend
+10290 return
+
+11000 do_mail:
+11005 rem ' converted to email.bbj 11/14/14 kew
+11010 if sort$(1,2)<>"02" then gosub find_sales
+
+11012 rem ' start$=""; call"emailEncoding.src::encode_start",start$
+11020 sendto$=cvs(smc01.e_mail$,3),from$=cvs(sales_name$,3)
+11030 if from$<>"" then from$=from$+" <"+cvs(arm10f.e_mail$,3)+">"
+11040 if sendto$="" then return
+
+11050 if smc01.firm_id$="02" then from$="eu.sales@basis.cloud"
+11060 if cvs(from$,3)="" then from$="sales@basis.cloud"
+
+11070 rem ' outfile$=stbl("TEMP")+"RNT"+sort$(1,8)+str(cnt)+".txt"
+11080 cnt=cnt+1
+11090 rem ' erase outfile$,err=*next
+11100 rem 'string outfile$
+11110 rem ' out_chn=unt;open(out_chn)outfile$
+
+11120 if sendto$="" then sendto$="customer-service@basis.cloud"
+
+11130 rem ' HEADER$=start$ + "To: "+SENDTO$+cr$+"From: "+from$+cr$
+11140 rem ' header$=header$+"Cc: "+from$
+11142 cc$ = from$ + ", customer-service@basis.cloud"
+
+11150 rem ' if pos("cust@basis"=sendto$)=0 then header$=header$+", customer-service@basis.cloud"
+
+11153 rem ' header$ = header$ + cr$ + "Bcc: kurt.e.williams@comcast.net"
+11154 bcc$ = "kurt.e.williams@comcast.net"
+
+11155 rem ' header$ = header$ + cr$ + subject$ + cr$ + cr$
+11156 rem ' middle$=""; call "emailEncoding.src::encode_middle", middle$
+11157 rem ' header$ = header$ + middle$
+11160 rem ' header$=header$+cr$+cvs(head$,2)
+11162 header$ = cvs(head$,2)
+
+11170 while sn_line$<>""
+11180   lfpos=pos(lf$=sn_line$)
+11190   if lfpos=0 then break 
+11200   serial$=sn_line$(1,lfpos-1)
+11210   sn_line$=sn_line$(lfpos+1) 
+11220   header$=header$+serial$+cr$
+11230 wend
+
+11240 rem ' header$=header$+body$+cr$+cr$
+11241 header$ = header$ + body$
+
+11242 rem ' ending$=""; call "emailEncoding.src::encode_ending", ending$
+11243 rem ' header$ = header$ + ending$
+11250 rem ' WRITE RECORD (out_chn,siz=len(header$))HEADER$
+11260 rem ' close(out_chn)
+11265 rem ' use of unix send mail has been discontinued
+11270 rem ' a=scall("/usr/lib/send mail -t < "+outfile$)
+11280 rem ' erase outfile$,err=*next
+
+11300 rem ' call sendEmail.src
+11310 finalFile$ = ""
+
+11320 rem ' next 5 lines for testing
+11325 rem ' finalResp = msgbox("from: " + from$ + " to: " + sendto$ + " cc: " + cc$ + " bcc: " + bcc$,4,"debug")
+11327 rem ' if finalResp = 7 then escape
+11330 rem ' from$="Nico Spence <nspence@basis.cloud>", sendto$ = "kw5121151@gmail.com, kurt.e.williams@comcast.net", cc$ = "williams.kurt@comcast.net", bcc$="check.williams@comcast.net"
+11340 rem ' finalResp = msgbox("from: " + from$ + " to: " + sendto$ + " cc: " + cc$ + " bcc: " + bcc$,4,"debug")
+11350 rem ' if finalResp = 7 then escape
+11360 call "sendEmail.src", from$, sendto$, cc$, bcc$, subject$, header$, finalFile$
+
+11370 return
+
+
+12000 do_contracts:
+12010 while 1
+12020   read record(smc01,end=*break)smc01$
+12030   if pos(smc01.customer_nbr$="008450001081007808001031002786",6) then continue
+12040   if smc01.contr_type$(1,2)<>"RN" then continue
+12050   if smc01.expire_on_dt$>today$ then continue
+12060   if pos(smc01.invoiced_flag$="YI") then continue
+12070   if smc01.expire_on_dt$<start_dt$ then continue
+12080   temprec.firm$=smc01.firm_id$
+12090   temprec.cust$=smc01.customer_nbr$
+12100   temprec.exp_dt$=smc01.annual_dt$
+12110   temprec.contract$=smc01.contract$
+12120   gosub find_sns
+12190 wend
+12200 return
+12700 find_sns:
+12710 read(snm01,key=smc01.contract$,knum=3,dom=*next)
+12720 while 1
+12730 read record(snm01,end=*break)snm01$
+12740 if snm01.contract$<>smc01.contract$ then break
+12750 if snm01.firm_id$+snm01.customer_nbr$<>smc01.firm_id$+smc01.customer_nbr$ then break
+12760 if snm01.active_flag$<>"Y" then continue
+12770 temprec.serial_nbr$=snm01.serial_nbr$
+12830 writerecord(tmp_dev)temprec$
+12850 wend
+12890 return
+13500 language:
+13510 lang$="EN"
+13520 if sort$(1,2)="01" then return
+13530 dim tmm01$:fattr(tmm01$),country$:fattr(country$)
+13540 readrecord(tmm01,key=sort$(1,8)+"000000",dom=*next)tmm01$
+13550 lang$=cvs(tmm01.lang_code$,7)
+13560 readrecord(country,key=tmm01.country_code$,dom=*next)country$
+13570 if lang$="" then lang$=cvs(country.lang_code$,7)
+13590 return
+14000 parse_rent_txt:
+14010 head$="",body$="",sn1=0
+14020 sr$=lang$+":"
+14030 if lang$="EN" then sr$=lang$+sort$(1,2)+":"
+14050 while 1
+14070   p0=pos(sr$=cvs(rent_txt$,4));if p0=0 then break
+14080   txt$=rent_txt$(p0)
+14090   p0=pos("{"=txt$);if p0=0 then break
+14100   txt$=txt$(p0+1),p0=pos("}"=txt$)
+14110   if p0=0 then break
+14120   txt$=txt$(1,p0-1)
+14122   rem ' pull out the subject
+14123   subject$=""
+14124   p1 = pos(lf$=txt$)
+14125   subject$ = txt$(1,p1-1), txt$ = txt$(p1+1)
+14126   if subject$(len(subject$),1) = $0D$ then subject$ = subject$(1,len(subject$)-1)
+14127   rem ' call "emailEncoding.src::encode_subject", subject$
+14128   if cvs(subject$(1,9),4) = "SUBJECT: " subject$ = subject$(10)
+14130   p0=pos("<sn>"=txt$); if p0=0 then break
+14140   p1=pos(lf$=txt$(1,p0),-1);if p1=0 then p1=p0-1
+14160   head$=txt$(1,p1),loc$=txt$(p1+1)
+14170   sn1=pos("<sn>"=loc$)
+14190   p0=pos(lf$=loc$)
+14200   if p0 then body$=loc$(p0+1) else body$=loc$
+14210   dt1=pos("<date>"=body$)
+14220   break
+14230 wend
+14250 if head$="" and lang$<>"EN" then lang$="EN";goto parse_rent_txt
+14260 while 1
+14270  p=pos($0a$=head$),p1=pos($0d$=head$)
+14275  if p=1 then head$=head$(2);continue
+14280  if p1=1 then head$=head$(2);continue
+14285  break
+14290 wend
+14300 if dt1 then body$=body$(1,dt1-1)+date(exp_jul:dt_mask$)+body$(dt1+6)
+14395 return

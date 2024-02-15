@@ -1,0 +1,42 @@
+rem ' row by row edits for FUT_HOLIDAYCARDS
+
+enter inq_mode$, rec_tpl$, calc_tpl$, table_chans$[], status$
+
+rem ' inq_mode$ Not currently used
+rem ' rec_tpl$  Current inquiry row database columns
+rem ' calc_tpl$ Current inquiry row calculation columns
+rem ' table_chans$[]  Barista opened table/channel array
+rem ' status$ Returned status: "" = Display current row, "SKIP" = Skip current row
+
+rem ' format the arm01 zip code
+zip$ = cvs(rec_tpl.zip_code$,3)
+if len(zip$) = 9 then 
+	zip$ = zip$(1,5) + "-" + zip$(6,4)
+	rec_tpl.fax_number$ = zip$
+else
+	rec_tpl.fax_number$ = zip$
+fi
+
+rem ' format the tmm01 zip code
+zip$ = cvs(rec_tpl.tmm01_zip_code$,3)
+if len(zip$) = 9 then 
+	zip$ = zip$(1,5) + "-" + zip$(6,4)
+fi
+
+rem ' always using the tmm01 address 
+rec_tpl.fax_number$ = zip$
+
+rem ' blank contact_name when equal to the customer name
+if cvs(rec_tpl.cust_name$,3) = cvs(rec_tpl.contact_nm$,3) then
+	rec_tpl.contact_nm$ = ""
+fi
+
+rem ' manipulate the YTD Sales number into a 1000s number
+ytd_sales = round(rec_tpl.ytd_sales / 1000 , 0)
+rec_tpl.ytd_sales = ytd_sales
+
+status$ = ""
+
+exit
+
+

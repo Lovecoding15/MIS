@@ -1,0 +1,128 @@
+rem --- preview the image prior to upload --- image_preview.src
+
+rem    setesc std_error
+rem    seterr std_error
+
+rem --- declares
+
+use ::BBUtils.bbj::BBUtils
+
+declare BBjSysGui sysgui!
+declare BBjTopLevelWindow win!
+
+declare BBjHtmlView htmlviewer!
+declare BBjImageCtrl imageviewer!
+declare BBjButton reselect!
+declare BBjButton save!
+declare BBjButton cancel!
+	
+rem --- enter
+
+enter thefile$, retval$
+
+if thefile$ = "" then 
+	retval$ = "reselect"
+	goto std_exit
+endif
+
+rem --- what file type are we doing
+ppos = pos("."=thefile$)
+ftype$ = thefile$(ppos+1)
+
+rem --- if ftype$ = "pdf" then 
+	rem --- create the html
+	rem --- url$ = BBUtils.copyFileToWebServer(thefile$,"appreviewtemp", sslReq)
+	rem --- html$ ="<!DOCTYPE html>" +$0A$
+	rem --- html$ = html$ + "<html>" +$0A$
+	rem --- html$ = html$ + "<head>" +$0A$
+	rem --- html$ = html$ + "</head>" +$0A$
+	rem --- html$ = html$ + "<body>" +$0A$
+	rem --- html$ = html$ + "<BR><BR>      Please see your web browser for the pdf preview"+ $0A$
+	rem --- html$ = html$ + "<object data=" + chr(34) + url$ + chr(34) + " type=" + chr(34) + "application/pdf" + chr(34) + " width=" + chr(34) + "100%" + chr(34) + " height=" + chr(34) + "100%" + chr(34) + " >"
+	rem --- html$ = html$ + "</object>" + $0A$
+	rem --- html$ = html$ + "</body>" +$0A$
+	rem --- html$ = html$ + "</html>" +$0A$
+rem --- endif
+
+html$ ="<!DOCTYPE html>" +$0A$
+html$ = html$ + "<html>" +$0A$
+html$ = html$ + "<head>" +$0A$
+html$ = html$ + "</head>" +$0A$
+html$ = html$ + "<body>" +$0A$
+html$ = html$ + "<BR><BR><center>Please see your web browser for the document image preview.</center>"+ $0A$
+html$ = html$ + "</body>" +$0A$
+html$ = html$ + "</html>" +$0A$
+
+
+rem --- Create the Window for the program
+
+winWidth = 615
+rem ' winHeight = 700
+winHeight = 150
+
+sysgui!=BBjAPI().getSysGui()
+context = sysgui!.getAvailableContext()
+
+win!=sysgui!.addWindow(context, 50, 50, winWidth, winHeight, "Invoice Image Preview",$00080010$)
+font! = sysgui!.makeFont("Tahoma", 8, sysgui!.PLAIN)
+
+rem --- do the views first pdf then all others
+rem --- if ftype$ = "pdf" then
+rem --- 	htmlviewer! = win!.addHtmlView(100, 1, 1, 612, 680, html$, $0800$)
+	rem --- htmlviewer!.setUrl("file:///" + thefile$)
+	rem --- sslReq = BBUtils.isWebServerSSLEnabled()
+	rem ---- sslReq = 0
+	rem --- url$ = BBUtils.copyFileToWebServer(thefile$,"appreviewtemp", sslReq)
+	rem --- htmlviewer!.setUrl(url$)
+	rem --- BBjAPI().getThinClient().browse(url$)
+rem --- else
+rem --- 	win!.addImageCtrl(100, 1, 1,612, 680, thefile$, $0800$)
+rem --- endif
+
+htmlviewer! = win!.addHtmlView(100, 1, 1, 612, 130, html$, $0800$)
+
+rem --- show all files in the browser
+sslReq = BBUtils.isWebServerSSLEnabled()
+url$ = BBUtils.copyFileToWebServer(thefile$,"appreviewtemp", sslReq)
+BBjAPI().getThinClient().browse(url$)
+	
+rem --- buttons
+rem --- reselect! = win!.addButton(101, 370, 682, 80, 19, "Reselect")
+reselect! = win!.addButton(101, 370, 132, 80, 19, "Reselect")
+reselect!.setFont(font!)
+
+rem --- save! = win!.addButton(102, 451, 682, 80, 19, "Save")
+save! = win!.addButton(102, 451, 132, 80, 19, "Save")
+save!.setFont(font!)
+
+rem --- cancel! = win!.addButton(103, 532, 682, 80, 19, "Cancel")
+cancel! = win!.addButton(103, 532, 132, 80, 19, "Cancel")
+cancel!.setFont(font!)
+
+rem --- callbacks
+reselect!.setCallback(reselect!.ON_BUTTON_PUSH, "reselect")
+save!.setCallback(save!.ON_BUTTON_PUSH, "save")
+cancel!.setCallback(cancel!.ON_BUTTON_PUSH, "cancel")
+
+
+win!.setVisible(1)
+save!.focus()
+
+process_events,err=*same
+
+reselect:
+	retval$ = "reselect"
+	goto std_exit
+save:
+	retval$ = "save"
+	goto std_exit
+
+cancel:
+	retval$ = "cancel"
+	goto std_exit
+	
+std_exit: rem --- Standard program end (01Mar2006)
+
+win!.destroy()
+
+exit	

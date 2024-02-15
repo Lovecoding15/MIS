@@ -1,0 +1,135 @@
+[Program]
+Creation Date=2020-04-20
+Creation Time=13:34:36
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2020-04-21
+Last Build Time=12:48:10
+Precision=99
+Program Name=backupLicense
+Remarks=Yes
+Resource File=backupLicense.arc
+Show Forms=All
+
+[EOJ]
+rem ' -----------------------------------------------------------------
+rem ' EOJ
+rem ' -----------------------------------------------------------------
+
+theWindow!.destroy()
+
+[Init]
+rem ' -----------------------------------------------------------------
+rem ' Init
+rem ' -----------------------------------------------------------------
+
+gosub buildObjectReferences
+gosub loadGrid
+
+
+[Event Win=101 ID=100 Code=B <PUSH_BUTTON> (W101_C100_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gb__eoj=1
+
+[Event Win=101 ID=102 Code=N3:107 <GRID_DCLICK> (W101_C102_GRID_MOUSE_DOUBLE_CLICK)]
+rem ' Notify Event - Grid - Grid Double Clicked (3)
+rem ' gb__event! = cast(BBjGridDoubleClickEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' Row is: gb__event!.getRow()
+rem ' Column is: gb__event!.getColumn()
+rem ' Point clicked: gb__event!.getXLocationInCell(), 
+rem '     gb__event!.getYLocationInCell()
+rem ' Cell boundaries: gb__event!.getCellBounds()
+rem ' Meta keys: gb__event!.isShiftDown(), gb__event!.isControlDown()
+
+gb__event! = cast(BBjGridDoubleClickEvent,bbjapi().getSysGui().getLastEvent())
+gb__control! = gb__event!.getControl()
+row = gb__event!.getRow()
+col = gb__event!.getColumn()
+
+if col <> 5 and col <> 7 then 
+    xresp = msgbox("You must double click the Production Serial Number or the Backup Serail Number.", 0, "Select a Serial Number")
+    return
+fi
+
+gb__arg$ = theGrid!.getCellText(row, col)
+gb__eoj=1
+
+
+[Function (buildObjectReferences)]
+rem ' -----------------------------------------------------------------
+rem ' buildObjectReferences
+rem ' -----------------------------------------------------------------
+
+buildObjectReferences:
+
+use ::SQLProperties.bbj::SQLProperties
+
+declare SQLProperties props!
+declare BBjSysGui sysgui!
+declare BBjTopLevelWindow theWindow!
+declare BBjStandardGrid theGrid!
+declare BBjRecordSet inRs!
+declare BBjRecordData rd!
+declare BBjVector gridData!
+
+sysgui! = BBjAPI().getSysGui()
+theWindow! = cast(BBjTopLevelWindow, sysgui!.getActiveWindow())
+theGrid! = cast(BBjStandardGrid, theWindow!.getControl("theGrid"))
+
+gridData! = BBjAPI().makeVector()
+
+return
+
+[Function (loadGrid)]
+rem ' -----------------------------------------------------------------
+rem ' loadGrid
+rem ' -----------------------------------------------------------------
+
+loadGrid:
+
+sql$ = "SELECT  t2.firm_id, t2.customer_nbr, t3.cust_name, t2.contract, " 
+sql$ = sql$ + "    substring(t5.annual_dt,5,2)+'/'+substring(t5.annual_dt,7,2)+'/'+substring(t5.annual_dt,1,4) as expiration, "
+sql$ = sql$ + "    t1.prod_serial_nbr, t2.users as prod_users, t1.back_serial_nbr, t4.users as backup_users FROM SN_PROD_BACKUP t1 "
+sql$ = sql$ + "INNER JOIN SNM01 t2 on t1.prod_serial_nbr = t2.serial_nbr "
+sql$ = sql$ + "INNER JOIN ARM01 t3 on t2.firm_id = t3.firm_id and t2.customer_nbr = t3.customer_nbr "
+sql$ = sql$ + "INNER JOIN SNM01 t4 on t1.back_serial_nbr = t4.serial_nbr "
+sql$ = sql$ + "INNER JOIN SMC01 t5 on t2.contract = t5.contract "
+sql$ = sql$ + "ORDER BY t3.customer_nbr "
+
+props! = new SQLProperties()
+sqlConnect$ = props!.getDBConnectForDatabase("AddOnData")
+
+inRs! = BBjAPI().createSQLRecordSet(sqlConnect$, "", sql$)
+rows = inRs!.getRecordCount()
+
+theGrid!.setNumRows(rows)
+theGrid!.setColumnAlignment(2, theGrid!.GRID_ALIGN_LEFT)
+
+row = 0
+
+while 1
+    rd! = inRs!.getCurrentRecordData()
+    
+    theGrid!.setCellText(row, 0, rd!.getFieldValue("FIRM_ID"))
+    theGrid!.setCellText(row, 1, rd!.getFieldValue("CUSTOMER_NBR"))
+    theGrid!.setCellText(row, 2, rd!.getFieldValue("CUST_NAME"))
+    theGrid!.setCellText(row, 3, rd!.getFieldValue("CONTRACT"))
+    theGrid!.setCellText(row, 4, rd!.getFieldValue("EXPIRATION"))
+    theGrid!.setCellText(row, 5, rd!.getFieldValue("PROD_SERIAL_NBR"))
+    theGrid!.setCellText(row, 6, rd!.getFieldValue("PROD_USERS"))
+    theGrid!.setCellText(row, 7, rd!.getFieldValue("BACK_SERIAL_NBR"))
+    theGrid!.setCellText(row, 8, rd!.getFieldValue("BACKUP_USERS"))
+    
+    row = row + 1
+    
+    inRs!.next(err=*break)
+wend
+
+inRs!.close()
+
+return
+

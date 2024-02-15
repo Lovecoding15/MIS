@@ -1,0 +1,270 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2022-06-29
+Last Build Time=11:51:25
+Precision=99
+Program Name=ec_sendLicense
+Remarks=Yes
+Resource File=ec_sendLicense.arc
+Show Forms=All
+
+[Init]
+declare BBjTopLevelWindow ourWindow!
+declare BBjEditBox company!
+declare BBjEditBox firstName!
+declare BBjEditBox lastName!
+declare BBjEditBox phoneNumber!
+declare BBjEditBox faxNumber!
+declare BBjEditBox emailAddress!
+declare BBjEditBox hostName!
+declare BBjEditBox hostId!
+declare BBjEditBox serialNbr!
+declare BBjEditBox authNum!
+declare BBjCheckBox trl!
+
+rem ' get the passed in data
+
+firm_id$ = gb__arg.firm_id$
+customer_nbr$ = gb__arg.customer_nbr$
+user_code$ = gb__arg.user_code$
+serial_nbr$ = cvs(gb__arg.serial_nbr$,3)
+x = num(gb__arg.screenx$)
+y = num(gb__arg.screeny$)
+lang$ = gb__arg.lang$
+
+ourWindow! = cast(BBjTopLevelWindow, BBjAPI().getSysGui().getWindow(gb__win.sendLicense))
+gosub prep_window
+ourWindow!.setVisible(1)
+
+gosub open_files
+
+rem ' look up the data
+read record(arm01, key = firm_id$ + customer_nbr$)arm01$
+company$ = arm01.cust_name$
+
+firstName$ = ""
+lastName$ = ""
+
+phone_number$ = ""
+fax_number$ = ""
+read record(tmm01, key = firm_id$ + customer_nbr$ + "000000", dom=*next)tmm01$
+phone_number$ = cvs(tmm01.phone_number$,3)
+fax_number$ = cvs(tmm01.fax_num$,3)
+
+emailAddress$ = ""
+read record(ecm01, key = firm_id$ + customer_nbr$ + user_code$)ecm01$
+emailAddress$ = ecm01.e_mail$
+
+hostname$ = ""
+read record(logextract,key=serial_nbr$,dom=*next)logextract$
+while 1
+    read record(logextract, end=*break)logextract$
+    if cvs(logextract.serialnum$,3) <> serial_nbr$ then break
+    if cvs(logextract.hostname$,3) <> "" then hostname$ = logextract.hostname$
+wend
+
+hostid$ = "", authnum$ = ""
+read record(sn_license,key=serial_nbr$,dom=*next)sn_license$
+while 1
+    read record(sn_license, end=*break)sn_license$
+    if cvs(sn_license.serial_num$,3) <> serial_nbr$ then break
+    if cvs(sn_license.hostid$,3) <> "" then hostid$ = sn_license.hostid$
+    if cvs(sn_license.authnum$,3) <> "" then authnum$ = sn_license.authnum$
+wend
+
+rem ' place the data in the form fields
+ourWindow!.setLocation(x,y)
+company! = ourWindow!.getEditBox("company")
+firstName! = ourWindow!.getEditBox("firstName")
+lastName! = ourWindow!.getEditBox("lastName")
+phoneNumber! = ourWindow!.getEditBox("phoneNumber")
+faxNumber! = ourWindow!.getEditBox("faxNumber")
+emailAddress! = ourWindow!.getEditBox("emailAddress")
+hostName! = ourWindow!.getEditBox("hostName")
+hostId! = ourWindow!.getEditBox("hostId")
+serialNbr! = ourWindow!.getEditBox("serialNbr")
+authNum! = ourWindow!.getEditBox("authNum")
+trl! = ourWindow!.getCheckBox("trl")
+
+company!.setText(cvs(company$,3))
+firstName!.setText(cvs(firstName$,3))
+lastName!.setText(cvs(lastName$,3))
+phoneNumber!.setText(cvs(phone_Number$,3))
+faxNumber!.setText(cvs(fax_Number$,3))
+emailAddress!.setText(cvs(emailAddress$,3))
+hostName!.setText(cvs(hostName$,3))
+hostId!.setText(cvs(hostId$,3))
+serialNbr!.setText(cvs(serial_Nbr$,3))
+authNum!.setText(cvs(authNum$,3))
+
+
+[Event Win=101 ID=121 Code=B <PUSH_BUTTON> (W101_C121_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub send_license_email
+gosub close_files
+goto gb__eoj
+
+[Event Win=101 ID=122 Code=B <PUSH_BUTTON> (W101_C122_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub close_files
+goto gb__eoj
+
+
+[Function (close_files)]
+rem ' -----------------------------------------------------------------
+rem ' close_files
+rem ' -----------------------------------------------------------------
+
+close_files:
+
+while len(chan$)
+    chan = num(chan$(1,4))
+    chan$ = chan$(5)
+    close(chan, err=*next)
+wend
+
+return
+
+[Function (open_files)]
+rem ' -----------------------------------------------------------------
+rem ' open_files
+rem ' -----------------------------------------------------------------
+
+open_files:
+
+CALL "ec_open::SNM01"; LET chan$=chan$+STR(snm01:"0000")
+CALL "ec_open::ARM01"; LET chan$=chan$+STR(arm01:"0000")
+CALL "ec_open::TMM01"; LET chan$=chan$+STR(TMM01:"0000")
+CALL "ec_open::ECM01"; LET chan$=chan$+STR(ecm01:"0000")
+CALL "ec_open::LOGEXTRACT"; LET chan$=chan$+STR(logextract:"0000")
+CALL "ec_open::SN_LICENSE"; LET chan$=chan$+STR(SN_LICENSE:"0000")
+
+return
+
+[Function (prep_window)]
+rem ' -----------------------------------------------------------------
+rem ' prep_window
+rem ' -----------------------------------------------------------------
+
+prep_window:
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.util.Enumeration
+
+declare Enumeration keys!
+declare BBjControl aControl!
+
+rem ' locate ec_sendLicense.properties file
+sqlprops=unt
+open(sqlprops)"ec_sendLicense.properties"
+sqlprops$=fid(sqlprops)
+sqlprops$=sqlprops$(9)
+close(sqlprops)
+
+rem ' load the properties object with the properties
+file!= new java.io.File(sqlprops$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new Properties()
+props!.load(bis!)
+keys! = cast(Enumeration, props!.keys())
+
+while keys!.hasMoreElements()
+    theKey$ = cast(BBjString, keys!.nextElement())
+
+    rem ' skip if not this language
+    keyLang$ = theKey$(1,2)
+    if (keyLang$ <> lang$) then continue
+    
+    theText$ = cast(BBjString, props!.getProperty(theKey$))
+    contName$ = cvs(theKey$(4),3)
+
+    if contName$ = "windowTitle" then
+        ourWindow!.setTitle(theText$)
+        continue
+    fi
+
+    aControl! = ourWindow!.getControl(contName$)
+    aControl!.setText(theText$)
+    
+wend
+
+return
+
+[Function (send_license_email)]
+rem ' -----------------------------------------------------------------
+rem ' send_license_email
+rem ' -----------------------------------------------------------------
+
+send_license_email:
+
+company$ = cvs(company!.getText(),3)
+firstName$ = cvs(firstName!.getText(),3)
+lastName$ = cvs(lastName!.getText(),3)
+phoneNumber$ = cvs(phoneNumber!.getText(),3)
+faxNumber$ = cvs(faxNumber!.getText(),3)
+emailAddress$ = cvs(emailAddress!.getText(),3)
+hostName$ = cvs(hostName!.getText(),3)
+hostId$ = cvs(hostId!.getText(),3)
+serialNbr$ = cvs(serialNbr!.getText(),3)
+authNum$ = cvs(authNum!.getText(),3)
+trl = trl!.isSelected()
+
+if len(authNum$) <> 10 then 
+    i=msgbox("Invalid authorization number.",0,"Send License")
+    return
+fi
+
+if authNum$="TEMPORARY*" then hostId$="1234567890ab"
+
+if emailAddress$ = "" then 
+    i=msgbox("An Email Address is required.",0,"Send License")
+    return
+fi
+
+rem ' set delivery method
+x$="Email" 
+
+mail$="To: license@basis.cloud"+$0a$+"From: customer-service@basis.cloud"+$0a$+
+:"Subject: License"+$0a$+$0a$
+mail$=mail$+"Company          : "+company$+$0a$
+mail$=mail$+"Last Name        : "+lastName$+$0a$
+mail$=mail$+"First Name       : "+firstName$+$0a$
+mail$=mail$+"Phone Number     : "+phoneNumber$+$0a$
+mail$=mail$+"Fax Number       : "+faxNumber$+$0a$
+mail$=mail$+"Email Address    : "+emailAddress$+$0a$
+mail$=mail$+"Host Name        : "+hostName$+$0a$
+mail$=mail$+"Host ID          : "+hostId$+$0a$
+mail$=mail$+"Serial Number    : "+serialNbr$+$0a$
+mail$=mail$+"License Auth Num : "+authNum$+$0a$
+mail$=mail$+"License Delivery : "+x$+$0a$
+mail$=mail$+"AutoResponderForceCheck: false"+$0A$
+if trl then mail$=mail$+"UseTRL: true"+$0A$
+
+mailfile$=stbl("TEMP")+cvs(snm01.serial_nbr$,3)+".txt"
+erase mailfile$,err=*next
+string mailfile$
+temp=unt
+open(temp,err=endmail)mailfile$
+writerecord(temp)mail$
+close(temp)
+i=scall("/usr/lib/sendmail -t < "+mailfile$)
+if i=0 then msg$="License request sent to Autoresponder."
+erase mailfile$,err=endmail
+endmail:
+i=msgbox(msg$,0,"Send License")
+
+return
+

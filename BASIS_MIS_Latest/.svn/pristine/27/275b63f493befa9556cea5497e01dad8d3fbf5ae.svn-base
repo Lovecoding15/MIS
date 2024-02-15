@@ -1,0 +1,128 @@
+rem ' <flexlicLogSecondarySN.bbx>
+
+rem ' fields to change in sn_license from the primary sn record
+rem ' serial_num - from snlist$
+rem ' prod_type - derive from features$
+rem ' prod_rev - from snlist$, add .x or .xx to the number keeping length of the result to 4 bytes
+rem ' authnum - look up if sn_license
+rem ' lic_property1 - clear, secondary serial numbers should not be BAS type anyway 
+rem ' lic_property2 - clear, secondary serial numbers should not be BAS type anyway
+rem ' users - from feature$
+rem ' lic_count - increment
+rem ' users2 - 0
+
+seterr errmsg 
+
+enter snlist$, features$, sn_license$, sn_license
+
+temp$ = snlist$
+temp1$ = features$
+
+while len(temp$)
+	
+	p = pos($0A$ = temp$)
+	thissn$ = temp$(1, p-1)
+	temp$ = temp$(p+1)
+
+	p = pos($0A$ = temp1$)
+	thisfeature$ = temp1$(1, p-1)
+	temp1$ = temp1$(p+1)
+	
+	rem ' serial number
+	sn$ = cvs(thissn$(1,20),3)
+
+	sn_license.serial_num$ = sn$
+	
+	rem ' sn_license.date$ stays the same
+	rem ' sn_license.time$ stays the same
+
+	rem ' prod_type
+	prod_type$ = ""
+	p = pos(" "=thisfeature$)
+	prod$ = thisfeature$(1,p-1)
+	thisfeature$ = thisfeature$(p+1)
+	if prod$ = "PRO5_DEV" then
+		prod_type$ = "STD"
+	else
+		if prod$ = "ODBC_RW" then
+			prod_type$ = "ODBCSTD"
+		else
+			if prod$ = "ODBC_RO" then
+				prod_type$ = "ODBCROO"
+			else
+				if prod$ = "PRO5DS" then
+					prod_type$ = "DSSTD"
+				else
+					prod_type$ = "NONE"
+				fi
+			fi
+		fi
+	fi
+	sn_license.prod_type$ = prod_type$
+	
+	rem ' prod_rev
+	p = pos(" " = thisfeature$)
+	rev$ = thisfeature$(1, p-1)
+	thisfeature$ = thisfeature$(p+1)
+	rev$ = rev$ + ".xx"
+	if len(rev$) > 4 then
+		rev$ = rev$(1,4)
+	fi
+	sn_license.prod_rev$ = rev$
+	
+	rem ' sn_license.hostid$ stays the same
+	
+	rem ' auth num and get the license count while we are at it
+	authnum$ = "", lic_count = 0
+	dim alt_sn_license$:fattr(sn_license$)
+	read record(sn_license, key = sn$, dom = *next)alt_sn_license$
+	while 1
+		read record(sn_license, end=*break)alt_sn_license$
+		if pos(sn$=alt_sn_license$) <> 1 then break
+		if cvs(alt_sn_license.authnum$,3) <> "" then
+			authnum$ = cvs(alt_sn_license.authnum$,3)
+		fi
+		lic_count = alt_sn_license.lic_count
+	wend
+	sn_license.authnum$ = authnum$
+	
+	rem ' sn_license.expire$ stays the same
+	
+	sn_license.lic_property1$ = ""
+	sn_license.lic_property2$ = ""
+	
+	rem ' sn_license.firm_id$ stays the same
+	rem ' sn_license.customer_nbr$ stays the same
+	rem ' sn_license.perpetual$ stays the same
+	rem ' sn_license.notice$ stays the same
+	rem ' sn_license.annual$ stays the same
+	rem ' sn_license.noticea$ stays the same
+	
+	rem ' users
+	p = pos(" " = thisfeature$)
+	users$ = thisfeature$(1, p-1)
+	thisfeature$ = thisfeature$(p+1)
+	users = num(users$)
+	sn_license.users = users
+	
+	rem ' license count
+	sn_license.lic_count = lic_count + 1
+	
+	rem ' users2 set to 0
+	sn_license.users2 = 0
+	
+	sn_license$=field(sn_license$)
+	write record (sn_license)sn_license$
+	
+wend
+
+goto pgm_exit
+
+errmsg:
+	msg$="(Err "+str(err)+" "+errmes(-1)+" at "+str(tcb(5))+" "+pgm(-2)+")"
+	throw msg$, 455
+	exit
+	
+pgm_exit:
+	exit
+end

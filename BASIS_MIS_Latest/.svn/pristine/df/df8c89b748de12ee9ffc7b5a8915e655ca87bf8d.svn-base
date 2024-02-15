@@ -1,0 +1,200 @@
+rem ' sam rebate report for all BSG customers
+
+seterr end_pgm
+enter firm$,email$
+
+if firm$ <> "02" then
+	print "only run this report for firm_id 02 BSG "
+	exit
+fi
+
+call "ec_open::ART03"
+call "ec_open::ART13"
+call "ec_open::snm01"
+call "ec_open::arm02"
+call "ec_open::smc01"
+call "ec_open::arm01"
+
+check_dt$=date(0:"%Y%Mz%Dz")
+
+rem 'to get a report for a calendar year, replace check_dt$ with desired year end date
+check_dt$="20101231"
+
+yr=num(check_dt$(1,4))
+last_year_end_dt$=str(yr-1:"0000")+"1231"
+cur_year_end_dt$=str(yr:"0000")+"1231"
+this_yr$=chr(132+yr-2000)
+m$="#####0"
+m1$="#####0.00"
+dl$=","
+
+if firm$="01" then
+	rem ' these percentages were for firm 01 BAS
+	pct_sam=60,pct_rnw=80,rebate_pct=5
+	if yr>2008 then 
+		pct_sam=70
+	endif
+else
+	rem ' these percentages were for firm 02 BSG
+	pct_sam=70,pct_rnw=80,rebate_pct=5
+endif
+
+close(cf,err=*next)
+TMP$=stbl("TEMP")
+unique$=date(0:"%mz%sz")
+cfile$=tmp$+"SAM_Rebate"+unique$+".csv"
+erase cfile$,err=*next
+string cfile$
+cf=unt
+open(cf)cfile$
+print (cf)",,,,,Total,On,%On,YTD,YTD,,YTD,Non-qualified,Qualified,Remaining SAM"
+print (cf)"Sls#,Cust#,Name,CustType,Discount,Users,SAM,SAM,Renewed,Expired,%Renewed,Sales,Rebate,Rebate,to Renew,New SAM"
+
+rem ' selection string is for DSI only
+selectCust$=""
+
+if firm$="01" then
+	rem ' BAS 
+	preferredCust$=""
+else
+	rem ' BSG
+	preferredCust$=""
+endif
+
+read(arm02,key=firm$+custnum$,dom=*next)
+while 1
+  readrecord(arm02,end=*break)arm02$
+  if firm$<>arm02.firm_id$ then break
+  if custnum$<>"" then 
+   if arm02.customer_nbr$<>custnum$ then break
+  fi
+
+  rem ' set rebate_pct
+  if pos(cvs(arm02.cust_type$,3)=preferredCust$) then
+	rebate_pct=10
+  else
+  	rebate_pct=5
+  endif
+  
+  cust$=arm02.customer_nbr$
+  if firm$="02" and pos("PP"=arm02.cust_type$) then rebate_pct=9
+  gosub get_sam_count
+  gosub check_invoices
+  readrecord(arm01,key=firm$+cust$)arm01$
+  line$=arm02.slspsn_code$+dl$+cust$+dl$+fncomma$(arm01.cust_name$)+dl$
+  line$=line$+arm02.cust_type$+dl$+arm02.disc_code$+dl$
+  line$=line$+str(tot_users)+dl$+str(current_sam)+dl$
+  
+  if tot_users then pct=current_sam/tot_users*100 else pct=0
+  if pct>=pct_sam then ok=1 else ok=0 
+  line$=line$+cvs(str(pct:m1$),3)+dl$+str(renewed)+dl$+str(ytd_expired)+dl$
+
+  x=ytd_expired+renewed
+  if x then pct=renewed/x*100 else pct=0
+  if pct<pct_rnw and ytd_expired then ok=0
+  line$=line$+cvs(str(pct:m1$),3)+dl$+cvs(str(ytd_sales:m1$),3)
+  line$=line$+dl$+cvs(str(rebate_pct/100*ytd_sales*(ok=0):m1$),3)
+  line$=line$+dl$+cvs(str(rebate_pct/100*ytd_sales*ok:m1$),3)
+  line$=line$+dl$+str(renew_this_yr)+dl$+str(new_sam)
+  print(cf)line$
+wend
+
+from$="BASIS Customer Service <customer-service@basis.cloud>"
+subject$="SAM Rebate Report"
+
+cc$ = ""
+bcc$ = ""
+
+file$=cfile$
+to$=CVS(email$,3)
+msgtxt$=""
+
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+wait 1
+
+end_pgm:
+erase cfile$,err=*next
+exit
+
+get_sam_count:
+tot_users=0
+current_sam=0
+epxired_sam=0
+ytd_expired=0
+renewed=0
+renew_this_yr=0
+new_sam=0
+
+read(snm01,key=firm$+cust$,knum=1,dom=*next)
+while 2
+  read record(snm01,end=*break)snm01$
+  if snm01.firm_id$<>firm$ or snm01.customer_nbr$<>cust$ then break
+  if snm01.active_flag$<>"Y" then continue
+  if pos(snm01.product$(1,1)="TCK") then continue; rem 'Taos,CLib,old Kits
+  if pos(snm01.license_type$(1,1)="DKN") then continue; rem 'Demo,Kit,NFR
+  if pos(snm01.license_type$="R60") then continue
+  if snm01.orig_sale_date$(1,1)>this_yr$ then continue
+  u=snm01.users
+  if snm01.product$="DS5" then u=u/2
+  tot_users=tot_users+u
+  contract$=cvs(snm01.contract$,3)
+  if contract$="" then continue
+  readrecord(smc01,key=contract$,dom=*continue)smc01$
+  if pos(smc01.contr_type$="SM1RN1")<>1 then continue
+  if smc01.sam_active$="N" or snm01.sam_active$="N" or smc01.expire_on_dt$<=check_dt$ then na=1 else na=0
+  if na then 
+    expired_sam=expired_sam+u
+    if smc01.expire_on_dt$>last_year_end_dt$ then ytd_expired=ytd_expired+u
+  else
+    current_sam=current_sam+u
+    if smc01.annual_dt$>check_dt$ and smc01.annual_dt$<=cur_year_end_dt$ then  
+      renew_this_yr=renew_this_yr+u
+      continue
+    fi
+    if smc01.contr_start$>last_year_end_dt$ then 
+      new_sam=new_sam+u
+      continue
+    fi
+    rem if smc01.annual_dt$>cur_year_end_dt$ then continue
+    rem j1=fnjul(smc01.contr_start$)
+    rem j2=fnjul(smc01.annual_dt$)
+    rem if j2-j1>729 then renewed=renewed+u
+    rem 'annual is 2 years or more past start date so it's been renewed
+    renewed=renewed+u
+  fi
+wend
+
+return
+
+def fnjul(xx$)=jul(num(xx$(1,4)),num(xx$(5,2)),num(xx$(7,2)))
+def fncomma$(xx$)
+ cpos=pos(","=xx$)
+ while cpos
+   xx$(cpos,1)=" "
+   cpos=pos(","=xx$)
+ wend
+ return cvs(xx$,35)
+fnend
+  
+check_invoices:
+ytd_sales=0
+k$=firm$+"  "+cust$
+
+read(art03,key=k$,dom=*next)
+while 1
+  readrecord(art03,end=*break)art03$
+  if pos(k$=art03$)<>1 then break
+  if pos(this_yr$=art03.invoice_date$)<>1 then continue
+  k13$=art03$(1,17)
+  read(art13,key=k13$,dom=*next)
+  while 2
+    readrecord(art13,end=*break)art13$
+    if pos(k13$=art13$)<>1 then break
+    if pos(art13.line_code$="DSV1gjnos")=0 then continue
+    if pos("CONF"=art13.item_number$)=1 and art13.line_code$="S" then continue
+    ytd_sales=ytd_sales+art13.ext_price
+  wend
+wend
+
+return

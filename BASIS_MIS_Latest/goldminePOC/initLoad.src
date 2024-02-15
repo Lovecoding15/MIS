@@ -1,0 +1,163 @@
+rem ' load Addon Customers to Goldmine
+
+begin
+
+use java.util.Calendar
+use java.lang.Long
+
+declare BBjRecordSet customer!
+declare BBjRecordData custRec!
+declare BBjString time!
+
+rem ' Goldmine connection 
+connURL$ = "jdbc:sqlserver://localhost:1433;databaseName=BaristaAddon;user=sa;password=Password1;"
+java.lang.Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver")
+chan = sqlunt
+sqlopen(chan)connURL$
+chan1 = sqlunt
+sqlopen(chan1)connURL$
+
+sql$ = "SELECT FIRM_ID, CUSTOMER_ID, CUSTOMER_NAME, ADDR_LINE_1, ADDR_LINE_2, ADDR_LINE_3, "
+sql$ = sql$ + "ZIP_CODE, PHONE_NO, PHONE_EXTEN, FAX_NO, CITY, STATE_CODE, CNTRY_ID, CONTACT_NAME "
+sql$ = sql$ + "FROM ARM_CUSTMAST "
+sql$ = sql$ + "WHERE FIRM_ID = '01' AND CUSTOMER_ID <> '000123' AND CUSTOMER_ID <> '009999' AND CUSTOMER_ID <> '999999'"
+
+customer! = BBjAPI().createSQLRecordSet("AddonSoftware", "user=admin,password=admin123", sql$)
+customer!.first()
+
+while 1
+	custRec! = customer!.getCurrentRecordData()
+	count = count + 1
+	
+	rem ' print custRec!.getFieldValue("FIRM_ID")
+	rem ' print custRec!.getFieldValue("CUSTOMER_ID")
+	rem ' print custRec!.getFieldValue("CUSTOMER_NAME")
+	rem ' print custRec!.getFieldValue("ADDR_LINE_1")
+	rem ' print custRec!.getFieldValue("ADDR_LINE_2")
+	rem ' print custRec!.getFieldValue("ADDR_LINE_3")
+	rem ' print custRec!.getFieldValue("CITY")
+	rem ' print custRec!.getFieldValue("STATE_CODE")
+	rem ' print custRec!.getFieldValue("ZIP_CODE")
+	rem ' print custRec!.getFieldValue("PHONE_NO")
+	rem ' print custRec!.getFieldValue("PHONE_EXTEN")
+	rem ' print custRec!.getFieldValue("FAX_NO")
+	rem ' print custRec!.getFieldValue("CNTRY_ID")
+	rem ' print custRec!.getFieldValue("CONTACT_NAME")
+	
+	rem ' check to see if the record already exists if it's there skip it
+	sql$ = "SELECT * FROM dbo.contact2 WHERE dbo.contact2.Usourcekey = '" + custRec!.getFieldValue("FIRM_ID") + custRec!.getFieldValue("CUSTOMER_ID") + "'"
+	sqlprep(chan)sql$
+	sqlexec(chan)
+	dim rec$:sqltmpl(chan)
+	accountno$=""
+	rec$=sqlfetch(chan, err=*next); accountno$ = cvs(rec.accountno$,3)
+	if accountno$ <> "" then
+		rem ' record is already in the goldmine database skip it
+		print custRec!.getFieldValue("FIRM_ID") + custRec!.getFieldValue("CUSTOMER_ID") + " is already in the Goldmine Database. ",
+		input *
+		print 'cs'
+		customer!.next(err=*break)
+		continue
+	endif
+	
+	rem ' contact1
+	
+	rem ' create accountno
+	time! = new Long(Calendar.getInstance().getTimeInMillis()).toString()
+	accountno$ = "B5" + date(0:"%Mz%Dz") + time!
+
+	rem ' create recid
+	recid$ = new Long(Calendar.getInstance().getTimeInMillis()).toString()
+	
+	sql$ = "INSERT INTO dbo.contact1 (dbo.contact1.ACCOUNTNO, dbo.contact1.COMPANY, dbo.contact1.CONTACT, "
+	sql$ = sql$ + "dbo.contact1.PHONE1, dbo.contact1.FAX, dbo.contact1.EXT1, dbo.contact1.ADDRESS1, dbo.contact1.ADDRESS2, "
+	sql$ = sql$ + "dbo.contact1.ADDRESS3, dbo.contact1.CITY, dbo.contact1.STATE, dbo.contact1.ZIP, dbo.contact1.COUNTRY, "
+	sql$ = sql$ + "dbo.contact1.STATUS, dbo.contact1.OWNER, dbo.contact1.U_COMPANY, dbo.contact1.U_CONTACT, dbo.contact1.U_LASTNAME, "
+	sql$ = sql$ + "dbo.contact1.U_CITY, dbo.contact1.U_STATE, dbo.contact1.U_COUNTRY, dbo.contact1.U_KEY1, dbo.contact1.U_KEY2, "
+	sql$ = sql$ + "dbo.contact1.U_KEY3, dbo.contact1.U_KEY4, dbo.contact1.U_KEY5, dbo.contact1.recid) "	
+
+	sql$ = sql$ + "VALUES ('" + accountno$ + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("CUSTOMER_NAME"),3) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("CONTACT_NAME"),3) + "', "
+	
+	phoneno$ = cvs(custRec!.getFieldValue("PHONE_NO"),3)
+	if len(phoneno$) = 10 then
+		phoneno$ = "(" + phoneno$(1,3) + ")" + phoneno$(4,3) + "-" + phoneno$(7)
+	else
+		if len(phoneno$) = 7 then
+			phoneno$ = phoneno$(1,3) + "-" + phoneno$(4)
+		endif
+	endif
+	sql$ = sql$ + "'" + phoneno$ + "', "
+	
+	faxno$ = cvs(custRec!.getFieldValue("FAX_NO"),3)
+	if len(faxno$) = 10 then
+		faxno$ = "(" + faxno$(1,3) + ")" + faxno$(4,3) + "-" + faxno$(7)
+	else
+		if len(faxno$) = 7 then
+			faxno$ = faxno$(1,3) + "-" + faxno$(4)
+		endif
+	endif
+	
+	sql$ = sql$ + "'" + faxno$ + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("PHONE_EXTEN"),3) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("ADDR_LINE_1"),3) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("ADDR_LINE_2"),3) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("ADDR_LINE_3"),3) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("CITY"),3) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("STATE_CODE"),3) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("ZIP_CODE"),3) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("CNTRY_ID"),3) + "', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("CUSTOMER_NAME"),7) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("CONTACT_NAME"),7) + "', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("CITY"),7) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("STATE_CODE"),7) + "', "
+	sql$ = sql$ + "'" + cvs(custRec!.getFieldValue("CNTRY_ID"),7) + "', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'', "
+	sql$ = sql$ + "'" + recid$ + "')"
+
+	print sql$
+	sqlprep(chan)sql$
+	sqlexec(chan)
+	dim rec$:sqltmpl(chan,ind=1)
+	rec$=sqlfetch(chan,ind=1)
+	print "contact1 rows affected: ",rec.rows_affected
+	wait .25
+	
+	rem ' contact2
+
+	rem ' create recid
+	recid$ = new Long(Calendar.getInstance().getTimeInMillis()).toString()
+	
+	sql$ = "INSERT INTO dbo.contact2 (dbo.contact2.ACCOUNTNO, dbo.contact2.USOURCEKEY, dbo.contact2.recid) "
+	sql$ = sql$ + "VALUES ('" + accountno$ + "', "
+	sql$ = sql$ + "'" + custRec!.getFieldValue("FIRM_ID") + custRec!.getFieldValue("CUSTOMER_ID") + "', "
+	sql$ = sql$ + "'" + recid$ + "')"
+	
+	print sql$
+	sqlprep(chan)sql$
+	sqlexec(chan)
+	dim rec$:sqltmpl(chan,ind=1)
+	rec$=sqlfetch(chan,ind=1)
+	print "contact2 rows affected: ",rec.rows_affected
+	wait .25
+
+	input *
+	print 'cs'
+	customer!.next(err=*break)
+wend
+
+print count
+sqlclose(chan)
+sqlclose(chan1)
+
+escape
+
+end

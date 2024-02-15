@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADS_LOG_SETTINGS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<LOG_ID>TABLE_INQUIRY   </LOG_ID>
+		<DESCRIPTION>Table Key Sort Optimization</DESCRIPTION>
+		<ACTIVE>N</ACTIVE>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

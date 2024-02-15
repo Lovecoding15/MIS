@@ -1,0 +1,85 @@
+seterr enter_err
+enter firm$,invoicefile$,invoice_nbr$,reportfile$
+
+enter_err:
+
+seterr errmsg
+msg$=""
+basedir$="/mnt/data/archives/"
+nxtdir$=basedir$+firm$
+gosub checkdir
+nxtdir$=nxtdir$+"/invoices"
+gosub checkdir
+nxtdir$=nxtdir$+"/"+invoice_nbr$(1,1)
+gosub checkdir
+nxtdir$=nxtdir$+"/"+invoice_nbr$(2,2)
+gosub checkdir
+nxtdir$=nxtdir$+"/"+invoice_nbr$(4,2)
+gosub checkdir
+tmpfile$=invoicefile$
+gosub get_file
+if txt$="" then msg$="No invoice file";goto errmsg
+tmpfile$=nxtdir$+"/"+invoice_nbr$+".pdf"
+gosub archive_file
+if reportfile$="" then goto pgm_exit
+tmpfile$=reportfile$
+gosub get_file
+if txt$="" then msg$="No report file";goto errmsg
+tmpfile$=nxtdir$+"/"+invoice_nbr$+"_ver.pdf"
+gosub archive_file
+
+pgm_exit:
+exit
+
+get_file:
+ichan=unt
+sz=-1
+txt$=""
+open(ichan,err=end_get_file)tmpfile$
+f$=fin(ichan),sz=dec(f$(1,4))
+if sz then readrecord(ichan,siz=sz)txt$
+end_get_file:
+close(ichan,err=*next)
+return
+
+archive_file:
+string tmpfile$,err=file_exists
+newchan=unt
+open(newchan)tmpfile$
+print(newchan)txt$
+close(newchan)
+a=scall("chmod 644 "+tmpfile$+" 2>/dev/null")
+return
+file_exists:
+if err<>12 then exitto errmsg
+return
+
+checkdir:
+tmp=unt
+open(tmp,err=makedir)nxtdir$
+close(tmp)
+return
+makedir:
+if err<>12 then exitto errmsg
+mkdir nxtdir$,err=errmsg
+wait 15
+a=scall("chmod 777 "+nxtdir$+" 2>/dev/null")
+if a then msg$="Chmod failed on "+nxtdir$;exitto errmsg
+return
+
+errmsg:
+to$ = "mis@basis.cloud"
+from$ = "customer-service@basis.cloud"
+cc$ = ""
+bcc$ = ""
+subject$ = "Invoice archive error"
+
+if msg$="" then msg$ = "error " + str(err) + " " + errmes(-1) + " in " + str(tcb(5)) + " of " + pgm(-2)
+msg$ =  msg$ + $0a$ + "Firm: " + firm$
+msg$ =  msg$ + $0a$ + "Invoice: "+invoice_nbr$ + $0a$ + "Invoice file: " + invoicefile$
+msg$ =  msg$ + $0a$ + "Report file: " + reportfile$
+
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msg$, ""
+
+goto pgm_exit
+

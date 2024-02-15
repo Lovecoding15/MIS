@@ -1,0 +1,158 @@
+0010 REM "SNM - Serial Number Maintenance (Marketing Information)"
+0020 REM "Program SNM.MF"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * 4/22/99 * WA# 208 * BASIS"
+0040 REM 
+0070 SETERR 9000
+0080 SETESC 9000
+0090 PRECISION P[1]
+0200 REM " --- IOLIST's"
+0210 SNM03A: IOLIST C0$(1),C1$(1),C2$(1),C3$(1),C[ALL]
+0310 ARM01E: IOLIST X0$,X1$
+0500 REM " --- Initializations"
+0510 DIM C0$(20),C1$(60),C2$(31),C3$(20),C[1]
+0700 REM " --- Background"
+0705 PRINT @(0,6),'CE',
+0710 PRINT 'SF',@(7,6),"Computer Make: "
+0720 PRINT @(6,7),"Computer Model: ",
+0730 PRINT @(4,8),"Operating System: ",
+0740 PRINT @(8,10),"Install Date: ",
+0750 PRINT @(5,11),"Purchasing Cust: ",
+0760 PRINT @(1,13),"BBX Sold w/Package?: "
+0770 PRINT @(8,14),"Package Name: "
+0780 PRINT @(11,16),"Lead Code: ",
+0790 PRINT 'SB'
+1300 REM " --- Display record"
+1310 LET C0$=A0$
+1320 READ (SNM03_DEV,KEY=C0$,DOM=1321)IOL=SNM03A
+1350 GOSUB 5000
+1390 ON O0 GOTO 4000,4000,4000
+2000 REM " --- Computer Make"
+2020 LET V0$="S",V1$="CE",V2$=C1$(1,20),V3$="",V0=20,V1=22,V2=6
+2030 LET V4$="Enter the Computer Make"
+2040 GOSUB 7000
+2070 LET C1$(1,20)=V$
+2090 GOTO 3900
+2100 REM " --- Computer Model"
+2120 LET V0$="S",V1$="CE",V2$=C1$(21,20),V3$="",V0=20,V1=22,V2=7
+2130 LET V4$="Enter the Computer Model"
+2140 GOSUB 7000
+2170 LET C1$(21,20)=V$
+2190 GOTO 3900
+2200 REM " --- Operating System"
+2220 LET V0$="S",V1$="CE",V2$=C1$(41,20),V3$="",V0=20,V1=22,V2=8
+2230 LET V4$="Enter the Operating System"
+2240 GOSUB 7000
+2270 LET C1$(41,20)=V$
+2290 GOTO 3900
+2300 REM " --- Install Date"
+2320 LET V0$="D",V1$="CE",V2$=FNB$(C2$(1,3)),V3$="",V0=8,V1=22,V2=10
+2330 LET V4$="Enter the Install Date"
+2340 GOSUB 7000
+2370 LET C2$(1,3)=V$
+2390 GOTO 3900
+2400 REM " --- Purchasing Customer"
+2420 LET V0$="M",V1$="CE",V2$=C2$(4,6),V3$=CUSTMASK$,V0=6,V1=22,V2=11
+2430 LET V4$="Enter the Purchasing Customer, <F3>=Lookup"
+2440 GOSUB 7000
+2470 LET C2$(4,6)=V$
+2480 PRINT @(V1,V2),FNF$(C2$(4,CUSTLEN),CUSTMASK$)
+2490 GOTO 3900
+2500 REM " --- BBX Sold w/Package"
+2520 LET V0$="Y",V1$="CE",V2$=C2$(10,1),V3$="",V0=1,V1=22,V2=13
+2530 LET V4$="Was BBX Sold With a Package?"
+2540 GOSUB 7000
+2570 LET C2$(10,1)=V$
+2590 GOTO 3900
+2600 REM " --- Package Name"
+2620 LET V0$="S",V1$="CE",V2$=C2$(11,20),V3$="",V0=20,V1=22,V2=14
+2630 LET V4$="Enter the Package Name"
+2640 GOSUB 7000
+2670 LET C2$(11,20)=V$
+2690 GOTO 3900
+2700 REM " --- Lead Code"
+2720 LET V0$="S",V1$="CE",V2$=C2$(31,1),V3$="",V0=1,V1=22,V2=16
+2730 LET V4$="Enter the Lead Code"
+2740 GOSUB 7000
+2770 LET C2$(31,1)=V$
+2790 GOTO 3900
+3900 REM " --- Next field"
+3905 IF V3=4 THEN GOTO 3990
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 ON I0 GOTO 2000,2100,2200,2300,2400,2500,2600,2700,3990
+3990 LET I0=0
+4000 REM " --- Correct?"
+4010 GOSUB 5000
+4020 CALL "SYC.YN",1,"Is The Above Information Correct",2,V$,V3
+4030 ON V3 GOTO 4040,4000,4000,4000,4900
+4090 ON POS(V$="YN") GOTO 4000,4100,2000
+4100 REM " --- Write"
+4150 WRITE (SNM03_DEV,KEY=C0$)IOL=SNM03A
+4190 GOTO 4900
+4900 REM " --- Run menu overlay"
+4990 RUN "SNM.MA"
+5000 REM " --- Display"
+5010 PRINT @(22,6),C1$(1,20),
+5020 PRINT @(22,7),C1$(21,20),
+5030 PRINT @(22,8),C1$(41,20),
+5040 PRINT @(22,10),FNB$(C2$(1,3)),
+5050 PRINT @(22,11),FNF$(C2$(4,CUSTLEN),CUSTMASK$)
+5060 PRINT @(22,13),C2$(10,1),
+5070 PRINT @(22,14),C2$(11,20),
+5080 PRINT @(22,16),C2$(31,1),
+5190 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+8245 LET Q=1,Q0=0
+8250 WHILE LEN(Q2$(Q))
+8255 IF POS(Q2$(Q,1)="-()") THEN LET Q0=Q0+1 ELSE LET Q2$(Q,1)="X"
+8260 LET Q=Q+1
+8265 WEND
+8270 IF LEN(Q1$)>LEN(Q2$)-Q0 THEN LET Q1$=Q1$(1,LEN(Q2$)-Q0)
+8280 RETURN STR(Q1$:Q2$)
+8290 FNEND
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END

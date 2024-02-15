@@ -1,0 +1,54 @@
+SETERR errmsg
+REM ' Program name: email_invoice.pgm
+REM ' Email PDF version of invoice from invoice history
+
+ENTER job_queue$
+invoice$=cvs(job_queue.job_date$,3)
+art03key$=job_queue.firm_id$+"  "+job_queue.customer_nbr$+invoice$+"000"
+textfile$="Invoice_"+invoice$+".txt"
+TMP$=stbl("TEMP")
+if tmp$(LEN(tmp$),1)<>"/" THEN LET tmp$=tmp$+"/"
+textfile$=tmp$+textfile$
+erase textfile$,err=*next
+prtr_dev=unt
+msg$="Couldn't open "+textfile$
+OPEN (PRTR_DEV,MODE="FILE="+textfile$,ERR=*next)"PX";msg$=""
+
+call "invhist_print.bbj",art03key$,prtr_dev,""
+
+close(prtr_dev,err=*next)
+pdf$=textfile$(1,len(textfile$)-3)+"pdf"
+
+call "PDF.01",textfile$,pdf$
+
+tries=0,pdf=unt
+while tries<5
+  open(pdf,err=*next)pdf$;break
+  tries=tries+1
+  wait 1
+wend
+close(pdf,err=*next)
+if tries>4 then 
+  msg$="Email failed."
+else
+  
+  from$="BASIS Customer Service <customer-service@basis.cloud>"
+  subject$="Invoice "+invoice$
+  attach$=pdf$
+  to$=CVS(job_queue.e_mail$,3)
+  msgtxt$="Attachment is in Adobe Portable Document Format(PDF). " +$0A$
+  msgtxt$=msgtxt$ + "Viewing and printing PDF files requires the Adobe Acrobat Reader, " +$0A$
+  msgtxt$=msgtxt$ + "available free at www.adobe.com."
+  bcc$ = ""
+  cc$ = ""
+  call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, attach$
+fi
+erase textfile$,err=*next
+erase pdf$,err=*next
+goto exit
+
+errmsg: 
+IF msg$="" THEN LET msg$=STR(ERR)+" in "+STR(TCB(5))
+
+exit: 
+exit

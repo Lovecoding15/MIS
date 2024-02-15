@@ -1,0 +1,48 @@
+0010 REM "ADS - ADministrator Parameter Definition Program Overlay"
+0020 REM "Program: ADS.01"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0510 DIM PRM$[0]; CALL "ADC.01",PRM$[ALL],STATUS
+0520 IF STATUS<>0 THEN GOTO 9000
+1000 REM "---- Set ADD+ON Variables"
+1040 LET FID=0,AP=1,AR=2,BM=3,DC=4,FA=5,GL=6,IV=7,MP=8,OP=9,PO=10,PR=11,SA=12,SH=13,SY=14,WO=15; REM "Set ADD+ON Module Id Numbers"
+1060 LET TS=21,TB=22,DC=23,VS=24,EF=25; REM "Set MAS Module Id Numbers"
+1120 DIM J$(80,"-"),J0$(40,"0"),J1$(40)
+1200 REM "--- Define MAS Parameter References to PRM$[MODULE,ELEMENT]
+1210 REM "    Where ELEMENT = "
+1220 LET INSTALL=0; REM "Installation Flag For Application <Y/N>"
+1240 LET KEYLEN=1; REM " Parameterized Length Of Key, ie: Cust Number Length"
+1260 LET KEYMAX=2; REM " Maximum Length Of Key, ie: Cust=6, Item=20
+1280 LET KEYMASK=3; REM "Customer, Vendor, Employee Number Mask...."
+1300 LET CPERIOD=4; REM "Current Period"
+1310 LET CYEAR=5; REM "  Current Year"
+1320 LET DMASK=6; REM "  Dollar Mask"
+1330 LET UMASK=7; REM "  Unit Mask"
+1340 LET RMASK=8; REM "  Rate Mask"
+1350 LET TWO=9; REM "    ADD+ON 2$ Parameter String"
+1360 LET THREE=10; REM " ADD+ON 3$ Parameter String"
+1370 LET FOUR=11; REM "  ADD+ON 4$ Parameter String"
+1380 LET EMASK=12
+2000 REM "--- Define MAS Parameter References to PRM$[TERMINAL,ATTRIBUTES]
+2020 LET TOPCODE=1; REM "Current Operator Code"
+2040 LET TDATE=2; REM "Terminal Date"
+2060 LET TMENU=3; REM "Terminal Menu"
+2080 LET TPRINTER=4; REM "Printer Selected"
+2100 LET TSECURE=5; REM "Security Level"
+2120 LET TFIRM=6; REM "Currently Selected Firm"
+2160 LET TPMODE=7; REM "Terminal Printer Mode"
+2180 LET TPROG=8; REM "Terminal Program"
+2200 LET TPOPTS=9; REM "Terminal Printer Options"
+2220 LET TFNAME=10; REM "Terminal Firm Name"
+2240 LET TPNAME=11; REM "Terminal Program Name"
+2250 LET TLDATE=12; REM "Long (YYMMDD) Date"
+4090 LET O0=9
+4190 GOTO 9900
+9000 REM "---- Error Exit"
+9010 LET O0=9
+9020 LET STATUS=1
+9900 REM "---- Exit"
+9990 RUN PGM$

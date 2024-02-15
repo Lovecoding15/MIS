@@ -1,0 +1,20 @@
+AddOn 6.0 File Utility^FILEUTIL^M^^^im_menua_miscellaneous.png^^01007514^FUT^^1.0^^^^^^^^
+	Deactivated SN Registration Log^0000003120^A^^execSNDeactRegLog.src^im_menui_grid.png^^01007514^FUT^^1.0^^^^^^^^
+	Add Dormant SNs (no Expiration Notices)^FUT_SN_DORMANT^T^FUT_SN_DORMANT^^im_menui_table.png^^01007514^FUT^^1.0^^^^^^^^
+	Exclude Serial Numbers^FUT_SN_EXCL_SN^T^FUT_SN_EXCL_SN^^im_menui_table.png^^01007514^FUT^^1.0^^^^^^^^
+	Serial Number Exclusion by Customer Nbr^FUT_SN_EXCL_CUST^T^FUT_SN_EXCL_CUST^^im_menui_table.png^^01007514^FUT^^1.0^^^^^^^^
+	ARE03 Order/Invoice Entry Header^FUT_ARE03^T^FUT_ARE03^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	ARE83 SN Hist^FUT_ARE83^T^FUT_ARE83^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	ARE93 User Feature Detail^FUT_ARE93^T^FUT_ARE93^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	SNM01 Serial Number Master^FUT_SNM01^T^FUT_SNM01^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	SNM02 Serial Nbr Registration Info^FUT_SNM02^T^FUT_SNM02^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	SNT01 Serial Number Detail^FUT_SNT01^T^FUT_SNT01^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	SNT02 Server-linked Clients^FUT_SNT02^T^FUT_SNT02^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	SNT04 SN Vendor Features^FUT_SNT04^T^FUT_SNT04^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	SMC01 SAM Contracts^FUT_SMC01^T^FUT_SMC01^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	SPEC_DATE Fixed SAM Expiration Date   ^FUT_SPEC_DATE^T^FUT_SPEC_DATE^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	OEM_AR_PRICE Line Item Price Tracking^FUT_OEM_AR_PRICE^T^FUT_OEM_AR_PRICE^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	SN_SELECT Serial Number Select^FUT_SN_SELECT^T^FUT_SN_SELECT^^im_menui_table.png^N^01007514^FUT^^1.0^^^^^^^^
+	Advantage Ezine Mailing List Query^FUT_EZINE^A^^execAdvantageEmailQuery.src^im_menui_grid.png^^01007514^FUT^^1.0^^^^^^^^
+	Holiday Cards Mailing List Query^FUT_HOLIDAYCARDS^A^^execHolidayCardsQuery.src^im_menui_grid.png^^01007514^FUT^^1.0^^^^^^^^
+	Mailing List Query^FUT_MAILING^A^^execMailingListQuery.src^im_menui_grid.png^^01007514^FUT^^1.0^^^^^^^^

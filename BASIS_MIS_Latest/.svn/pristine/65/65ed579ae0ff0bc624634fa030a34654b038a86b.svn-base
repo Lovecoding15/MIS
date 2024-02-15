@@ -1,0 +1,86 @@
+0010 REM "CSC - Configurator System - delete record"
+0020 REM "Program CSC.DA"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * WA# 204"
+0040 REM 
+0050 REM "CHANNELS[n] : Channel references - See CSM.?A (input)"
+0052 REM "PARAMS$[n]  : Parameter information (input)"
+0054 REM "            : [0]=Firm ID             [4]=Relationships (Y/N)"
+0056 REM "            : [1]=Code                [5]=Media Types (Y/N)"
+0058 REM "            : [2]=Type                [6]=not used          "
+0060 REM "            : [3]=BOM Records (Y/N)   [7]=not used"
+0070 REM "STATUS      : 0=No Error (returned)"
+0075 REM 
+0080 SETERR 9000
+0085 SETESC 9000
+0090 ENTER CHANNELS[ALL],PARAMS$[ALL],STATUS
+0200 REM " --- IOLIST's"
+0400 REM " --- Parameters"
+0410 LET N0$=PARAMS$[0],CODE$=PARAMS$[1],TYPE$=PARAMS$[2],BOM$=PARAMS$[3]
+0420 LET REL$=PARAMS$[4],MED$=PARAMS$[5]
+0500 REM " --- Initializations"
+0565 LET SYS01_DEV=CHANNELS[1],MAIN_DEV=CHANNELS[2],CSM12_DEV=CHANNELS[3]
+0570 LET CSM13_DEV=CHANNELS[4],CSM14_DEV=CHANNELS[5]
+0900 REM " --- Does the record actually exist?"
+0910 LET STATUS=0
+0970 FIND (MAIN_DEV,KEY=N0$+CODE$,DOM=4000)
+2000 REM " --- Delete BOM information"
+2010 IF BOM$<>"Y" THEN GOTO 2100
+2020 LET START$=N0$+TYPE$+CODE$
+2030 READ (CSM12_DEV,KEY=START$,DOM=2031)
+2040 LET K$=KEY(CSM12_DEV,END=2100)
+2050 IF K$(1,LEN(START$))<>START$ THEN GOTO 2100
+2060 REMOVE (CSM12_DEV,KEY=K$)
+2070 GOTO 2040
+2100 REM " --- Delete Relationship Information"
+2110 IF REL$<>"Y" THEN GOTO 2200
+2120 LET START$=N0$+TYPE$+CODE$
+2130 READ (CSM13_DEV,KEY=START$,DOM=2131)
+2140 LET K$=KEY(CSM13_DEV,END=2200)
+2150 IF K$(1,LEN(START$))<>START$ THEN GOTO 2200
+2160 REMOVE (CSM13_DEV,KEY=K$)
+2170 GOTO 2140
+2200 REM " --- Delete Media Information"
+2210 IF MED$<>"Y" THEN GOTO 2300
+2220 LET START$=N0$+CODE$
+2230 READ (CSM14_DEV,KEY=START$,DOM=2231)
+2240 LET K$=KEY(CSM14_DEV,END=2300)
+2250 IF K$(1,LEN(START$))<>START$ THEN GOTO 2300
+2260 REMOVE (CSM14_DEV,KEY=K$)
+2270 GOTO 2240
+2500 REM " --- Remove Main Record"
+2510 REMOVE (MAIN_DEV,KEY=N0$+CODE$,DOM=2511)
+4000 REM " --- All done"
+4090 GOTO 9900
+8110 REM " --- FNYEAR_YY21$ Convert Numeric Year to 21st Century 2-Char Year"
+8115 DEF FNYEAR_YY21$(Q)=FNYY_YY21$(STR(MOD(Q,100):"00"))
+8120 REM " --- FNYY_YY21$ Convert 2-Char Year to 21st Century 2-Char Year"
+8125 DEF FNYY_YY21$(Q1$)
+8130 LET Q3$=" ABCDE56789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+8135 RETURN Q1$
+8140 FNEND
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 LET STATUS=999
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 REM " --- Return to calling program"
+9950 EXIT 
+9999 END

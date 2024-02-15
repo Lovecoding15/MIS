@@ -1,0 +1,124 @@
+// check for serial numbers no longer active (past dropdead date)
+// <deactivate_sn.rwi>
+// set display/rows=1/cols=80/trim "/home/thines/deactivate.txt";
+display/form="MAS_HEAD" firm_name=""
+	screen_desc="DEACTIVATE EXPIRED SERIAL #'s";
+
+if pos(info(3,2)="gparra  sportwo thines  sjohnso ")=0 then
+	{ pause/message="Restricted to customer service."; exit; }
+
+today$=date(0:"%Y%Mz%Dz");
+ex60=jul(0,0,0)-60;dt60$=date(ex60:"%Y%Mz%Dz");
+ex1y=jul(0,0,0)-365;dt1y$=date(ex1y:"%Y%Mz%Dz");
+mlist$="JAN01FEB02MAR03APR04MAY05JUN06JUL07AUG08SEP09OCT10NOV11DEC12";
+
+dir$=stbl("PROJECT")+"bas/";
+deactivated_log$=stbl("AON")+"tmp/deactivated.log";
+loghdr$=$22$+"Serial#'s Deactivated on "+date(0)+$22$;
+
+pause/message "WORKING";
+sn_read=0;
+sn_died=0;
+for each snm01 where active_flag="Y" 
+and pos(license_type="D1YD60DRDKITR60ZM ZM1ZM2ZM3ZN2ZNDZPDZR1ZR2ZR3ZRDZRPZRYZS1ZT2ZTD",3)
+{
+sn_read=sn_read+1;
+if mod(sn_read,100)=0 then 
+	pause/message str(sn_read)+" READ "+str(sn_died)+" DEACTIVATED";
+init sntmp$:fattr(snt01$);
+for each snt01 of snm01
+	{ if cvs(snt01.auth_code,3)<>"" then sntmp$=field(snt01$);}
+if len(cvs(sntmp.auth_code$,2))=10 then gosub license_check;
+if len(cvs(sntmp.auth_code$,2))=13 then gosub key_check;
+}
+
+subroutine key_check
+{
+holdport$=snm01.port_id;
+holdkey$=cvs(sntmp.auth_code$,2);
+if holdkey$=fill(13,"x") then break;
+find/noerror csm04 using sntmp.firm_id$+sntmp.product_rev$;
+if available(csm04) then 
+	{ 
+	p=pos("."=csm04.description);if p=0 then p=2;
+	holdrev$="REV "+csm04.description(1,p); 
+	}
+	else break;
+dropdead$="";
+if pos(snm01.product="P4E DS4") 
+	then holdport$=holdport$(1,4);
+if holdport$(1,4)="1467" then holdport$="14675"; 
+call/nowindow dir$+"SYKEYDRD",snm01.serial_nbr,holdport$,holdrev$,holdkey$,dropdead$;
+open_pr=pos("("=dropdead$);
+close_pr=pos(")"=dropdead$);
+mm=0;dd=0;yy=0;
+if open_pr>0 and close_pr-open_pr>8 then
+	{
+	mm=num(dropdead$(open_pr+1,2),err=next_step);
+	dd=num(dropdead$(open_pr+4,2),err=next_step);
+	yy=num(dropdead$(open_pr+7,2),err=next_step);
+	}
+next_step:
+if mm<1 or mm>12 then mm=0;
+if dd<1 or dd>31 then dd=0;
+if yy<10 then yy=yy+2000; else yy=yy+1900;
+exdt$=str(yy:"0000")+str(mm:"00")+str(dd:"00");
+if mm*dd and exdt$<today$ then gosub deactivate_snm01;
+//	display/notitle snm01.serial_nbr/len=12 "expires" exdt$/len=10; 
+}
+
+subroutine deactivate_snm01
+{
+snm01.active_flag="N";
+snm01.avail_expire=fill(8);
+snm01.avail_support=0;
+update snm01;
+inc01.serial_nbr=snm01.serial_nbr;
+delete/noerror inc01;
+#3glbegin
+if sn_died=0 then let a=scall("echo "+loghdr$+">"+deactivated_log$)
+let a=scall("echo "+snm01.serial_nbr$+">>"+deactivated_log$)
+#3glend
+sn_died=sn_died+1;
+pause/message snm01.serial_nbr+" EXPIRED: "+exdt$;
+}
+
+subroutine license_check
+{
+call/nowindow "(BBX)aondate.bbx",sntmp.trans_date$,dt$,"U";
+if len(dt$)<10 then dt$="01/01/1900";
+tdt$=dt$(7,4)+dt$(1,2)+dt$(4,2);
+exdt$="";
+e$="";
+find/next/noerror sn_license using cvs(snm01.serial_nbr,2);
+sn_lic:
+if available(sn_license) and
+cvs(sn_license.serial_num,2)=cvs(snm01.serial_nbr,2) then 
+	{
+	if pos("DEMO7"=prod_type)=0 then {e$=cvs(sn_license.expire,7);
+		p$=sn_license.prod_type;}
+	find/next/noerror sn_license;
+	goto sn_lic;
+	}
+e_len: if len(e$)<11 then {e$="0"+e$; goto e_len;}
+p=pos(e$(4,3)=mlist$);if p then
+	exdt$=e$(8,4)+mlist$(p+3,2)+e$(1,2);
+//if exdt$="" and snm01.license_type<>"KIT" then 
+if exdt$="" then 
+	{
+	if pos(snm01.license_type="D60DRD") and tdt$<dt60$ 
+		then exdt$=tdt$;
+	if pos(snm01.license_type="D60DRD")=0 and tdt$<dt1y$ then 
+		exdt$=tdt$;
+//	display/notitle snm01.license_type snm01.serial_nbr/len=12 "sold"
+//	 tdt$/len=10 "expires" exdt$/len=10; 
+	}
+if snm01.license_type="KIT" then 
+	{
+	find/noerror smc01 using snm01.contract;
+	if available(smc01) then exdt$=smc01.expire_on_dt;
+	}
+if exdt$<>"" and exdt$<today$ then gosub deactivate_snm01;
+}
+  
+//

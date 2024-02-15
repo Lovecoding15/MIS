@@ -1,0 +1,161 @@
+REM ' runs the Active Serial Number report BSI.01
+
+begin
+seterr err_trap
+setesc esc_trap
+
+REM ========================================================================
+REM USE and Declares
+REM ========================================================================
+
+	declare BBjSysGui sysgui!
+	declare BBjTopLevelWindow win!
+	declare BBjFont font!
+	declare BBjStaticText label!
+	declare BBjStaticText label1!
+	declare BBjListButton firmID!
+	declare BBjEditBox custNbr!
+	declare BBjStaticText custNbrLabel!
+	declare BBjStaticText customerName!
+	declare BBjStaticText warning!
+
+REM ========================================================================
+REM Common information
+REM ========================================================================
+
+	rem ' set the environment
+
+	REM Open the BBj SysGUI Channel
+	sysgui!=BBjAPI().openSysGui("X0") 
+
+	rem ' open the customer masterfile
+	call "ec_open::ARM01"
+	
+REM ========================================================================
+REM create the window
+REM ========================================================================
+
+	winWidth = 380
+	winHeight = 190
+
+	win!=sysgui!.addWindow(50, 150, winWidth, winHeight, "Active Serial Number Report",$00010012$)
+	font! = sysgui!.makeFont("Ariel", 10, sysgui!.BOLD)
+
+	label! = win!.addStaticText(win!.getAvailableControlID(), 10, 20,100,20,"E-mail to:")
+	label!.setFont(font!)
+
+	inputEmail! = win!.addEditBox(win!.getAvailableControlID(), 80, 20, 260, 20, stbl("+SALES"))
+	rem ' inputEmail! = win!.addEditBox(win!.getAvailableControlID(), 80, 20, 260, 20, "kurt.e.williams@comcast.net")
+	inputEmail!.setFont(font!)
+
+	firm_id$="01"
+	firm_name$="BAS"
+	label1! = win!.addStaticText(win!.getAvailableControlID(), 40, 50, 100, 20,"Firm:")
+	label1!.setFont(font!)
+	
+	firmIDs$ = "01 BAS" + $0A$ + "02 BSG" + $0A$
+	firmID! = win!.addListButton(win!.getAvailableControlID(), 80, 50, 90, 60, firmIDs$, $0000$)
+	firmID!.setFont(font!)
+	firmID!.selectIndex(0)
+	firmID!.setCallback(firmID!.ON_LIST_SELECT, "firmSelected")	
+	
+	custNbrLabel! = win!.addStaticText(win!.getAvailableControlID(), 5, 80, 100, 20,"Customer:")
+	custNbrLabel!.setFont(font!)
+
+	custNbr! = win!.addEditBox(win!.getAvailableControlID(), 80, 80, 100, 20, "All")
+	custNbr!.setFont(font!)
+	custNbr!.setCallback(custNbr!.ON_LOST_FOCUS, "CUSTOMER_CHANGE")
+	customerValid = 1
+
+	customerName! = win!.addStaticText(win!.getAvailableControlID(), 80, 110, 260, 20,"All Customers")
+	customerName!.setFont(font!)
+
+	buttonStart! = win!.addButton(win!.getAvailableControlID(), 200, 160, 70, 20, "Start")
+	buttonStart!.setFont(font!)
+	buttonStart!.setCallback(buttonStart!.ON_BUTTON_PUSH, "RUN_REPORT")
+
+	buttonFinish! = win!.addButton(win!.getAvailableControlID(), 280, 160, 60, 20, "Exit")
+	buttonFinish!.setFont(font!)
+	buttonFinish!.setCallback(buttonFinish!.ON_BUTTON_PUSH, "DONE")
+
+	warning! = win!.addStaticText(win!.getAvailableControlID(), 10, 160, 100, 20,"Please wait.")
+	warning!.setFont(font!)
+	warning!.setVisible(0)
+	
+	win!.setVisible(1)
+
+	process_events 
+
+DONE:
+	release
+	
+FIRMSELECTED:
+	
+	temp$ = firmID!.getText()
+	firm_id$ = temp$(1,2)
+	firm_name$ = temp$(3)
+	
+	gosub customer_change
+	
+	return
+
+CUSTOMER_CHANGE:
+	custNbr$ = custNbr!.getText()
+	if cvs(custNbr$,3) = "" or cvs(custNbr$,7) = "ALL" then
+		custNbr!.setText("ALL")
+		customerName!.setText("All Customers")
+		customerValid = 1
+	else
+		if len(custNbr$) < 6 then
+			while len(custNbr$) < 6
+				custNbr$ = "0" + custNbr$
+			wend
+		fi
+		if len(custNbr$) > 6 then custNbr$ = custNbr$(1,6)
+		found = 0
+		read record(arm01,key = firm_id$ + custNbr$,dom=*next)arm01$; found = 1
+		if found then
+			custNbr!.setText(custNbr$)
+			customerName!.setText(cvs(arm01.cust_name$,3))
+			customerValid = 1
+		else
+			customerName!.setText("Customer number invalid.")
+			customerValid = 0
+		fi
+	fi
+	return
+
+RUN_REPORT:
+
+	gosub customer_change
+	
+	if customerValid then
+	
+		warning!.setVisible(1)
+		custNbr$ = custNbr!.getText()
+		if custNbr$ = "ALL" then custNbr$ = ""
+		toEmail$ = inputEmail!.getText()
+		win!.setCursor(3)
+		call "BSI.01",firm_id$,custNbr$,toEmail$
+		win!.setCursor(0)
+		warning!.setVisible(0)
+		msg = msgbox("The report has been completed and emailed to " + toEmail$, 0, "Process Complete")
+
+	else
+		msg = msgbox("Customer number is not valid.", 0, "Invalid Customer")
+	fi
+		
+	return
+
+err_trap:
+	msgtxt$ = "An error " + str(err) + " occurred on line: " + str(tcb(5)) + " Description: " + errmes(-1)
+	retval = msgbox(msgtxt$, 16, "Error Message")
+	release
+
+esc_trap:
+	return
+	
+end
+
+
+	

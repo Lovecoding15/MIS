@@ -1,0 +1,54 @@
+// <osnr_2> OEM Serial number by date
+
+repeat
+{
+new_dt: display/form="MAS_HEAD" firm_name=""
+screen_desc="Oem Serial Numbers by Date"; 
+prompt for/prompt="Enter beginning date (MMDDYYYY)"/len=8/imask="NNNNNNNN"
+	/help="(#F2)=exit"/nodrop/col=9/row=5/nobox dt1$;
+if cvs(dt1$,3)="" or ctl(2) then exit;
+t$=dt1$+fill(8);begindt$=t$(5,4)+t$(1,4);
+prompt for/prompt="Enter ending date (MMDDYYYY)"/len=8/imask="NNNNNNNN"
+	/help="(#F2)=exit"/nodrop/col=12/row=7/nobox dt2$;
+if cvs(dt2$,3)="" or ctl(2) then exit;
+t$=dt2$+fill(8);enddt$=t$(5,4)+t$(1,4);
+prompt for/prompt="Enter OEM ID" /len=3/imask="XXX"
+	/help="(#F2)=exit"/nodrop/col=28/row=9/nobox oem$;
+if cvs(oem$,3)="" or ctl(2) then exit;
+
+pause/message "Searching . . .";
+pick:
+choose/record/rewind/nobreak/index=date_serial_tran
+	/title="@Date  |SerialNum|Tran|Item Num|Rev |Prod Type|Key or Auth# |Act|CurU|NewU|Lic#"
+	/rows=15/drop/colchar="|"
+	/gosub=format_line
+	/display=line$
+	/help="((#F43)=Edit  (#F2)=Cancel)"
+	oemhistory where (oemhistory.date_tran between begindt$ and enddt$)
+		and pos(oem$=oemhistory.serial_num)=1;
+if ctl(2) then goto new_dt;
+if available(oemhistory)=0 then 
+	{ pause/message="No matching records found"; goto new_dt; }
+if ctlval=43 then call "(BBX)osnm_1.bbx",oemhistory;
+goto pick;
+}
+
+subroutine format_line
+{
+dt$=oemhistory.date_tran;
+dt$=dt$(5,2)+dt$(7,2)+dt$(3,2);
+type$=oemhistory.prod_type;
+switch type$
+	{
+	case "N": type$=type$+"-Normal";
+	case "D": type$=type$+"-DlrDem";
+	case "U": type$=type$+"-UsrDem";
+	case "P": type$=type$+"-Upgrd ";
+	case "R": type$=type$+"-Update";
+	default: type$=type$+"-      ";
+	}
+if sale_type="R" then type$=type$(1,1)+"-Rdonly";
+line$=dt$+"|"+cvs(serial_num,2)+"|"+tran+"|"+cvs(item_num,2)+"|"+cvs(rev_level,2)+"|"+type$ +"|"+key_auth+"|"+active_flag+"|"+str(cur_user:"###0")+"|"+str(new_user:"###0")+"|"+str(lic_count:"###0");
+}
+
+//

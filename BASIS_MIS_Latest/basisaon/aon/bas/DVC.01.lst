@@ -1,0 +1,174 @@
+0010 REM "DVC - Developer Contract Expiration Notices"
+0020 REM "Program DVC.01"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| February 2001                                             |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0050 rem " This program is called from the daily order/invoice update
+0060 enter stat
+0070 stat=0 
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files"
+0110 LET FILES=6
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 LET FILES$[1]="SYS-01",FILES$[2]="ARM-01",FILES$[3]="SMC-01",FILES$[4]="SNM-01",FILES$[5]="ARM-10"
+0135 let files$[6]="ARM-02"
+0140 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0150 IF STATUS>0 THEN GOTO 9900
+0160 LET SYS01_DEV=CHANNELS[1],ARM01_DEV=CHANNELS[2],SMC01_DEV=CHANNELS[3],SNM01_DEV=CHANNELS[4],ARM10_DEV=CHANNELS[5]
+0170 let arm02_dev=channels[6]
+0200 REM " --- IOLIST's"
+0210 DIM ARM01$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6*=10),CUST_NAME:C(30),ADDR_LINE_1:C(24),ADDR_LINE_2:C(24),ADDR_LINE_3:C(24),ZIP_CODE:C(9),PHONE_NUMBER:C(10),PHONE_EXTEN:C(4),RESALE_NBR:C(20),ALT_SEQUENCE:C(10),OPENED_DATE:C(3),AR_SHIP_VIA:C(10),FAX_NUMBER:C(10),ADDR_LINE_4:C(24),ADDR_LINE_5:C(24),RETAIN_CUST:C(1),CONTACT_NAME:C(20),D_B_NUMBER:C(9),SIC_CODE:C(8),COUNTRY:C(24),FOB:C(15),OP_FRT_TERMS:C(2*=10)"
+0220 DIM SMC01$:"CONTRACT:C(6),FIRM_ID:C(2),CUSTOMER_NBR:C(6),CONTR_START:C(8),ANNUAL_DT:C(8),EXPIRE_ON_DT:C(8),CONTR_TYPE:C(3),SAM_ACTIVE:C(1),E_MAIL:C(80),NEW_FLAG:C(1),INVOICED_FLAG:C(1),AVAILABLE:C(132)"
+0230 DIM SNM01$:"SERIAL_NBR:C(20*=10),SERIAL_DESC:C(60*=10),PRODUCT:C(3),PLATFORM:C(3),OS_LEVEL:C(3),PRODUCT_REV:C(3),LICENSE_TYPE:C(3),MEDIA_TYPE:C(3*=10),ACTIVE_FLAG:C(1),ORIG_SALE_DATE:C(3),CUSTOMER_NBR:C(6),PORT_ID:C(5),FIRM_ID:C(2),CONTRACT:C(6),SAM_ACTIVE:C(1),DEALER_STR:C(11*=10),COMMENT:C(60*=10),USERS:N(5*=10),DEALER_NUM_1:N(1*=10),DEALER_NUM_2:N(1*=10)"
+0240 DIM ARM10F$:"FIRM_ID:C(2),RECORD_ID_F:C(1),SLSPSN_CODE:C(3),SLSPSN_NAME:C(20),E_MAIL:C(80),PHONE_1:C(14),PHONE_2:C(14),RESERVED_STR:C(106*=10),COMM_RATE:N(7*=10)"
+0250 DIM ARM02$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),AR_TYPE:C(2*=10),SLSPSN_CODE:C(3),TERMS_CODE:C(2),DISC_CODE:C(2),DIST_CODE:C(2),FINANCE_CHG:C(1),SA_FLAG:C(1),RESERVED_STR_1:C(2),LAST_INV_DATE:C(3),LAST_PAY_DATE:C(3),STATEMENTS:C(1),TERRITORY:C(3),PRICING_CODE:C(4),NBR_LABELS:C(2),MESSAGE_CODE:C(2),TAX_CODE:C(2),CUST_TYPE:C(3),RESERVED_STR_2:C(1),INV_HIST_FLG:C(1),CRED_HOLD:C(1),RESERVED_STR_3:C(25*=10),AGING_FUTURE:N(7*=10),AGING_CUR:N(7*=10),AGING_30:N(7*=10),AGING_60:N(7*=10),AGING_90:N(7*=10),AGING_120:N(7*=10),CREDIT_LIMIT:N(7*=10),RESERVED_NUM_1:N(1*=10),RESERVED_NUM_2:N(1*=10),RESERVED_NUM_3:N(1*=10),RESERVED_NUM_4:N(1*=10)"
+0260 ARS01A: IOLIST X$,P1$,P2$,P3$,P4$,M0$,M1$,M2$,M3$
+0270 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET N0$=F0$(16,2),N1$=F4$,N2$="AR",N4$=F5$
+0430 FIND (SYS01_DEV,KEY=N0$+N2$+"00",DOM=9800)IOL=ARS01A
+0500 REM " --- Initialize Data"
+0510 LET days=30,type_key$="DV1"
+0700 REM " --- Background"
+0710 call "SYC.WA",mode,42,5,18,10,"",name$
+0720 message$="Checking Contract:  "
+0730 print 'sb',@(21-int((len(message$)+6)/2),1),message$,'sf',
+1000 REM " --- Initial Read"
+1010 first=0,start_jul=jul(0,0,0),end_jul=start_jul+days,cnt=0
+1020 end_dt$=date(end_jul:"%Yl%Mz%Dz")
+1030 extract record(smc01_dev,key=type_key$,knum=3,dom=contract_loop)
+1100 contract_loop:
+1105 REM " --- Main Read"
+1110 read record(smc01_dev,end=notify_finish)smc01$
+1120 smc01$=field(smc01$)
+1130 if smc01.contr_type$<>type_key$ then goto notify_finish
+1140 if smc01.annual_dt$>end_dt$ or smc01.invoiced_flag$="Y" then goto contract_loop
+1155 if smc01.firm_id$<>"02" then gosub find_sales
+1160 gosub find_serial_nbrs
+1170 if serial_nbrs$="" then goto contract_loop
+1175 print @(28,1),smc01.contract$,
+1180 sendto$=cvs(smc01.e_mail$,1+2)
+1185 if sendto$="" then gosub no_sendto; goto contract_loop
+1190 if smc01.firm_id$="02" then company$="BASIS International Sofware GmbH",from$="Basis-Wiesbaden@t-online.de",sales_name$="",phone$="49.611.714.6682" else company$="BASIS International Ltd.",from$=cvs(arm10f.e_mail$,1+2),phone$="1.505.938.6120 or 011.505.345.5232"
+1195 if from$="" then from$="sales@basis.cloud"
+1200 gosub create_message
+1210 gosub send_message
+1220 first=1,smc01.invoiced_flag$="Y",smc01$=field(smc01$)
+1230 write record(smc01_dev)smc01$
+1240 GOTO contract_loop
+2000 notify_finish:
+2005 call "SYC.WD",name$
+2010 if first=0 then gosub no_contracts
+2020 for x=1 to files
+2030 close(channels[x])
+2040 next x
+2050 exit
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 REM " --- Return to Caller"
+9910 CALL "SYC.WD",ERR=9920,NAME$
+9920 CALL "SYC.WB","0",1
+9930 PRINT @(0,20),
+9940 FOR I=1 TO FILES
+9950 CLOSE (CHANNELS[I],ERR=9951)
+9960 NEXT I
+9980 EXIT 
+10100 find_sales:
+10110 dim sales_name$(30)
+10120 find record(arm02_dev,key=smc01.firm_id$+smc01.customer_nbr$+"  ",dom=sales_done)arm02$
+10130 find record(arm10_dev,key=arm02.firm_id$+"F"+arm02.SLSPSN_CODE$,dom=sales_done)arm10f$
+10140 sales_name$(1)=arm10f.SLSPSN_NAME$
+10150 sales_done:
+10160 return
+10200 find_serial_nbrs:
+10210 serial_nbrs$=""
+10220 extract record(snm01_dev,key=smc01.firm_id$+smc01.customer_nbr$,knum=1,dom=serial_loop)
+10230 serial_loop:
+10240 read record(snm01_dev,end=serial_done)snm01$
+10250 if snm01.firm_id$+snm01.customer_nbr$<>smc01.firm_id$+smc01.customer_nbr$ then goto serial_done
+10260 if snm01.contract$<>smc01.contract$ or snm01.active_flag$<>"Y" then goto serial_loop
+10270 serial_nbrs$=serial_nbrs$+cvs(snm01.serial_nbr$,1+2)+$0a$
+10280 goto serial_loop
+10290 serial_done:
+10300 return
+10400 create_message:
+10405 cnt=cnt+1
+10410 let outfile$=stbl("AON")+"tmp/dv1notice"+str(cnt)+".txt"
+10420 erase outfile$,err=no_file
+10425 goto create_file
+10430 no_file:
+10440 if err<>12 then goto 9000
+10445 create_file:
+10450 string outfile$
+10460 out_chn=unt;open(out_chn)outfile$
+10470 LET HEADER$="To: "+SENDTO$+$0A$+"From: "+cvs(sales_name$,1+2)+" <"+from$+">"+$0a$
+10480 header$=header$+"Reply-To: "+from$+$0A$
+10490 header$=header$+"Cc: customer-service@basis.cloud, "+from$+$0a$
+10500 header$=header$+"Subject: Developer Kit Expiration Notice"+$0A$+$0a$
+10510 HEADER$=HEADER$+"The following Developer Kit licenses have expired or are due to expire "
+10520 header$=header$+"within the next thirty days:"+$0a$
+10530 license_loop:
+10540 if serial_nbrs$="" then goto license_done
+10550 line_feed=pos($0a$=serial_nbrs$)
+10560 serial$=serial_nbrs$(1,line_feed),serial_nbrs$=serial_nbrs$(line_feed+1)
+10570 header$=header$+"     "+serial$
+10580 goto license_loop
+10590 license_done:
+10600 header$=header$+$0a$+"To order your Developer Kit Replacement:"+$0a$+$0a$
+10610 header$=header$+"If you purchased your Developer kit from "+company$
+10620 header$=header$+", please contact your BASIS Sales Representative at "+phone$+"."+$0a$+$0a$
+10630 header$=header$+"If you purchased your Developer Kit through your Authorized BASIS "
+10640 header$=header$+"Distributor, please contact your Distributor."+$0a$+$0a$
+10650 header$=header$+"Thank you for your continued development using BASIS "
+10660 header$=header$+"products,"+$0a$+company$+$0a$
+10670 WRITE RECORD (out_chn,siz=len(header$))HEADER$
+10680 close(out_chn)
+10690 return
+10700 send_message:
+10710 a=scall("/usr/lib/sendmail -t < "+outfile$)
+10720 rem erase outfile$,err=message_sent
+10730 message_sent:
+10740 return
+10800 no_sendto:
+10810 DIM MESSAGE$[1]
+10820 LET MESSAGE$[0]="There is no E-Mail address for Contract:"
+10830 LET MESSAGE$[1]=smc01.contract$+" (<Enter>=Continue)"
+10840 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+10850 RETURN
+11700 no_contracts:
+11710 DIM MESSAGE$[1]
+11720 LET MESSAGE$[0]="There are no DV1 Contracts that are expiring"
+11730 LET MESSAGE$[1]="within 30 days (<Enter>=Continue)"
+11740 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+11750 RETURN

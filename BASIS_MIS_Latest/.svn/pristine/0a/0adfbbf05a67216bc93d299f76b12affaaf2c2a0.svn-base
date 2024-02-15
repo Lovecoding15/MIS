@@ -1,0 +1,127 @@
+REM ' Convert EC files to include USER_CODE in the key
+
+temp$ = "/tmp/"
+print "Writing converted files to ",temp$
+
+ECE11: REM ' ECE11 -- E-Comm Shopping Cart Detail
+DIM ECE11$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),LINE_NUMBER:C(4),PO_REF_NUMBER:C(20),SERIAL_NBR:C(20),ITEM_NUMBER:C(20),SITE_ID:C(20),SITE_LINE_NUMBER:C(4),SAM_COVERAGE:C(1),MODIFY_FLAG:C(1),LICENSE_ONLY:C(1),ANNUAL_DT:C(8),SUPPORT_ONLY:C(1),UPG_TO_PRODUCT:C(3),UPG_TO_REV:C(3),RENTAL_COMMIT:C(1),LIC_PROPERTY1:C(2),LIC_PROPERTY2:C(2),LIC_PROPERTY3:C(2),ODBC_RW:C(1),UNCOUNTED_FLAG:C(1),AVAILABLE:C(13*=10),PRICE_QUOTE:N(10*=10),QTY:N(4*=10),USERS:N(4*=10),ADD_USERS:N(4*=10),ADD_SUPPORT:N(4*=10),users2:N(4*=10),users3:N(4*=10)"
+
+original = unt, original$="ECE-11"
+open (original)original$
+print "Converting ",original$
+converted = unt, converted$=temp$+original$
+erase converted$,err=*next
+xkeyed converted$,[0:1:14],0,179
+open (converted)converted$
+skipped = 0
+while 1
+   read record (original,end=*break)ece11$
+   ece11$ = field(ece11$,err=ece11_error)
+   ece11$ = ece11$(1,8)+"  "+ece11$(9)
+   write record (converted)ece11$
+   continue
+ece11_error:
+   print "Skipped: "+cvs(ECE11$,16)
+   skipped = skipped + 1
+wend
+close (original)
+close (converted)
+if skipped then print "Skipped",skipped," bad records."
+
+ECE12: REM ' ECE12 -- E-Comm Shopping Cart User Features
+DIM ECE12$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),LINE_NUMBER:C(4),FEATURE:C(30),FEATURE_REV:C(5),AVAILABLE:C(40*=10),USERS:N(5*=10),AVAILABLE_NUM:N(7*=10)"
+
+original = unt, original$="ECE-12"
+open (original)original$
+print "Converting ",original$
+converted = unt, converted$=temp$+original$
+erase converted$,err=*next
+xkeyed converted$,[0:1:44],0,112
+open (converted)converted$
+while 1
+   read record (original,end=*break)ece12$
+   ece12$ = field(ece12$)
+   ece12$ = ece12$(1,8)+"  "+ece12$(9)
+   write record (converted)ece12$
+wend
+close (original)
+close (converted)
+
+ECE83: REM ' ECE83 -- E-Comm Shopping Cart Serial Number List
+DIM ECE83$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),LINE_NUMBER:C(4),SERIAL_NBR:C(20),AVAILABLE:C(18)"
+
+original = unt, original$="ECE-83"
+open (original)original$
+print "Converting ",original$
+converted = unt, converted$=temp$+original$
+erase converted$,err=*next
+xkeyed converted$,[0:1:34],0,50
+open (converted)converted$
+while 1
+   read record (original,end=*break)ece83$
+   ece83$ = field(ece83$)
+   ece83$ = ece83$(1,8)+"  "+ece83$(9), ece83$ = ece83$(1,50)
+   write record (converted)ece83$
+wend
+close (original)
+close (converted)
+
+ECM01: REM ' ECM01 -- E-Commerce Master
+DIM ECM01$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),E_MAIL:C(80),PASSWORD:C(20),E_MAIL2:C(80),SURVEY_FLAG:C(1),AVAILABLE:C(78)"
+
+original = unt, original$="ECM-01"
+open (original)original$
+print "Converting ",original$
+converted = unt, converted$=temp$+original$
+erase converted$,err=*next
+xkeyed converted$,[0:1:10],0,270
+open (converted)converted$
+while 1
+   read record (original,end=*break)ecm01$
+   ecm01$ = field(ecm01$)
+   ecm01$ = ecm01$(1,8)+"  "+ecm01$(9)
+   write record (converted)ecm01$
+wend
+close (original)
+close (converted)
+
+ECM02: REM ' ECM02 -- E-Comm Customer Credit Cards
+DIM ECM02$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),CREDIT_CARD_NUM:C(16),CC_TYPE:C(1),CC_NAME:C(30),CC_EXPIRES_MO:C(2),CC_EXPIRES_YR:C(4),AVAILABLE:C(40)"
+
+original = unt, original$="ECM-02"
+open (original)original$
+print "Converting ",original$
+converted = unt, converted$=temp$+original$
+erase converted$,err=*next
+xkeyed converted$,[0:1:26],0,100
+open (converted)converted$
+while 1
+   read record (original,end=*break)ecm02$
+   ecm02$ = field(ecm02$)
+   ecm02$ = ecm02$(1,8)+"  "+ecm02$(9), ecm02$ = ecm02$(1,100)
+   write record (converted)ecm02$
+wend
+close (original)
+close (converted)
+
+ECS01: REM ' ECS01 -- E-Commerce Survey
+DIM ECS01$:"FIRM_ID:C(2),CUSTOMER_NBR:C(6),SURVEY_NAME:C(10),INVOICE_NBR:C(7),ANSWER_1:C(30),ANSWER_2:C(30),ANSWER_3:C(30),ANSWER_4:C(30),ANSWER_5:C(30),ANSWER_6:C(30),ANSWER_7:C(30),ANSWER_8:C(30),ANSWER_9:C(30),ANSWER_10:C(30),COMMENTS:C(400),AVAILABLE:C(43)"
+
+original = unt, original$="ECS-01"
+open (original)original$
+print "Converting ",original$
+converted = unt, converted$=temp$+original$
+erase converted$,err=*next
+xkeyed converted$,[0:1:20],[0:11:10]+[0:1:10],0,768
+open (converted)converted$
+while 1
+   read record (original,end=*break)ecs01$
+   ecs01$ = field(ecs01$)
+   ecs01$ = ecs01$(1,8)+"  "+ecs01$(9), ecs01$ = ecs01$(1,768)
+   write record (converted)ecs01$
+wend
+close (original)
+close (converted)
+
+print "Done!"
+end

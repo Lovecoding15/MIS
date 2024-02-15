@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_EMAIL_ACCT</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<EMAIL_ACCOUNT>ADMIN     </EMAIL_ACCOUNT>
+		<EMAIL_HOST>smtp.gmail.com</EMAIL_HOST>
+		<EMAIL_PORT>465</EMAIL_PORT>
+		<EMAIL_FROM>customerservice@basis.com</EMAIL_FROM>
+		<EMAIL_REPLYTO>customerservice@basis.com</EMAIL_REPLYTO>
+		<EMAIL_AUTH>1</EMAIL_AUTH>
+		<EMAIL_SSL>1</EMAIL_SSL>
+		<EMAIL_USERID>basismail@basis.com</EMAIL_USERID>
+		<EMAIL_PASSWORD>G&S=Cu5t</EMAIL_PASSWORD>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<EMAIL_ACCOUNT>CHAWKINS  </EMAIL_ACCOUNT>
+		<EMAIL_HOST>smtp.gmail.com</EMAIL_HOST>
+		<EMAIL_PORT>465</EMAIL_PORT>
+		<EMAIL_FROM>chawkins@basis.com</EMAIL_FROM>
+		<EMAIL_REPLYTO>chawkins@basis.com</EMAIL_REPLYTO>
+		<EMAIL_AUTH>1</EMAIL_AUTH>
+		<EMAIL_SSL>1</EMAIL_SSL>
+		<EMAIL_USERID>chawkins@basis.com</EMAIL_USERID>
+		<EMAIL_PASSWORD>WSz5@her</EMAIL_PASSWORD>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<EMAIL_ACCOUNT>CUSTSERV  </EMAIL_ACCOUNT>
+		<EMAIL_HOST>smtp.gmail.com</EMAIL_HOST>
+		<EMAIL_PORT>465</EMAIL_PORT>
+		<EMAIL_FROM>customerservice@basis.com</EMAIL_FROM>
+		<EMAIL_REPLYTO>customerservice@basis.com</EMAIL_REPLYTO>
+		<EMAIL_AUTH>1</EMAIL_AUTH>
+		<EMAIL_SSL>1</EMAIL_SSL>
+		<EMAIL_USERID>basismail@basis.com</EMAIL_USERID>
+		<EMAIL_PASSWORD>G&S=Cu5t</EMAIL_PASSWORD>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<FIRM_ID>01</FIRM_ID>
+		<EMAIL_ACCOUNT>BASIS     </EMAIL_ACCOUNT>
+		<EMAIL_HOST>email-smtp.us-west-2.amazonaws.com</EMAIL_HOST>
+		<EMAIL_PORT>465</EMAIL_PORT>
+		<EMAIL_FROM>customer-service@basis.cloud</EMAIL_FROM>
+		<EMAIL_REPLYTO>customer-service@basis.cloud</EMAIL_REPLYTO>
+		<EMAIL_AUTH>1</EMAIL_AUTH>
+		<EMAIL_SSL>1</EMAIL_SSL>
+		<EMAIL_USERID>AKIA252YH774IK54J2KX</EMAIL_USERID>
+		<EMAIL_PASSWORD>F9AFF29D101C452ACB46ECFC85D4FEC05407887B3898895A8E5B0759272D17435209DA06B1E6581E1977457FCD190793</EMAIL_PASSWORD>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

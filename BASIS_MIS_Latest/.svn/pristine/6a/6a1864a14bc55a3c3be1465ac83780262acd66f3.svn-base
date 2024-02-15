@@ -1,0 +1,58 @@
+rem ' expCompDate
+rem ' expand or compress date
+
+seterr err_trap
+setesc err_trap
+
+enter inDate$, outDate$
+escape
+if len(inDate$) = 3 then
+	outDate$ = FNunpackDate$(inDate$)
+	if num(outDate$(1,2)) < 20 then
+		outDate$="20"+outDate$
+	else
+		outDate$="19"+outDate$
+	fi
+else 
+	if len(inDate$) = 8 then
+		outDate$ = fnd$(inDate$(5,4)+inDate$(3,2))
+	else 
+		if len(inDate$) = 6
+			outDate$ = fnd$(inDate$(3,4)+inDate$(1,2))
+		fi
+	fi
+fi
+
+exit
+
+err_trap:
+	outDate$="Err " + str(err)
+	exit
+
+REM " --- Functions"
+DEF FNunpackDate$(Q1$)=FNA$(Q1$(1),Q1$)+FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)
+
+DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+
+DEF FND$(Q$)=CHR(FNYY_YEAR(Q$(5,2))+32)+CHR(NUM(Q$(1,2))+32)+CHR(NUM(Q$(3,2))+32)
+REM " --- FNYEAR_YY21$ Convert Numeric Year to 21st Century 2-Char Year"
+DEF FNYEAR_YY21$(Q)=FNYY_YY21$(STR(MOD(Q,100):"00"))
+
+REM " --- FNYY_YY21$ Convert 2-Char Year to 21st Century 2-Char Year"
+DEF FNYY_YY21$(Q1$)
+LET Q3$=" AB23456789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+
+REM " --- FNYY21_YY$ Un-Convert 21st Century 2-Char Year to 2-Char Year"
+DEF FNYY21_YY$(Q1$)
+LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+
+REM " --- FNYY_YEAR Convert 2-Char Year to 21st Century Numeric Year"
+DEF FNYY_YEAR(Q1$)
+LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<20 THEN LET Q=Q+100
+RETURN Q
+FNEND

@@ -1,0 +1,34 @@
+Utility programs:
+
+/stable/thines/util
+   
+   ap_vendlbl.src   -  for Kim - create txt file for her to print labels
+   
+   ar_custlbl.src    -  ditto (both need to be edited for the year on labels) 
+   
+   change_sn_owner.src - change a bunch of sn & contract owners, write comment about change (edit batch method & comment) 
+
+   deactivate_sn.src  -  Batch sn deactivation, write comment (edit first)
+	
+   file_recover.src  -  recover damaged file
+
+   na.src     -  takes "NA" cust types off announcments and Advantage lists
+
+   sls_chg.src  - change sales rep for a list of customers
+
+   snm01_recover.src  - was written after a catastrophic data loss in SNM-01 to recreate lost data after file was restored from backup
+
+   xx.src  - change distributor reset counter back to 0 in SNM-01
+
+/stable/thines/bin
+
+   unpin - Unix script, calls "unpin.bbj" , used to unpin programs on production (kazoo2) after program changes (also on opus)
+
+**********************************************************************
+Things on Opus:
+
+Application directory programs (bbweb code) are under /home/basis/pro5/appdir
+
+Distributor lookup (used only by OSH now - also bbweb code) under /share/var/www/ec
+
+

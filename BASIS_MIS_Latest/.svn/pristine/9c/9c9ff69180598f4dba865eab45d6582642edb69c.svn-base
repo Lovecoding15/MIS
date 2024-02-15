@@ -1,0 +1,36 @@
+// <aondate>
+enter indt$,outdt$,op$;
+outdt$="";
+
+if op$="P" then 
+{
+dt$=""; p=1;
+repeat/while p<=len(indt$)
+	{if pos(indt$(p,1)="0123456789") then dt$=dt$+indt$(p,1);
+	p=p+1;}
+l=len(dt$);if l<>6 and l<>8 then goto done;
+y$=dt$(l-1,2);
+c$="19";if l=8 then c$=dt$(l-3,2);
+y=num(y$); 
+m=num(dt$(1,2));
+if m<1 or m>12 then goto done;
+d=num(dt$(3,2));
+if d<1 or d>31 then goto done;
+if y<10 then y=y+100;
+outdt$=chr(y+32)+chr(m+32)+chr(d+32);
+}
+
+if op$="U" then
+{
+l=len(indt$);if l<>3 then goto done;
+y=asc(indt$(1,1))-32;
+m=asc(indt$(2,1))-32;
+d=asc(indt$(3,1))-32;
+c=1900;
+if m<1 or m>12 then goto done;
+if d<1 or d>31 then goto done;
+outdt$=str(m:"00")+"/"+str(d:"00")+"/"+str(c+y:"0000");
+}
+
+done:
+exit;

@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_admin_record>
+	<barista_record_table>ADM_QUERY</barista_record_table>
+	<QUERY_ID>FUT_HOLIDAYCARDS</QUERY_ID>
+	<DESC>Holiday Card List based on Sales</DESC>
+	<DD_TABLE_ALIAS>FUT_ARM01       </DD_TABLE_ALIAS>
+	<INQUIRY_PROG>/mnt/data/basisaon/aon/bas/fut_holidaycards_row.src</INQUIRY_PROG>
+	<COLUMN_MOVE>Y</COLUMN_MOVE>
+	<QUERY_TYPE>M</QUERY_TYPE>
+	<USER_FILTERS>Y</USER_FILTERS>
+	<PRINT_RESULTS>Y</PRINT_RESULTS>
+	<CLIP_RESULTS>Y</CLIP_RESULTS>
+	<ASC_COMP_ID>01007514</ASC_COMP_ID>
+	<ASC_PROD_ID>FUT</ASC_PROD_ID>
+	<OVERRIDE_SQL>Y</OVERRIDE_SQL>
+	<SQL_SELECT>SELECT fut_arm01.firm_id, fut_arm01.customer_nbr, fut_arm01.contact_nm, fut_arm01.cust_name, fut_arm01.addr_line_1, fut_arm01.addr_line_2, fut_arm01.addr_line_3, fut_arm01.addr_line_4, fut_arm01.addr_line_5, fut_arm01.zip_code, fut_arm01.fax_number, fut_arm01.country, fut_arm02.slspsn_code, fut_arm06.ytd_sales[$0a$]FROM fut_arm01[$0a$]LEFT JOIN fut_arm02 ON fut_arm02.firm_id=fut_arm01.firm_id AND fut_arm02.customer_nbr=fut_arm01.customer_nbr[$0a$]LEFT JOIN fut_arm06 ON fut_arm06.firm_id=fut_arm01.firm_id AND fut_arm06.customer_nbr=fut_arm01.customer_nbr[$0a$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               </SQL_SELECT>
+</barista_admin_record>

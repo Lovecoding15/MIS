@@ -1,0 +1,158 @@
+rem ' this class will move files between the client and the server
+
+USE ::LanguageTranslator.src::LanguageTranslator
+
+class public ClientServerFileMover
+
+    field private BBjClientFileSystem cfs!
+    field private LanguageTranslator translator!
+    field private BBjInt translatorAvailable!
+    field private BBjInt true! = 1
+    field private BBjInt false! = 0
+
+rem ' if a translator is present then prompt$ will be passed to the 
+rem ' translator as a key, if a translator is not present prompt$ will 
+rem ' be presented directly
+
+
+    method public ClientServerFileMover()
+        seterr csfError
+            #cfs! = BBjAPI().getThinClient().getClientFileSystem()
+            #translatorAvailable! = #false!
+            methodret
+        csfError:
+            throw "Error getting client file system.",err
+    methodend
+
+
+    method public ClientServerFileMover(LanguageTranslator trans!)
+        seterr csfmError
+            #cfs! = BBjAPI().getThinClient().getClientFileSystem()
+            if trans! = null() then
+                #translatorAvailable! = #false!
+            else
+                #translatorAvailable! = #true!
+                #translator! = trans!
+            fi
+            methodret
+        csfmError:
+            throw "Error getting client file system.",err
+    methodend
+
+
+    method public BBjString uploadToServer(BBjString prompt$, 
+:                                   BBjString clientPath$, 
+:                                   BBjString nameOnClient$,
+:                                   BBjString extension$,
+:                                   BBjString filter$, 
+:                                   BBjString serverPath$)
+
+        seterr uptsError
+            declare BBjString altPrompt$
+            declare BBjString response$
+            declare BBjNumber msgbox_response
+            declare BBjClientFile cf!
+            declare BBjString tempFileLocation$
+            declare BBjString nameOnServer$
+
+            rem Present user with a dialog for a file to upload
+            altPrompt$=#translateString(prompt$)
+            response$=FILEOPEN(altPrompt$,clientPath$,nameOnClient$,extension$,filter$,MODE="client")
+
+            if response$="::CANCEL::" or response$="::BAD::" then 
+                methodret response$
+            endif 
+            cf!=#cfs!.getClientFile(response$)
+
+            tempFileLocation$=cf!.copyFromClient()
+
+            rem ' strip the path and get the ordinary file name of the uploaded file
+            nameOnServer$=response$
+            while pos("/"=nameOnServer$)
+                rpos = pos("/"=nameOnServer$)
+                nameOnServer$=nameOnServer$(rpos+1)
+            wend
+            while pos("\"=nameOnServer$)
+                rpos = pos("\"=nameOnServer$)
+                nameOnServer$=nameOnServer$(rpos+1)
+            wend
+
+            erase serverPath$+nameOnServer$,err=*next
+            rename tempFileLocation$,serverPath$+nameOnServer$
+
+            methodret "::GOOD::"
+
+       uptsError:
+            throw "Error uploading the file in ClientServerFileMover.src. Error: " + str(err) + " Line: " + str(tcb(5)) + " Message: " + errmes(-1), err
+    methodend
+
+
+    method public BBjString downloadToClient(BBjString prompt$, 
+:                                          BBjString clientPath$, 
+:                                          BBjString nameOnServer$, 
+:                                          BBjString extension$,
+:                                          BBjString filter$,
+:                                          BBjString serverPath$)
+
+        seterr dltcError
+
+            declare BBjString altPrompt$
+            declare BBjString response$
+            declare BBjNumber msgbox_response
+            declare BBjClientFile cf!
+
+            rem Present user with a dialog for a file to upload
+            altPrompt$=#translateString(prompt$)
+            response$=FILESAVE(altPrompt$,clientPath$,nameOnServer$,extension$,filter$,MODE="client")
+
+            if response$="::CANCEL::" OR response$="::BAD::" then 
+                methodret response$
+            endif 
+
+            cf!=#cfs!.getClientFile(response$)
+
+            if cf!.exists() then
+            	rem ' do nothing
+            else
+                if cf!.createNewFile() then
+                	rem ' do nothing
+                else
+                    throw "File " + response$ + " can not be written. You may not have write permissions for that location.", 18
+                 endif
+            endif
+
+            if cf!.canWrite() then
+                cf!.copyToClient(serverPath$+nameOnServer$) 
+            else
+                throw "File " + response$ + " can not be written. You may not have write permissions for that location.", 18
+            endif
+
+            methodret "::GOOD::" + response$
+        
+        dltcError:
+            throw "Error downloading the file. " + errmes(-1), err
+    methodend
+
+    method private BBjString translateString(BBjString theString$)
+        
+        seterr tsError
+            declare BBjString altPrompt$
+
+            if #translatorAvailable! then
+                altPrompt$ = #translator!.getMessage(theString$)
+                if altPrompt$="" then 
+                    altPrompt$=theString$
+                fi
+            else
+                altPrompt$=theString$
+            fi
+
+            methodret altPrompt$
+
+        tsError:
+            throw "Error translating message or prompt.",err
+
+    methodend
+
+classend
+                                    

@@ -1,0 +1,36 @@
+// Menu for other SN options  <aon_sn_mnu>
+repeat
+{
+display/form="MAS_HEAD"
+	screen_desc="Additional Serial No. Options" firm_name="";
+
+choose /traditional /title="@Select an Option" /drop
+	a from
+	"Search for Serial Numbers by Invoice Number"
+	"Display Client/Server Links"
+	"Display Activated/New Serial Number Links"
+	"Deactivate/Activate Serial#'s (with Dataserver unlink/link option)"
+	/help="Restricted to customer service"
+	"Link Clients to Servers"
+	/help="Restricted to customer service"
+	"Unlink Clients from Servers"
+	/help="Restricted to customer service"
+	"Deactivate Expired Serial Numbers"
+	/help="Restricted to customer service"
+	"End";
+if ctl()=2 then exit;
+switch a
+	{
+	case 0: call/window "(BBX)aon_snsrc.bbx";
+	case 1: call/window "(BBX)aon_csxref.bbx";
+	case 2: call/window "(BBX)aon_ugxref.bbx";
+	case 3: call/window "(BBX)aon_misc9.bbx";
+	case 4: call/window "(BBX)aon_misc1.bbx";
+	case 5: call/window "(BBX)aon_misc8.bbx";
+	case 6: call/window "(BBX)deactivate_sn.bbx";
+	case 7: goto menu_done;
+	}
+}
+menu_done:
+exit;
+//

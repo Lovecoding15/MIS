@@ -1,0 +1,28 @@
+Crontabs:
+
+rs_reg.pgm
+	Looks for customers registering as partners on our web site. Uses database in /share/partners. Updates ARM-02 and TMM-01. Still used??
+
+cust_web_updt.pgm
+	Called by rs_reg.pgm if time is between 11 pm & 11:15 pm. Updates TMM-01,TMM-03,ARM-01 from info is /share/partners database from web input by customers. Also called by GuiAddOn to update /share/partners/reseller when we change something.
+
+arxrebuild.pgm
+	Nightly rebuild of ARM-04 cross references from ARM-01. Based on AddOn rebuild utility.
+
+bcomm_license.pgm
+	Reads data on kazoo2 created by bcomm (ec_license program) to generate & send license forms. Runs job_queue.pgm at end.
+
+job_queue.pgm
+	Developed as an offshoot of bcomm_license.pgm when we needed something to process events from bcomm or other programs without taking the time in the original program. Data is written to job_queue.dat by various programs, this one reads the file and takes appropriate action. Also runs sign_invoice.bbj, which checks /basisaon/holding directory for BSG invoices that need digital signatures.
+
+gen_sam_orders.bbj
+	Daily program to automatically generate SAM renew orders. Emails cust w/orders generated. Cust may edit/delete orders, then invoice them manually.
+
+email_xref.pgm
+	Daily rebuild of emxref.dat, used in GuiAddOn (Email Search button)
+
+rotate_rev.bbj
+	Runs program to set CUR rev to match new year on Jan 1 (i.e., 2008 sets CUR to 8XX). Also sets NXT rev to next year (9XX). On April 1, sets CUR to NXT. NXT rev is available to any sn w/SAM active thru 4/1.
+
+
+ 

@@ -1,0 +1,96 @@
+rem ' bulk license reset 
+begin
+
+call "ec_open::snm01"
+snm01out=snm01
+call "ec_open::snm01"
+call "ec_open::license_reset"
+call "ec_open::snt01"
+
+rem ' used to reset all OSAS
+rem ' firm$="01"
+rem ' cust$="001081"
+rem ' read(snm01,key=firm$+cust$,knum=1,dom=*next)
+
+rem ' used to drive bulk reset from a list of serial numbers
+serials = unt
+open(serials)"/mnt/data/basisaon/aon/tmp/Dec2019_Refreshes.txt"
+rem ' for Marriott
+firm$="01"
+cust$="002786"
+
+print fid(snm01out)
+print fid(snm01)
+print fid(license_reset)
+print fid(snt01)
+print fid(serials)
+print info(3,4)
+input *
+
+while 1
+	
+	read (serials,end=*break)serial_nbr$
+	if cvs(serial_nbr$,3)="" then continue
+	serial_nbr$ = serial_nbr$+fill(20)
+	serial_nbr$=serial_nbr$(1,20)
+	read record(snm01,key=serial_nbr$)snm01$
+
+	rem ' readrecord(snm01,end=*break)snm01$
+  	
+  	if snm01.customer_nbr$<>cust$ or snm01.firm_id$<>firm$ then break
+  	
+  	count = count + 1
+  	
+  	if snm01.active_flag$="N" then continue
+  	if snm01.license_type$="D60" then continue
+  	rem ' if snm01.dist_reset = 0 then continue
+  
+  	countChg = countChg + 1
+  	
+  	print snm01.serial_nbr$
+	if mod(count,10) = 0 then print count,
+	
+	snm01.dist_reset=0
+	snm01$=field(snm01$)
+	write record(snm01out,key=snm01.serial_nbr$)snm01$
+	
+	rem ' reset license count in SNT01
+	read (snt01,key=cvs(serial_nbr$,2),err=*next)
+	license_status_key$=""
+	while 1
+		k$=key(snt01,end=*break)
+		read record(snt01,key=k$)snt01$
+		if pos(cvs(serial_nbr$,2)=snt01.serial_nbr$) <> 1 then break
+		if len(cvs(snt01.auth_code$,3)) <> 10 then continue
+	
+		if snt01.action$<>"D" then license_status_key$=k$
+	wend
+	if license_status_key$ <> "" then
+		stat_count = stat_count + 1
+		extractrecord(snt01,key=license_status_key$)snt01$
+		snt01.license_cnt=0
+		snt01$=field(snt01$)
+		writerecord(snt01,key=license_status_key$)snt01$
+	fi
+
+	rem ' write a license reset record
+	dim license_reset$:fattr(license_reset$)
+	license_reset.serial_nbr$=snm01.serial_nbr$
+	license_reset.reset_date$=date(0:"%Y%Mz%Dz")
+	license_reset.reset_time$=date(0:"%Hz%mz%sz")
+	license_reset.reset_by$="grobled"
+	license_reset.reset_to$="0"
+	license_reset.reset_code$="40"; rem ' new machine
+	fl$=fattr(license_reset$,"available"),fl=dec(fl$(10,2))
+	license_reset.available$=fill(fl)
+	license_reset$=field(license_reset$)
+	write record(license_reset,key=license_reset.serial_nbr$+license_reset.reset_date$+license_reset.reset_time$)license_reset$
+
+	input "Pause: ", *
+wend
+
+print " read: ", count, " changed: ", countChg, " status changed: ", stat_count
+
+end
+
+

@@ -1,0 +1,195 @@
+0010 REM "SMC - SAM Disbursement File"
+0020 REM "Program SMC.02"
+0060 BEGIN 
+0080 SETERR 9000
+0090 SETESC 9000
+0100 REM " --- Open/Lock Files"
+0110 LET FILES=4
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 LET FILES$[1]="SYS-01",FILES$[2]="ARM-01",FILES$[3]="SMC-02",files$[4]="ARM-10"
+0140 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0150 IF STATUS>0 THEN GOTO 9900
+0160 LET SYS01_DEV=CHANNELS[1],ARM01_DEV=CHANNELS[2],SMC02_DEV=CHANNELS[3],arm10_dev=channels[4]
+0200 REM " --- IOLIST's"
+0210 call "templates.pgm::ARM01"
+0220 call "templates.pgm::SMC02"
+0230 call "templates.pgm::ARM10D"
+0240 call "templates.pgm::ARM10F"
+0250 dim smc02_hold$:fattr(smc02$)
+0270 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET N2$="AR"
+0500 REM " --- Initializations"
+0700 REM " --- Background"
+0720 PRINT 'SB',@(10,3),"Invoice:",@(13,4),"Line:"
+0730 print @(1,5),"Last transaction:",@(3,6),"Days remaining:"
+0740 print @(5,7),"Original amt:",@(9,8),"Unearned:",@(7,9),"MTD Earned:"
+0750 print @(1,10),"NextMonth Earned:",@(7,11),"YTD Earned:"
+0760 print @(13,12),"Item:",@(0,13),"Distribution Code:"
+0770 print @(13,14),"Firm:",@(24,14),"Customer:"
+0780 print @(6,15),"Salesperson:",@(6,16),"Annual Date:",'SF'
+0900 REM " --- Position file"
+0905 k2$=""
+0910 position_file:
+0930 found=0;read record(SMC02_DEV,KEY=k2$,DOM=*next)smc02$;found=1
+0940 if found then k2$=smc02$(1,10) else k2$=key(smc02_dev,err=*next)
+1000 REM " --- invoice #"
+1005 invoice:
+1010 PRINT 'CF',@(0,18),'ce'
+1020 LET v2$="";if len(k2$)>6 then v2$=k2$(1,7)
+1030 LET V0$="S",V1$="",V3$="",V0=7,V1=20,V2=3,V4$="Enter Invoice Number"
+1040 GOSUB addon_input
+1050 IF V3=4 THEN GOTO finish_up
+1060 IF V$="" THEN GOTO invoice
+1070 v$=STR(NUM(V$,ERR=invoice):"0000000")
+1080 if pos(v$=k2$)<>1 then k2$=v$+"000"
+1100 LET V0$="S",V1$="",V3$="",V0=3,V1=20,V2=4,V4$="Enter Line Number"
+1110 LET v2$="";if len(k2$)>9 then v2$=k2$(8,3)
+1120 GOSUB addon_input
+1130 IF V3=4 THEN GOTO invoice
+1140 if v$<>"" then LET k2$(8,3)=STR(NUM(V$,ERR=*next):"000")
+1150 found=0; readrecord(SMC02_DEV,KEY=k2$,DOM=*next)smc02$;found=1
+1160 if found then k2$=smc02$(1,10) else k2$=key(smc02_dev,err=invoice)
+1200 REM " --- Get record"
+1210 READ RECORD(smc02_dev,KEY=k2$,DOM=invoice)smc02$
+1220 smc02_hold$=field(smc02$)
+1230 smc02$=smc02_hold$
+1300 REM " --- Display record"
+1310 GOSUB display_record
+1390 GOTO data_correct
+2000 REM " --- Start Date"
+2005 last_date:
+2010 LET V0$="S",V1$="",V2$=smc02.last_trans_dt$,v3$="",V0=8,V1=20,V2=5,i0=0
+2015 LET V4$="Enter Last Transaction Date (YYYYMMDD)"
+2020 GOSUB addon_input
+2030 ON V3 GOTO continue_last,last_date,next_field,last_date,next_field
+2040 continue_last:
+2045 LET dt$=v$
+2050 gosub check_date
+2060 if dt$="" then goto last_date
+2070 smc02.last_trans_dt$=dt$
+2090 GOTO next_field
+2100 REM " --- Annual Date" (not currently used)
+2110 annual_date:
+2120 LET V0$="S",V1$="",V2$=smc02.annual_dt$,V3$="",V1=20,V2=16,V0=8
+2130 LET V4$="Enter Annual Date of the Contract (YYYYMMDD)"
+2140 GOSUB addon_input
+2150 ON V3 GOTO continue_annual,annual_date,next_field,annual_date,next_field
+2155 continue_annual:
+2160 LET dt$=V$
+2170 gosub check_date
+2180 if dt$="" then goto annual_date
+2185 smc02.annual_dt$=dt$
+2190 GOTO next_field
+2200 REM " --- Days remaining"
+2210 days_remaining:
+2220 LET V0$="S",V1$="",V2$=str(num(smc02.days_remaining$)),V3$="",V1=20,V2=6,V0=7
+2230 LET V4$="Enter Days Remaining"
+2240 GOSUB addon_input
+2250 ON V3 GOTO continue_days,last_date,next_field,last_date,next_field
+2255 continue_days:
+2260 LET v=num(V$,err=days_remaining)
+2270 if v<1 or v>365 then goto days_remaining
+2280 smc02.days_remaining$=str(v:"0000.00")
+2290 GOTO next_field
+3900 REM " --- Next field"
+3910 next_field:
+3915 IF V3=4 THEN GOTO data_correct
+3920 IF V3<>2 THEN GOTO incr_field
+3925 IF I0>0 THEN LET I0=I0-1
+3930 GOTO do_on_io
+3935 incr_field:
+3940 LET I0=I0+1
+3950 do_on_io:
+3960 ON I0 GOTO last_date,days_remaining,continue_next
+3970 continue_next:
+3990 LET I0=K0
+4000 REM " --- Correct?"
+4010 data_correct:
+4015 v4$="Is the Above Correct (Y/N)"
+4020 LET V0$="S",V1$="KC^",V2$="Y",V3$="",V0=8,V1=FNV(V4$),V2=22
+4030 GOSUB addon_input
+4040 ON V3 GOTO continue_correct,data_correct,data_correct,data_correct,9900
+4050 continue_correct:
+4090 ON POS(V$="YN") GOTO data_correct,write_record,last_date
+4100 write_record:
+4110 if smc02$=smc02_hold$ then goto end_write_record
+4120 smc02$=field(smc02$)
+4130 writerecord(smc02_dev)smc02$
+4150 end_write_record:
+4160 k2$=key(smc02_dev,err=*next)
+4190 GOTO position_file
+4900 finish_up:
+4930 goto 9900
+5000 REM " --- Display record"
+5005 display_record:
+5010 arm01.cust_name$=" ",arm10d.code_desc$=" ",arm10f.slspsn_name$=" "
+5015 find record(arm01_dev,key=smc02.firm_id$+smc02.customer_nbr$,dom=*next)arm01$
+5020 find record(arm10_dev,key=smc02.firm_id$+"D"+smc02.dist_code$,dom=*next)arm10d$
+5025 find record(arm10_dev,key=smc02.firm_id$+"F"+smc02.slspsn_code$,dom=*next)arm10f$
+5030 PRINT @(20,3),smc02.ar_inv_nbr$,@(20,4),smc02.line_number$
+5040 PRINT @(20,5),smc02.last_trans_dt$,@(20,6),str(num(smc02.days_remaining$))
+5050 PRINT @(20,7),fnnum$(smc02.orig_amount$),@(20,8),fnnum$(smc02.unearned_bal$)
+5060 PRINT @(20,9),fnnum$(smc02.mtd_earned$),@(20,10),fnnum$(smc02.nmtd_earned$)
+5070 PRINT @(20,11),fnnum$(smc02.ytd_earned$),@(20,12),smc02.item_number$
+5080 PRINT @(20,13),smc02.dist_code$,"  ",'sb',arm10d.code_desc$
+5090 PRINT @(20,14),'sf',smc02.firm_id$,@(34,14),smc02.customer_nbr$,"  ",'sb',arm01.cust_name$
+5100 PRINT @(20,15),'sf',smc02.slspsn_code$,"  ",'sb',arm10f.slspsn_name$,'sf'
+5110 PRINT @(20,16),smc02.annual_dt$
+5190 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7005 addon_input:
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO addon_input
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO addon_input
+8000 REM " --- Functions"
+8010 DEF FNnum$(Q$)
+8020 q=0,q=num(q$,err=*next) 
+8030 return str(q:"######.00-")
+8040 fnend
+8080 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9220 GOTO position_file
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 REM " --- Return to menu"
+9950 RUN "SYS.AA"
+9999 END
+10100 check_date:
+10110 tmp$=""
+10120 while len(dt$)
+10130   if pos(dt$(1,1)="0123456789")=0 then continue
+10140   tmp$=tmp$+dt$(1,1),dt$=dt$(2)
+10150 wend
+10160 dt$=""
+10170 if len(tmp$)<>8 then return
+10180 mm=num(tmp$(5,2)),dd=num(tmp$(7,2)),yy=num(tmp$(1,4))
+10190 juldt=jul(yy,mm,dd),today=jul(0,0,0)
+10200 if juldt>today+365 or juldt<today-365 then return
+10210 dt$=tmp$
+10290 return

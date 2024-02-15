@@ -1,0 +1,69 @@
+// look up upgrade SN's in snt03 xref <aon_ugxref.rwi>
+
+repeat 
+{
+screen_desc$="Deactivated/Activated Serial Number Links";
+display/form="MAS_HEAD" screen_desc=screen_desc$ firm_name="";
+
+insn$="";
+prompt for /prompt="Serial Number? "
+	/imask="ZZZZZZZZZ"/row=8/len=9/help="(Enter=exit)"
+	insn$;
+if ctl(2) or insn$="" then goto the_end;
+found=0;
+
+find/next/noerror snt03 using insn$;
+new_sn:
+if available(snt03) and 
+	pos(insn$=snt03.serial_nbr_1)=1 then
+	{ 
+	sn1$=snt03.serial_nbr_1;
+	sn2$=snt03.serial_nbr_2;
+	sn1desc$="New SN: ";
+	sn2desc$="Old SN: ";
+	if action="A" then
+		{sn1desc$="Old SN: ";
+		sn2desc$="New SN: ";}
+	gosub sn_lookup;
+	find/next/noerror snt03;
+	goto new_sn;
+	}
+
+if found=0 then pause/message=insn$+" Not Found";
+	else display/newpage;
+}
+
+the_end:
+exit ;
+
+subroutine sn_lookup
+{
+sn$=sn1$;
+desc$=sn1desc$;
+lookitup:
+cust$="?";
+item$="?";
+revlvl$="?";
+active$="?";
+find/noerror snm01 using sn$;
+if available(snm01) then 
+   	{ 
+	cust$=snm01.customer_nbr;item$=snm01.port_id(1,4);
+	revlvl$=snm01.product_rev;active$=snm01.active_flag;
+	find/noerror csm04 using snm01.firm_id+revlvl$;
+	if available(csm04) then 
+		{revlvl$=csm04.description;
+		p=pos(" "=revlvl$); 
+		if p then revlvl$=revlvl$(1,p); }
+	}
+if active$="?" and snt03.action="A" then active$="N";
+active$="Active: "+active$;
+display desc$+sn$/col=0 active$/col=19
+"Cust: "+cust$/col=30 "Port: "+item$/col=44 "Rev: "+revlvl$/col=56;
+if sn$=sn1$ then
+ { sn$=sn2$;desc$=sn2desc$;goto lookitup;}
+display " ";
+found=found+1;
+}
+
+//

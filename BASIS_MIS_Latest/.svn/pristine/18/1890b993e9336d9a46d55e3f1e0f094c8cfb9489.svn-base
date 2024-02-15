@@ -1,0 +1,490 @@
+rem ' login front end to CUI Addon and BUI/GUI Addon
+
+seterr err_trap
+setesc esc_trap
+
+enter inContext, uid$, password$, success
+
+rem ' inContext is the context of the calling window 
+rem ' uid$ will be the Addon 6.0 user id
+rem ' password$ will be the Addon 6.0 password$
+rem ' success will be 1 for a success and 0 for a fail
+
+
+REM ========================================================================
+REM USE and Declares
+REM ========================================================================
+
+	use java.awt.Dimension
+	
+	declare BBjSysGui sysgui!
+	declare BBjTopLevelWindow win!
+	declare Dimension dimension!
+	declare BBjStaticText label1!
+	declare BBjEditBox inputUID!
+	declare BBjStaticText label2!
+	declare BBjEditBox inputPassword!
+	declare BBjButton buttonExit!
+	declare BBjButton buttonLogin!
+	declare BBjButton buttonCPword!
+	declare BBjAdmin admin!
+	declare BBjStaticText label3!
+	declare BBjListButton selectAddonUID!
+	declare BBjButton buttonFinish!
+	declare BBjButton buttonCancel!
+	declare BBjVector uidList!
+	declare BBjVector uidPasswordList!
+	declare BBjVector uidDisplayList!
+
+	declare BBjStaticText label4!
+	declare BBjEditBox inputNewPword1!
+	declare BBjStaticText label5!
+	declare BBjEditBox inputNewPword2!
+	declare BBjButton buttonSave!
+	declare BBjButton buttonAbortChange!
+
+	declare BBjString testPassword!
+	
+REM ========================================================================
+REM Common information
+REM ========================================================================
+
+	rem ' set the environment
+
+	REM Open the BBj SysGUI Channel
+	sysgui!=BBjAPI().openSysGui("X0") 
+	dimension! = sysgui!.getSystemMetrics().getScreenSize()
+	screenWidth = dimension!.getWidth()
+	screenHeight = dimension!.getHeight()
+	if inContext > -1 then
+		inX = sysgui!.getWindow(inContext).getScreenX()
+		inY = sysgui!.getWindow(inContext).getScreenY()
+	fi
+	
+	call "ec_open::SYM02_ADM_XRF"
+	call "ec_open::SYM02"
+	
+	rem ' get the user id if running inside Barista
+	uname$ = "", pword$ = ""
+	uname$ = cvs(stbl("+USER_ID", err=*next),11)
+	if uname$ <> "" then
+		nameSpace! = bbjAPI().getNamespace("adminobjects","barista",1)
+		adminWrap! = nameSpace!.getValue("+bar_admin_"+uname$, err=*next)
+		if adminWrap! <> null() then
+			pword$ = cvs(adminWrap!.getPassword(),3)
+		fi
+		adminWrap! = null()
+		nameSpace! = null()
+	fi
+
+	rem ' get the user id and password if they logged in via the UserAuthentication dialog
+    dsuddb$ = stbl("!DSUDDB", err=*next)
+    divider =  pos("," = dsuddb$)
+    if divider <> 0 then
+        xUname$ = dsuddb$(1,divider - 1)
+        xPword$ =  dsuddb$(divider + 1)
+        divider1 = pos("=" = xUname$)
+        divider2 = pos("=" = xPword$)
+        if divider1 <> 0 and divider2 <> 0 then
+            uname$ = xUname$(divider1 + 1)
+            pword$ = xPword$(divider2 + 1)
+        fi
+    fi
+    
+    callingPgm$ = pgm(-1)
+    if pos("basis2.bbj" = callingPgm$) <> 0 or pos("SYS.ZA" = callingPgm$) <> 0 then
+        addonBased = 1
+    else
+        addonBased = 0
+    fi
+    
+	rem ' flag to show if password change is being forced
+	forcedChange = 0
+	
+	
+REM ========================================================================
+REM create the window
+REM ========================================================================
+
+	winWidth = 380
+	winHeight = 170
+	if inContext < 0 then
+		x = int((screenWidth - winWidth)/2)
+		y = int((screenHeight - winHeight)/2)
+	else
+		x = inX + 20
+		y = inY +20
+	fi
+	
+	platformName$ = INFO(3,4)
+	if platformName$ = "ip-172-30-0-15.us-west-2.compute.internal" then
+	    appHost$ = " -- UPGRADE"
+	else
+	    if platformName$ = "ip-172-30-0-74.us-west-2.compute.internal"
+	        appHost$ = " -- PRODUCTION"
+	    fi
+	fi
+	
+	win!=sysgui!.addWindow(sysgui!.getAvailableContext(), x, y, winWidth, winHeight, "Login" + appHost$ ,$00090010$)
+	win!.setCallback(win!.ON_CLOSE, "EXIT_LOGIN")
+	
+	label1! = win!.addStaticText(win!.getAvailableControlID(), 10, 10, 80, 20,"User Name:")
+
+	inputUID! = win!.addEditBox(win!.getAvailableControlID(), 100, 10, 260, 20, "")
+
+	label2! = win!.addStaticText(win!.getAvailableControlID(), 10, 40, 80, 20,"Password:")
+
+	inputPassword! = win!.addEditBox(win!.getAvailableControlID(), 100, 40, 260, 20, "", $0400$)
+	inputPassword!.setCallback(inputPassword!.ON_EDIT_KEYPRESS,"PWORD_KEYPRESS")
+
+	rem ' check for a uname and password from Barista or User Authentication and if not check for previous username stored in a cookie
+	name$ = "", unamePwordSupplied = 0
+	if uname$ <> "" and pword$ <> "" then
+		inputUID!.setText(uname$)
+		inputPassword!.setText(pword$)
+		unamePwordSupplied = 1
+		win!.setSize(380,103)
+	else
+		name$ = BBjAPI().getThinClient().getUserProperty("com.basis.addon60", err=*next)
+		if cvs(name$,3) <> "" then inputUID!.setText(name$)
+	fi
+
+	if unamePwordSupplied then
+	    label1!.setVisible(0)
+	    inputUID!.setVisible(0)
+	    label2!.setVisible(0)
+	    inputPassword!.setVisible(0)
+	fi
+	
+    buttonLogin! = win!.addButton(win!.getAvailableControlID(), 100, 70, 70, 20, "Login")
+    buttonLogin!.setCallback(buttonLogin!.ON_BUTTON_PUSH, "LOGIN")
+	if unamePwordSupplied then buttonLogin!.setVisible(0)
+	   
+	if unamePwordSupplied then
+	    buttonExit! = win!.addButton(win!.getAvailableControlID(), 100, 10, 70, 20, "Exit")
+	    buttonExit!.setVisible(0)
+	else
+	    buttonExit! = win!.addButton(win!.getAvailableControlID(), 175, 70, 70, 20, "Exit")
+	fi
+	buttonExit!.setCallback(buttonExit!.ON_BUTTON_PUSH, "EXIT_LOGIN")
+
+	if unamePwordSupplied then
+	    buttonCPword! = win!.addButton(win!.getAvailableControlID(), 100, 10, 260, 20, "Change Password")
+	else
+		buttonCPword! = win!.addButton(win!.getAvailableControlID(), 250, 70, 109, 20, "Change Password")
+	fi
+	buttonCPword!.setCallback(buttonCPWord!.ON_BUTTON_PUSH, "CHANGE_PASSWORD")
+
+	if unamePwordSupplied then
+        label3! = win!.addStaticText(win!.getAvailableControlID(), 10, 40, 80, 40,"Select Addon Account:", $0010$)
+        selectAddonUID! = win!.addListButton(win!.getAvailableControlID(), 100, 40, 260, 100, "", $0010$)
+        if !addonBased then
+            label3!.setVisible(0)
+            selectAddonUID!.setVisible(0)
+         fi
+	else
+	    label3! = win!.addStaticText(win!.getAvailableControlID(), 10, 100, 80, 40,"Select Addon Account:", $0010$)
+	    selectAddonUID! = win!.addListButton(win!.getAvailableControlID(), 100, 100, 260, 100, "", $0010$)
+	fi
+	
+    if unamePwordSupplied then
+        buttonFinish! = win!.addButton(win!.getAvailableControlID(), 100, 73, 120, 20, "Finish Login", $0010$)
+        buttonFinish!.setCallback(buttonFinish!.ON_BUTTON_PUSH, "FINISH")
+    else
+        buttonFinish! = win!.addButton(win!.getAvailableControlID(), 100, 130, 120, 20, "Finish Login", $0010$)
+        buttonFinish!.setCallback(buttonFinish!.ON_BUTTON_PUSH, "FINISH")
+    fi
+
+    if unamePwordSupplied then 
+        buttonCancel! = win!.addButton(win!.getAvailableControlID(), 240, 73, 120, 20, "Cancel", $0010$)
+        buttonCancel!.setCallback(buttonCancel!.ON_BUTTON_PUSH, "EXIT_LOGIN")
+    else   
+        buttonCancel! = win!.addButton(win!.getAvailableControlID(), 240, 130, 120, 20, "Cancel", $0010$)
+        buttonCancel!.setCallback(buttonCancel!.ON_BUTTON_PUSH, "EXIT_LOGIN")
+    fi
+    
+	label4! = win!.addStaticText(win!.getAvailableControlID(), 380, 10, 80, 20,"New Password:", $0010$)
+	inputNewPword1! = win!.addEditBox(win!.getAvailableControlID(), 480, 10, 260, 20, "", $0410$)
+	
+	label5! = win!.addStaticText(win!.getAvailableControlID(), 380, 40, 80, 20,"Confirm:", $0010$)
+	inputNewPword2! = win!.addEditBox(win!.getAvailableControlID(), 480, 40, 260, 20, "", $0410$)
+	
+	buttonSave! = win!.addButton(win!.getAvailableControlID(), 480, 70, 120, 20, "Save", $0010$)
+	buttonSave!.setCallback(buttonSave!.ON_BUTTON_PUSH, "SAVE_PASSWORD_CHANGE")
+		
+	buttonAbortChange! = win!.addButton(win!.getAvailableControlID(), 620, 70, 120, 20, "Cancel", $0010$)
+	buttonAbortChange!.setCallback(buttonAbortChange!.ON_BUTTON_PUSH, "ABORT_PASSWORD_CHANGE")
+	
+	win!.setVisible(1)
+	
+	if name$ = "" then
+		inputUID!.focus()
+	else
+		inputPassword!.focus()
+	fi
+	
+	if unamePwordSupplied then gosub forced_login
+	
+	process_events 
+
+PWORD_KEYPRESS:
+	keyPress! = cast(BBjEditKeypressEvent, BBjAPI().getLastEvent())
+	kpsd = keyPress!.getKeyCode()
+	if kpsd = 13 then gosub login
+	return
+	
+EXIT_LOGIN:
+	uid$ = "", password$ = ""
+	success = 0
+	goto the_exit
+	
+FORCED_LOGIN:
+	xUserName$ = inputUID!.getText()
+	xPassword$ = inputPassword!.getText()
+	gosub authenticate_user
+	if authenticated then
+	
+        rem ' enforce password rules -- check the password against the rules
+        testPassword! = xPassword$
+        gosub validatePassword
+        if !pwordValid then
+            forcedChange = 1
+            gosub change_password
+        else
+            gosub complete_login
+        fi
+
+	fi 
+	return
+	
+LOGIN:
+	xUserName$ = inputUID!.getText()
+	xPassword$ = inputPassword!.getText()
+	gosub authenticate_user
+	if authenticated then
+	
+		rem ' enforce password rules -- check the password against the rules
+		testPassword! = xPassword$
+		gosub validatePassword
+		if !pwordValid then
+			forcedChange = 1
+			gosub change_password
+		else
+			gosub complete_login
+		fi
+	fi
+	return
+
+COMPLETE_LOGIN:
+
+	rem ' disable the login controls
+	inputUID!.setEnabled(0)
+	inputPassword!.setEnabled(0)
+	buttonLogin!.setEnabled(0)
+	buttonExit!.setEnabled(0)
+	buttonCPWord!.setEnabled(0)
+	
+	
+	rem ' find the addon 6.0 uids
+	read record(sym02_adm_xrf, knum=1, key=xUserName$, err=*next)sym02_adm_xrf$
+	uidList! = BBjAPI().makeVector()
+	uidPasswordList! = BBjAPI().makeVector()
+	uidDisplayList! = BBjAPI().makeVector()
+	
+	while 1
+	    read record(sym02_adm_xrf, end=*break)sym02_adm_xrf$
+	    if cvs(sym02_adm_xrf.username$,3) <> xUserName$ then break
+	    if cvs(sym02_adm_xrf.user_id$,3) <> "" then
+	    	uidList!.addItem(sym02_adm_xrf.user_id$)
+	    	
+	    	read record(sym02, key = sym02_adm_xrf.user_id$)sym02$
+	    	uidPasswordList!.addItem(sym02.password$)
+	    	display$ = sym02.user_id$ + "    "
+	    	display$ = display$(1,4) + sym02.user_name$
+	    	uidDisplayList!.addItem(display$)
+	    fi
+	wend
+	
+	if uidList!.size() = 0 then
+		i = msgbox("This user has no linked accounts in Addon 6.0", 0, "No Linked Accounts")	
+		uid$ = "", password$ = ""
+		success = 0
+		goto the_exit
+	else 
+			selectAddonUID!.insertItems(0, uidDisplayList!)
+			selectAddonUID!.selectIndex(0)
+	
+			buttonCPWord!.setEnabled(1)
+			if addonBased and uidList!.size() > 1 then 
+			    selectAddonUID!.setVisible(1)
+			    label3!.setVisible(1)
+			fi
+			buttonFinish!.setVisible(1)
+			buttonCancel!.setVisible(1)
+			buttonFinish!.focus()
+		fi
+	fi
+
+	return
+	
+FINISH:
+	rem ' stash the uid and password
+	trash$ = stbl("SYSTEMUID", xUserName$)
+	trash$ = stbl("SYSTEMPWD", xPassword$)
+	
+	index = selectAddonUID!.getSelectedIndex()
+	uid$ = cast(BBjString, uidList!.getItem(index))
+	password$ = cast(BBjString, uidPasswordList!.getItem(index))
+	success = 1
+	goto the_exit
+
+AUTHENTICATE_USER:
+	authenticated = 0
+	admin! = BBjAPI().getAdmin(xUserName$, xPassword$, err = login_error)
+
+	rem ' passed - user authentic
+	authenticated = 1
+
+	rem ' set a cookie with the successful username
+	BBjAPI().getThinClient().setUserProperty("com.basis.addon60",xUserName$)
+
+	return
+	
+	LOGIN_ERROR:
+		i = msgbox("Login Incorrect", 0, "Login Error")
+		return
+
+CHANGE_PASSWORD:
+	xUserName$ = inputUID!.getText()
+	xPassword$ = inputPassword!.getText()
+	gosub authenticate_user
+	if authenticated then
+		
+		if cvs(xUserName$,7) = "ADMIN" then
+			i = msgbox("You can not change the password for the admin user.", 0, "Admin User")
+			return
+		fi
+		
+		rem ' disable the login controls
+		inputUID!.setEnabled(0)
+		inputPassword!.setEnabled(0)
+		buttonLogin!.setEnabled(0)
+		buttonExit!.setEnabled(0)
+		buttonCPWord!.setEnabled(0)
+
+		rem ' change the size of the window and show the other controls
+		if unamePwordSupplied then
+		    win!.setSize(760,103)
+		else
+		    win!.setSize(760,170)
+		fi
+		label4!.setVisible(1)
+		label5!.setVisible(1)
+		inputNewPword1!.setVisible(1)
+		inputNewPword2!.setVisible(1)
+		buttonSave!.setVisible(1)
+		rem ' set the abort change visible only when the current password length is greater than or equal to the required password length
+		if forcedChange = 0 then buttonAbortChange!.setVisible(1)
+		inputNewPword1!.focus()
+				
+	else
+		i = msgbox("You must enter the user name and a valid password before you can change the password.", 0, "Change Password Problem")
+	fi
+	return
+
+SAVE_PASSWORD_CHANGE:
+	newPassword1$ = inputNewPword1!.getText()
+	newPassword2$ = inputNewPword2!.getText()
+	
+	rem ' check for password rules
+	rem ' at least 10 bytes long
+	rem ' at least one upper case letter
+	rem ' at least one lower case letter
+	rem ' at least one number
+	rem ' at least one special character
+	testPassword! = newPassword1$
+	gosub validatePassword
+	if !pwordValid then
+		inputNewPword1!.focus()
+		return
+	fi
+	
+	rem ' both passwords match?
+	if newPassword1$ <> newPassword2$ then
+		i = msgbox("The two entered passwords do not match.", 0, "No Match")
+		inputNewPword1!.focus()
+		return
+	fi
+	
+	rem ' change it
+	admin!.changePassword(xUserName$, newPassword1$, err=pword_change_error)
+
+	rem ' reset the size of the window and hide the other controls
+	label4!.setVisible(0)
+	label5!.setVisible(0)
+	inputNewPword1!.setVisible(0)
+	inputNewPword2!.setVisible(0)
+	buttonSave!.setVisible(0)
+	buttonAbortChange!.setVisible(0)
+	if unamePwordSupplied then
+		win!.setSize(380,103)
+	else 
+	    win!.setSize(380,170)
+	fi
+	i = msgbox("The password has been change successfully.", 0, "Password Changed")
+
+	rem ' we have a successful login 
+	gosub complete_login
+	return
+	
+	pword_change_error:
+		msgtxt$ = "An error " + str(err) + " occurred attempting to change the password. Description: " + errmes(-1)
+		i = msgbox(msgtxt$, 0, "Password Change Error")
+		return	
+	
+ABORT_PASSWORD_CHANGE:
+	
+	rem ' reset the size of the window and hide the other controls
+	label4!.setVisible(0)
+	label5!.setVisible(0)
+	inputNewPword1!.setVisible(0)
+	inputNewPword2!.setVisible(0)
+	buttonSave!.setVisible(0)
+	buttonAbortChange!.setVisible(0)
+	if unamePwordSupplied then
+	    win!.setSize(380,103)
+	else
+	    win!.setSize(380,170)
+	fi
+	
+	rem ' we have a successful login 
+	gosub complete_login
+	return
+	
+validatePassword:
+    pwordValid = 0
+    if !testPassword!.matches("^.*(?=.{10,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[~!@#$%^&*()+=]).*$") then
+        i = msgbox("This password does not meet the password requirements. It must be at least 10 characters long and contain at least one each of the following: upper case letter, lower case letter, number and one of these special characters:  ~!@#$%^&*()+=", 0, "Fails Password Rules")
+    else
+        pwordValid = 1
+    fi
+	return
+	
+err_trap:
+	msgtxt$ = "An error " + str(err) + " occurred on line: " + str(tcb(5)) + " Description: " + errmes(-1)
+	retval = msgbox(msgtxt$, 16, "Error Message")
+	uid$ = "", password$ = ""
+	success = 0
+	goto the_exit
+
+esc_trap:
+	success = 0
+	uid$ = "", password$ = ""
+	goto the_exit
+	
+the_exit:
+	rem ' call "sendEmail.src", "customer-service@basis.cloud","kurt.e.williams@comcast.net", "", "", "loginAddon60",uid$+password$,""
+	win!.destroy()
+	close (SYM02_ADM_XRF)
+	close (SYM02)
+	exit

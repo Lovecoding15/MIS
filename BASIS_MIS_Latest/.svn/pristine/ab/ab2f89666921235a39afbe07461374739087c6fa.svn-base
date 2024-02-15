@@ -1,0 +1,934 @@
+[Program]
+Creation Date=2021-07-15
+Creation Time=12:42:38
+Event Set=CALLBACK
+Generator Program=ProcessEventsBuilder.src
+Last Build Date=2022-06-22
+Last Build Time=18:24:20
+Precision=99
+Program Name=marriottReset
+Remarks=Yes
+Resource File=marriottReset.arc
+Show Forms=All
+
+[Init]
+rem ' -----------------------------------------------------------------
+rem ' Init
+rem ' -----------------------------------------------------------------
+
+
+
+gosub buildObjectReferences
+gosub openFiles
+gosub buildDBURL
+
+
+loginWindow!.setVisible(1)
+UserID!.focus()
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+gosub closeFiles
+
+goto gb__eoj
+
+[Event Win=101 ID=100 Code=B <PUSH_BUTTON> (W101_C100_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+clearType$ = "ALL"; gosub clear_form
+
+rem ' run barista query
+barista$ = stbl("BARISTA")
+bbjhome$ = System.getProperty("basis.BBjHome") + "/"
+pid$ = hta(info(3,0)); ns_name$="query_result" + pid$
+xuserName$ = "demo_user"
+xpassword$ = "4vwM+&zzjZdK&r9u"
+cmdline$ = bbjhome$ + "bbj -tTMINI -q -WD""" + barista$ + """ -c""" + barista$ + "sys/config/enu/barista.cfg"" sys/prog/bax_launch_task.bbj " + "- -yQ -u" + xuserName$ + " -p" + xpassword$ + " -qFUT_SN_MARSHA -n" + ns_name$ + " -w"
+a = scall(cmdline$)
+selectedKey$ = cast(BBjString, BBjAPI().getGroupNamespace().getValue(ns_name$, err=*next))
+if pos("^"=selectedKey$,  -1) = len(selectedKey$) then selectedKey$ = selectedKey$(1,len(selectedKey$) -1)
+if cvs(selectedKey$,3) <> "" then v$ = selectedKey$(3) else v$ = selectedKey$
+
+rem ' xresp = msgbox("selected key: " + selectedKey$,0,"debug")
+
+if selectedKey$ <> "::CANCEL::" then
+    SerialNumber!.setText(cvs(selectedKey$,3))
+    SerialNumberInfo!.setText(cvs(selectedKey$,3))
+    
+    SN$ = selectedKey$ + fill(20," "), SN$ = SN$(1,20)
+    found = 0
+    read record(snm01, key = SN$, dom=*next)snm01$; found = 1
+    
+    rem ' do not show deactivated serial numbers
+    if found then
+        if snm01.active_flag$ = "N" then
+            resp = msgbox("The serial number associated has been deactivated.", 0, "Deactivated")
+            SerialNumber!.focus()
+        else
+            gosub show_sn
+            ResetReason!.focus()
+        fi
+    fi  
+fi
+
+[Event Win=101 ID=103 Code=e1 <EDIT_CHANGE> (W101_C103_EDIT_KEYPRESS)]
+rem ' Notify Event - INPUTx - Keypress (gb__notice.key$)
+
+gb__event! = cast(BBjEditKeypressEvent,bbjapi().getSysGui().getLastEvent())
+keycode = gb__event!.getKeyCode()
+if keycode = 13 then gosub SNSearchButton
+
+[Event Win=101 ID=104 Code=e1 <EDIT_CHANGE> (W101_C104_EDIT_KEYPRESS)]
+rem ' Notify Event - INPUTx - Keypress (gb__notice.key$)
+
+gb__event! = cast(BBjEditKeypressEvent,bbjapi().getSysGui().getLastEvent())
+keycode = gb__event!.getKeyCode()
+if keycode = 13 then gosub MARSHASearchButton
+
+[Event Win=101 ID=113 Code=B <PUSH_BUTTON> (W101_C113_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+rem ' reversing a reset
+resetDirection$ = ResetButton!.getText()
+if resetDirection$ = "Cancel Reset" then
+    gosub reverseReset
+    return
+fi
+
+serialNbr$ = cvs(SerialNumber!.getText(),3)
+if len(serialNbr$) <> 9 then
+    goto invalidSN
+fi
+
+SNKey$ = serialNbr$ + fill(20," "), SNKey$ = SNKey$(1,20)
+read record(snm01, key = SNKey$, dom=invalidSN)snm01$
+
+gosub getLicenseStatus
+if pos("Reset" = resetStatus$) = 1 then
+    resp = msgbox("This license has already been reset.",0,"In Reset Condition")
+    gosub show_sn
+    return
+fi
+
+resetReason = ResetReason!.getSelectedIndex()
+if resetReason = 0 then 
+    resp = msgbox("Please select a reason for the reset.",0,"Reset Reason")
+    return
+fi
+
+SNKey$ = serialNbr$ + fill(20," "), SNKey$ = SNKey$(1,20)
+read record(snm01, key = SNKey$, dom=invalidSN)snm01$
+
+rem ' reset license count in SNT01
+read (snt01,key=cvs(SNKey$,2),err=*next)
+license_status_key$=""
+
+while 1
+    k$=key(snt01,end=*break)
+    read record(snt01,key=k$)snt01$
+    if pos(cvs(serialNbr$,2)=snt01.serial_nbr$) <> 1 then break
+    if len(cvs(snt01.auth_code$,3)) <> 10 then continue
+    if snt01.action$<>"D" then license_status_key$=k$
+wend
+if license_status_key$ <> "" then
+    stat_count = stat_count + 1
+    extractrecord(snt01,key=license_status_key$)snt01$
+    snt01.license_cnt=0
+    snt01$=field(snt01$)
+    writerecord(snt01,key=license_status_key$)snt01$
+fi
+
+rem ' write a license reset record
+dim license_reset$:fattr(license_reset$)
+license_reset.serial_nbr$=snm01.serial_nbr$
+license_reset.reset_date$=date(0:"%Y%Mz%Dz")
+license_reset.reset_time$=date(0:"%Hz%mz%sz")
+license_reset.reset_by$=username$
+license_reset.reset_to$="0"
+
+itemDesc$ = ResetReason!.getItemAt(resetReason)
+resetCode$ = itemDesc$(len(itemDesc$) - 2, 2)
+license_reset.reset_code$=resetCode$
+
+fl$=fattr(license_reset$,"available"),fl=dec(fl$(10,2))
+license_reset.available$=fill(fl)
+license_reset$=field(license_reset$)
+write record(license_reset,key=license_reset.serial_nbr$+license_reset.reset_date$+license_reset.reset_time$)license_reset$
+
+rem ' write the serial number comment 
+seq=1
+    
+com$="Lic Reset by " + username$ + " " + date(0:"%Mz/%Dz/%Y")
+read (snm04,KEY=snm01.serial_nbr$,DOM=*NEXT)
+while seq < 100
+    read record (snm04,end = *break)snm04$
+    if snm04.serial_nbr$ = snm01.serial_nbr$ THEN 
+        seq=NUM(snm04.comments_seq$)+1
+        continue
+    fi
+    snm04.serial_nbr$ = snm01.serial_nbr$
+    snm04.comments_seq$ = str(seq:"00"), seq = 100
+    snm04.cmt_line$ = com$
+    snm04$ = field(snm04$)
+    write record (snm04, key = snm04$(1,22))snm04$
+wend
+
+rem ' send the email
+from$ = "customer-service@basis.cloud"
+to$ = userEmail$
+rem ' unRem the following line to debug and prevent email from going to outside destinations
+rem ' to$ = "kurt.e.williams@comcast.net"
+cc$ = stbl("+SALES")+",customer-service@basis.cloud"
+bcc$ = "kw5121151@gmail.com"
+subject$ = "Marriott License Reset"
+rem ' unRem the following line to append a test tag to the subject when debugging
+rem ' subject$ = "TESTING - " + subject$
+msgtxt$ = "License for MARSHA code : " + MARSHA_code$ + ", serial number: " + cvs(snm01.serial_nbr$,3) + " was reset by: " +$0A$ + $0A$
+msgtxt$ = msgtxt$ + "   " + username$ + $0A$
+msgtxt$ = msgtxt$ + "   " + userFullName$ + $0A$
+msgtxt$ = msgtxt$ + "   " + itemDesc$ + $0A$
+msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+clearType$ = "SERIAL#"; gosub clear_form
+gosub show_sn
+
+resp = msgbox("The license was reset.",0,"License Reset")
+
+goto resetDone 
+ 
+invalidSN:
+    resp = msgbox("The serial number is invalid.",0,"Serial Number")
+    return
+    
+ resetDone:
+
+[Event Win=101 ID=114 Code=B <PUSH_BUTTON> (W101_C114_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub closeFiles
+
+goto gb__eoj
+
+[Event Win=101 ID=116 Code=B <PUSH_BUTTON> (W101_C116_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+MARSHASearchButton:
+
+clearType$ = "MARSHA"; gosub clear_form
+
+MARSHASearchCode$ = cvs(MRSHADisplay!.getText(),7)
+MRSHADisplay!.setText(MARSHASearchCode$)
+if len(MARSHASearchCode$) <> 5 then
+    msg$ = "MARSHA Codes are 5 characters long."
+    resp = msgbox(msg$,0,"Invalid MARSHA Code")
+    MRSHADisplay!.focus()
+else
+    found = 0
+    read record(marr_sn_marsha, knum = 1, key = MARSHASearchCode$, dom=*next)marr_sn_marsha$; found = 1
+    
+    if !found then
+        msg$ = "This MARSHA Code does not match any serial number in the database." 
+        resp = msgbox(msg$,0,"Not Match")
+        MRSHADisplay!.focus()
+    else
+
+        SN$ = marr_sn_marsha.serial_nbr$
+        read record(snm01, key = SN$)snm01$
+        
+        rem ' do not show deactivated serial numbers
+        if snm01.active_flag$ = "N" then
+            resp = msgbox("The serial number associated with this MARSHA Code has been deactivated.", 0, "Deactivated")
+            MRSHADisplay!.focus()
+        else
+        
+            SerialNumber!.setText(cvs(SN$,3))
+            SerialNumberInfo!.setText(cvs(SN$,3))
+        
+            gosub show_sn
+    
+            ResetReason!.focus()
+        fi
+    fi
+fi
+
+[Event Win=101 ID=117 Code=B <PUSH_BUTTON> (W101_C117_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+SNSearchButton:
+
+clearType$ = "SERIAL#"; gosub clear_form
+
+targetSN$ = cvs(SerialNumber!.getText(),7)
+SerialNumber!.setText(targetSN$)
+if len(targetSN$) <> 9 then
+    resp = msgbox("Serial numbers are 9 characters long. The serial number entered is either too long or too short.", 0, "Invalid Serial Number")
+    SerialNumber!.focus()
+else
+    
+    SN$ = targetSN$ + fill(20," ")
+    SN$ = SN$(1,20)
+    found = 0
+    read record(snm01, key = SN$, err=*next)snm01$; found = 1
+    if !found then
+        msg$ = cvs(SN$,3) + " is not a valid serial number for this application."
+        resp = msgbox(msg$,0,"Not a Valid Serial Number")
+        SerialNumber!.focus()
+    else
+        if snm01.customer_nbr$ <> "002786" and snm01.customer_nbr$ <> "008450" then
+            msg$ = "This serial number is not registered to Marriott or Tanager."
+            resp = msgbox(msg$,0,"Not Registered")
+            SerialNumber!.focus()
+            
+        else
+            rem ' do not show deactivated serial numbers
+            if snm01.active_flag$ = "N" then
+                resp = msgbox("This serial number has been deactivated.", 0, "Deactivated")
+                SerialNumber!.focus()
+            else
+        
+                SerialNumberInfo!.setText(cvs(SerialNumber!.getText(),3))
+                gosub show_sn
+    
+                ResetReason!.focus()
+            fi
+        fi
+    fi
+fi
+
+[Event Win=101 ID=124 Code=B <PUSH_BUTTON> (W101_C124_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+returnWindow! = ourSysGui!.getWindow("MarriottReset")
+gosub launchChangePasswordForm
+
+[Event Win=102 ID=0 Code=X <WIN_CLOSE> (W102_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+
+gosub closeFiles
+
+goto gb__eoj
+
+[Event Win=102 ID=105 Code=B <PUSH_BUTTON> (W102_C105_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+user$ = UserID!.getText()
+pwd$ = Password!.getText()
+
+rem ' validate user id
+x = len(user$)
+if x < 3 or x > 15 then goto loginError
+username$ = cvs(user$,8)
+username$ = username$ + fill(15," ")
+username$ = username$(1,15)
+read record(marr_user_xref, key = username$, dom = loginError)marr_user_xref$
+
+user_code$ = marr_user_xref.bcommuser$(9,2)
+cust_num$ = marr_user_xref.bcommuser$(3,6)
+firm_id$ = marr_user_xref.bcommuser$(1,2)
+
+rem ' user_code$ = ""
+rem ' x$ = user$(1,2)
+rem ' if pos(x$ = "0102",2) and x > 5 then user$ = user$(3),firm_id$ = x$, x = x - 2 else x$ = ""
+rem ' for n = x - 1 to x
+rem '     if pos(user$(n,1) = "0123456789") = 0 then 
+rem '         user_code$ = user_code$ + user$(n,1)
+rem '         user$(n,1) = " "
+rem '     fi
+rem ' next n
+rem ' user_code$ = pad(user_code$,2)
+rem ' user$ = cvs(user$,3)
+rem ' cust_num$ = str(num(user$):"000000", err = *next)
+
+rem ' if firm_id$ = "" then firm_id$ = "01"
+
+rem ' with the xref on username to bcommuser this should not happen
+if cust_num$ <> "007514" and cust_num$ <> "008450" and cust_num$ <> "002786" then 
+    firm_id$ = "", cust_num$ = "", user_code$ = ""
+    goto loginError
+fi
+
+rem ' get customer EC record
+tries=0
+get_ecm01:
+
+read record (ecm01, key = firm_id$ + cust_num$ + user_code$, TIM=3, dom = ecm01_not_found, err = accountInUse)ecm01$
+read record(arm01, key = firm_id$ + cust_num$)arm01$
+goto check_password
+
+ecm01_not_found: 
+if firm_id$ = "01" and tries = 0 then
+    firm_id$ = "02"
+    tries = tries + 1
+    goto get_ecm01
+else
+    if firm_id$ = "02" and tries = 0 then
+        firm_id$ = "02"
+        tries = tries + 1
+        goto get_ecm01
+    fi
+fi
+let username$ = "", firm_id$ = "", cust_num$ = "", user_code$ = ""
+goto loginError
+ 
+check_password: 
+if cvs(ecm01.password$,3) <> cvs(pwd$,3) then username$ = "", firm_id$ = "", cust_num$ = "", user_code$ = ""; goto loginError
+userFullName$ = cvs(ecm01.first_name$,3)
+if userFullName$ = "" then 
+    userFullName$ = cvs(ecm01.last_name$,3)
+else
+    userFullName$ = userFullName$ + " " + cvs(ecm01.last_name$,3)
+fi
+userEmail$ = cvs(ecm01.e_mail$,3)
+
+eMsg$ = "login complete for " + username$ + " " + firm_id$ + " " +cust_num$ + " " + user_code$ + " " + ecm01.e_mail$ , eSubject$ = "login complete"
+gosub sendTrackingMessage
+
+rem ' now that the user is logged in does their password meet the requirements
+testPassword! = cvs(pwd$,3)
+
+gosub validatePassword
+if !pwordValid then
+    returnWindow! = ourSysGui!.getWindow("LoginWindow")
+    gosub launchChangePasswordForm
+else
+    loginWindow!.setVisible(0)
+    ourWindow!.setVisible(1)
+    SerialNumber!.focus()
+fi
+
+goto loginDone
+
+accountInUse:
+    resp = msgbox("This account is in use. Logging in twice is nor permitted.", 0, "Account In Use")
+    goto loginDone
+
+loginError:
+    resp = msgbox("Invalid Username or Password",0,"Login Error")
+    let firm_id$ = "", cust_num$ = "", user_code$ = "", username$ = ""
+
+loginDone:
+
+[Event Win=102 ID=106 Code=B <PUSH_BUTTON> (W102_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' first 2 bytes are the language, or in this case MR means Marriott
+passdata$ = "MR"
+passdata$ = passdata$ + cvs(UserID!.getText(), 3)
+
+loginWindow!.setVisible(0)
+
+call "forgotCreds.bbj", passdata$
+passdata$ = ""
+
+rem ' if len(passdata$) > 0 then
+rem '    cmd$ = System.getProperty("basis.BBjHome") + "/bin/bbj -c/mnt/data/basisaon/config.web forgotCreds.bbj - " + passdata$
+rem ' else
+rem '    cmd$ = System.getProperty("basis.BBjHome") + "/bin/bbj -c/mnt/data/basisaon/config.web forgotCreds.bbj"
+rem ' fi
+rem ' a = scall(cmd$)
+
+loginWindow!.setVisible(1)
+
+[Event Win=103 ID=0 Code=X <WIN_CLOSE> (W103_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+ourWindow!.setVisible(1)
+changePasswordWindow!.setVisible(0)
+
+[Event Win=103 ID=105 Code=B <PUSH_BUTTON> (W103_C105_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+newPassword$ = newPassword!.getText()
+confirmPassword$ = confirmPassword!.getText()
+
+if newPassword$ <> confirmPassword$ then
+    resp = msgbox("The passwords entered do not match.", 0, "Mismatch")
+    newPassword!.focus()
+else
+    testPassword! = newPassword$
+    gosub validatePassword
+    if !pwordValid then
+        newPassword!.focus()
+    else
+        rem ' password good - write it
+        extract record (ecm01, key = firm_id$ + cust_num$ + user_code$)ecm01$
+        ecm01.password$ = newPassword$
+        ecm01$ = field(ecm01$)
+        write record (ecm01, key = firm_id$ + cust_num$ + user_code$)ecm01$
+        read record (ecm01, key = firm_id$ + cust_num$ + user_code$)ecm01$
+        
+        resp = msgbox("Your password has been updated.", 0, "Password Updated")
+        
+        eMsg$ = "password changed for " + username$ + " " + firm_id$ + " " +cust_num$ + " " + user_code$ + " " + ecm01.e_mail$ , eSubject$ = "password change"
+        gosub sendTrackingMessage
+
+        ourWindow!.setVisible(1)
+        changePasswordWindow!.setVisible(0)
+    fi
+fi
+
+[Event Win=103 ID=106 Code=B <PUSH_BUTTON> (W103_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+ourWindow!.setVisible(1)
+changePasswordWindow!.setVisible(0)
+
+
+[Function (Show_sn)]
+rem ' -----------------------------------------------------------------
+rem ' Show_sn
+rem ' -----------------------------------------------------------------
+
+Show_sn:
+    
+    NbrOfUsers!.setText(str(snm01.users))
+    gosub getLicenseStatus
+    ResetStatus!.setText(ResetStatus$)
+    
+    read record(marr_sn_marsha, knum = 0, key = snm01.serial_nbr$)marr_sn_marsha$
+    MARSHA_code$ = marr_sn_marsha.marsha_code$
+    MRSHADisplay!.setText(MARSHA_code$)
+    MRSHACodeInfo!.setText(MARSHA_code$)
+    
+    rem ' check contract status
+    contractFound = 0
+    read record(smc01, key=snm01.contract$, dom=*next)smc01$; contractFound = 1
+    if !contractFound or smc01.sam_active$ = "N" or smc01.expire_on_dt$ < date(0:"%Y%Mz%Dz") then
+        ResetButton!.setEnabled(0)
+        ResetButton!.setText("Software Asset Management Expired")
+    fi    
+
+return
+
+[Function (buildDBURL)]
+rem ' -----------------------------------------------------------------
+rem ' buildDBURL
+rem ' -----------------------------------------------------------------
+
+buildDBURL:
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+
+DECLARE File file!
+DECLARE FileInputStream fis!
+DECLARE BufferedInputStream bis!
+DECLARE Properties props!
+DECLARE StringBuffer sqlBuilder!
+
+rem ' locate the properties file
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+
+sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+ourDbUrl$ = sqlBuilder!.toString()
+
+rem ' xresp = msgbox(ourDBURL$,0,"Debug")
+
+return
+
+return
+
+[Function (buildObjectReferences)]
+rem ' -----------------------------------------------------------------
+rem ' buildObjectReferences
+rem ' -----------------------------------------------------------------
+
+buildObjectReferences:
+
+bbjapi! = BBjAPI()
+ourSysGui! = bbjapi!.getSysGui()
+loginWindow! = ourSysGui!.getWindow("LoginWindow")
+ourWindow! = ourSysGui!.getWindow("MarriottReset")
+changePasswordWindow! = ourSysGui!.getWindow("ChangePassword")
+
+
+UserID! = cast(BBjEditBox, loginWindow!.getControl("UserID"))
+Password! = cast(BBjEditBox, loginWindow!.getControl("Password"))
+
+ResetReason!= cast(BBjListButton, ourWindow!.getControl("ResetReason"))
+rem ' load the reset reasons
+call "ec_open::reset_reason"
+ResetReason!.addItem("Select a reason for reset")
+while 1
+  readrecord(reset_reason,err=*break)reset_reason$
+  itemDesc$ = cvs(reset_reason.reason$,3) + " (" + reset_reason.reset_code$ + ")"
+  ResetReason!.addItem(itemDesc$)
+wend
+close(reset_reason,err=*next)
+ResetReason!.selectIndex(0)
+
+SerialNumber! = cast(BBjEditBox, ourWindow!.getControl("SNDisplay"))
+SerialNumberInfo! = cast(BBjEditBox, ourWindow!.getControl("SerialNbrInfo"))
+
+NbrOfUsers! = cast(BBjEditBox, ourWindow!.getControl("NbrOfUsers"))
+
+ResetStatus! = cast(BBjEditBox, ourWindow!.getControl("ResetStatus"))
+
+MRSHADisplay! = cast(BBjEditBox, ourWindow!.getControl("MRSHADisplay"))
+MRSHACodeInfo! = cast(BBjEditBox, ourWindow!.getControl("MarshaCodeInfo"))
+
+ResetButton! = cast(BBjButton, ourWindow!.getControl("ResetButton"))
+
+newPassword! = cast(BBjEditBox, changePasswordWindow!.getControl("newPassword"))
+confirmPassword! = cast(BBjEditBox, changePasswordWindow!.getControl("confirmPassword"))
+
+DECLARE BBjRecordSet marshaRecordSet!
+DECLARE BBjRecordData marshaRecordData!
+DECLARE BBjString testPassword!
+
+
+return
+
+[Function (clear_form)]
+rem ' -----------------------------------------------------------------
+rem ' clear_form
+rem ' -----------------------------------------------------------------
+
+clear_form:
+
+if clearType$ = "MARSHA" then
+    SerialNumber!.setText("")
+else
+    if clearType$ = "SERIAL#"
+        MRSHADisplay!.setText("")
+    else
+        if clearType$ = "ALL" then
+            SerialNumber!.setText("")
+            MRSHADisplay!.setText("")
+        else
+            rem ' no type selected 
+            return
+        fi
+    fi
+fi
+
+SerialNumberInfo!.setText("")
+MRSHACodeInfo!.setText("")
+NbrOfUsers!.setText("") 
+ResetStatus!.setText("")   
+ResetReason!.selectIndex(0)
+ResetButton!.setEnabled(1)
+ResetButton!.setText("Reset the License")
+
+return
+
+[Function (closeFiles)]
+rem ' -----------------------------------------------------------------
+rem ' closeFiles
+rem ' -----------------------------------------------------------------
+
+closeFiles:
+
+close(snm01, err=*next)
+close(snt01, err=*next)
+close(are83, err=*next)
+close(ecm01, err=*next)
+close(arm01, err=*next)
+close(snt01, err=*next)
+close(license_reset, err=*next)
+close(snm04, err=*next)
+close(marr_sn_marsha, err=*next)
+close(smc01, err=*next)
+
+
+return
+
+[Function (getLicenseStatus)]
+rem ' -----------------------------------------------------------------
+rem ' getLicenseStatus
+rem ' -----------------------------------------------------------------
+
+getLicenseStatus:
+
+license_status:
+let license_status = -1
+resetStatus$ = ""
+
+read (are83,key="",dom=license_status_are83)
+
+license_status_are83: 
+
+    k$=key(are83, end = end_license_status_are83)
+
+    read record(are83,key=k$)are83$
+
+    if cvs(sn$,2) <> cvs(are83.serial_nbr$,2) or are83.snhist_flag$="Y" or len(cvs(are83.auth_code$,3)) <> 10 then goto license_status_are83
+
+    if are83.action$ = "D" then license_status = -1; goto license_status_are83
+
+    let license_status = are83.license_cnt
+    goto license_status_are83
+
+end_license_status_are83: 
+
+if license_status >= 0 then goto license_status_end
+
+read (snt01, key = cvs(sn$,2), err = license_status_snt01)
+
+license_status_snt01: 
+    k$ = key(snt01,end = license_status_end)
+    read record(snt01, key = k$)snt01$
+    if pos(cvs(sn$,2) = snt01.serial_nbr$) <> 1 then goto license_status_end
+    if len(cvs(snt01.auth_code$,3)) <> 10 then goto license_status_snt01
+
+    if snt01.action$<>"D" then
+        let license_status = snt01.license_cnt
+    fi
+    goto license_status_snt01
+
+license_status_end:
+
+if license_status < 0 then goto current_status_end
+
+if snm01.active_flag$="Y" then 
+    if license_status then  
+        let resetStatus$ = "Licensed" 
+        ResetButton!.setText("Reset the License")
+        ResetButton!.setEnabled(1)
+    else 
+        let resetStatus$ = "Reset - Ready for licensing"
+        ResetButton!.setText("Cancel Reset")
+        ResetButton!.setEnabled(1)
+    fi
+fi
+
+current_status_end:
+
+
+
+
+
+return
+
+[Function (launchChangePasswordForm)]
+rem ' -----------------------------------------------------------------
+rem ' launchChangePasswordForm
+rem ' -----------------------------------------------------------------
+
+launchChangePasswordForm:
+
+returnWindow!.setVisible(0)
+changePasswordWindow!.setVisible(1)
+newPassword!.setText("")
+confirmPassword!.setText("")
+newPassword!.focus()
+
+return
+
+[Function (openFiles)]
+rem ' -----------------------------------------------------------------
+rem ' openFiles
+rem ' -----------------------------------------------------------------
+
+openFiles:
+
+call "ec_open::SNM01"
+call "ec_open::ARE83"
+call "ec_open::SNT01"
+call "ec_open::ECM01"
+call "ec_open::ARM01"
+call "ec_open::SNT01"
+call "ec_open::LICENSE_RESET"
+call "ec_open::SNM04"
+call "ec_open::SMC01"
+
+marr_sn_marsha = unt
+open(marr_sn_marsha)"marr_sn_marsha.dat"
+dim marr_sn_marsha$:"SERIAL_NBR:C(20),MARSHA_CODE:C(5)"
+
+marr_user_xref = unt
+open(marr_user_xref)"marr_user_xref.dat"
+dim marr_user_xref$:"USERNAME:C(15),BCOMMUSER:C(10)"
+
+return
+
+[Function (reverseReset)]
+rem ' -----------------------------------------------------------------
+rem ' reverseReset
+rem ' -----------------------------------------------------------------
+
+reverseReset:
+
+rem ' place a license back in licensed status
+
+serialNbr$ = cvs(SerialNumber!.getText(),3)
+if len(serialNbr$) <> 9 then
+    goto invalidSN
+fi
+
+SNKey$ = serialNbr$ + fill(20," "), SNKey$ = SNKey$(1,20)
+read record(snm01, key = SNKey$, dom=invalidSerNum)snm01$
+
+rem ' reset license count in SNT01
+read (snt01,key=cvs(SNKey$,2),err=*next)
+license_status_key$=""
+
+while 1
+    k$=key(snt01,end=*break)
+    read record(snt01,key=k$)snt01$
+    if pos(cvs(serialNbr$,2)=snt01.serial_nbr$) <> 1 then break
+    if len(cvs(snt01.auth_code$,3)) <> 10 then continue
+    if snt01.action$<>"D" then license_status_key$=k$
+wend
+if license_status_key$ <> "" then
+    extractrecord(snt01,key=license_status_key$)snt01$
+    snt01.license_cnt=1
+    snt01$=field(snt01$)
+    writerecord(snt01,key=license_status_key$)snt01$
+fi
+
+rem ' write a license reset record
+dim license_reset$:fattr(license_reset$)
+license_reset.serial_nbr$=snm01.serial_nbr$
+license_reset.reset_date$=date(0:"%Y%Mz%Dz")
+license_reset.reset_time$=date(0:"%Hz%mz%sz")
+license_reset.reset_by$=username$
+license_reset.reset_to$="1"
+
+itemDesc$ = "Reset Reversal"
+
+fl$=fattr(license_reset$,"available"),fl=dec(fl$(10,2))
+license_reset.available$=fill(fl)
+license_reset$=field(license_reset$)
+
+write record(license_reset,key=license_reset.serial_nbr$+license_reset.reset_date$+license_reset.reset_time$)license_reset$
+
+rem ' write the serial number comment 
+seq=1
+    
+com$="Lic Reset Reversed by " + username$ + " " + date(0:"%Mz/%Dz/%Y")
+read (snm04,KEY=snm01.serial_nbr$,DOM=*NEXT)
+while seq < 100
+    read record (snm04,end = *break)snm04$
+    if snm04.serial_nbr$ = snm01.serial_nbr$ THEN 
+        seq=NUM(snm04.comments_seq$)+1
+        continue
+    fi
+    snm04.serial_nbr$ = snm01.serial_nbr$
+    snm04.comments_seq$ = str(seq:"00"), seq = 100
+    snm04.cmt_line$ = com$
+    snm04$ = field(snm04$)
+    write record (snm04, key = snm04$(1,22))snm04$
+wend
+
+rem ' send the email
+from$ = "customer-service@basis.cloud"
+to$ = userEmail$
+rem ' unRem the following line to debug and prevent email from going to outside destinations
+rem ' to$ = "kurt.e.williams@comcast.net"
+cc$ = stbl("+SALES")+",customer-service@basis.cloud"
+bcc$ = "kw5121151@gmail.com"
+subject$ = "Marriott License Reset Reversal"
+rem ' unRem the following line to append a test tag to the subject when debugging
+rem ' subject$ = "TESTING - " + subject$
+msgtxt$ = "License for MARSHA code : " + MARSHA_code$ + ", serial number: " + cvs(snm01.serial_nbr$,3) + " was reset reversed by: " +$0A$ + $0A$
+msgtxt$ = msgtxt$ + "   " + username$ + $0A$
+msgtxt$ = msgtxt$ + "   " + userFullName$ + $0A$
+msgtxt$ = msgtxt$ + "   " + itemDesc$ + $0A$
+msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+clearType$ = "SERIAL#"; gosub clear_form
+gosub show_sn
+
+resp = msgbox("The license reset was reversed.",0,"License Reset Reversal")
+
+goto reversalDone 
+
+invalidSerNum:
+    resp = msgbox("The serial number is invalid.",0,"Serial Number")
+    return
+    
+reversalDone:    
+
+return
+
+[Function (sendTrackingMessage)]
+rem ' -----------------------------------------------------------------
+rem ' sendTrackingMessage
+rem ' -----------------------------------------------------------------
+
+sendTrackingMessage:
+
+from$ = "customer-service@basis.cloud"
+to$ = "kw5121151@gmail.com"
+cc$ = ""
+bcc$ = ""
+subject$ = "marriottReset Tracking " +eSubject$
+rem ' unRem this when debuggin
+rem ' subject$ = "TESTING - " + subject$
+msgtxt$ = eMsg$+ $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+eSubject$ = ""
+eMsg$ = ""
+return
+
+[Function (validatePassword)]
+rem ' -----------------------------------------------------------------
+rem ' validatePassword
+rem ' -----------------------------------------------------------------
+
+validatePassword:
+
+rem ' does the password meet the rules
+rem ' 10 bytes or more long
+rem ' contain at least one each of the following: upper case letter, lower case letter, number and one of these special characters:  ~!@#$%^&*()+=
+
+    pwordValid = 0
+    if !testPassword!.matches("^.*(?=.{10,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[~!@#$%^&*()+=]).*$") then
+        i = msgbox("This password does not meet the password requirements. It must be at least 10 characters long and contain at least one each of the following: upper case letter, lower case letter, number and one of these special characters:  ~!@#$%^&*()+=", 0, "Fails Password Rules")
+    else
+        pwordValid = 1
+    fi
+    return
+
+return
+

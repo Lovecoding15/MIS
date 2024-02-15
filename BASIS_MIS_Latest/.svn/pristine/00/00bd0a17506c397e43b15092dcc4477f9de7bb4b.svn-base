@@ -1,0 +1,54 @@
+rem ' checking Descore orders for a currency conversion record before the update
+rem ' curConvLinkCheck.src
+
+begin
+
+seterr err_trap
+
+rem ' any Descore invoices in ARE03 without a proper exchange Rate record
+msgtxt$ = msgtxt$ + $0A$ + "Descore invoices not linked to exhange rates in ARE03" + $0A$
+
+sql$="select t1.firm_id, t1.customer_nbr, YEAR(t1.invoice_date) as inv_year, MONTH(t1.invoice_date) as inv_month, "
+sql$=sql$ +"DAYOFMONTH(t1.invoice_date) as inv_day, t1.ar_inv_nbr, t1.order_number, "
+sql$=sql$ +"t2.order_number, t2.invoice_date from ARE03 t1 "
+sql$=sql$ +"LEFT JOIN ART03_CANADA t2 on t1.firm_id = t2.firm_id and t1.customer_nbr = '001022' and "
+sql$=sql$ +"t1.invoice_date = t2.invoice_date and t1.order_number = t2.order_number "
+sql$=sql$ +"where t1.firm_id = '01' and t1.customer_nbr = '001022' "
+sql$=sql$ +"and t2.order_number is null"
+msgtxt$ = msgtxt$ + sql$ + $0A$ + $0A$
+
+sqlChan = sqlunt
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+
+result_message$ = "NONE"
+
+while 1
+	rec$=sqlfetch(sqlChan,end=*break)
+	result_message$ = ""
+	msgtxt$ = msgtxt$ + str(rec.inv_year:"0000") + "-" + str(rec.inv_month:"00") + "-" + str(rec.inv_day:"00") + " " + cvs(rec.ar_inv_nbr$,3) + " " + cvs(rec.order_number$,3) + $0A$
+wend
+
+if result_message$ <> "" then msgtxt$ = msgtxt$ + result_message$ + $0A$
+
+sqlclose(sqlchan)
+
+rem ' email the results
+
+email_results:
+
+from$="customer-service@basis.cloud"
+to$="kurt.e.williams@comcast.net"
+subject$="query result from Descore Curreny Conversion issues in ARE03 (curConvLinkProb.src)"
+msgtxt$=msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+release
+
+err_trap:
+msgtxt$ = "An error " + str(err) + " occurred on line: " + str(tcb(5)) + " of prob_queries.txt. " + errmes(-1)
+goto email_results
+
+end

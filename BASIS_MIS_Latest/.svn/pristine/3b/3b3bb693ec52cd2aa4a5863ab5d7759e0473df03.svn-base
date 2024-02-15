@@ -1,0 +1,203 @@
+Updatexml log started: 2014-02-13@15:01:34
+Source syn file: /mnt/data/aon_prod/v1110/extramenu/config/extramenu.syn
+Target directory: /mnt/data/aon_prod/apps/extramenu
+[EXTRAMENU] source=/mnt/data/aon_prod/v1110/extramenu/data/  target=/mnt/data/aon_prod/apps/extramenu/data/
+[BBJHOME] source=/mnt/data/bbj/  target=/mnt/data/bbj/
+[KEYGEN] source=/mnt/data/basisaon/aon/bas/  target=/mnt/data/basisaon/aon/bas/
+[FLEXHOME] source=/u/docfiles/flexlic/  target=/u/docfiles/flexlic/
+[EXTRAMENU_PROG] source=/mnt/data/aon_prod/v1110/extramenu/prog/  target=/mnt/data/aon_prod/apps/extramenu/prog/
+[EXTRAMENU_LIB] source=/mnt/data/aon_prod/v1110/extramenu/lib/  target=/mnt/data/aon_prod/apps/extramenu/lib/
+[DATA_SERVER] source=  target=
+[AON] source=/mnt/data/basisaon/aon/  target=/mnt/data/basisaon/aon/
+[CUST_SERVICE] source=/mnt/data/docfiles/cs/  target=/mnt/data/docfiles/cs/
+[TPM] source=/mnt/data/basisaon/aon/taos/config.TPM  target=/mnt/data/basisaon/aon/taos/config.TPM
+[TEMP] source=/mnt/data/basisaon/aon/tmp/  target=/mnt/data/basisaon/aon/tmp/
+[EXT] source=/mnt/data/bbj/utils/ext/  target=/mnt/data/bbj/utils/ext/
+[E_COMM] source=/mnt/data/ec/  target=/mnt/data/ec/
+[EXTRAMENU_PROP] source=/mnt/data/aon_prod/v1110/extramenu/prop/  target=/mnt/data/aon_prod/apps/extramenu/prop/
+PREFIX source=/mnt/data/basisaon/aon/bas/  target=/mnt/data/basisaon/aon/bas/
+PREFIX source=/mnt/data/basisaon/aon/mods/  target=/mnt/data/basisaon/aon/mods/
+PREFIX source=/mnt/data/basisaon/aon/ADATA/  target=/mnt/data/basisaon/aon/ADATA/
+PREFIX source=/mnt/data/basisaon/aon/MAS/  target=/mnt/data/basisaon/aon/MAS/
+PREFIX source=/mnt/data/basisaon/aon/DLR/  target=/mnt/data/basisaon/aon/DLR/
+PREFIX source=/mnt/data/basisaon/aon/61DD/  target=/mnt/data/basisaon/aon/61DD/
+PREFIX source=/mnt/data/basisaon/aon/SCN/  target=/mnt/data/basisaon/aon/SCN/
+PREFIX source=/mnt/data/basisaon/aon/ADM/  target=/mnt/data/basisaon/aon/ADM/
+PREFIX source=/mnt/data/basisaon/aon/ACT/  target=/mnt/data/basisaon/aon/ACT/
+PREFIX source=/mnt/data/basisaon/aon/DIS/  target=/mnt/data/basisaon/aon/DIS/
+PREFIX source=/mnt/data/basisaon/aon/MFG/  target=/mnt/data/basisaon/aon/MFG/
+PREFIX source=/mnt/data/basisaon/aon/GRW/  target=/mnt/data/basisaon/aon/GRW/
+PREFIX source=/mnt/data/basisaon/aon/sdsoffice/  target=/mnt/data/basisaon/aon/sdsoffice/
+PREFIX source=/mnt/data/ec/  target=/mnt/data/ec/
+
+Source directory: /mnt/data/aon_prod/v1110/extramenu/
+Target directory: /mnt/data/aon_prod/apps/extramenu
+
+copy source: /mnt/data/aon_prod/v1110/extramenu/
+    /mnt/data/aon_prod/v1110/extramenu/logs/updateapp_20110708_2128.txt
+    /mnt/data/aon_prod/v1110/extramenu/logs/updatexml_20110712_1836.txt
+    /mnt/data/aon_prod/v1110/extramenu/logs/updatexml_20110712_1855.txt
+    /mnt/data/aon_prod/v1110/extramenu/config/extramenu.syn.20110929
+    /mnt/data/aon_prod/v1110/extramenu/config/extramenu.syn.bak
+    /mnt/data/aon_prod/v1110/extramenu/config/enu/extramenu.men
+    /mnt/data/aon_prod/v1110/extramenu/config/install_rules.txt
+    /mnt/data/aon_prod/v1110/extramenu/config/extramenu.syn
+    /mnt/data/aon_prod/v1110/extramenu/data/sync/adm_modules~[00000000XTR].xml.bak
+    /mnt/data/aon_prod/v1110/extramenu/data/sync/adm_modules~[00000000XTR].xml
+    /mnt/data/aon_prod/v1110/extramenu/data/sync/adm_module_dflt~[00000000XTR].xml
+    /mnt/data/aon_prod/v1110/extramenu/data/admin_backup/adm_modules~[00000000XTR].xml
+    /mnt/data/aon_prod/v1110/extramenu/data/admin_backup/adm_module_dflt~[00000000XTR].xml
+
+copy SYSSTBL/STBL: EXTRAMENU
+    SKIPPED /mnt/data/aon_prod/v1110/extramenu/data
+
+copy SYSSTBL/STBL: BBJHOME
+    SKIPPED /mnt/data/bbj
+
+copy SYSSTBL/STBL: KEYGEN
+    SKIPPED /mnt/data/basisaon/aon/bas
+
+copy SYSSTBL/STBL: FLEXHOME
+    SKIPPED /u/docfiles/flexlic
+
+copy SYSSTBL/STBL: EXTRAMENU_PROG
+    SKIPPED /mnt/data/aon_prod/v1110/extramenu/prog
+
+copy SYSSTBL/STBL: EXTRAMENU_LIB
+    SKIPPED /mnt/data/aon_prod/v1110/extramenu/lib
+
+copy SYSSTBL/STBL: DATA_SERVER
+    SKIPPED 
+
+copy SYSSTBL/STBL: AON
+    SKIPPED /mnt/data/basisaon/aon
+
+copy SYSSTBL/STBL: CUST_SERVICE
+    SKIPPED /mnt/data/docfiles/cs
+
+copy SYSSTBL/STBL: TPM
+    SKIPPED /mnt/data/basisaon/aon/taos/config.TPM
+
+copy SYSSTBL/STBL: TEMP
+    SKIPPED /mnt/data/basisaon/aon/tmp
+
+copy SYSSTBL/STBL: EXT
+    SKIPPED /mnt/data/bbj/utils/ext
+
+copy SYSSTBL/STBL: E_COMM
+    SKIPPED /mnt/data/ec
+
+copy SYSSTBL/STBL: EXTRAMENU_PROP
+    SKIPPED /mnt/data/aon_prod/v1110/extramenu/prop
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/bas/
+    SKIPPED /mnt/data/basisaon/aon/bas
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/mods/
+    SKIPPED /mnt/data/basisaon/aon/mods
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/ADATA/
+    SKIPPED /mnt/data/basisaon/aon/ADATA
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/MAS/
+    SKIPPED /mnt/data/basisaon/aon/MAS
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/DLR/
+    SKIPPED /mnt/data/basisaon/aon/DLR
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/61DD/
+    SKIPPED /mnt/data/basisaon/aon/61DD
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/SCN/
+    SKIPPED /mnt/data/basisaon/aon/SCN
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/ADM/
+    SKIPPED /mnt/data/basisaon/aon/ADM
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/ACT/
+    SKIPPED /mnt/data/basisaon/aon/ACT
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/DIS/
+    SKIPPED /mnt/data/basisaon/aon/DIS
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/MFG/
+    SKIPPED /mnt/data/basisaon/aon/MFG
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/GRW/
+    SKIPPED /mnt/data/basisaon/aon/GRW
+
+copy SYSPFX/PREFIX: /mnt/data/basisaon/aon/sdsoffice/
+    SKIPPED /mnt/data/basisaon/aon/sdsoffice
+
+copy SYSPFX/PREFIX: /mnt/data/ec/
+    SKIPPED /mnt/data/ec
+
+update target syn file: /mnt/data/aon_prod/apps/extramenu/config/extramenu.syn
+// Barista Application Framework - Application Synchronization File
+// Proprietary Information. BASIS International Ltd. All rights reserved.
+ACOMP=00000000;BASIS International
+SYS=EXTRAMENU;Extra Menus^Copyright (C) 2009-2011 BASIS International Ltd.^All rights reserved.^BASIS Extra Menus for Addon 6.0 and GUI functions.^
+DIR=/mnt/data/aon_prod/apps/extramenu/
+MENU=extramenu
+APROD=XTR;Extra Menus;;;extramenu;/mnt/data/aon_prod/apps/extramenu/prop/;ENU
+STBL=SET EXTRAMENU=/mnt/data/aon_prod/apps/extramenu/data/
+STBL=SET EXTRAMENU_LIB=/mnt/data/aon_prod/apps/extramenu/lib/
+STBL=SET EXTRAMENU_PROG=/mnt/data/aon_prod/apps/extramenu/prog/
+STBL=SET EXTRAMENU_PROP=/mnt/data/aon_prod/apps/extramenu/prop/
+STBL=SET EXT=/mnt/data/bbj/utils/ext/
+STBL=SET DATA_SERVER=
+STBL=SET TEMP=/mnt/data/basisaon/aon/tmp/
+STBL=SET FLEXHOME=/u/docfiles/flexlic/
+STBL=SET CUST_SERVICE=/mnt/data/docfiles/cs/
+STBL=SET AON=/mnt/data/basisaon/aon/
+STBL=SET KEYGEN=/mnt/data/basisaon/aon/bas/
+STBL=SET E_COMM=/mnt/data/ec/
+STBL=SET BBJHOME=/mnt/data/bbj/
+STBL=SET TPM=/mnt/data/basisaon/aon/taos/config.TPM
+PREFIX=/mnt/data/basisaon/aon/bas/
+PREFIX=/mnt/data/basisaon/aon/mods/
+PREFIX=/mnt/data/basisaon/aon/ADATA/
+PREFIX=/mnt/data/basisaon/aon/MAS/
+PREFIX=/mnt/data/basisaon/aon/DLR/
+PREFIX=/mnt/data/basisaon/aon/61DD/
+PREFIX=/mnt/data/basisaon/aon/SCN/
+PREFIX=/mnt/data/basisaon/aon/ADM/
+PREFIX=/mnt/data/basisaon/aon/ACT/
+PREFIX=/mnt/data/basisaon/aon/DIS/
+PREFIX=/mnt/data/basisaon/aon/MFG/
+PREFIX=/mnt/data/basisaon/aon/GRW/
+PREFIX=/mnt/data/basisaon/aon/sdsoffice/
+PREFIX=/mnt/data/ec/
+CFG=EXTRAMENU=/mnt/data/aon_prod/apps/extramenu/data/
+LANG=ENU
+DEVICE=alias P2 "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.com 'lpr -Psaleslj -oraw' >/dev/null" "Sales Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143
+DEVICE=alias PA "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.com 'lpr -P custlj -oraw' >/dev/null" "Customer Service Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+DEVICE=alias PE "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.com 'lpr -P englj -oraw' >/dev/null" "Customer Service Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+DEVICE=alias PG "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.com 'lpr -P coolj -oraw' >/dev/null" "Peggy's Laser Jet 4" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+DEVICE=alias PH "| ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.com 'lpr -P hrlj -oraw' >/dev/null" "HR Laser Jet" cp=1B451B266C304F1B266C36441B266C32411B283130551B266B3253,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1B266C306F326136441B283130551B28737031306831327673623354,bs=1B26612D3143,SERVER
+DEVICE=alias PX $FILE "Output to File" O_CREATE,O_TRUNC,CR,LF=0A,SPCOLS=255,CPCOLS=255,FILE=/u/docfiles/pub/PX.txt,SERVER
+DEVICE=alias TQ0 syswindow "" invisible, USERID=ADMIN, LEGACYID=+ON
+DEVICE=alias TQ1 syswindow "" invisible, USERID=GPARRA, LEGACYID=GP
+DEVICE=alias TQ2 syswindow "" invisible, USERID=KPETERL, LEGACYID=KP
+DEVICE=alias TQ3 syswindow "" invisible, USERID=KWILLIAM, LEGACYID=+ON
+DEVICE=alias TQ4 syswindow "" invisible, USERID=NSPENCE, LEGACYID=+ON
+DEVICE=alias TQ5 syswindow "" invisible, USERID=PLEWIS, LEGACYID=PL1
+DEVICE=alias TQ6 syswindow "" invisible, USERID=SWAUFLE, LEGACYID=SW
+DEVICE=alias TQ7 syswindow "" invisible, USERID=KKING, LEGACYID=KK
+DEVICE=alias TQ8 syswindow "" invisible, USERID=LGUINEY LEGACYID=LG
+DEVICE=alias TQ9 syswindow "" invisible, USERID=GROBLED LEGACYID=GR
+
+
+update target adm_modules XML files: 
+    updated: /mnt/data/aon_prod/apps/extramenu/data/sync/adm_modules~[00000000XTR].xml
+      <<< 		<LOCALE_PATH>/mnt/data/aon_prod/v1110/extramenu/prop/</LOCALE_PATH>
+      >>> 		<LOCALE_PATH>/mnt/data/aon_prod/apps/extramenu/prop/</LOCALE_PATH>
+      <<< 		<DD_MOUNT_DIR>/mnt/data/aon_prod/v1110/extramenu/</DD_MOUNT_DIR>
+      >>> 		<DD_MOUNT_DIR>/mnt/data/aon_prod/apps/extramenu/</DD_MOUNT_DIR>
+    updated: /mnt/data/aon_prod/apps/extramenu/data/admin_backup/adm_modules~[00000000XTR].xml
+      <<< 		<LOCALE_PATH>/mnt/data/aon_prod/v1110/extramenu/prop/</LOCALE_PATH>
+      >>> 		<LOCALE_PATH>/mnt/data/aon_prod/apps/extramenu/prop/</LOCALE_PATH>
+      <<< 		<DD_MOUNT_DIR>/mnt/data/aon_prod/v1110/extramenu/</DD_MOUNT_DIR>
+      >>> 		<DD_MOUNT_DIR>/mnt/data/aon_prod/apps/extramenu/</DD_MOUNT_DIR>
+
+Updatexml log finished: 2014-02-13@15:01:34

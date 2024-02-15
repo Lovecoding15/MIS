@@ -1,0 +1,747 @@
+seterr entry_err
+cust$=""
+msg$=""
+enter cust$
+entry_err:
+
+rem 'cust$=firm$+cust$ when called from an Addon update, not passed by rs_reg.pgm
+one_cust=(len(cust$)=8)
+
+seterr errmsg
+
+calendar$=date(0)
+
+opened$=""
+rem if one_cust and info(3,2)="thines" then escape
+
+aon$=stbl("AON")
+rem dsrv$=stbl("DATA_SERVER")+"/share/partners/"
+dsrv$ = "/mnt/data/databases/partners/"
+
+rem ' no need to change the pfx
+rem savepfx$=pfx
+rem prefix "/usr/local/ec/ "+aon$+"bas/ "+savepfx$
+
+if one_cust=0 then
+  rem 'Has this already been done today?
+  updated$=stbl("DATA_SERVER")+aon$+"ADATA/cust_updt_date.log"
+  u=unt,ok=0
+  open(u,err=*next)updated$;ok=1
+  if ok then read(u,end=*next)dt$
+  close(u,err=*next)
+  if pos(calendar$=dt$) then goto pgm_exit
+  erase updated$,err=*next
+  string updated$
+fi
+
+newrs=unt
+new_file$=dsrv$+"reseller_new"
+open(newrs)new_file$
+opened$=str(newrs:"000")
+rsfile$=dsrv$+"reseller"
+rs=unt
+open(rs)rsfile$
+opened$=opened$+str(rs:"000")
+call "ec_open::ECM01"
+opened$=opened$+str(ECM01:"000")
+call "ec_open::arm01"
+opened$=opened$+str(arm01:"000")
+call "ec_open::tmm01"
+opened$=opened$+str(tmm01:"000")
+call "ec_open::tmm03"
+opened$=opened$+str(tmm03:"000")
+call "ec_open::country"
+opened$=opened$+str(country:"000")
+call "ec_open::states"
+opened$=opened$+str(states:"000")
+call "ec_open::arm06"
+opened$=opened$+str(arm06:"000")
+call "ec_open::tmm07"
+opened$=opened$+str(tmm07:"000")
+call "ec_open::tmm11"
+opened$=opened$+str(tmm11:"000")
+call "ec_open::arm10f"
+opened$=opened$+str(arm10f:"000")
+
+if one_cust=0 then
+  logfile$=aon$+"ADATA/cust_web_updt.log"
+  log=unt
+  open(log)logfile$
+  f$=fin(log),logindex=dec(f$(1,4))
+  opened$=opened$+str(log:"000")
+  read (log,ind=logindex)
+fi
+
+x1$="firm:c(2),cust_num:c(6),password:c(6*),"
+x2$="firm:c(2),cust_num:c(6),"
+xx$="company:c(30*),addr1:c(30),addr2:c(30),addr3:c(30),addr4:c(30),city:c(25),state:c(2),zip:c(9),country:c(15),phone:c(14),fax:c(14)"
+xx$=xx$+",contact1:c(30),cont1_title:c(18),cont1_same:c(1),cont1_email:c(80),cont1_addr1:c(30),cont1_addr2:c(30),cont1_city:c(25),cont1_state:c(2),cont1_zip:c(9),cont1_country:c(24),cont1_phone:c(14),cont1_ext:c(6),cont1_ap:c(1)"
+xx$=xx$+",contact2:c(30),cont2_title:c(18),cont2_same:c(1),cont2_email:c(80),cont2_addr1:c(30),cont2_addr2:c(30),cont2_city:c(25),cont2_state:c(2),cont2_zip:c(9),cont2_country:c(24),cont2_phone:c(14),cont2_ext:c(6),cont2_adv:c(1),cont2_ann:c(1),cont2_ap:c(1)"
+xx$=xx$+",contact3:c(30),cont3_title:c(18),cont3_same:c(1),cont3_email:c(80),cont3_addr1:c(30),cont3_addr2:c(30),cont3_city:c(25),cont3_state:c(2),cont3_zip:c(9),cont3_country:c(24),cont3_phone:c(14),cont3_ext:c(6),cont3_adv:c(1),cont3_ann:c(1),cont3_ap:c(1)"
+xx$=xx$+",contact4:c(30),cont4_title:c(18),cont4_same:c(1),cont4_email:c(80),cont4_addr1:c(30),cont4_addr2:c(30),cont4_city:c(25),cont4_state:c(2),cont4_zip:c(9),cont4_country:c(24),cont4_phone:c(14),cont4_ext:c(6),cont4_adv:c(1),cont4_ann:c(1),cont4_ap:c(1)"
+
+dim rs_new$:x2$+xx$
+dim rs$:x1$+xx$+",cust_type:c(3),sales_rep:c(20),ADDON_RSL_YN:C(1)"
+
+while 1
+  if one_cust then break
+  readrecord(newrs,end=*break)rs_new$
+  k$=rs_new.firm$+rs_new.cust_num$
+  readrecord(arm01,key=k$,dom=*continue)arm01$
+  readrecord(tmm01,knum=0,key=k$+"000000",dom=*continue)tmm01$
+  change$="",who$="Company"
+  old$=tmm01.address_1$,new$=rs_new.addr1$
+  what$="Addr 1";gosub compare
+  tmm01.address_1$=new$
+  old$=tmm01.address_2$,new$=rs_new.addr2$
+  what$="Addr 2";gosub compare
+  tmm01.address_2$=new$
+  old$=tmm01.address_3$,new$=rs_new.addr3$
+  what$="Addr 3";gosub compare
+  tmm01.address_3$=new$
+  old$=tmm01.address_4$,new$=rs_new.addr4$
+  what$="Addr 4";gosub compare
+  tmm01.address_4$=new$
+  old$=tmm01.city$,new$=rs_new.city$
+  what$="City";gosub compare
+  tmm01.city$=new$
+  old$=tmm01.state$,new$=rs_new.state$,ok=0
+  rem 'special case for Puerto Rico - use state code PR and set country to US
+  z$=cvs(rs_new.country$,7)
+  if z$="PR" then rs_new.country$="US",new$="PR"
+  readrecord(states,key=cvs(new$,7),dom=*next)states$;ok=1
+  if ok=0 then new$="  "
+  what$="State";gosub compare
+  tmm01.state$=cvs(new$,4)
+  old$=tmm01.zip_code$,new$=rs_new.zip$
+  what$="Zip";gosub compare
+  tmm01.zip_code$=new$ 
+  kc$=tmm01.country_code$
+  if kc$="  " then kc$="US"
+  gosub get_country
+  old$=country.country_name$
+  new$=cvs(rs_new.country$,7)
+  kc$=new$
+  if kc$="" then kc$="US"
+  gosub get_country
+  if ok then 
+    new$=country.country_name$
+    what$="Country"
+    gosub compare
+    tmm01.country_code$=country.country_code$
+  else
+    change$=change$+who$+" ** Country not found ** "+new$+$0a$
+  fi
+  old$=fnundo$(tmm01.phone_number$),new$=fnundo$(rs_new.phone$)
+  what$="Phone";gosub compare
+  tmm01.phone_number$=fnusphone$(new$,tmm01.country_code$)
+  old$=fnundo$(tmm01.fax_num$),new$=fnundo$(rs_new.fax$)
+  what$="Fax";gosub compare
+  tmm01.fax_num$=fnusphone$(new$,tmm01.country_code$)
+  chg1$=change$,change$="" 
+
+  dim c$[3](272)
+
+  c$[0](1)=rs_new.contact1$
+  c$[0](31)=rs_new.cont1_title$
+  c$[0](49)=rs_new.cont1_same$
+  c$[0](50)=rs_new.cont1_email$
+  c$[0](130)=rs_new.cont1_addr1$
+  c$[0](160)=rs_new.cont1_addr2$
+  c$[0](190)=rs_new.cont1_city$
+  c$[0](215)=rs_new.cont1_state$
+  c$[0](217)=rs_new.cont1_zip$
+  c$[0](226)=rs_new.cont1_country$
+  c$[0](250)=rs_new.cont1_phone$
+  c$[0](264)=rs_new.cont1_ext$
+  c$[0](270)="1"
+  c$[0](271)="1"
+  c$[0](272)=rs_new.cont1_ap$
+
+  c$[1](1)=rs_new.contact2$
+  c$[1](31)=rs_new.cont2_title$
+  c$[1](49)=rs_new.cont2_same$
+  c$[1](50)=rs_new.cont2_email$
+  c$[1](130)=rs_new.cont2_addr1$
+  c$[1](160)=rs_new.cont2_addr2$
+  c$[1](190)=rs_new.cont2_city$
+  c$[1](215)=rs_new.cont2_state$
+  c$[1](217)=rs_new.cont2_zip$
+  c$[1](226)=rs_new.cont2_country$
+  c$[1](250)=rs_new.cont2_phone$
+  c$[1](264)=rs_new.cont2_ext$
+  c$[1](270)=rs_new.cont2_adv$
+  c$[1](271)=rs_new.cont2_ann$
+  c$[1](272)=rs_new.cont2_ap$
+
+  c$[2](1)=rs_new.contact3$
+  c$[2](31)=rs_new.cont3_title$
+  c$[2](49)=rs_new.cont3_same$
+  c$[2](50)=rs_new.cont3_email$
+  c$[2](130)=rs_new.cont3_addr1$
+  c$[2](160)=rs_new.cont3_addr2$
+  c$[2](190)=rs_new.cont3_city$
+  c$[2](215)=rs_new.cont3_state$
+  c$[2](217)=rs_new.cont3_zip$
+  c$[2](226)=rs_new.cont3_country$
+  c$[2](250)=rs_new.cont3_phone$
+  c$[2](264)=rs_new.cont3_ext$
+  c$[2](270)=rs_new.cont3_adv$
+  c$[2](271)=rs_new.cont3_ann$
+  c$[2](272)=rs_new.cont3_ap$
+
+  c$[3](1)=rs_new.contact4$
+  c$[3](31)=rs_new.cont4_title$
+  c$[3](49)=rs_new.cont4_same$
+  c$[3](50)=rs_new.cont4_email$
+  c$[3](130)=rs_new.cont4_addr1$
+  c$[3](160)=rs_new.cont4_addr2$
+  c$[3](190)=rs_new.cont4_city$
+  c$[3](215)=rs_new.cont4_state$
+  c$[3](217)=rs_new.cont4_zip$
+  c$[3](226)=rs_new.cont4_country$
+  c$[3](250)=rs_new.cont4_phone$
+  c$[3](264)=rs_new.cont4_ext$
+  c$[3](270)=rs_new.cont4_adv$
+  c$[3](271)=rs_new.cont4_ann$
+  c$[3](272)=rs_new.cont4_ap$
+  for i=0 to 3
+    if c$[i](49,1)="1" then c$[i](129,120)=" ",c$[i](49,1)="Y"
+    for j=270 to 272
+      z$=c$[i](j,1),c$[i](j,1)="N"
+      if z$="1" then c$[i](j,1)="Y"
+      if j=270 and z$="2" then c$[i](j,1)="E"
+    next j
+  next i
+  oldmain$="",oldap$="",newmain$="",newap$="",nextseq$="010"
+  read(tmm03,key=k$+"000000",dom=*next)
+  while 2
+    readrecord(tmm03,end=*break)tmm03$
+    if pos(k$=tmm03$)<>1 then break
+    tmm03.dealer_str_1$=""
+    if oldmain$="" and tmm03.primary_contact$="Y" then oldmain$=tmm03$(1,17)
+    if oldap$="" and tmm03.ap_contact$="Y" then oldap$=tmm03$(1,17)
+    for i=0 to 3
+      nextseq$=str(num(tmm03.sequence_nbr$)+10:"000")
+      who$=cvs(c$[i](1,30),3)
+      if pos(cvs(who$,7)=cvs(tmm03.contact_name$,7))=0 then continue
+      tmm03.USE_FIRM_ADDR$=c$[i](49,1)
+      if num(tmm03.sequence_nbr$)<>(i+1)*10 then tmm03.dealer_str_1$=str(i+1)
+      old$=tmm03.position$,new$=c$[i](31,18)
+      what$="Title";gosub compare
+      tmm03.position$=new$
+      old$=tmm03.e_mail$,new$=c$[i](50,80)
+      what$="Email";gosub compare
+      tmm03.e_mail$=new$
+      old$=tmm03.address_1$,new$=c$[i](130,30)
+      what$="Addr 1";gosub compare
+      tmm03.address_1$=new$
+      old$=tmm03.address_2$,new$=c$[i](160,30)
+      what$="Addr 2";gosub compare
+      tmm03.address_2$=new$
+      old$=tmm03.city$,new$=c$[i](190,25)
+      what$="City";gosub compare
+      tmm03.city$=new$
+      old$=tmm03.state_code$,new$=c$[i](215,2),ok=0
+      rem 'special case for Puerto Rico - use state code PR and set country to US
+      z$=cvs(c$[i](226,15),7)
+      if z$="PR" then c$[i](226,15)="US",new$="PR"
+      readrecord(states,key=cvs(new$,7),dom=*next)states$;ok=1
+      if ok=0 then new$="  "
+      what$="State";gosub compare
+      tmm03.state_code$=cvs(new$,4)
+      old$=tmm03.zip_code$,new$=c$[i](217,9)
+      what$="Zip";gosub compare
+      tmm03.zip_code$=new$
+      kc$=tmm03.country_code$
+      if kc$="  " then kc$="US"
+      gosub get_country
+      if ok then old$=country.country_name$ else old$=""
+      new$=cvs(c$[i](226,15),7)
+      kc$=new$
+      if kc$="" then kc$="US"
+      gosub get_country
+      if ok then 
+        new$=country.country_name$
+        what$="Country";gosub compare
+        tmm03.country_code$=country.country_code$
+      else
+        change$=change$+who$+" ** Country not found ** "+new$+$0a$
+      fi
+      old$=fnundo$(tmm03.phone_number$),new$=fnundo$(c$[i](250,14))
+      what$="Phone";gosub compare
+      tmm03.phone_number$=fnusphone$(new$,tmm03.country_code$)
+      old$=tmm03.extension$,new$=c$[i](264,6)
+      what$="Extension";gosub compare
+      tmm03.extension$=new$
+      old$=tmm03.send_lit$,new$=c$[i](270,1)
+      what$="Advantage";gosub compare
+      tmm03.send_lit$=new$
+      old$=tmm03.announcements$,new$=c$[i](271,1)
+      what$="Announcements";gosub compare
+      tmm03.announcements$=new$
+      old$=tmm03.ap_contact$,new$=c$[i](272,1)
+      what$="AP Contact";gosub compare
+      tmm03.ap_contact$=new$
+      if new$="Y" then newap$=tmm03$(1,17)
+      old$=tmm03.primary_contact$,new$="N"
+      if i=0 then new$="Y",newmain$=tmm03$(1,17)
+      what$="Main Contact";gosub compare
+      tmm03.primary_contact$=new$
+      c$[i](272,1)="*"
+    next i
+    tmm03$=field(tmm03$)
+    writerecord(tmm03,key=tmm03$(1,17))tmm03$
+  rem "end of while 2
+  wend 
+
+  rem 'add any new contacts
+  for i=0 to 3
+    if c$[i](272,1)="*" then continue
+    n$=cvs(c$[i](1,30),3)
+    if n$="" then continue
+    who$="New contact: "+n$
+    change$=change$+who$+$0a$
+    dim tmm03$:fattr(tmm03$)
+    tmm03$(1,17)=k$+"000000"+nextseq$
+    if num(nextseq$)<>(i+1)*10 then tmm03.dealer_str_1$=str(i+1)
+    nextseq$=str(num(tmm03.sequence_nbr$)+10:"000")
+    tmm03.USE_FIRM_ADDR$=c$[i](49,1)
+    tmm03.contact_name$=n$
+    tmm03.position$=c$[i](31,18)
+    tmm03.e_mail$=c$[i](50,80)
+    tmm03.address_1$=c$[i](130,30)
+    tmm03.address_2$=c$[i](160,30)
+    tmm03.city$=c$[i](190,25)
+    new$=cvs(c$[i](215,2),7),ok=0
+    readrecord(states,key=new$,dom=*next)states$;ok=1
+    if ok=0 then new$="  "
+    tmm03.state_code$=new$
+    tmm03.zip_code$=c$[i](217,9)
+    new$=cvs(c$[i](226,15),7)
+    kc$=new$
+    if kc$="" then kc$="US"
+    gosub get_country
+    if ok then 
+      tmm03.country_code$=country.country_code$
+    else
+      change$=change$+n$+" ** Country not found ** "+new$+$0a$
+    fi
+    tmm03.phone_number$=fnusphone$(c$[i](250,14),tmm03.country_code$)
+    tmm03.extension$=c$[i](264,6)
+    tmm03.send_lit$=c$[i](270,1)
+    tmm03.announcements$=c$[i](271,1)
+    tmm03.ap_contact$=c$[i](272,1)
+    if tmm03.ap_contact$="Y" then newap$=tmm03$(1,17)
+    new$="N";if i=0 then new$="Y"
+    tmm03.primary_contact$=new$
+    if new$="Y" then newmain$=tmm03$(1,17)
+    tmm03$=field(tmm03$)
+    writerecord(tmm03,key=tmm03$(1,17))tmm03$
+  next i
+  
+  rem 'unset previous main, ap contacts if they have changed  
+  if oldmain$<>newmain$ and newmain$<>"" then
+    readrecord(tmm03,key=oldmain$,dom=newmain)tmm03$
+    tmm03.primary_contact$="N"
+    tmm03$=field(tmm03$)
+    writerecord(tmm03,key=oldmain$)tmm03$
+    newmain:
+    readrecord(tmm03,key=newmain$)tmm03$
+    tmm01.cont_name$=tmm03.contact_name$
+    tmm01.contact_sort$=cvs(tmm03.contact_name$,7)
+    tmm01$=field(tmm01$)
+    writerecord(tmm01)tmm01$  
+  fi
+  if oldap$<>newap$ and oldap$<>"" then
+    readrecord(tmm03,key=oldap$)tmm03$
+    tmm03.ap_contact$="N"
+    tmm03$=field(tmm03$)
+    writerecord(tmm03,key=oldap$)tmm03$
+  fi
+  
+  rem 'put the contacts in the order they were in from the input file
+  read(tmm03,key=k$,dom=*next)
+  while 3
+    k3$=key(tmm03,end=*break)
+    if pos(k$=k3$)<>1 then break
+    readrecord(tmm03,key=k3$)tmm03$
+    ord=num(tmm03.dealer_str_1$,err=*continue)*10
+    if ord<10 or ord>40 then continue
+    seq=num(tmm03.sequence_nbr$,err=*continue)
+    if ord=seq then continue
+    dim hold$:fattr(tmm03$)
+    ordfound=0,ord$=str(ord:"000"),seq$=str(seq:"000")
+    readrecord(tmm03,key=k$+"000000"+ord$,dom=*next)hold$;ordfound=1
+    tmm03.sequence_nbr$=ord$
+    tmm03.dealer_str_1$=""
+    tmm03$=field(tmm03$)
+    writerecord(tmm03,key=tmm03$(1,17))tmm03$
+    if ordfound then 
+      hold.sequence_nbr$=seq$
+      hold$=field(hold$)
+      writerecord(tmm03,key=hold$(1,17))hold$
+    else
+      remove(tmm03,key=tmm03$(1,14)+seq$)
+    fi
+    read(tmm03,key=k3$,dom=*next)
+  rem 'end of while 3
+  wend
+
+  remove(newrs,key=rs_new.firm$+rs_new.cust_num$) 
+
+  change$=chg1$+change$
+  if chg1$<>"" then 
+    tmm01$=field(tmm01$)
+    writerecord(tmm01)tmm01$
+    arm01.contact_name$=tmm01.cont_name$
+    arm01.addr_line_1$=tmm01.address_1$
+    arm01.addr_line_2$=tmm01.address_2$
+    arm01.addr_line_3$=tmm01.address_3$
+    arm01.addr_line_4$=tmm01.address_4$
+    temp$=cvs(tmm01.city$,3);if len(temp$)>21 then temp$=temp$(1,21)
+    arm01.addr_line_5$=temp$+" "+tmm01.state$
+    arm01.zip_code$=tmm01.zip_code$
+    arm01.phone_number$=tmm01.phone_number$
+    arm01.fax_number$=tmm01.fax_num$
+    arm01$=field(arm01$)
+    writerecord(arm01,key=k$)arm01$
+  fi
+  if change$="" then continue
+  to$="info@basis.cloud"
+  if tmm01.firm_id$="02" then to$="eu.sales@basis.cloud"
+  cc$=""
+  subj$="Customer information change"
+  gosub notify
+rem 'end of while 1
+wend
+
+while 1
+  k$=key(rs,end=*break)
+  readrecord(rs,key=k$,err=*break)rs$
+  ok=0
+  dim tmm01$:fattr(tmm01$)
+  readrecord(tmm01,key=k$+"000000",dom=*next)tmm01$;ok=1
+  ok=pos(tmm01.cust_type$(1,1)="AMRPO");rem ' Members, Resellers, Partners, OEMs
+  if ok=0 and tmm01.cust_type$="DSI" then ok=1
+  if ok=0 and tmm01.cust_type$="DR " then ok=1
+  if ok=0 then remove(rs,key=k$,err=*next)
+  if ok=0 then remove(newrs,key=k$,err=*next)
+  if one_cust then break
+wend
+
+while one_cust=0 
+  call "ec_open::sys01c"
+  read(sys01c,key="01AR00")*,*,*,*,my$
+  close(sys01c)
+  ar_mm=num(my$(1,2))
+  this_mm=num(calendar$(1,2))
+  partner_sales$=stbl("DATA_SERVER")+aon$+"ADATA/partner_sales.log"
+  psale$="",newsale$=""
+  psale=unt
+  open(psale,err=*break)partner_sales$
+  f$=fin(psale),sz=dec(f$(1,4))
+  if sz then readrecord(psale,siz=sz)psale$
+  close(psale)
+  break
+wend
+
+read(tmm01,key="01000009",dom=*next)
+if one_cust then read(tmm01,key=cust$,dom=*next)
+while 1
+  readrecord(tmm01,end=*break)tmm01$
+  if one_cust and pos(tmm01.customer_nbr$=cust$)<>3 then break
+  if pos(tmm01.cust_type$(1,1)="AMRPO")=0 and tmm01.cust_type$<>"DSI" and tmm01.cust_type$<>"DR " then continue
+  if tmm01.customer_nbr$="000000" then continue
+  tmmkey$=tmm01$.firm_id$+tmm01.customer_nbr$+tmm01.tm_number$
+  dim ecm01$:fattr(ecm01$)
+  readrecord(ecm01,key=tmmkey$(1,8)+"  ",err=*continue)ecm01$
+  if cvs(ecm01.password$,3)="" then continue
+  dim arm10f$:fattr(arm10f$)
+  readrecord(arm10f,key=tmm01.firm_id$+"F"+tmm01.slsperson$,err=*next)arm10f$
+  dim rs$:fattr(rs$) 
+  rs.sales_rep$=arm10f.slspsn_name$
+  rs.firm$=tmm01.firm_id$
+  rs.cust_num$=tmm01.customer_nbr$
+  rs.password$=cvs(ecm01.password$,3)
+  rs.ADDON_RSL_YN$=tmm01.ADDON_RSL_YN$
+  rs.company$=tmm01.cont_firm$
+  rs.addr1$=tmm01.address_1$
+  rs.addr2$=tmm01.address_2$
+  rs.addr3$=tmm01.address_3$
+  rs.addr4$=tmm01.address_4$
+  rs.city$=tmm01.city$
+  rs.state$=tmm01.state$
+  rs.zip$=tmm01.zip_code$
+  rs.country$=tmm01.country_code$
+  rs.phone$=fnundo$(tmm01.phone_number$)
+  rs.fax$=fnundo$(tmm01.fax_num$)
+  rs.cust_type$=tmm01.cust_type$
+  dim tmm03$:fattr(tmm03$)
+  srt$=""
+  read(tmm03,key=tmmkey$,dom=*next)
+  while 2
+    k3$=key(tmm03,end=*break)
+    if pos(tmmkey$=k3$)<>1 then break
+    readrecord(tmm03,end=*break)tmm03$
+    srt$=srt$+str(tmm03.primary_contact$<>"Y")+k3$
+  wend 
+  if srt$<>"" then srt$=ssort(srt$,18)
+  i=0
+  while len(srt$) and i<4
+    k3$=srt$(2,17),srt$=srt$(19)
+    readrecord(tmm03,key=k3$,dom=*continue)tmm03$
+    change$=""
+    adv$=str(tmm03.send_lit$="Y")
+    if tmm03.send_lit$="E" then adv$="2"
+    old$=tmm03.address_1$,new$=tmm01.address_1$,a$=old$;gosub compare
+    old$=tmm03.address_2$,new$=tmm01.address_2$,a$=a$+old$;gosub compare
+    old$=tmm03.city$,new$=tmm01.city$,a$=a$+old$;gosub compare
+    old$=tmm03.state_code$,new$=tmm01.state$,a$=a$+old$;gosub compare
+    old$=tmm03.zip_code$,new$=tmm01.zip_code$,a$=a$+old$;gosub compare
+    a$=cvs(a$,3)
+    if a$="" and tmm03.use_firm_addr$="Y" then goto skip_write
+    if change$=""  or cvs(a$,3)="" then 
+      tmm03.use_firm_addr$="Y"
+      tmm03.address_1$=""
+      tmm03.address_2$=""
+      tmm03.city$=""
+      tmm03.state_code$=""
+      tmm03.zip_code$=""
+      tmm03.country_code$=""
+      tmm03$=field(tmm03$)
+      writerecord(tmm03,key=k3$)tmm03$
+    fi
+    skip_write:
+    ccode$=tmm03.country_code$
+    if i=0 then
+    rs.contact1$=tmm03.contact_name$
+    rs.cont1_title$=tmm03.position$
+    rs.cont1_same$=str(tmm03.use_firm_addr$="Y")
+    rs.cont1_email$=tmm03.e_mail$
+    rs.cont1_addr1$=tmm03.address_1$
+    rs.cont1_addr2$=tmm03.address_2$
+    rs.cont1_city$=tmm03.city$
+    rs.cont1_state$=tmm03.state_code$
+    rs.cont1_zip$=tmm03.zip_code$
+    rs.cont1_country$=ccode$
+    rs.cont1_phone$=fnundo$(tmm03.phone_number$)
+    rs.cont1_ext$=tmm03.extension$
+    rs.cont1_ap$=str(tmm03.ap_contact$="Y")
+    fi
+    if i=1 then
+    rs.contact2$=tmm03.contact_name$
+    rs.cont2_title$=tmm03.position$
+    rs.cont2_same$=str(tmm03.use_firm_addr$="Y")
+    rs.cont2_email$=tmm03.e_mail$
+    rs.cont2_addr1$=tmm03.address_1$
+    rs.cont2_addr2$=tmm03.address_2$
+    rs.cont2_city$=tmm03.city$
+    rs.cont2_state$=tmm03.state_code$
+    rs.cont2_zip$=tmm03.zip_code$
+    rs.cont2_country$=ccode$
+    rs.cont2_phone$=fnundo$(tmm03.phone_number$)
+    rs.cont2_ext$=tmm03.extension$
+    rs.cont2_ap$=str(tmm03.ap_contact$="Y")
+    rs.cont2_ann$=str(tmm03.announcements$="Y")
+    rs.cont2_adv$=adv$
+    fi
+    if i=2 then
+    rs.contact3$=tmm03.contact_name$
+    rs.cont3_title$=tmm03.position$
+    rs.cont3_same$=str(tmm03.use_firm_addr$="Y")
+    rs.cont3_email$=tmm03.e_mail$
+    rs.cont3_addr1$=tmm03.address_1$
+    rs.cont3_addr2$=tmm03.address_2$
+    rs.cont3_city$=tmm03.city$
+    rs.cont3_state$=tmm03.state_code$
+    rs.cont3_zip$=tmm03.zip_code$
+    rs.cont3_country$=ccode$
+    rs.cont3_phone$=fnundo$(tmm03.phone_number$)
+    rs.cont3_ext$=tmm03.extension$
+    rs.cont3_ap$=str(tmm03.ap_contact$="Y")
+    rs.cont3_ann$=str(tmm03.announcements$="Y")
+    rs.cont3_adv$=adv$
+    fi
+    if i=3 then
+    rs.contact4$=tmm03.contact_name$
+    rs.cont4_title$=tmm03.position$
+    rs.cont4_same$=str(tmm03.use_firm_addr$="Y")
+    rs.cont4_email$=tmm03.e_mail$
+    rs.cont4_addr1$=tmm03.address_1$
+    rs.cont4_addr2$=tmm03.address_2$
+    rs.cont4_city$=tmm03.city$
+    rs.cont4_state$=tmm03.state_code$
+    rs.cont4_zip$=tmm03.zip_code$
+    rs.cont4_country$=ccode$
+    rs.cont4_phone$=fnundo$(tmm03.phone_number$)
+    rs.cont4_ext$=tmm03.extension$
+    rs.cont4_ap$=str(tmm03.ap_contact$="Y")
+    rs.cont4_ann$=str(tmm03.announcements$="Y")
+    rs.cont4_adv$=adv$
+    fi
+    i=i+1
+  wend
+  rs$=field(rs$)
+  writerecord(rs)rs$
+  if pos("AMP"=tmm01.cust_type$)=1 and one_cust=0 then gosub update_sales
+wend
+
+if one_cust=0 then
+  rem 'Set update date so it doesn't get done more than once
+  u=unt,ok=0
+  open(u,err=*next)updated$;ok=1
+  if ok then print(u)calendar$
+  close(u,err=*next)
+  erase partner_sales$,err=*next
+  string partner_sales$
+  psale=unt,ok=0
+  open(psale,err=*next)partner_sales$;ok=1
+  if ok then print(psale)newsale$
+  close(psale,err=*next)
+fi
+
+pgm_exit:
+if savepfx$<>"" then prefix savepfx$
+while len(opened$)>1
+  f=num(opened$(1,3))
+  opened$=opened$(4)
+  close(f,err=*next)
+wend
+exit
+
+errmsg:
+if pos("Error"=msg$) then exit
+
+to$="customer-service@basis.cloud"
+rem ' to$="kurt.e.williams@comcast.net"
+cc$=""
+subj$="Customer update error"
+msg$="Error "+str(err)+" in "+str(tcb(5))+" of "+pgm(-2) + " " + errmes(-1)
+if one_cust then msg$=msg$+" Customer "+cust$
+gosub notify
+goto pgm_exit
+
+notify:
+from$="info@basis.cloud"
+
+clock$=date(0:"%Hz%mz%sz")
+if msg$="" then
+  msg$="Customer "+k$+"  "+calendar$+" "+clock$(1,2)+":"+clock$(3,2)
+  msg$=msg$+"  "+tmm01.cont_firm$+$0a$+fill(33,"-")+$0a$+change$
+  print(log)msg$
+fi
+
+rem ' hdr$="To: "+to$+$0A$
+rem ' hdr$=hdr$+"From: "+from$+$0A$
+rem ' hdr$=hdr$+"Cc: "+cc$+$0A$
+rem ' hdr$=hdr$+"Subject: "+Subj$+$0A$+$0A$
+rem ' hdr$=hdr$+msg$+$0a$
+rem ' tmpfile$=stbl("TEMP")+clock$+"email.txt"
+rem ' erase tmpfile$,err=*next
+rem ' string tmpfile$
+rem ' tmp=unt
+rem ' open(tmp)tmpfile$
+rem ' writerecord(tmp)hdr$
+rem ' close(tmp)
+rem ' send mail no longer used
+rem ' A=SCALL("/usr/lib/send mail -t < "+tmpfile$)
+rem ' erase tmpfile$,err=*next
+
+bcc$ = ""
+call "sendEmail.src", from$, to$, cc$, bcc$, subj$, msg$, ""
+
+return
+
+compare:
+new$=cvs(new$,35)
+old$=cvs(old$,35)
+if cvs(old$,4)=cvs(new$,4) then return
+change$=change$+who$+" "+what$+$0a$+"  Old: "+old$+$0a$+"  New: "+new$+$0a$
+return
+
+update_sales:
+msg$=""
+k6$=tmm01$.firm_id$+tmm01.customer_nbr$
+event$="20001231"
+read (tmm07,key=k6$,knum=1,dom=*next)
+while 1
+  read record(tmm07,end=*break)tmm07$
+  if pos(k6$=tmm07.firm_id$+tmm07.customer_nbr$)<>1 then break
+  readrecord(tmm11,key=tmm07.firm_id$+tmm07.class_id$,dom=*continue)tmm11$
+  if tmm11.event_date$>event$ then event$=tmm11.event_date$
+wend
+last_event=jul(num(event$(1,4))+1,12,31)
+newevent=(last_event>=jul(0,0,0)) 
+edt$=event$(5,2)+"/"+event$(7,2)+"/"+event$(1,4)
+
+dim arm06$:fattr(arm06$)
+readrecord(arm06,key=k6$,dom=*next)arm06$
+ytd=arm06.ytd_sales+arm06.nmtd_sales
+pyr=arm06.pyr_sales
+if ar_mm=12 and this_mm=1 then 
+  ytd=arm06.nmtd_sales
+  pyr=arm06.ytd_sales
+fi
+newhi=max(ytd,pyr,0)
+hi$=str(newhi:"0000000.00")
+newsale$=newsale$+"*"+k6$+hi$+str(newevent)+$0a$
+p=pos("*"+k6$=psale$)
+if p=0 then return
+
+oldhi=num(psale$(p+9,10))
+oldevent=0
+oldevent=num(psale$(p+19,1),err=*next)
+
+if oldhi=newhi and oldevent=newevent then return
+n1=0,o1=0
+if newhi>=5000 then n1=n1+1
+if newhi>=12500 then n1=n1+1
+if newhi>=25000 then n1=n1+1
+if oldhi>=5000 then o1=o1+1
+if oldhi>=12500 then o1=o1+1
+if oldhi>=25000 then o1=o1+1
+if o1=n1 and oldevent=newevent then return;rem 'still at same level
+
+to$="sales@basis.cloud"
+cc$=""
+if tmm01.firm_id$="02" then to$="eu.sales@basis.cloud",cc$="nspence@basis.cloud"
+subj$="Discount change for Partner "+tmm01.customer_nbr$
+if o1<>n1 then 
+  msg$="Sales increased for "+cvs(tmm01.cont_firm$,3)+$0a$+"from "+cvs(str(oldhi:"$#,###,###.00"),3)+" to "+cvs(str(newhi:"$#,###,###.00"),3)+"."+$0a$
+  if oldhi>newhi then msg$(7,2)="de"
+fi
+if oldevent<>newevent then msg$=msg$+"Latest event date: "+edt$+$0a$
+
+msg$=msg$+$0a$+"Salesperson: "+tmm01.slsperson$+$0a$+"Date: "+calendar$
+gosub notify
+return
+
+get_country:
+  dim country$:fattr(country$)
+  ok=0
+  readrecord(country,key=kc$,knum=0,err=*next)country$;ok=1
+  if ok=0 then
+    read(country,key=kc$,knum=1,err=*next)
+    readrecord(country,err=*next)country$
+    if pos(kc$=country.country_name$)=1 then ok=1
+  fi
+return
+
+def fnusphone$(xx$,zz$)
+if pos(zz$="  US",2)=0 then return xx$
+xx$=fnundo$(xx$)
+if len(xx$)=10 then xx$=xx$(1,3)+"."+xx$(4,3)+"."+xx$(7)
+return xx$
+fnend
+
+def fnundo$(xx$)
+xx$=cvs(xx$,3),xx1$=""
+while len(xx$)
+ if pos(xx$(1,1)="0123456789") then xx1$=xx1$+xx$(1,1)
+ xx$=xx$(2)
+wend
+return xx1$
+fnend
+
+END

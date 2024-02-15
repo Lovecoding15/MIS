@@ -1,0 +1,14 @@
+Refresh data on bambam2:
+
+on kazoo2 - cd /basisaon/aon/work
+	      ./aa_copy_data.cmd
+            (executes aa_copy_data.cmd script - copies files specified in aa_list.txt from ADATA to work)
+
+on bambam2 - cd /basisaon/aon/ADATA
+             scp kazoo2:/basisaon/aon/work/* .
+             (copy from work on kazoo2 to ADATA on bambam2)
+		 cd ../ec
+		 start bbj session - I use a script called gbbj in /stable/thines/bin
+		 run "bambam_data.src" - resets passwords, email addresses
+
+on kazoo2 - remove files listed in aa_list.txt from /basisaon/aon/work ( I usually just do this manually - could easily be a script)

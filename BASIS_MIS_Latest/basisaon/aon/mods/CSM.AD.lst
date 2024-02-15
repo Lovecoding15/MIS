@@ -1,0 +1,92 @@
+0010 REM "CSM - Product ID Maintenance (Serial # Counter)"
+0020 REM "Program CSM.AD"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * 4/27/99 * WA# 204 * BASIS"
+0040 REM 
+0070 SETERR 9000
+0080 SETESC 9000
+0090 PRECISION P[1]
+0200 REM " --- IOLIST's"
+0210 CSM01A: IOLIST A0$(1),A1$(1),A2$(1),A3$(1),A[ALL]
+0500 REM " --- Initializations"
+0700 REM " --- Background"
+0710 PRINT 'SB',
+0720 PRINT @(5,8),"Serial Number Prefix: ",
+0730 PRINT @(18,10),"Counter: ",
+0790 PRINT 'SF',
+1300 REM " --- Display record"
+1310 GOSUB 5000
+1390 ON O0 GOTO 4000,4000,4000,2000
+2000 REM " --- Prefix"
+2020 LET V0$="S",V1$="CE^",V2$=A3$(1,3),V3$="",V0=3,V1=27,V2=8
+2030 LET V4$="Enter the Serial Number Prefix"
+2040 GOSUB 7000
+2080 LET A3$(1,3)=V$
+2090 GOTO 3900
+2100 REM " --- Counter"
+2120 LET V0$="N",V1$="CE",V2$=STR(A[0]),V3$="000000",V0=6,V1=27,V2=10
+2130 LET V4$="Enter the Serial Number Counter"
+2140 GOSUB 7000
+2180 LET A[0]=V
+2190 GOTO 3900
+3900 REM " --- Next field"
+3905 IF V3=4 THEN GOTO 3990
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 ON I0 GOTO 2000,2100,3990
+3990 LET I0=0
+4000 REM " --- Correct?"
+4010 GOSUB 5000
+4020 CALL "SYC.YN",1,"Is The Above Information Correct",2,V$,V3
+4030 ON V3 GOTO 4040,4000,4000,4000,4900
+4090 ON POS(V$="YN") GOTO 4000,4100,2000
+4100 REM " --- Write"
+4150 WRITE (CSM01_DEV,KEY=A0$)IOL=CSM01A
+4190 GOTO 4900
+4900 REM " --- Run menu overlay"
+4990 RUN "CSM.AA"
+5000 REM " --- Display"
+5010 PRINT @(27,8),A3$(1,3)
+5020 PRINT @(27,10),STR(A[0]:"000000")
+5090 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END

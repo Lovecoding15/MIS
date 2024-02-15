@@ -1,0 +1,497 @@
+REM ' runs the SALES_RESERCH sproc and returns the result set via email in a text file
+
+begin
+seterr err_trap
+setesc esc_trap
+
+REM ========================================================================
+REM USE and Declares
+REM ========================================================================
+
+	declare BBjSysGui sysgui!
+	declare BBjTopLevelWindow win!
+	declare BBjFont font!
+	declare BBjStaticText titleDesc!
+	declare BBjStaticText label!
+	declare BBjEditBox inputEmail!
+	declare BBjButton buttonStart!
+	declare BBjButton buttonFinish!
+	declare BBjStaticText warning!
+	declare BBjInputD startDate!
+	declare BBjStaticText startDateLabel!
+	declare BBjInputD endDate!
+	declare BBjStaticText endDateLabel!
+	declare BBjVector salesTypeMaster!
+	declare BBjEditBox custNbr!
+	declare BBjStaticText custNbrLabel!
+	declare BBjStaticText customerName!
+	declare BBjStaticText label1!
+	declare BBjListButton firmID!
+
+REM ========================================================================
+REM Common information
+REM ========================================================================
+
+	rem ' set the environment
+
+	REM Open the BBj SysGUI Channel
+	sysgui!=BBjAPI().openSysGui("X0") 
+
+	rem ' open the customer masterfile
+	call "ec_open::ARM01"
+	
+	REM ' Initialization
+	server$ = "localhost"
+	uid$ = "basisaon"
+	pwd$ = "kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww"
+	dbName$ = "AddOnData"
+
+	REM Database connection string
+	chan = sqlunt
+	sqlopen(chan)"jdbc:basis:" + server$ + ":2001?database=" + dbName$ + "&user=" + uid$ + "&pwd=" + pwd$ + "&ssl=true"
+
+	REM ' find the images
+	bbjhome$ = System.getProperty("basis.BBjHome") + "/"
+	imageshome$ = bbjhome$ + "demos/DigitalDashboard/images/"
+	
+	REM ' get firm and firm name
+	rem ' sysinfo_template$=stbl("+SYSINFO_TPL",err=*next)
+	rem ' dim sysinfo$:sysinfo_template$
+	rem ' sysinfo$=stbl("+SYSINFO",err=*next)
+	rem ' firm_id$=sysinfo.firm_id$
+	rem ' firm_name$=sysinfo.firm_name$
+
+	REM set start and end month and year
+	year$ = date(0:"%Y")
+	year = num(year$)
+        startmonth$ = "01"
+        startmonth = num (startmonth$)
+        startday$ = "01"
+	startday = num(startday$)
+	endyear = year
+	endMonth$ = date(0:"%Mz")
+	endmonth = num(endMonth$)
+	endDay$ = date(0:"%Dz")
+	endDay = num(endDay$)
+	
+REM ========================================================================
+REM create the window
+REM ========================================================================
+
+	winWidth = 380
+	winHeight = 290
+
+	win!=sysgui!.addWindow(50, 150, winWidth, winHeight, "Sales Summary Sale Type/Price Tier",$00010012$)
+	font! = sysgui!.makeFont("Ariel", 10, sysgui!.BOLD)
+
+	titleDesc! = win!.addStaticText(win!.getAvailableControlID(), 10,10,300,20,"Extract from AR Invoice History Table")
+	titleDesc!.setFont(font!)
+
+	label! = win!.addStaticText(win!.getAvailableControlID(), 10, 40,100,20,"E-mail to:")
+	label!.setFont(font!)
+
+	inputEmail! = win!.addEditBox(win!.getAvailableControlID(), 80, 40, 260, 20, stbl("+SALES"))
+	rem ' inputEmail! = win!.addEditBox(win!.getAvailableControlID(), 80, 40, 260, 20, "kurt.e.williams@comcast.net")
+	inputEmail!.setFont(font!)
+
+	startDateLabel! = win!.addStaticText(win!.getAvailableControlID(), 5, 70, 100, 20,"Start Date:")
+	startDateLabel!.setFont(font!)
+
+	startDate! = win!.addInputD(win!.getAvailableControlID(), 80, 70, 100, 20, $$, "%Yl-%Mz-%Dz", "", jul(year,startmonth,startDay), jul(year,startmonth,startDay))
+	startDate!.setFont(font!)
+	buttonStartLookup! = win!.addButton(win!.getAvailableControlID(), 180, 67, 26, 26, "BITMAP=" + imageshome$ + "binoculars.png")
+	buttonStartLookup!.setFont(font!)
+	buttonStartLookup!.setCallback(buttonStartLookup!.ON_BUTTON_PUSH, "SELECT_START_DATE")
+
+	
+	endDateLabel! = win!.addStaticText(win!.getAvailableControlID(), 10, 100, 100, 20,"End Date:")
+	endDateLabel!.setFont(font!)
+
+	endDate! = win!.addInputD(win!.getAvailableControlID(), 80, 100, 100, 20, $$, "%Yl-%Mz-%Dz", "", jul(endyear,endmonth,endDay), jul(endyear,endmonth,endDay))
+	endDate!.setFont(font!)
+	buttonFinishLookup! = win!.addButton(win!.getAvailableControlID(), 180, 97, 26, 26, "BITMAP=" + imageshome$ + "binoculars.png")
+	buttonFinishLookup!.setFont(font!)
+	buttonFinishLookup!.setCallback(buttonFinishLookup!.ON_BUTTON_PUSH, "SELECT_FINISH_DATE")
+
+	firm_id$="01"
+	firm_name$="BAS"
+	label1! = win!.addStaticText(win!.getAvailableControlID(), 40, 130, 100, 20,"Firm:")
+	label1!.setFont(font!)
+	
+	firmIDs$ = "01 BAS" + $0A$ + "02 BSG" + $0A$
+	firmID! = win!.addListButton(win!.getAvailableControlID(), 80, 130, 90, 60, firmIDs$, $0000$)
+	firmID!.setFont(font!)
+	firmID!.selectIndex(0)
+	firmID!.setCallback(firmID!.ON_LIST_SELECT, "firmSelected")	
+	
+	custNbrLabel! = win!.addStaticText(win!.getAvailableControlID(), 5, 160, 100, 20,"Customer:")
+	custNbrLabel!.setFont(font!)
+
+	custNbr! = win!.addEditBox(win!.getAvailableControlID(), 80, 160, 100, 20, "All")
+	custNbr!.setFont(font!)
+	custNbr!.setCallback(custNbr!.ON_LOST_FOCUS, "CUSTOMER_CHANGE")
+	customerValid = 1
+
+	custNbr2Label! = win!.addStaticText(win!.getAvailableControlID(), 185, 160, 30, 20,"To:")
+	custNbr2Label!.setFont(font!)
+
+	custNbr2! = win!.addEditBox(win!.getAvailableControlID(), 216, 160, 100, 20, "")
+	custNbr2!.setFont(font!)
+	custNbr2!.setCallback(custNbr2!.ON_LOST_FOCUS, "CUSTOMER2_CHANGE")
+	custNbr2!.setEnabled(0)
+	customer2Valid = 1
+	
+	customerName! = win!.addStaticText(win!.getAvailableControlID(), 80, 190, 260, 20,"All Customers")
+	customerName!.setFont(font!)
+
+	customer2Name! = win!.addStaticText(win!.getAvailableControlID(), 80, 220, 260, 20,"")
+	customer2Name!.setFont(font!)
+
+	buttonStart! = win!.addButton(win!.getAvailableControlID(), 200, 250, 70, 20, "Start")
+	buttonStart!.setFont(font!)
+	buttonStart!.setCallback(buttonStart!.ON_BUTTON_PUSH, "EXECUTE_QUERY")
+
+	buttonFinish! = win!.addButton(win!.getAvailableControlID(), 280, 250, 60, 20, "Exit")
+	buttonFinish!.setFont(font!)
+	buttonFinish!.setCallback(buttonFinish!.ON_BUTTON_PUSH, "DONE")
+
+	warning! = win!.addStaticText(win!.getAvailableControlID(), 10, 250, 100, 20,"Please wait.")
+	warning!.setFont(font!)
+	warning!.setVisible(0)
+	
+	win!.setVisible(1)
+
+	process_events 
+
+DONE:
+	release
+	
+SELECT_START_DATE:
+    startDate!.calendar()
+    return
+
+SELECT_FINISH_DATE:
+    endDate!.calendar()
+    return
+
+FIRMSELECTED:
+	
+	temp$ = firmID!.getText()
+	firm_id$ = temp$(1,2)
+	firm_name$ = temp$(3)
+	
+	gosub customer_change
+	gosub customer2_change
+	
+	return
+
+CUSTOMER_CHANGE:
+	custNbr$ = custNbr!.getText()
+	if cvs(custNbr$,3) = "" or cvs(custNbr$,7) = "ALL" then
+		customerName!.setText("All Customers")
+		customerValid = 1
+	else
+		if len(custNbr$) < 6 then
+			while len(custNbr$) < 6
+				custNbr$ = "0" + custNbr$
+			wend
+		fi
+		if len(custNbr$) > 6 then custNbr$ = custNbr$(1,6)
+		found = 0
+		read record(arm01,key = firm_id$ + custNbr$,dom=*next)arm01$; found = 1
+		if found then
+			custNbr!.setText(custNbr$)
+			cust1country$ = cvs(arm01.country$,3)
+			customerName!.setText(cvs(arm01.cust_name$,3))
+			custNbr2!.setEnabled(1)
+			customerValid = 1
+		else
+			cust1country$ = ""
+			customerName!.setText("Customer number invalid.")
+			custNbr2!.setText("")
+			customer2Name!.setText("")
+			custNbr2!.setEnabled(0)
+			customerValid = 0
+		fi
+	fi
+	return
+
+CUSTOMER2_CHANGE:
+	custNbr2$ = custNbr2!.getText()
+	if custNbr2$ = "" then
+		customer2Name!.setText("")
+		customer2Valid = 1
+	else
+		if len(custNbr2$) < 6 then
+			while len(custNbr2$) < 6
+				custNbr2$ = "0" + custNbr2$
+			wend
+		fi
+		if len(custNbr2$) > 6 then custNbr2$ = custNbr2$(1,6)
+		found = 0
+		read record(arm01,key = firm_id$ + custNbr2$,dom=*next)arm01$; found = 1
+		if found then
+			custNbr2!.setText(custNbr2$)
+			cust2country$ = cvs(arm01.country$,3)
+			customer2Name!.setText(cvs(arm01.cust_name$,3))
+			customer2Valid = 1
+			if num(custNbr2$) <= num(custNbr!.getText()) then
+				msg = msgbox("The (To:) Customer is less than or equal to the from customer.",0,"Range Error")
+				cust2country$ = ""
+				customer2Name!.setText("Customer number invalid.")
+				customer2Valid = 0
+			fi
+		else
+			cust2country$ = ""
+			customer2Name!.setText("Customer number invalid.")
+			customer2Valid = 0
+		fi
+	fi
+	return
+
+
+
+EXECUTE_QUERY:
+
+	gosub customer_change
+	gosub customer2_change
+	
+	if customerValid and customer2Valid then
+
+		rem --- msg = msgbox("This process may take up to 3 minutes.", 0, "Process Warning")
+
+		REM Set a wait cursor
+		win!.setCursor(3)
+		buttonStart!.setEnabled(0)
+		buttonFinish!.setEnabled(0)
+		warning!.setVisible(1)
+
+		rem --- three processes (ALL, single customer, list of customers)
+		
+		rem ' set the customer list
+		custList$ = ""
+		custNbr$ = custNbr!.getText()
+		custNbr$ = cvs(custNbr$,7)
+		if custNbr$ = "ALL" then
+			custList$ = "ALL   "
+		else
+			custList$ = custNbr$ 
+			custNbr2$ = custNbr2!.getText()
+			custNbr2$ = cvs(custNbr2$,3)
+			rem ' do we have a list
+			if len(custNbr2$) <> 0 then
+				read record(arm01,key=firm_id$ + custNbr$)arm01$
+				while 1
+					read record(arm01,end=*break)arm01$
+					if arm01.firm_id$ + arm01.customer_nbr$ > firm_id$ + custNbr2$ then break
+					custList$ = custList$ + arm01.customer_nbr$
+				wend
+			fi
+		fi
+
+		while len(custList$) > 0
+
+			custNbr$ = cvs(custList$(1,6),3), custList$ = custList$(7)
+			if custNbr$ = "ALL" then
+				customerName$ = "All Customers"
+				custNbr$ = ""
+			else
+				read record(arm01,key = firm_id$ + custNbr$)arm01$
+				customerName$ = cvs(arm01.cust_name$,3)
+				country$ = cvs(arm01.country$,3)
+				if firm_id$ = "02" and len(country$) > 0 then customerName$ = customerName$ + " (" + country$ + ")"
+			fi
+
+			rem ' set the sql
+			sql$ = "CALL SALES_RESEARCH('" + startDate!.getText() + "', '" + endDate!.getText() + "', '" + custNbr$ + "', '" +firm_id$ + "')"
+
+			sqlprep(chan)sql$
+			sqlexec(chan)
+			dim returnRow$:sqltmpl(chan)
+
+			tempFile$ = stbl("TEMP") + "salesResearch" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".csv"
+			erase tempFile$, err=*next
+			string tempFile$
+			outfile = unt
+			open(outfile)tempFile$
+
+			rem ' change from using an output template to using a csv record
+			rem ' dim outrec$:"TYPE_OF_SALE:C(3*=9),TIER:C(20*=9),TOTAL_USERS:C(20*=9),TOTAL_SFUSERS:C(20*=9),TOTAL_EFUSERS:C(20*=9),TOTAL_SALES:C(20*=9),TOTAL_LIST:C(20*=9),NUM_OF_SALES:C(10*=9)"
+			s$ = chr(34) + "," + chr(34)
+			q$ = chr(34)
+
+			write (outfile) q$ + "Sales Summary by Type of Sale/Price Tier for " + startDate!.getText() + " to: " + endDate!.getText() + " " + firm_id$ + " " + firm_name$ + " " + custNbr$ + " " + customerName$ + q$
+
+			outrec$ =  q$ + "Type of Sale"
+			outrec$ = outrec$ + s$ + "Price Tier"
+			outrec$ = outrec$ + s$ + "User Type"
+			outrec$ = outrec$ + s$ + "Total Users"
+			rem ' outrec$ = outrec$ + s$ + "Total SF Users"
+			rem ' outrec$ = outrec$ + s$ + "Total EF Users"
+			outrec$ = outrec$ + s$ + "Users"
+			outrec$ = outrec$ + s$ + "Total Sales"
+			outrec$ = outrec$ + s$ + "Total List"
+			outrec$ = outrec$ + s$ + "Num of Sales" + q$
+			write (outfile)outrec$
+
+
+			rem ' build a list of avaiable sales types and price tiers for the firm
+			call "ec_open::CSM07"
+			rem ' position the key pointer to the first record for the firm
+			read record(csm07,key=firm_id$,dom=*next)csm07$
+		
+			dim driver$:"TYPE_OF_SALE:C(3),TIER:C(20*=9),USER_TYPE:C(10*=9)"
+			dim tier_name$[4]
+			tier_name$[0] = "Tier 1,    1 -  10"
+			tier_name$[1] = "Tier 2,   11 -  25"
+			tier_name$[2] = "Tier 3,   26 -  50"
+			tier_name$[3] = "Tier 4,   51 - 999"
+			tier_name$[4] = "Tier 5, 1000 - Up"
+			salesTypeMaster! = BBjAPI().makeVector()
+			tier = 0
+
+			while 1
+				read record(csm07,end=*break)csm07$
+				if csm07.firm_id$ <> firm_id$ then break
+				for tier = 0 to 4
+					driver.TYPE_OF_SALE$ = csm07.TYPE_OF_SALE$
+					driver.TIER$ = tier_name$[tier]
+					driver.USER_TYPE$="Standard"
+					salesTypeMaster!.addItem(driver$)
+					driver.USER_TYPE$="Extended"
+					salesTypeMaster!.addItem(driver$)
+				next tier
+			wend
+
+			REM Iterate over the result set 
+			index = 0
+			while 1
+
+				returnRow$ = sqlfetch(chan,err=*BREAK)
+
+				gosub write_filler_rows
+
+				rem ' do the standard user row
+				outrec$ = q$ + returnRow.TYPE_OF_SALE$
+				outrec$ = outrec$ + s$ + returnRow.TIER$
+				outrec$ = outrec$ + s$ + driver.USER_TYPE$
+				outrec$ = outrec$ + s$ + returnRow.TOTAL_USERS$
+				outrec$ = outrec$ + s$ + returnRow.TOTAL_SFUSERS$
+				outrec$ = outrec$ + s$ + returnRow.TOTAL_SALES$
+				outrec$ = outrec$ + s$ + returnRow.TOTAL_LIST$
+				outrec$ = outrec$ + s$ + returnRow.NUM_OF_SALES$ + q$
+				write (outfile)outrec$
+
+				rem ' do the extended users
+				driver$ = cast(BBjString, salesTypeMaster!.getItem(index))
+				index = index + 1
+				outrec$ = q$ + returnRow.TYPE_OF_SALE$
+				outrec$ = outrec$ + s$ + returnRow.TIER$
+				outrec$ = outrec$ + s$ + driver.USER_TYPE$
+				outrec$ = outrec$ + s$ + "0"
+				outrec$ = outrec$ + s$ + returnRow.TOTAL_EFUSERS$
+				outrec$ = outrec$ + s$ + "0"
+				outrec$ = outrec$ + s$ + "0"
+				outrec$ = outrec$ + s$ + "0" + q$
+				write (outfile)outrec$
+
+			wend
+
+			gosub finish_filling_file
+	
+			close (outfile)
+
+			rem ' email the results
+			from$="customer-service@basis.cloud"
+			to$=inputEmail!.getText()
+			if custNbr$ = "" then
+				subject$="Sales Summary by Sale Type/Price Tier All Customers"
+			else	
+				subject$="Sales Summary by Sale Type/Price Tier (" + custNbr$ + ") " + customerName$
+			fi
+			attach$=tempFile$
+			msgtxt$="See attached"
+			cc$="", bcc$=""
+			call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, attach$
+
+			erase tempFile$,err=*next
+		
+		wend
+
+		msg = msgbox("The Query is complete and the results have been emailed to: " + inputEmail!.getText(), 0, "Complete")
+
+		buttonStart!.setEnabled(1)
+		buttonFinish!.setEnabled(1)
+		warning!.setVisible(0)
+
+		REM Set a normal cursor
+		win!.setCursor(0)
+
+	else
+	
+		if !customerValid then
+			msg = msgbox("Customer number is not valid.", 0, "Invalid Customer")
+		else
+			msg = msgbox("The (To:) Customer number is not valid.", 0, "Invalid (To:) Customer")
+		fi
+	fi
+		
+	return
+
+finish_filling_file:
+
+	if index > 0 then
+		while index < salesTypeMaster!.size()
+			driver$ = cast(BBjString, salesTypeMaster!.getItem(index))
+			index = index + 1
+			gosub write_filler_row
+		wend
+	fi
+return
+
+write_filler_rows:
+
+	while 1
+		driver$ = cast(BBjString, salesTypeMaster!.getItem(index))
+		index = index + 1
+
+		if driver.TYPE_OF_SALE$ <> returnRow.TYPE_OF_SALE$
+			gosub write_filler_row
+		else
+			if driver.tier$ <> returnRow.tier$
+				rem ' write standard user row
+				gosub write_filler_row
+			else
+				rem ' it is a match
+				break
+			fi
+		fi
+	wend
+return
+
+write_filler_row:
+
+	outrec$ = q$ + driver.TYPE_OF_SALE$
+	outrec$ = outrec$ + s$ + driver.TIER$
+	outrec$ = outrec$ + s$ + driver.USER_TYPE$
+	outrec$ = outrec$ + s$ + "0"
+	outrec$ = outrec$ + s$ + "0"
+	outrec$ = outrec$ + s$ + "0"
+	outrec$ = outrec$ + s$ + "0"
+	outrec$ = outrec$ + s$ + "0" + q$
+	write (outfile)outrec$
+
+return
+
+err_trap:
+	msgtxt$ = "An error " + str(err) + " occurred on line: " + str(tcb(5)) + " Description: " + errmes(-1)
+	retval = msgbox(msgtxt$, 16, "Error Message")
+	release
+
+esc_trap:
+	return
+	
+end
+
+
+	

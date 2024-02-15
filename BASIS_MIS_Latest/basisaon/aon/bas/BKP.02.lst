@@ -1,0 +1,85 @@
+0010 REM "Switch to/from BACK(n) directories
+0020 REM "Program BKP.02"
+0070 BEGIN 
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files
+0110 LET FILES=1
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0125 LET FILES$[1]="SYS-01"
+0170 CALL "SYC.DA",1,1,1,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0175 IF STATUS>0 THEN GOTO 9900
+0180 LET SYS01_DEV=CHANNELS[1]
+0200 REM " --- IOLists
+0300 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0400 REM " --- Parameters
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0415 LET N0$=F0$(16,2)
+0500 REM " --- Initializations"
+0530 LET L0=5,l1=5,opt$="C"
+0540 dim back$[3]
+0550 px$=pfx
+0560 back=pos("/BACK"=px$)
+0570 if back then px$=px$(back+8)
+0580 adata=pos("/ADATA"=px$)
+0590 p=pos(" "=px$(1,adata),-1)+1
+0600 path$=px$(p,adata-p+1)
+0610 for i=3 to 1 step -1
+0620 backfile$="/basisaon/aon/BACK"+str(i)+"/backup_date.txt"
+0630 bk=unt,back$[i]="(No Data)"
+0640 open(bk,err=*continue)backfile$
+0650 read(bk)xx$;close(bk);opt$=str(i)+","+opt$
+0660 back$[i]="Backup dated "+xx$
+0670 next i
+0700 REM " --- Background
+0710 for i=1 to 3
+0720 PRINT @(l1,l0+i),str(i),". "+back$[i]
+0730 next i
+0740 PRINT @(l1,l0+5),"Current Data",'ce'
+1000 REM 
+1020 LET V2$="C",v0$="",v1$="^",v3$=""
+1050 V0=1,V2=22,V4$="Select A Data Set <"+opt$+">",v1=42+INT(LEN(v4$)/2)
+1060 GOSUB 7000
+1070 IF V3=4 THEN GOTO 9900
+1080 PRINT @(v1,v2),V$
+1090 p=pos(V$=opt$)
+1100 if p=0 then goto 1000
+1120 if V$<>"C" then x$="BACK"+str(int(p/2)+1),px$=path$+x$+"/ "+px$
+1160 prefix px$
+1200 REM 
+4080 GOTO 9900
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9220 GOTO 0900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 RUN "SYS.AA"
+9999 END

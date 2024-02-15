@@ -1,0 +1,103 @@
+window.title=Administración de los Datos de su Usuario Final
+download.temp.explain=Descargar un archivo plantilla de número de serie de usuario final para llenarlo y descargarlo.
+download.temp.group.label=Descargar ARchivo Plantilla
+upload.explain=Descargar su archivo de número de serie de usuario final como actualización al sistema.
+upload.file=Descargar Archivo
+upload.group.label=Descargar Datos de Usuario Final
+download.eu.data.explain=Descargar su archivo de datos de número de serie de usuario final.
+download.file.label=Descargar Archivo
+download.eu.group.label=Decargar Archivo de Usuario Final
+done.label=Retroceder
+select.type.group.label=Seleccionar Tipo de Archivo
+tab.delimited.label=Oprimir Tab para Delimitar Texto
+vkeyed.label=VKeyed
+progress.cnt.label=Recuento de Avance:
+vkeyed.standalone.label=VKeyed con Aplicación Independiente
+menu.file=Archivo
+menu.exit=Salir
+menu.edit=Editar
+menu.edit.eu.data=Editar Datos de Usuario Final
+menu.actions=Acciones
+menu.download.temp=Descargar Plantilla
+menu.tab.delim.text=Oprimir Tab para Delimitar Archivo de Texto
+menu.vkeyed=Archivo VKeyed
+menu.vkeyed.with.app=VKeyed con Aplicación Independiente
+menu.download.existing.eu=Descargar Datos de Usuario Final Existente
+menu.upload.eu.data=Descargar Datos de Usuario Final
+
+no.eu.title=Sin Usuarios Finales
+
+no.eu.message=No hay usuarios finales para incluir en el archivo
+
+file.ready.title=Archivo Listo
+
+file.ready.msg=Se incluyeron {0} usuarios finales en el archivo que se empacó en {1} y se descargo a su sistema.
+
+no.ser.nbr.title=No hay Números de Serie
+
+no.ser.nbr.msg=No hay números de serie para incluir en el archivo
+
+ser.nbr.ready.msg=Se incluyeron {0} números de serie en los archivos que se empacaron en {1} y se descargaron a su sistema.
+
+
+no.company.name=No se proporcionaron datos para el campo nombre de la compañía.
+
+no.country=No se especificó pais o el país indicado ({0}) no es válido.
+
+no.state=Warning\: El estado que se indicó ({0}) no es válido. Se escribió registro con estado en blando.
+
+no.basis.prod=Warning\: El Producto BASIS indicado ({0}) no es válido. Se escribio registro con referencia de Producto BASIS en blanco.
+
+no.industry=Warning\: La industria que se indicó ({0}) no es válida.  Se escribio registro como 'Otra' Industria y se colocó la industria indicada en el campo de otra industria.
+
+wrong.serial.nbr=Este número de serie pertenece a otro cliente.
+
+serial.nbr.not.there=Este número de serie no está en el archivo.
+
+upl.comp.title=Actualización Terminada
+
+upl.comp.count={0} registros descargados.
+
+invalid.cust.count={0} números de serie descargados que se saltaron debido a que el número de cliente es inválido.
+
+invalid.serial.nbr.count={0} números de serie descargados que se saltaron debido a que el número de serie es inválido.
+
+data.validation.count={0} números de serie descargados que se saltaron debido a problema en la validación de datos.
+
+updated.count=Se actualizaron {0} registros de usuario final descargados.
+
+file.not.found.msg=El archivo debe ener un nombre de archivo STRING o VKEYED {0} y no tener extensión, o una extensión .tab, o una extensión .vky. Temtién puede ser el par de archivos {1} y {2} de la aplicación independiente.
+
+file.not.found.title=No se encontró el archivo
+
+string.file.proc.msg=Archivo STRING {0}, Procesando registros.
+
+vkeyed.file.proc.msg=Archivo VKEYED {0}, Procesando {1} registros.
+
+bad.filetype.msg=El archivo debe ser STRING o VKEYED.
+
+bad.filetype.title=Tipo de archivo incorrecto
+
+download.prompt=Guardar Archivo En
+
+file.transfer.abort=La transferencia del archivo se canceló o abortó debido a un error.
+
+file.transfer.abort.title=Transverencia Cancelad
+
+upload.file.prompt=Seleccionar el archivo que desea descargar.
+
+upload.another.file=¿Desea descargar otro archivo?
+
+upload.another.file.title=Otro Archivo
+
+exception.file.notice=Se descargará un archivo zip que contiene los registros de cualesquiera excepciones encontradas en el proceso de actualización.
+
+not.available.inBrowser.msg=La funcionalidad descargar/cargar no está disponible al correr la aplicación b-commerce en modo independiente.
+
+not.available.inBrowser.title=No Disponible
+
+singlefile.download.warning=Please Note\: Este archivo contiene solamente aquellos números de serie que actualmente no están ligados a un usuario final.
+
+singlefile.download.title=Solamente Números de Serie No Ligados
+
+no.email.address=Warning\: Solicitó Advantage o Anuncios, o ambos para\: {0} pero no proporcionó dirección de email. Advantage y Announcements indicados como No. 

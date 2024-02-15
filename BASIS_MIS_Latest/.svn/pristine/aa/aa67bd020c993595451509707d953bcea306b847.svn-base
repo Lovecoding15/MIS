@@ -1,0 +1,156 @@
+Updatexml log started: 2014-02-13@15:06:53
+Source syn file: /mnt/data/aon_prod/v1110/partnerqueries/config/partnerqueries.syn
+Target directory: /mnt/data/aon_prod/apps/partnerqueries
+[PQY_SERVER_FLEX] source=/u/docfiles/flexlic/  target=/u/docfiles/flexlic/
+[PARTNERQUERIES_PROG] source=/mnt/data/aon_prod/v1110/partnerqueries/prog/  target=/mnt/data/aon_prod/apps/partnerqueries/prog/
+[PQY_SERVER_BAS] source=/mnt/data/basisaon/aon/bas/  target=/mnt/data/basisaon/aon/bas/
+[PQY_PROGRAMS] source=/mnt/data/aon_prod/v1110/partnerqueries/prog/  target=/mnt/data/aon_prod/apps/partnerqueries/prog/
+[PARTNERQUERIES] source=/mnt/data/aon_prod/v1110/partnerqueries/data/  target=/mnt/data/aon_prod/apps/partnerqueries/data/
+[PQY_PROD_DOCS] source=/u/docfiles/sales/  target=/u/docfiles/sales/
+[PQY_CONNECT] source=jdbc:basis:localhost:2001?DATABASE=AddOnData&USER=admin&PWD=Titp4BBj&ssl=true  target=jdbc:basis:localhost:2001?DATABASE=AddOnData&USER=admin&PWD=Titp4BBj&ssl=true
+[PQY_SERVER_DATA] source=/mnt/data/basisaon/aon/ADATA/  target=/mnt/data/basisaon/aon/ADATA/
+[+DEFAULT_ASC_COMP_ID] source=01007514  target=01007514
+[PQY_TESTING_DOCS] source=/u/docfiles/sales/  target=/u/docfiles/sales/
+[PQY_SERVER_EC] source=/mnt/data/basisaon/ec/  target=/mnt/data/basisaon/ec/
+[PQY_PROD_SERVER] source=  target=
+PREFIX source=/mnt/data/aon_prod/v1110/partnerqueries/data/  target=/mnt/data/aon_prod/apps/partnerqueries/data/
+PREFIX source=/mnt/data/aon_prod/v1110/partnerqueries/prog/  target=/mnt/data/aon_prod/apps/partnerqueries/prog/
+
+Source directory: /mnt/data/aon_prod/v1110/partnerqueries/
+Target directory: /mnt/data/aon_prod/apps/partnerqueries
+
+copy source: /mnt/data/aon_prod/v1110/partnerqueries/
+    /mnt/data/aon_prod/v1110/partnerqueries/logs/updateapp_20110708_2122.txt
+    /mnt/data/aon_prod/v1110/partnerqueries/logs/updatexml_20110712_1838.txt
+    /mnt/data/aon_prod/v1110/partnerqueries/config/enu/partnerqueries.men
+    /mnt/data/aon_prod/v1110/partnerqueries/config/install_rules.txt
+    /mnt/data/aon_prod/v1110/partnerqueries/config/partnerqueries.syn
+    /mnt/data/aon_prod/v1110/partnerqueries/config/partnerqueries.syn.bak
+    /mnt/data/aon_prod/v1110/partnerqueries/data/arc/esp/pqy_inactive_par.arc
+    /mnt/data/aon_prod/v1110/partnerqueries/data/arc/ita/pqy_inactive_par.arc
+    /mnt/data/aon_prod/v1110/partnerqueries/data/arc/fra/pqy_inactive_par.arc
+    /mnt/data/aon_prod/v1110/partnerqueries/data/arc/deu/pqy_inactive_par.arc
+    /mnt/data/aon_prod/v1110/partnerqueries/data/arc/enu/pqy_inactive_par.arc
+    /mnt/data/aon_prod/v1110/partnerqueries/data/sync/adm_modules~[01007514PQY].xml.bak
+    /mnt/data/aon_prod/v1110/partnerqueries/data/sync/adm_modules~[01007514PQY].xml.bak1
+    /mnt/data/aon_prod/v1110/partnerqueries/data/sync/adm_modules~[01007514PQY].xml
+    /mnt/data/aon_prod/v1110/partnerqueries/data/sync/adm_module_dflt~[01007514PQY].xml
+    /mnt/data/aon_prod/v1110/partnerqueries/data/bar/pqy_inactive_par.zip
+    /mnt/data/aon_prod/v1110/partnerqueries/data/bar/pqy_inactive_par.xml
+    /mnt/data/aon_prod/v1110/partnerqueries/data/bar/delta/pqy_inactive_par.xml
+    /mnt/data/aon_prod/v1110/partnerqueries/data/admin_backup/adm_modules~[01007514PQY].xml.bak
+    /mnt/data/aon_prod/v1110/partnerqueries/data/admin_backup/adm_modules~[01007514PQY].xml
+    /mnt/data/aon_prod/v1110/partnerqueries/data/admin_backup/adm_module_dflt~[01007514PQY].xml
+    /mnt/data/aon_prod/v1110/partnerqueries/data/def/esp/pqy_inactive_par.def
+    /mnt/data/aon_prod/v1110/partnerqueries/data/def/ita/pqy_inactive_par.def
+    /mnt/data/aon_prod/v1110/partnerqueries/data/def/fra/pqy_inactive_par.def
+    /mnt/data/aon_prod/v1110/partnerqueries/data/def/deu/pqy_inactive_par.def
+    /mnt/data/aon_prod/v1110/partnerqueries/data/def/enu/pqy_inactive_par.def
+    /mnt/data/aon_prod/v1110/partnerqueries/data/cdf/pqy_inactive_par.cdf
+    /mnt/data/aon_prod/v1110/partnerqueries/prog/pqy_license_history.src
+    /mnt/data/aon_prod/v1110/partnerqueries/prog/pqy_inactive_rep.src
+    /mnt/data/aon_prod/v1110/partnerqueries/prog/pqy_inactive_query.src
+    /mnt/data/aon_prod/v1110/partnerqueries/prog/pqy_serial_nbr_query.src
+    /mnt/data/aon_prod/v1110/partnerqueries/callpoints/source/pqy_inactive_par_cpt.src
+    /mnt/data/aon_prod/v1110/partnerqueries/callpoints/prog/pqy_inactive_par_cpt.bbj
+
+copy SYSSTBL/STBL: PQY_SERVER_FLEX
+    SKIPPED /u/docfiles/flexlic
+
+copy SYSSTBL/STBL: PARTNERQUERIES_PROG
+    SKIPPED /mnt/data/aon_prod/v1110/partnerqueries/prog
+
+copy SYSSTBL/STBL: PQY_SERVER_BAS
+    SKIPPED /mnt/data/basisaon/aon/bas
+
+copy SYSSTBL/STBL: PQY_PROGRAMS
+    SKIPPED /mnt/data/aon_prod/v1110/partnerqueries/prog
+
+copy SYSSTBL/STBL: PARTNERQUERIES
+    SKIPPED /mnt/data/aon_prod/v1110/partnerqueries/data
+
+copy SYSSTBL/STBL: PQY_PROD_DOCS
+    SKIPPED /u/docfiles/sales
+
+copy SYSSTBL/STBL: PQY_CONNECT
+    SKIPPED jdbc:basis:localhost:2001?DATABASE=AddOnData&USER=admin&PWD=Titp4BBj&ssl=true
+
+copy SYSSTBL/STBL: PQY_SERVER_DATA
+    SKIPPED /mnt/data/basisaon/aon/ADATA
+
+copy SYSSTBL/STBL: +DEFAULT_ASC_COMP_ID
+    SKIPPED 01007514
+
+copy SYSSTBL/STBL: PQY_TESTING_DOCS
+    SKIPPED /u/docfiles/sales
+
+copy SYSSTBL/STBL: PQY_SERVER_EC
+    SKIPPED /mnt/data/basisaon/ec
+
+copy SYSSTBL/STBL: PQY_PROD_SERVER
+    SKIPPED 
+
+copy SYSPFX/PREFIX: /mnt/data/aon_prod/v1110/partnerqueries/data/
+    SKIPPED /mnt/data/aon_prod/v1110/partnerqueries/data
+
+copy SYSPFX/PREFIX: /mnt/data/aon_prod/v1110/partnerqueries/prog/
+    SKIPPED /mnt/data/aon_prod/v1110/partnerqueries/prog
+
+update target syn file: /mnt/data/aon_prod/apps/partnerqueries/config/partnerqueries.syn
+// Barista Application Framework - Application Synchronization File
+
+// Proprietary Information. BASIS International Ltd. All rights reserved.
+
+ACOMP=01007514;BASIS International, Ltd.
+
+SYS=PARTNERQUERIES;Partner Queries^Copyright (C) 2008 BASIS International, Ltd.^
+
+DIR=/mnt/data/aon_prod/apps/partnerqueries/
+
+MENU=partnerqueries
+
+APROD=PQY;Partner Queries;;;;;
+
+STBL=SET PARTNERQUERIES=/mnt/data/aon_prod/apps/partnerqueries/data/
+
+STBL=SET PARTNERQUERIES_PROG=/mnt/data/aon_prod/apps/partnerqueries/prog/
+
+STBL=SET +DEFAULT_ASC_COMP_ID=01007514
+
+STBL=SET PQY_CONNECT=jdbc:basis:localhost:2001?DATABASE=AddOnData&USER=admin&PWD=Titp4BBj&ssl=true
+
+STBL=SET PQY_PROGRAMS=/mnt/data/aon_prod/apps/partnerqueries/prog/
+
+STBL=SET PQY_SERVER_DATA=/mnt/data/basisaon/aon/ADATA/
+
+STBL=SET PQY_SERVER_EC=/mnt/data/basisaon/ec/
+
+STBL=SET PQY_SERVER_BAS=/mnt/data/basisaon/aon/bas/
+
+STBL=SET PQY_SERVER_FLEX=/u/docfiles/flexlic/
+
+STBL=SET PQY_TESTING_DOCS=/u/docfiles/sales/
+
+STBL=SET PQY_PROD_DOCS=/u/docfiles/sales/
+
+STBL=SET PQY_PROD_SERVER=
+
+PREFIX=/mnt/data/aon_prod/apps/partnerqueries/data/
+
+PREFIX=/mnt/data/aon_prod/apps/partnerqueries/prog/
+
+CFG=PARTNERQUERIES=/mnt/data/aon_prod/apps/partnerqueries/data/
+
+LANG=ENU
+
+
+
+update target adm_modules XML files: 
+    updated: /mnt/data/aon_prod/apps/partnerqueries/data/sync/adm_modules~[01007514PQY].xml
+      <<< 		<DD_MOUNT_DIR>/mnt/data/aon_prod/v1110/partnerqueries/</DD_MOUNT_DIR>
+      >>> 		<DD_MOUNT_DIR>/mnt/data/aon_prod/apps/partnerqueries/</DD_MOUNT_DIR>
+    updated: /mnt/data/aon_prod/apps/partnerqueries/data/admin_backup/adm_modules~[01007514PQY].xml
+      <<< 		<DD_MOUNT_DIR>/mnt/data/aon_prod/v1110/partnerqueries/</DD_MOUNT_DIR>
+      >>> 		<DD_MOUNT_DIR>/mnt/data/aon_prod/apps/partnerqueries/</DD_MOUNT_DIR>
+
+Updatexml log finished: 2014-02-13@15:06:54

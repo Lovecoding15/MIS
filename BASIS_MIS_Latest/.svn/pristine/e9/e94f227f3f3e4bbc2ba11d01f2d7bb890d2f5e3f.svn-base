@@ -1,0 +1,16 @@
+# properties used by sendEmail.src which is an interface to the email.bbj program
+
+mailhost=localhost
+
+mailport=25
+
+#used for testing from developers laptop
+#mailhost=smtp.gmail.com
+
+#mailport=465
+
+#username=kw5121151@gmail.com
+
+#password=97048ig8@ge
+
+

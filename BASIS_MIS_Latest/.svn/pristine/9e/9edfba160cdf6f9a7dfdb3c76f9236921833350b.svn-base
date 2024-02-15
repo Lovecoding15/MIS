@@ -1,0 +1,541 @@
+REM <ec_price.bbx> 
+REM Calculate price and transaction types by comparing current
+REM item and users with new item and users
+SETERR ERR_EXIT
+SETESC ERR_EXIT
+ENTER FIRM$,CUST$,QTY,CUR_ITEM$,C_USERS[all],c_prop$[all],NEW_ITEM$,N_USERS[all],n_prop$[all],RETURN_TYPE$[ALL],RETURN_PRICE[ALL],RETURN_DESC$,ARM02,ARM10I,CSM01,CSM02,CSM03,CSM04,CSM05,CSM07,CSM10,CSM13,IVM01,SMC01,SAM_FLAG,samfactor,CONTRACT$,T,xtra$
+
+rem ' debugLog = unt
+rem ' open(debugLog,mode="O_APPEND")"/mnt/data/basisaon/aon/tmp/ecpriceLog.txt"
+rem ' write(debugLog)"ENTER"
+rem ' write(debugLog)"samfactor: " + str(samfactor)
+
+rem ' are we working canadian pricing customer
+canadian_table$ = ""
+canadian_table$ = stbl("CANADIAN_TABLE",err=*next)
+if cvs(canadian_table$,3) <> "" then canadian_cust = 1 else canadian_cust = 0
+
+lang$=""
+disc_pct=0
+add_ts=0
+override_tier=0
+uncounted_change=0
+dc_call=0
+dc_rental=0
+dc_con=0
+no_rif=0
+extra_days=0
+for x=1 to 7
+  px=pos($0a$=xtra$)
+  if px=0 then continue
+  if x=1 then lang$=xtra$(1,px-1)
+  if x=2 then disc_pct=num(xtra$(1,px-1))
+  if x=3 then add_ts=num(xtra$(1,px-1))
+  if x=4 then override_tier=num(xtra$(1,px-1))
+  if x=5 then uncounted_change=num(xtra$(1,px-1))
+  if x=6 then no_rif=num(xtra$(1,px-1))
+  if x=7 then extra_days=num(xtra$(1,px-1))*365
+  xtra$=xtra$(px+1)
+next x
+if len(lang$)>2 then tmp$=lang$(3),lang$=lang$(1,2),dc_call=1
+if dc_call then 
+  dc_rental=num(tmp$(1,1),err=*next)
+  dc_con=num(tmp$(2,1),err=*next)
+fi
+call "templates.pgm::CSM04"
+call "templates.pgm::CSM05"
+call "templates.pgm::SMC01"
+call "templates.pgm::ARM02"
+
+new_users=0,cur_users=0,n=0,c=0,cur_item=len(cvs(cur_item$,3)),userchange=0
+dim cur_lprop$[2],new_lprop$[2],new_users[2],cur_users[2]
+dim cp$(9),np$(9)
+charge_sam_level=0
+for i=0 to 2
+ ux=n_users[i]-c_users[i]
+ if cvs(c_prop$[i],3)<>cvs(n_prop$[i],3) then ux=n_users[i]
+ charge_sam_level=charge_sam_level+ux*(ux>0)
+ new_users[i]=n_users[i]
+ cur_users[i]=c_users[i]
+ new_users=new_users+new_users[i]
+ cur_users=cur_users+cur_users[i]
+ cur_lprop$[i]=c_prop$[i],cp$(i*3+1,3)=c_prop$[i]
+ new_lprop$[i]=n_prop$[i],np$(i*3+1,3)=n_prop$[i]
+ if (cvs(cur_lprop$[i],3)<>"") then c=1
+ if (cvs(new_lprop$[i],3)<>"") then n=1
+ if new_users[i]<>cur_users[i] then userchange=1
+next i
+c_item$=cur_item$
+n_item$=new_item$
+
+Rem 'What are we dealing with:  (set typeflag) 
+Rem '0- if no cur_item and no new props, then NEW p5
+rem '1- if cur_item, no cur props, no new props, then a p5 mod
+rem '2- if no cur_item and there are new props, then NEW bbj
+rem '3- if cur_item, both cur props and new props, then a bbj mod
+rem '4- if cur_item, no cur props, but there are new props, then TRD
+typeflag=0
+if cur_item=0 and n then typeflag=2
+
+if cur_item then 
+  if c=0 and n=0 then typeflag=1, cur_lprop$[0]=cur_item$(1,3)
+  if c and n then typeflag=3
+  if c=0 and n then 
+    typeflag=4
+    cur_lprop$[0]=cur_item$(1,3)
+    if cvs(new_lprop$[1],3)<>"" then cur_lprop$[1]=cur_item$(1,3)
+  fi
+fi
+
+if typeflag<2 then new_lprop$[0]=new_item$(1,3)
+
+if typeflag=3 then
+  np$=ssort(np$,3),cp$=ssort(cp$,3)
+  if np$<>cp$ then userchange=1
+fi
+runtime_change=0
+if typeflag=1 and cur_item$(13,3)<>new_item$(13,3) then runtime_change=1
+rem 'any license type change -could be a change from read/write to readonly odbc
+
+LET RETURN_DESC$="",comm$=""
+IF NEW_USERS<1 OR CUR_USERS<0 THEN LET RETURN_DESC$="**Enter users",comm$="<C1"; GOTO PGM_EXIT
+IF QTY<1 THEN LET RETURN_DESC$="**Quantity must be greater than zero",comm$="<C2"; GOTO PGM_EXIT
+cur$="CUR"
+cp=(pos(CUR$=cur_item$)=10)
+np=(pos(CUR$=new_item$)=10)
+if np or cp then 
+ READrecord (CSM04,KEY=FIRM$+CUR$,dom=*NEXT)csm04$;tmp$=cvs(csm04.description$,3)
+ if cp and tmp$<>"" then cur_item$(10,3)=tmp$
+ if np and tmp$<>"" then new_item$(10,3)=tmp$
+fi
+
+LET cur_lic_rev=0,at_current_rev$=""
+dim csm04$:fattr(csm04$)
+csm04.dealer_str$=fill(19)
+readrecord (CSM04,KEY=FIRM$+CUR_ITEM$(10,3),ERR=*NEXT)csm04$
+LET cur_lic_rev=(csm04.key_or_licen$="L")
+at_current_rev$=csm04.dealer_str$(1,1)
+cur_rev$=cvs(csm04.description$,3)
+dim csm04$:fattr(csm04$)
+csm04.available1$=fill(10)
+READ record(CSM04,KEY=FIRM$+"CUR",ERR=*NEXT)csm04$
+latest_rev$=cvs(csm04.description$,3)
+if pos(latest_rev$=cur_item$)=10 then LET at_current_rev$="Y"
+LET new_rev$=cur_rev$,new_lic_rev=0
+dim csm04$:fattr(csm04$)
+readrecord (CSM04,KEY=FIRM$+NEW_ITEM$(10,3),DOM=*NEXT)csm04$
+new_lic_rev=(csm04.key_or_licen$="L")
+new_rev$=cvs(csm04.description$,3)
+READ record(CSM05,KEY=FIRM$+CUR_ITEM$(13,3),ERR=ODBC_SINGLE_USER_TEST)csm05$
+if pos("EXP"=cur_item$)=13 then csm05.expires$=" ",csm05.online_flag$=" " 
+expiring_license=(csm05.expires$="Y")
+IF dc_call=0 and csm05.online_flag$="N" AND ADD_TS=0 THEN LET RETURN_DESC$="**Call BASIS sales at 505.938.6120 for changes to this item.",comm$="<C3"; GOTO CLOSE_EXIT
+
+ODBC_SINGLE_USER_TEST: IF NEW_ITEM$(1,3)<>"ODB" THEN GOTO NEW_ITEM_TEST
+REM ODBC is single user only for revs prior to flex license
+IF new_lic_rev=0 AND NEW_USERS>1 THEN LET RETURN_DESC$="**This is a single user product. Set users to 1 or select a later revision."; GOTO CLOSE_EXIT
+
+NEW_ITEM_TEST: 
+LET sam_required=0
+LET MSG$="**Select Product",comm$="<C11"
+FIND (CSM01,KEY=FIRM$+NEW_ITEM$(1,3),DOM=*next)*,PR$,F2$;msg$="",comm$=""
+if len(f2$)>5 then sam_required=(F2$(6,1)="R" and expiring_license=0)
+IF cvs(NEW_ITEM$,3)=cvs(CUR_ITEM$,3) THEN GOTO INIT
+IF POS(NEW_ITEM$(1,3)="DS4P4E",3) THEN LET msg$="**Upgrading or adding users are the only options available",comm$="<C4",NEW_ITEM$=CUR_ITEM$
+if pos("-"=cvs(new_item$,3)) or pos(" "=cvs(new_item$,3)) then msg$="**Continue",comm$="<C5"
+IF MSG$<>"" THEN LET RETURN_DESC$=MSG$; GOTO ERR_EXIT
+dim ivm_item$(20)
+ivm_item$(1)=new_item$,ivmok=0
+FIND RECORD (ivm01,KEY=firm$+ivm_item$,ERR=*next)iv$;ivmok=1
+if ivmok=0 and len(cvs(ivm_item$,3))=15 then
+  ivm_item$(10,3)="CUR"
+  if ivm_item$(13,3)<>"STD" and ivm_item$(1,3)="BAS" then ivm_item$(13,3)="EXP"
+  FIND RECORD (ivm01,KEY=firm$+ivm_item$,ERR=*next)iv$;ivmok=1
+fi
+if ivmok=0 then RETURN_DESC$="**"+cvs(new_item$,3)+" Not in Inventory"; GOTO ERR_EXIT
+
+INIT: 
+LET TRANLIST$="",NL$=$0A$,SAM$="",ON_SAM=0,tot_price=0,expired=0
+LET NEW$="NEW"+NL$,UG4$="UG4"+NL$,TRD$="TRD"+NL$,PLX$="PLX"+NL$,UPD$="UPD"+NL$,UNC$="UNC"+NL$,ADD$="ADD"+NL$,TSI$="TSI"+NL$,rnw$="RNW"+nl$,rif$="RIF"+nl$
+READ RECORD (SMC01,KEY=CONTRACT$,knum=0,DOM=*next)SMC01$
+p=pos(smc01.contr_type$(1,2)="SM,DV") 
+factor_in=(samfactor>0 and dc_call=0)
+while p
+  JUL_ANNUAL=JUL(NUM(SMC01.ANNUAL_DT$(1,4)),NUM(SMC01.ANNUAL_DT$(5,2)),NUM(SMC01.ANNUAL_DT$(7,2)))
+  JUL_DT=JUL(0,0,0)
+  expired=(jul_annual<jul_dt)
+  if p=1 and SMC01.SAM_ACTIVE$="N" THEN expired=1
+  if expired then break
+  ON_SAM=num(smc01.contr_type$(3,1),err=*next)
+  if on_sam and userchange=0 and samfactor+jul_dt=jul_annual then factor_in=0
+  if samfactor=0 then
+    samfactor=jul_annual-jul_dt
+    if pos("EXP"=cur_item$)=13 or expiring_license then break 
+    if p=1 then samfactor=samfactor+extra_days
+  fi
+  break
+wend
+precision 4; samfactor=samfactor/365
+if samfactor=0 and p=0 then samfactor=1
+IF CUR_ITEM=0 THEN LET ADDUSERS=0,TRANLIST$=TRANLIST$+NEW$;GOTO PRICE_CALC
+
+LET ADDUSERS=NEW_USERS-CUR_USERS
+
+IF NEW_ITEM$(1,3)<>CUR_ITEM$(1,3) then 
+ LET T0$="D"+CUR_ITEM$(1,3),T1$=NEW_ITEM$(1,3); GOSUB FIND_CSM13
+ IF FOUND$<>"Y" THEN LET RETURN_DESC$="**Can't change product "+CUR_ITEM$(1,3)+" to "+NEW_ITEM$(1,3),comm$="<"+cur_item$(1,3)+"><"+new_item$(1,3)+">C8"; GOTO CLOSE_EXIT
+ while len(exc$)
+  LET X=POS(NL$=EXC$);if x=0 then break
+  LET TRANLIST$=TRANLIST$+EXC$(1,X),EXC$=EXC$(X+1)
+ wend
+ IF POS(UG4$=TRANLIST$) OR POS(TRD$=TRANLIST$) THEN GOTO PRICE_CALC 
+else 
+ if NEW_ITEM$(4,6)<>CUR_ITEM$(4,6) THEN LET TRANLIST$=TRANLIST$+PLX$
+fi
+
+IF NEW_ITEM$(10,3)=CUR_ITEM$(10,3) THEN GOTO PRICE_CALC
+
+LET INP$=new_rev$; GOSUB NUMERICS; LET new_rev$=TMP$,P1=P
+LET INP$=CUR_REV$; GOSUB NUMERICS; LET CUR_REV$=TMP$,P2=P
+REM Don't allow major rev backrev or license to revert to key
+IF INT(NUM(new_rev$))<INT(NUM(CUR_REV$)) OR new_lic_rev<cur_lic_rev THEN LET RETURN_DESC$="**Can't change revision "+CUR_REV$+" to "+new_rev$,comm$="<"+cur_rev$+"><"+new_rev$+">C9"; GOTO CLOSE_EXIT
+IF new_rev$(1,P1)<>CUR_REV$(1,P2) THEN LET TRANLIST$=TRANLIST$+UPD$
+IF new_lic_rev>cur_lic_rev and pos(upd$=tranlist$)=0 THEN LET TRANLIST$=TRANLIST$+UPD$
+IF new_rev$(1,P1)=CUR_REV$(1,P2) and pos(plx$=tranlist$)=0 and pos(upd$=tranlist$)=0 THEN LET TRANLIST$=TRANLIST$+UNC$
+
+PRICE_CALC: 
+precision 2
+LET T=POS(NL$=TRANLIST$,1,0)
+IF SAM_FLAG>0 and sam_flag<3 and expiring_license=0 THEN LET SAM$="SM"+str(sam_flag)+NL$
+LET upgrade$=UPD$+UG4$+TRD$
+IF new_lic_rev=0 THEN LET upgrade$=upgrade$+PLX$
+LET TMP$=upgrade$+NEW$,tmp=0
+WHILE LEN(TMP$)
+IF POS(TMP$(1,3)+NL$=TRANLIST$) THEN LET tmp=tmp+1
+LET TMP$=TMP$(5)
+WEND
+REM 'Require upgrade when buying SAM not at current rev and no other upg or new transaction
+IF tmp=0 and expired=0 AND ON_SAM=0 AND SAM_FLAG AND at_current_rev$<>"Y" THEN LET TRANLIST$=UPD$+TRANLIST$,T=T+1
+IF ADDUSERS>0 THEN LET TRANLIST$=TRANLIST$+ADD$,T=T+1
+REM User decrease must be 1st transaction
+IF ADDUSERS<0 THEN LET TRANLIST$=ADD$+TRANLIST$,T=T+1
+if userchange and typeflag=3 and pos(add$=tranlist$)=0 then tranlist$=tranlist$+add$,t=t+1
+LET SAMUSERS=NEW_USERS
+IF ON_SAM and factor_in=0 and typeflag<2 THEN LET SAMUSERS=ADDUSERS;IF ADDUSERS<1 THEN LET SAM$=""
+if on_sam and userchange=0 and factor_in=0 then sam$=""
+if userchange and typeflag=3 then temp=new_users-cur_users ;if temp>0 then samusers=temp
+IF T>0 or on_sam=0 THEN LET TRANLIST$=TRANLIST$+SAM$,T=T+(sam$<>"")
+renew_sam=(expired and sam_flag)
+IF renew_sam and pos("SM"=smc01.contr_type$) and no_rif=0 THEN TRANLIST$=TRANLIST$+rif$,T=T+1
+IF ADD_TS THEN LET TRANLIST$=TRANLIST$+TSI$,T=T+1
+
+rem 'check for counted/uncounted or runtime/ff change
+IF T=0 and (runtime_change or uncounted_change) then tranlist$=unc$,t=1 
+
+REM 'remove N/C plx if there is also an update
+u=(pos(upd$=tranlist$) or pos(unc$=tranlist$))
+LET P=POS(PLX$=TRANLIST$),TMP$=""
+IF P AND T>1 AND new_lic_rev and u THEN 
+IF P>1 THEN LET TMP$=TRANLIST$(1,P-1)
+LET TRANLIST$=TMP$+TRANLIST$(P+4),T=T-1
+FI 
+if u=0 and no_rif then tranlist$=unc$+tranlist$,t=t+1
+rem 'Remove nc update if there is a chargeable one
+if pos(upd$=tranlist$) then p=pos(unc$=tranlist$);if p then tranlist$(p,len(unc$))=fill(len(unc$)),t=t-1
+
+rem 'sam_flag for expiring_license indicates DVK,NFR renewal - rnw is like NEW
+IF SAM_FLAG and expiring_license THEN tranlist$=tranlist$+rnw$,t=t+1
+rem 'consolidate from directcomm
+IF dc_con THEN tranlist$=tranlist$+"CON"+nl$,t=t+1
+IF T=0 and factor_in THEN TRANLIST$=TRANLIST$+SAM$,T=T+(sam$<>"")
+IF T=0 THEN GOTO NO_TRANS
+rem ?tranlist$;input xx$;if xx$<>"" then escape
+
+T=T-1
+DIM T_PRICE[T],TEMP_TYPE$[T],RETURN_TYPE$[T],RETURN_PRICE[2*T+1],TEMP_DESC$[T]
+LET l=0,upgrade=0,upgrade_done=0,samtotal=0,t1=0
+readrecord (ARM02,KEY=FIRM$+CUST$+"  ",DOM=*next)arm02$
+splevel=arm02.pricing_level
+if splevel=0 then let splevel=override_tier
+if disc_pct=0 and dc_rental=0 then FIND (ARM10I,KEY=FIRM$+"I"+arm02.disc_code$,ERR=*next)*,disc_pct
+rem 'how many userchange lines?
+uc_count=(pos(add$=tranlist$)<>0)
+change$="",uc_line=0,uc_price=0
+
+WHILE l<=T
+
+LET n=POS(NL$=TRANLIST$,1,l+1); IF n<4 THEN LET l=l+1; CONTINUE
+LET trn$=TRANLIST$(n-3,3)
+LET T_PRICE[l]=9999
+
+LET upgrade=POS(trn$+NL$=upgrade$)
+IF upgrade AND (ON_SAM OR upgrade_done or renew_sam) THEN LET T_PRICE[l]=0;if pos(trn$=UPD$) then trn$="UNC"
+
+REM 'TRD of dataservers is actually an upgrade fee
+IF POS(trn$=TRD$) AND POS("DS5"=CUR_ITEM$)=1 THEN 
+  cur_lprop$[0]=cur_item$(1,3)
+  new_lprop$[0]=cur_item$(1,3)
+  cur_lprop$[1]=""
+  new_lprop$[1]=""
+  trn$="UPD"
+fi
+
+IF pos(trn$=rnw$) then
+  cur_users[0]=0
+  cur_users[1]=0
+  cur_lprop$[0]=""
+  cur_lprop$[1]=""
+fi
+
+REM 'SAM required for update or must be purchased w/new BBj product
+IF upgrade AND sam_required AND ON_SAM=0 AND SAM_FLAG=0 THEN 
+  RETURN_DESC$="**SAM required.",comm$="<C6"
+  if dc_call=0 or pos(new_item$(13,3)="KITRN1NFR",3)=0 then EXITTO close_exit
+fi
+
+REM N/C platform exch for licensed products
+IF POS(trn$=PLX$) AND new_lic_rev THEN LET T_PRICE[l]=0
+REM User decrease, price=0
+sameprop=(cvs(cur_lprop$[0],3)=cvs(new_lprop$[0],3) and cvs(cur_lprop$[1],3)=cvs(new_lprop$[1],3))
+
+REM ' broke this into two ifs 3/30/2009 to handle a user decrease and a SAM renewal at the same time
+REM ' IF POS(trn$=ADD$+sam$) AND ADDUSERS<0 and (typeflag<2 or sameprop) THEN T_PRICE[l]=0
+REM ' on 7/15/2009 removed sameprop from the test to handle a net user decrease where extended users increase less
+REM ' than standard users decrease
+REM ' IF POS(trn$=ADD$) AND ADDUSERS<0 and (typeflag<2 or sameprop) THEN T_PRICE[l]=0
+IF POS(trn$=ADD$) AND ADDUSERS<0 and typeflag<2 THEN T_PRICE[l]=0
+REM ' added the !sam_required test 6/29/2009 to handle a user decrease and an add SAM at the same time (bug 3231)
+IF POS(trn$=sam$) AND ADDUSERS<0 and (typeflag<2 or sameprop) and !renew_sam and !sam_required THEN T_PRICE[l]=0
+
+LET desc$=""; READ (CSM07,KEY=FIRM$+trn$,DOM=*NEXT)*,desc$
+
+LET prorate=(POS("S"=trn$)=1)
+if POS("AD"=trn$)=1 and expiring_license then prorate=1
+
+line_item$=NEW_ITEM$
+U=cur_users
+if addusers<0 then u=u+addusers
+IF POS(trn$=NEW$+rnw$) THEN LET U=new_users
+IF POS(trn$=ADD$) THEN LET U=ADDUSERS,line_item$=fnsub$(NEW_ITEM$(1,3)) 
+IF trn$(1,1)="S" THEN LET U=SAMUSERS,line_item$=fnsub$(NEW_ITEM$(1,3)),line_item$=line_item$(1,3)+"SAM"+str(sam_flag)
+
+IF POS(trn$=TSI$) THEN 
+	LET line_item$="SUPPORT",QTY=ADD_TS
+	if canadian_cust then
+		line_item$ = line_item$ +"CA"
+	fi
+fi
+
+IF POS(trn$=rif$) THEN LET line_item$="REINSFEE"
+LET line_item$="|"+line_item$+FILL(20),line_item$=line_item$(1,21)
+samtype$="",xx=len(sam$);if xx>2 then samtype$=sam$(1,3)
+
+IF t_price[l] THEN
+ IF POS(trn$=TSI$) THEN gosub ivm02_price;goto skip_sam
+ if pos("S"=trn$)=1 and on_sam and samtotal then goto skip_sam
+ IF upgrade THEN LET upgrade_done=1
+ lic_type$=new_item$(13,3)
+ old_rev$=""
+ if len(c_item$)>12 then old_rev$=c_item$(10,3)
+ charge_sam=(pos(trn$=add$) and on_sam=0 and sam_required and sam_flag=0)
+ if charge_sam then 
+   on_sam=1,holdsamtype$=samtype$,samtype$="SM1"
+   holdsplevel=splevel
+   if splevel=0 then splevel=max(1,charge_sam_level)
+ fi
+ dim nusr[2],cusr[2],nprop$[2],cprop$[2]
+ rloop=0,rprice=999999
+ rif=POS(trn$=rif$)
+ rif_loop:
+ nusr[]=new_users[]
+ cusr[]=cur_users[]
+ nprop$[]=new_lprop$[]
+ cprop$[]=cur_lprop$[]
+ rem 'Figure RIF twice if users changed, charge lower amount
+ IF rif THEN 
+   if rloop=0 then 
+     nusr[]=cur_users[],nprop$[]=cprop$[] 
+   else
+     cusr[]=new_users[],cprop$[]=nprop$[] 
+   fi
+ fi
+
+rem ' print "before price.pgm call"
+rem ' print "lic_type:", lic_type$
+rem ' print "current user/new user: ",cusr[all], " / ",nusr[all]
+rem ' print "curent lic prop/new lic prop: ", cprop$[all]," / ",nprop$[all]
+rem ' print "old rev/sam type: ",old_rev$," / ",samtype$
+rem ' print "on_sam/disc_pct/splevel/price/samprice",on_sam,disc_pct,splevel,price,samprice
+rem ' input *
+
+ call "price.pgm",firm$,trn$,lic_type$,cusr[all],nusr[all],cprop$[all],nprop$[all],old_rev$,samtype$,on_sam,disc_pct,splevel,price,samprice
+
+rem ' debuggin
+rem ' print "on_sam/disc_pct/splevel/price/samprice",on_sam,disc_pct,splevel,price,samprice
+rem ' input yzx$
+rem ' if yzx$="e" or yzx$="E" then escape
+
+ samtotal=samtotal+samprice
+
+ listprice=0
+ listprice=num(stbl("LISTPRICE"),err=*next)
+ if price = 0 and listprice < 0 then listprice = 0
+
+ samlist=0
+ samlist=num(stbl("SAMLIST"),err=*next)
+ if samprice = 0 and samlist < 0 then samlist = 0 
+
+ if charge_sam then 
+   on_sam=0,samtype$=holdsamtype$,splevel=holdsplevel
+   price=price+max(samprice,0)
+   listprice=listprice+max(samlist,0)
+ fi
+ if rif then
+   rprice=min(rprice,price)
+   if rloop=1 and price=rprice then u=new_users
+   if new_users[0]<>cur_users[0] or new_users[1]<>cur_users[1] then 
+     if rloop=0 then rloop=1;goto rif_loop
+   fi
+   price=rprice,listprice=price
+   
+   rem --- RIF discounting section changed by kew 6/27/2014 / 7/1/2014
+   rem --- if pos(arm02.cust_type$(1,1)="A") then price=price*(1-disc_pct/100)
+   rem --- all customer types beginning with A are Addon Partner customer types
+   rem --- with the exception of ADI which is Advantage only Intl
+   if pos(arm02.cust_type$(1,1)="A") and arm02.cust_type$ <> "ADI" then price=price*(1-disc_pct/100)
+ fi
+ skip_sam:
+ 
+rem '  if pos("S"=trn$)=1 then
+rem '  	write(debugLog)"price: " + str(price)
+rem '  	write(debugLog)"trn$: " + trn$
+rem '  	write(debugLog)"samtotal: " + str(samtotal)
+rem '  	write(debugLog)"prorate: " + str(prorate)
+rem '  	write(debugLog)"samfactor: " + str(samfactor)
+rem '  fi
+ 
+ if pos("S"=trn$)=1 then price=max(0,samtotal)
+ if prorate then price=price*samfactor,samlist=samlist*samfactor
+ t_price[l]=price*qty
+FI 
+IF price<0 THEN LET RETURN_DESC$="**Price can't be calculated for this item",comm$="<C7",l=T+1; CONTINUE
+rem 'Reset old property after trd,upg for possible user change and/or sam
+if pos(trn$="TRD,UG4") then let cur_lprop$[0]=new_lprop$[0],cur_lprop$[1]=new_lprop$[1]
+LET TEMP_TYPE$[l]=trn$+line_item$
+
+rem ' write(debugLog)"temp_type:" + temp_type$[l]
+
+LET u$=", "+STR(U)+" user"; IF U>1 THEN LET u$=u$+"s"
+IF POS(trn$=TSI$) THEN LET u$=""
+
+rem 'combine user changes into 1 transaction
+IF POS(trn$=ADD$) THEN 
+  uc_line=uc_line+1  
+  if change$="" then 
+    if cur_users[0] then change$=str(cur_users[0])+" "+cvs(cur_lprop$[0],3)
+    if cur_users[0]*cur_users[1] then change$=change$+","
+    if cur_users[1] then change$=change$+str(cur_users[1])+" "+cvs(cur_lprop$[1],3)
+    change$=change$+" to "
+  fi
+  uc_price=uc_price+t_price[l]
+  if new_users[0] then change2$=str(new_users[0])+" "+cvs(new_lprop$[0],3)
+  if new_users[0]*new_users[1] then change2$=change2$+","
+  if new_users[1] then change2$=change2$+str(new_users[1])+" "+cvs(new_lprop$[1],3)
+  LET u$=" "+cvs(change$+change2$,35)
+  if uc_line<>uc_count then temp_type$[l]="",u$="",desc$="" else t_price[l]=uc_price
+fi
+
+dl$=$0a$
+LET TEMP_DESC$[l]=CVS(desc$,2)+u$+dl$
+if pos("S"=trn$)=1 and price=0 then temp_type$[l]=""
+
+rem ' write(debugLog)"temp_type:" + temp_type$[l]
+rem ' write(debugLog)"price: " + str(price)
+
+rem '  degugging
+rem ' print "listprice ", listprice
+rem ' print "T_PRICE[l]", T_PRICE[l]
+rem ' escape
+
+IF TEMP_TYPE$[l]<>"" THEN 
+  LET RETURN_TYPE$[t1]=TEMP_TYPE$[l]
+  RETURN_PRICE[t1]=T_PRICE[l]
+  if pos("SM1"=trn$) then tmplist=samlist else tmplist=listprice
+  RETURN_PRICE[t1+t+1]=qty*tmplist
+  t1=t1+1
+  IF POS("**"=RETURN_DESC$)=0 THEN LET RETURN_DESC$=RETURN_DESC$+TEMP_DESC$[l]
+fi
+
+LET tot_price=tot_price+t_price[l],l=l+1
+WEND
+IF tot_price<0 or tot_price>999999 THEN LET RETURN_DESC$="**Price can't be calculated for this item",comm$="<C7"
+if t1>0 then t=t1-1
+GOTO CLOSE_EXIT
+NO_TRANS: 
+LET RETURN_DESC$="**Current item: "+CVS(CUR_ITEM$,2)+", "+STR(CUR_USERS)+" user"
+IF CUR_USERS>1 THEN LET RETURN_DESC$=RETURN_DESC$+"s"
+comm$="<"+return_desc$(17)+">C10"
+GOTO CLOSE_EXIT
+ERR_EXIT: 
+SETERR CLOSE_EXIT
+IF CVS(RETURN_DESC$,2)="" THEN LET RETURN_DESC$="**Program error",comm$="<C12"
+CLOSE_EXIT: 
+LET P=POS(dl$=RETURN_DESC$,-1); IF P AND P=LEN(RETURN_DESC$)-1 THEN LET RETURN_DESC$(P,1)=" "
+LET RETURN_DESC$=CVS(RETURN_DESC$,3)
+REM ?"exiting ec_price";input xx$;if xx$<>"" then escape
+PGM_EXIT: 
+gosub translate_comment
+
+rem ' write(debugLog)"EXIT"
+rem ' close(debugLog)
+
+EXIT
+
+translate_comment:
+if POS("<"=comm$)<>1 or lang$="" then return
+comm$=comm$(2)
+dim param$:"mbid:c(4),lang:c(2*),text1:c(1*),text2:c(1*)"
+p2=pos(">"=comm$)
+if p2 then param.text1$=comm$(1,p2-1);comm$=comm$(p2+1)
+p1=pos("<"=comm$)
+p2=pos(">"=comm$)
+if p1 and p2 then param.text2$=comm$(p1+1,p2-1);comm$=comm$(p2+1)
+param.mbid$=comm$
+param.lang$=lang$
+call "ec_translate.bbj",param$
+return_desc$=param.text1$
+return
+
+DEF FNSUB$(X$)
+LET X1$="VP5",X2$="PR5",X=POS(X$=X1$,3); IF X THEN LET X$=CVS(X2$(X,3),2)
+RETURN X$+TRN$
+FNEND
+
+NUMERICS: 
+LET P=POS(" "=INP$); IF P THEN LET INP$=INP$(1,P)
+LET TMP$="",INP$=CVS(INP$,3),l=LEN(INP$); IF l=0 THEN GOTO END_NUMERICS
+FOR I=1 TO l; IF POS(INP$(I,1)="0123456789.") THEN LET TMP$=TMP$+INP$(I,1)
+NEXT I
+END_NUMERICS: 
+LET P=POS("."=TMP$); IF P=0 THEN LET P=1,TMP$=TMP$+" "
+RETURN
+
+FIND_CSM13: 
+LET FOUND$="",EXC$=""
+READ (CSM13,KEY=FIRM$+T0$,DOM=CSM13KEY)
+CSM13KEY: LET K$=KEY(CSM13,END=END_FIND_CSM13)
+IF K$(1,6)<>FIRM$+T0$ THEN GOTO END_FIND_CSM13
+READ (CSM13)C0$,C1$
+IF C1$(1,3)<>T1$ THEN GOTO CSM13KEY
+LET FOUND$="Y",EXC$=EXC$+C1$(4,3)+NL$; GOTO CSM13KEY
+END_FIND_CSM13: RETURN
+
+IVM02_PRICE: 
+CALL "ec_open::IVM02"
+READ RECORD (IVM02,KEY=FIRM$+"01"+line_item$(2),DOM=*NEXT)IVM02$
+IF IVM02.CUR_PRICE THEN LET price=IVM02.CUR_PRICE,T_PRICE[l]=price*QTY
+CLOSE (IVM02)
+listprice=price
+rem ' support incidents are no longer discountable as of 2/2/2016
+rem ' if pos("TSI"=trn$) then price=price*(1-disc_pct/100)
+RETURN

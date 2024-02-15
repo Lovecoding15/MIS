@@ -1,0 +1,1871 @@
+rem ' <flexlic.bbx>
+
+seterr entry_err
+seterr auto_email
+
+called_pgm=0
+enter auth_num$,serial_num$,host_id$,lic$; called_pgm=1
+
+rem ' ---------------------------------------------------------------------------------
+rem ' flexlic.bbx was CALLed 
+rem ' ---------------------------------------------------------------------------------
+seterr errmsg
+
+rem ' open the failure log file
+call "ec_open::SN_LIC_REG_ERR"
+
+composite$="-l nocheck"
+if lic$="GEN TAMPER RESISTANT LICENSE" then
+	trl$="-S trl"
+	lic$=""
+else
+	trl$="-S no_trl"
+fi
+goto verify_input
+
+rem ' ---------------------------------------------------------------------------------
+rem ' flexlic.bbx was run from a command line like this:
+rem ' cmd: /usr/local/bbj/bin/bbj -m256 -c/basisaon/config.aon -tIO /u/docfiles/flexlic/bin/flexlic.bbx - /tmp/FINFO31064
+rem ' ---------------------------------------------------------------------------------
+
+auto_email:
+seterr errmsg
+
+rem ' open the failure log file
+call "ec_open::SN_LIC_REG_ERR"
+
+tmpfile$=argv(1)
+tmpchn=unt; open (tmpchn,err=errmsg)tmpfile$
+auth_num$=""
+serial_num$=""
+host_id$=""
+composite$=""
+trl$=""
+timezone$=""
+licensingType$=""
+arg_count=0
+
+rem ' read arguments from the file passed as an argument on the command line
+while 1
+  read (tmpchn,end=*break)tmprec$
+  arg_count=arg_count+1
+  if arg_count=1 then auth_num$=tmprec$ 
+  if arg_count=2 then serial_num$=tmprec$
+  if arg_count=3 then host_id$=tmprec$
+  if arg_count=4 then composite$=tmprec$
+  if arg_count=5 then trl$=tmprec$
+  if arg_count=6 then timezone$=tmprec$
+  if arg_count=7 then licensingType$=tmprec$
+wend
+close (tmpchn)
+
+verify_input:
+
+flexhome$=stbl("FLEXHOME")
+aon$=stbl("AON")
+adata$=stbl("DATA_SERVER")+aon$+"ADATA/"
+
+sn$=cvs(serial_num$,3)
+
+errfile$=flexhome$+"lic/"+sn$+".err"
+erase errfile$,err=*next
+
+outfile$=flexhome$+"lic/"+sn$+".lic"
+
+if sn$="" then msg$="Didn't find Serial# in "+tmpfile$; goto errmsg
+
+auth_num$=cvs(auth_num$,3)
+if len(auth_num$)<>10 then msg$="Invalid Auth# "+serial_num$ + " " + auth_num$; goto errmsg
+
+sn$=cvs(sn$,4)
+rem ' Pad SN out to its full length
+serial_num$=sn$+fill(20),serial_num$=serial_num$(1,20)
+rem ' serial_num$ is the serial number padded out to it's full 20 byte length
+rem ' sn$ is the serial number limited to the standard 9 byte length, for example 'BBX608949'
+
+rem ' ---------------------------------------------------------------------------------
+rem ' use the full hostid to get the hostid token
+rem ' ---------------------------------------------------------------------------------
+
+rem ' trap the NoHostIDAvailable bad hostid issue
+if cvs(host_id$,7) = cvs("NoHostIDAvailable",7) then
+    msg$ = "NoHostIDAvailable is not a valid hostid."
+    goto errmsg
+fi
+
+rem ' BLS does not support redundant licenses, skip this lookup
+redundant=pos(","=host_id$,1,0)
+if redundant <> 0 then goto endHostIdLookup
+    
+hostidFull$ = host_id$
+gosub lookupHostidToken
+rem ' this next test should never be true because the front end will 
+rem ' add the HostID to the xref if it does not alreade exist
+if  hostidToken$ = "" then msg$="Did not find hostid token for full hostid " + hostidFull$; goto errmsg
+host_id$ = hostidToken$
+rem ' the full hostid is in hostidFull$
+
+endHostIdLookup:
+
+rem ' ---------------------------------------------------------------------------------
+rem ' open the files and get the record template
+rem ' ---------------------------------------------------------------------------------
+files$="SNM-01,SNM-02,SNT-01,SNT-04,CSM-03,CSM-04,CSM-05,CSM-13,SMC-01,ARE-93,ARE-83,ARE-73,ARE-13,sn_license.dat,job_queue.dat,ARM-40,SNM-04,ARM-02,"
+channel$=""
+while pos(","=files$)
+
+  rem ' open the file
+  p=pos(","=files$),tempfile$=files$(1,p-1),files$=files$(p+1)
+  tempchan=unt
+  open (tempchan)adata$+tempfile$
+  channel$=channel$+str(tempchan:"000")
+  
+  rem ' get the record template
+  p=pos("-"=tempfile$);if p then tempfile$=tempfile$(1,p-1)+tempfile$(p+1)
+  p=pos(".dat"=tempfile$);if p then tempfile$=tempfile$(1,p-1)
+  call aon$+"bas/templates.pgm::"+tempfile$
+
+wend
+call "ec_open::ARM10F"
+rem ' tables used in limiting a serial number to a particular hostid
+call "ec_open::SN_LIMIT_HOSTID"
+channel$=channel$+str(sn_limit_hostid:"000")
+rem ' serial numbers in a backup/production pair
+call "ec_open::SN_PROD_BACKUP"
+channel$=channel$+str(sn_prod_backup:"000")
+
+rem ' ---------------------------------------------------------------------------------
+rem ' get the channel numbers
+rem ' ---------------------------------------------------------------------------------
+snm01=num(channel$(1,3))
+snm02=num(channel$(4,3))
+snt01=num(channel$(7,3))
+snt04=num(channel$(10,3))
+csm03=num(channel$(13,3))
+csm04=num(channel$(16,3))
+csm05=num(channel$(19,3))
+csm13=num(channel$(22,3))
+smc01=num(channel$(25,3))
+are93=num(channel$(28,3))
+are83=num(channel$(31,3))
+are73=num(channel$(34,3))
+are13=num(channel$(37,3))
+sn_license=num(channel$(40,3))
+job_queue=num(channel$(43,3))
+arm40=num(channel$(46,3))
+snm04=num(channel$(49,3))
+arm02=num(channel$(52,3))
+
+rem ' ---------------------------------------------------------------------------------
+rem ' open the perpetual license model exclusion lists
+rem ' ---------------------------------------------------------------------------------
+call "ec_open::SN_EXCL_CUST"
+channel$=channel$+str(sn_excl_cust:"000")
+call "ec_open::SN_EXCL_SN"
+channel$=channel$+str(sn_excl_sn:"000")
+rem ' ---------------------------------------------------------------------------------
+rem ' open the AR Masterfile ARM01
+rem ' ---------------------------------------------------------------------------------
+call "ec_open::ARM01"
+channel$=channel$+str(arm01:"000")
+rem ' ---------------------------------------------------------------------------------
+rem ' open the Serial Number licensed by the BLS list table and the white list table
+rem ' ---------------------------------------------------------------------------------
+snm01_bls = unt
+open(snm01_bls)"snm01_bls.dat"
+channel$=channel$+str(snm01_bls:"000")
+dim snm01_bls$:"SERIAL_NBR:C(20),BLS_LICENSED:C(1)"
+
+call "ec_open::SN_BLMBLS_WHTLST"
+channel$=channel$+str(sn_blmbls_whtlst:"000")
+
+rem ' ---------------------------------------------------------------------------------
+rem ' check to see if this license has previously been registered with the BLS and
+rem ' an attempt is being made to register it as a FlexLM license
+rem ' ---------------------------------------------------------------------------------
+rem ' check the BASIS white list of test serial numbers
+whiteListed = 0
+read record(sn_blmbls_whtlst, key = serial_num$, dom=*next)sn_blmbls_whtlst$; whiteListed = 1
+
+if !isBLShostid then
+    found = 0
+    read record(snm01_bls, key = serial_num$, dom=*next)snm01_bls$; found = 1
+    if found then
+        if !whiteListed then
+            msg$ = cvs(serial_num$,3) + " previously registered with a BLS Hostid. Cannot Register with a BLM Hostid " + hostidFull$; goto errmsg
+        fi
+    fi
+else
+    found = 0
+    read record(snm01_bls, key = serial_num$, dom=*next)snm01_bls$; found = 1
+    if !found then
+        snm01_bls.serial_nbr$ = serial_num$
+        write record(snm01_bls, key = serial_num$)snm01_bls.serial_nbr$
+    fi
+fi    
+
+rem ' ---------------------------------------------------------------------------------
+rem ' check to see if this serial number is a single host multiple sn group
+rem ' ---------------------------------------------------------------------------------
+call flexhome$+"bin/flexlicCheckHostForMultipleSN.bbx", err=errmsg, serial_num$, auth_num$, host_id$, snlist$, primarySN$, primaryAuth$, specPerPetExpire$
+rem ' print "primary: " + primarySN$ + " " + primaryAuth$
+rem ' print "sn list: " + snlist$
+rem ' print "speceial Perpetual Expire Date: " + specPerPetExpire$
+rem ' input *
+rem ' ---------------------------------------------------------------------------------
+rem ' if a primarySN$ is passed back for this call we have changed the serial number 
+rem ' because it is in a host id group, multiple serial numbers same host id
+rem ' we will use the primarySN as the serial number for this license
+rem ' ---------------------------------------------------------------------------------
+if cvs(primarySN$,3) <> "" then 
+	sn$ = cvs(primarySN$,3)
+	serial_num$ = sn$ + fill(20)
+	serial_num$ = serial_num$(1,20)
+	auth_num$ = primaryAuth$
+fi
+rem ' escape
+
+rem ' Auth_num$ set to "TEMPORARY*" to generate a temporary license for the registration form - don't want to record the transaction or set the license counter
+rem ' is this even used any longer?
+if cvs(auth_num$,4)="TEMPORARY*" then form_temp=1 else form_temp=0
+
+rem ' ---------------------------------------------------------------------------------
+rem ' initiallize variables
+rem ' ---------------------------------------------------------------------------------
+l_prop$=fill(4)
+feature$=""
+odbc_rw$=""
+exp_type$=""
+exp_days_dt$=""
+contract$=""
+item$=""
+are83key$=""
+are93key$=""
+xusers=0
+found_sn=0
+lockcount=0
+sam_active=0
+expire_dt$=""
+demo7_dt$=""
+new_license=0
+
+rem ' ---------------------------------------------------------------------------------
+rem ' find the serail number in SNM01 and SNM02
+rem ' ---------------------------------------------------------------------------------
+read record (snm01,key=serial_num$,dom=are83)snm01$
+
+rem ' if inactive exit, do not license
+if snm01.active_flag$="N" then 
+	msg$="Serial# is not active "+serial_num$
+	rem ' log this attempt by an inactive serial number to register
+	call "ec_open::SN_DEACT_REG"
+	channel$=channel$+str(sn_deact_reg:"000")
+	attemptedHostid$ = cvs(host_id$,3)
+	sn_deact_reg.serial_nbr$ = serial_num$
+	sn_deact_reg.att_date$ = date(0:"%Y%Mz%Dz")
+	sn_deact_reg.att_time$ = date(0:"%Hz%mz%sz")
+	sn_deact_reg.firm_id$ = snm01.firm_id$
+	sn_deact_reg.customer_nbr$ = snm01.customer_nbr$
+	sn_deact_reg.host_id$ = attemptedHostid$
+	sn_deact_reg.users = snm01.users
+	write record(sn_deact_reg)sn_deact_reg$
+	rem ' noticetype = 2
+	rem ' call flexhome$+"bin/flexlicEmailNoticeSNLimitedDeactivated.src", noticetype, serial_num$, "", ""
+	goto errmsg
+fi
+
+rem ' if the serial nbr is limited to a single hostid and the host id provided is not it, do not license
+limit_found = 0
+read record(sn_limit_hostid, key = serial_num$, dom = *next)sn_limit_hostid$; limit_found = 1
+if limit_found then
+	if cvs(host_id$,3) <> cvs(sn_limit_hostid.hostid$,3) then
+		rem ' not the right host, log it, and do not license
+		call "ec_open::SN_LIMIT_REJECTS"
+		channel$=channel$+str(sn_limit_rejects:"000")
+		sn_limit_rejects.serial_nbr$ = serial_num$
+		sn_limit_rejects.regdate$ = date(0:"%Y%Mz%Dz")
+		sn_limit_rejects.regtime$ = date(0:"%Hz%mz%sz") 
+		sn_limit_rejects.hostid$ = cvs(host_id$,3)
+		write record(sn_limit_rejects)sn_limit_rejects$
+		msg$ = "Host Id provided for " + cvs(serial_num$,3) + " is not the host id that this serial number is limit to."
+		limitHostid$ = cvs(sn_limit_hostid.hostid$,3)
+		attemptedHostid$ = cvs(host_id$,3)
+		noticetype = 1
+		call flexhome$+"bin/flexlicEmailNoticeSNLimitedDeactivated.src", noticetype, serial_num$, limitHostid$, attemptedHostid$
+		goto errmsg
+	fi
+fi
+
+rem ' gather data on the serial number
+item$=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$
+contract$=cvs(snm01.contract$,3)
+firm$=snm01.firm_id$
+cust$=snm01.customer_nbr$
+rem ' get the customer name associated with this sn
+read record(arm01,key=firm$+cust$,err=*next)arm01$
+if cvs(arm01.cust_name$,3) <> "" then custname$=cvs(arm01.cust_name$,3) else custname$ = ""
+sam_active=(snm01.sam_active$<>"N")
+
+read record (snm02,key=serial_num$,dom=*next)snm02$
+l_prop$=snm02.lic_property1$+snm02.lic_property2$
+odbc_rw$=snm02.odbc_rw$
+exp_days_dt$=cvs(snm02.exp_days_dt$,3)
+rem ' item#(13,3) is the license type
+if exp_days_dt$<>"" then exp_type$=item$(13,3)
+
+rem ' get the user count
+users=snm01.users
+if snm02.users1 then users=snm02.users1
+users2=snm02.users2
+
+rem ' ---------------------------------------------------------------------------------
+rem ' find the serail number in SNT01 Serial Number History Detail
+rem ' ---------------------------------------------------------------------------------
+dim hold$:fattr(snt01$)
+read (snt01,key=serial_num$,err=*next)
+while 1
+  snt01key$=key(snt01,end=*break)
+  if pos(serial_num$=snt01key$)=0 then break
+  read record (snt01,key=snt01key$)snt01$
+  if cvs(snt01.auth_code$,2)="" or snt01.action$="D" then continue
+  hold$=field(snt01$)
+  rem 'Don't care if last digit is 1 or 0 anymore - 0 gets changed to 1 later
+  if pos(auth_num$(1,9)=hold.auth_code$)=1 or form_temp then found_sn=snt01
+wend
+snt01key$=""
+if found_sn<>snt01 then goto are83
+
+snt01key$=hold$(1,28)
+current_count=hold.license_cnt
+hold_auth$=cvs(hold.auth_code$,3)
+rem ' get the latest authorization number
+if auth_num$<>hold_auth$ and len(hold_auth$)=10 then auth_num$=hold_auth$
+rem ' if hold.fixed_float$="F" or auth_num$(10,1)<>"0" then float=1
+
+rem ' ---------------------------------------------------------------------------------
+rem ' find the serail number in ARE83 Order Entry Serial Number History 
+rem ' ---------------------------------------------------------------------------------
+are83:
+read (are83,key="",dom=*next)
+while 1
+  k$=key(are83,end=*break)
+  read record (are83,key=k$)are83$
+  if sn$<>cvs(are83.serial_nbr$,3) or are83.action$="D" then continue
+  
+  rem ' Contract needed, may not be in the are83 line we save 
+  temp$=cvs(are83.contract$,3)
+  if temp$<>"" then contract$=temp$,sam_active=(are83.sam_active$="Y")
+  if cvs(are83.auth_code$,3)="" then continue
+  rem ' Need to get features from are93 even if snhist_flag is Y because 
+  rem ' snt04 isn't updated until day end (kew, I don't think that this is true)
+  are93key$=k$
+  if are83.snhist_flag$="Y" then continue
+  found_sn=are83,are83key$=k$
+wend
+
+rem ' exit if no data found for sn in SNT01 or ARE83
+if found_sn=0 then goto no_sn
+
+rem ' extract the SNT01 record
+if found_sn=snt01 then
+  extract record (snt01,key=snt01key$,err=nolock)snt01$
+  goto item_check
+fi
+
+rem ' extract the ARE83 record and get new information on the serial number
+extract record (are83,key=are83key$,err=nolock)are83$
+pk$=are83$(1,20)
+firm$=are83.firm_id$
+cust$=are83.customer_nbr$
+current_count=are83.license_cnt
+
+rem ' order entry order line table
+read record (are13,key=pk$)are13$
+rem ' order entry Invoice Config table
+read record (are73,key=pk$)are73$
+
+rem ' get the new users and new lic_properties
+users=are73.users
+users2=are73.users2
+l_prop$=are73.lic_property1$+are73.lic_property2$
+
+rem ' get the new data on the sn
+odbc_rw$=are73.odbc_rw$
+rem ' if are73.fixed_float$="F" or auth_num$(10,1)<>"0" then float=1
+if are73.type_of_sale$<>"ADD" then item$=are13.item_number$;goto item_check
+
+rem ' ARE13 item for add isn't item we need- check for item in a previous line
+dim tmp83$:fattr(are83$)
+read (are13,key=pk$(1,17),dom=*next)
+while 1
+  k13$=key(are13,end=*break)
+  if k13$(1,17)<>pk$(1,17) or k13$>=pk$ then break
+  read record (are13,key=k13$)are13$
+  read (are83,key=k13$,dom=chksn)
+  chksn: 
+  read record (are83,end=*continue)tmp83$
+  if pos(k13$=tmp83$)<>1 then continue
+  if cvs(tmp83.serial_nbr$,3)<>sn$ or tmp83.action$="D" or cvs(tmp83.auth_code$,3)="" then goto chksn
+  read record (are73,key=k13$)are73$
+  if are73.type_of_sale$<>"ADD" then item$=are13.item_number$
+wend
+
+item_check:
+demolic=pos(item$(13,3)="D60,D1Y,DRD,R60")
+rem ' No temp license for demos
+if form_temp and demolic then 
+  erase outfile$,err=exit
+  goto exit
+fi
+
+if item$(1,3)="ODB" then composite$="-l nocheck"
+
+rem ' at some point the auth number ended in 0, no longer, it ends in 1
+if auth_num$(10,1)="0" then
+  auth_num$(10,1)="1"
+  if snt01key$<>"" then
+    read record (snt01,key=snt01key$)snt01$
+    snt01.auth_code$=auth_num$
+    snt01$=field(snt01$)
+    write record (snt01,key=snt01key$)snt01$
+    msg$="New Authorization Number"+$0a$+sn$+$0a$+auth_num$
+    goto errmsg
+  fi
+fi
+
+rem ' get the firm current rev record to find the current rev coding
+read record (csm04,key=firm$+"CUR")csm04$
+current_rev$=cvs(csm04.description$,3)
+
+rem ' set up two variables for later use
+today$=date(0:"%Yd%Mz%Dz")
+now$=date(0:"%Hz%mz%sz")
+
+rem ' ---------------------------------------------------------------------------------
+rem ' get the contract and contract status, and whether it is a rental or a kit
+rem ' ---------------------------------------------------------------------------------
+contract_ok=0
+read record (smc01,key=contract$,dom=*next)smc01$
+rem ' preserve the expiration date
+holdexpire_dt$ = smc01.expire_on_dt$
+rent_or_kit=pos(smc01.contr_type$(1,2)="RN,DV")
+if pos("SM"=smc01.contr_type$) and sam_active and smc01.sam_active$="Y" and today$<=smc01.annual_dt$ then contract_ok=1
+if rent_or_kit then 
+  rem ' clear the values read from SNM02 for these to values
+  exp_days_dt$=""
+  exp_type$=""
+  if today$<=smc01.expire_on_dt$ then contract_ok=1
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem ' if contract ok and no SoftwareAssetManagement feature line then add one
+rem ' (orginally excluded DVK licenses) but as of 4/6/2011 we will include them
+rem ' ---------------------------------------------------------------------------------
+rem ' if contract_ok and pos("DV"=smc01.contr_type$)=0 then
+if contract_ok then
+	snt04CheckFound = 0
+	snt04CheckKey$=serial_num$+"SoftwareAssetManagement" + fill(30), snt04CheckKey$=snt04CheckKey$(1,50)
+	read record(snt04,key=snt04CheckKey$,dom=*next)snt04$; snt04CheckFound=1
+	if snt04CheckFound = 0 then
+		rem ' create one
+		dim snt04$:fattr(snt04$)
+		snt04.serial_nbr$=serial_num$
+		snt04.feature$="SoftwareAssetManagement"
+		snt04.feature_rev$=current_rev$
+		snt04.expire_on_dt$=smc01.expire_on_dt$
+		snt04.users=users+users2
+		write record(snt04)snt04$
+	endif
+	dim snt04$:fattr(snt04$)
+endif
+
+rem ' ---------------------------------------------------------------------------------
+rem ' is current rev linked to os? if so & contract is valid, change rev
+rem ' ---------------------------------------------------------------------------------
+currev_link=0
+rem ' item$(7,3) is the OS_LEVEL
+temp$=firm$+"C"+item$(7,3)
+READ (CSM13,KEY=temp$,DOM=*next)
+while 1
+  READ RECORD (CSM13,END=*break)csm13$
+  IF pos(temp$=csm13$)<>1 then break
+  if csm13.cm_id_2$="CUR" then currev_link=1;break
+wend
+
+rem ' ---------------------------------------------------------------------------------
+rem ' EXP type licenses have SAM contracts, but the entire license expires with the 
+rem ' contract is up
+rem ' Force EXP w/SAM to expire w/SAM contract, by setting the rent_or_kit boolean
+rem ' ---------------------------------------------------------------------------------
+if item$(13,3)="EXP" and smc01.contr_type$="SM1" then rent_or_kit=1
+
+rem ' set proper current rev
+if item$(10,3)="CUR" then item$(10,3)=current_rev$
+revert_rev$ = ""
+
+rem ' ---------------------------------------------------------------------------------
+rem ' if we have an inforce SAM contract and the os_level is linked to the CUR rev
+rem ' ---------------------------------------------------------------------------------
+if contract_ok*currev_link then 
+  rem ' contract is currently inforce
+
+  rem ' look up the NXT rev level and date
+  dim csm04$:fattr(csm04$)
+  read record (csm04,key=firm$+"NXT",dom=*next)csm04$
+  nxt_rev$=cvs(csm04.description$,3)
+  nxt_dt$=cvs(csm04.available1$(1,8),3)
+
+  rem ' bump to the NXT rev if greater than the CUR rev
+  rem ' 10X problem -- 10X is less than 9XX
+  if nxt_dt$<>"" and fnConvertRevToNumber(nxt_rev$) >= fnConvertRevToNumber(item$(10,3)) then 
+    rem ' if nxt_dt$<=smc01.expire_on_dt$ or rent_or_kit then current_rev$=nxt_rev$ - old line removed
+    rem ' if the contract is in force they always get the nxt_rev$ including those that have a contract
+    rem ' that expires prior to the available date of the NEXT rev, normally 4/1/20XX
+    rem ' if the contract expires in the first quarter we will loan then the next rev - change made 3/4/2011
+    current_rev$=nxt_rev$
+  fi
+
+  rem ' if the rev on the license is less than the current rev promote the license
+  if fnConvertRevToNumber(current_rev$) > fnConvertRevToNumber(item$(10,3)) then 
+    rem ' this will be an increase in the product rev level, setup job_queue to record it
+    item$(10,3)=current_rev$
+    job_queue.firm_id$=firm$
+    job_queue.customer_nbr$=cust$
+    job_queue.job$="REV"+now$
+    job_queue.available$=sn$
+    job_queue.job_date$=current_rev$
+    job_queue$=field(job_queue$)
+    writerecord(job_queue)job_queue$
+  fi
+else
+    rem ' contract is not ok and it is not a rental or a kit, did it expire this year prior to the 
+    rem ' available date of the next rev normally 4/1/20XX
+    rem ' and was the license promoted to the next rev demote it
+    rem ' if so then set the current rev to one less than the next rev
+
+    if contract_ok = 0 and currev_link and rent_or_kit = 0 then
+
+	rem ' what is the next rev and what is the available date
+	dim csm04$:fattr(csm04$)
+	read record (csm04,key=firm$+"NXT",dom=*next)csm04$
+	nxt_rev$=cvs(csm04.description$,3)
+	nxt_dt$=cvs(csm04.available1$(1,8),3)
+
+	thisYear$ = date(0:"%Y")
+	startThisYear$ = thisYear$ + "0101"
+	rem ' if no next date than abort this check
+    	if nxt_dt$ <> "" then
+    		if smc01.expire_on_dt$ >= startThisYear$ and smc01.expire_on_dt$ < nxt_dt$ then
+    			rem ' we have a contract that expired this year before the avialbility of the NEXT REV
+    			rem ' was it given the next rev, if so we need to roll back because the contract
+    			rem ' had not been renewed.
+
+    			if item$(10,3) = nxt_rev$ then
+    				rem ' roll it back one level
+				revert_rev$ = nxt_rev$
+    				while pos("X" = revert_rev$)
+    					revert_rev$ = revert_rev$(1,len(revert_rev$)-1)
+				wend
+				revert_rev$ = str(num(revert_rev$)-1) + "X"
+				rem ' this one is being demoted one level write SNM01
+				snm01.product_rev$ = revert_rev$
+				snm01$ = field(snm01$)
+				write record(snm01)snm01$
+				comment$="Revert to rev " + revert_rev$ + " " + DATE(0:"%Mz/%Dz/%Y")
+				gosub write_comment
+				
+				item$(10,3)=revert_rev$
+				
+				rem ' log it
+				revertlog = unt
+				open(revertLog,mode="O_APPEND")stbl("TEMP") + "revert_log.txt"
+				logentry$=cvs(sn$,3) + $09$ + revert_rev$
+				write(revertLog)logentry$
+				close(revertLog)
+			fi
+		fi
+	fi
+    fi
+fi
+
+rem ' look up the product rev record based on the rev level of the sn
+rem ' also lookup the port id
+dim csm04$:fattr(csm04$)
+read record (csm04,key=firm$+item$(10,3))csm04$
+rem ' if rev is not License then exit
+if csm04.key_or_licen$<>"L" then msg$=sn$+" Invalid Rev "+item$(10,3); goto errmsg
+rv$=cvs(csm04.description$,3),p=pos(" "=rv$)
+if p=0 then p=len(rv$)
+revision$=cvs(rv$(1,p),2)
+bbj$=item$(1,3)
+lic_type$=item$(13,3)
+read record (csm03,key=firm$+item$(7,3))csm03$
+port$=csm03.port_id$
+
+rem ' position the user counts in proper variables and the l_prop for use in the product code
+if cvs(l_prop$,3)<>"" then
+  u1=0,u2=0
+  p1=pos("S"=l_prop$,2)
+  p2=pos("E"=l_prop$,2)
+  if p1 then u1=users;if p1>1 then u1=users2
+  if p2 then u2=users;if p2>1 then u2=users2
+  if u2 then bbj$=l_prop$(p2,2)
+  if u1 then xusers=u2, bbj$=l_prop$(p1,2)
+  bbj$="B"+cvs(bbj$,3)
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem ' BLS Style back up licenses which take the place of redundant licenses
+rem ' ---------------------------------------------------------------------------------
+
+if isBLSHostid then
+    backuplinkFound = 0
+    read record(sn_prod_backup, knum = 2, key = serial_num$, dom = *next)sn_prod_backup$; backuplinkFound = 1
+    if backuplinkFound then 
+       if contract_ok then
+          rem ' is it a backup license with an active SAM contract
+          composite$=composite$+"  -b " + cvs(sn_prod_backup.prod_serial_nbr$,3)
+       else   
+          rem ' sam expired, licensing the backup license as a standalone license is not allowed'
+          msg$ = "SAM has expired on the production/backup license pair. This backup license may not register as a standalone license."
+          goto errmsg
+       fi
+    fi
+fi    
+
+rem ' ---------------------------------------------------------------------------------
+rem ' redundant lic host_id$ format="hostname1 hostid1, name2 id2, name3 id3"
+rem ' ---------------------------------------------------------------------------------
+redundant=pos(","=host_id$,1,0)
+rem ' if not redundant then jump to the next section
+if redundant=0 then goto sn_license
+rem ' if SAM not in force then no license
+if contract_ok=0 then 
+  msg$=sn$+$0a$+"Error - redundant license requires current SAM/DevKit/Rental." 
+  lic$=msg$
+  goto errmsg
+fi
+dim host$[2],id$[2]
+rem 'strip quotes if any before parsing hostname, hostid pairs
+rem 'quotes will be placed around hostid$ after parsing
+while 1
+  p=pos($22$=host_id$)
+  if p=0 then break
+  host_id$(p,1)=" "
+wend
+rem ' strip line feeds from host_id$
+while 1
+  p=pos($0a$=host_id$)
+  if p=0 then break
+  host_id$(p,1)=" "
+wend
+rem ' strip carriage returns from host_id$
+while 1
+  p=pos($0d$=host_id$)
+  if p=0 then break
+  host_id$(p,1)=" "
+wend
+rem ' trim spaces from the front and back and turn strings of multiple spaces into a single space
+host_id$=cvs(host_id$,35)
+rem ' separate out host name and host ids into the arrays
+p$=host_id$+","
+c=0
+while c<3
+  p=pos(","=p$)
+  if p=0 then break
+  temp$=cvs(p$(1,p-1),3)
+  p$=p$(p+1)
+  p=pos(" "=temp$)
+  if p=0 then break 
+  rem ' put the hostname and host id into the arrays trim leading and trailing spaces and converting all to uppercase
+  host$[c]=cvs(temp$(1,p),7)
+  id$[c]=cvs(temp$(p),7)
+  c=c+1
+wend 
+rem ' if there were not three hostname and hostid pairs then no license
+if c<>3 then msg$=sn$+" Invalid hostname/hostid for redundant license"+$0a$+host_id$;goto errmsg
+rem 'enclose in quotes
+host_id$=$22$+host_id$+$22$; hostidFull$ = host_id$
+rem ' set up SN_HOST record, and see if it is a new license (hostid not in previous license registration)
+sn_host=unt
+open (sn_host)adata$+"sn_host.dat"
+channel$=channel$+str(tempchan:"000")
+dim sn_host$:"serial_nbr:c(12),date:c(8),time:c(6),hostid:c(180),hostname:c(90),available:c(60)"
+dim sn_host1$:"serial_nbr:c(12),date:c(8),time:c(6),hostid1:c(60),hostid2:c(60),hostid3:c(60),hostname1:c(30),hostname2:c(30),hostname3:c(30),available:c(60)"
+read(sn_host,key=sn$,dom=*next)
+hostrec=0
+while 1
+  hostk$=key(sn_host,end=*break)
+  if pos(sn$=hostk$)<>1 then break
+  readrecord(sn_host)sn_host$
+  hostrec=1
+wend
+sn_host1.serial_nbr$=sn$
+sn_host1.date$=today$
+sn_host1.time$=now$
+sn_host1.hostid1$=id$[0]
+sn_host1.hostid2$=id$[1]
+sn_host1.hostid3$=id$[2]
+sn_host1.hostname1$=host$[0]
+sn_host1.hostname2$=host$[1]
+sn_host1.hostname3$=host$[2]
+sn_host1$=field(sn_host1$)
+if hostrec=0 then new_license=1;goto sn_license
+for c=0 to 2
+  if pos(id$[c]=cvs(sn_host.hostid$,7))=0 then new_license=1;break
+  rem if pos(host$[c]=cvs(sn_host.hostname$,7))=0 then new_license=1;break
+next c
+
+rem ' ---------------------------------------------------------------------------------
+rem ' set up sn_license record and look for previous registration
+rem ' ---------------------------------------------------------------------------------
+sn_license:
+sn_license.date$=today$
+sn_license.time$=now$
+sn_license.serial_num$=serial_num$
+sn_license.authnum$=auth_num$
+sn_license.firm_id$=firm$
+sn_license.customer_nbr$=cust$
+if redundant then sn_license.hostid$="REDUNDANT" else sn_license.hostid$=host_id$
+sn_license.prod_rev$=revision$
+ prod$=""
+if pos("12"=port$)=1 then prod$="DS"
+if pos("146"=port$)=1 then prod$="ODBC"
+if pos("2"=port$)=1 or pos("6"=port$)=1 then prod$=bbj$
+if odbc_rw$="R" then lic_type$="RDO";if prod$="ODBC" then lic_type$="ROO"
+flex_lic$=prod$+lic_type$
+if form_temp then 
+  flex_lic$=prod$+"D60",host_id$="DEMO"
+  if prod$=bbj$ and lic_type$="RDO" then flex_lic$=prod$+"DRD"
+fi
+sn_license.users=users
+sn_license.users2=users2
+sn_license.lic_property1$=l_prop$(1,2)
+sn_license.lic_property2$=l_prop$(3,2)
+rem ' find the most recent license registration that is not DEMO7
+dim prevlic$:fattr(sn_license$)
+dim pr$:fattr(sn_license$)
+prvkey$=""
+read (sn_license,key=serial_num$(1,12),dom=*next)
+while 1
+  read record (sn_license,end=*break)pr$
+  if pos(cvs(serial_num$,2)=pr$)<>1 then break
+  REM "skip demo7's - just get a good registration record, but save exp date
+  if pos("DEMO7"=pr.prod_type$) then demo7_dt$=cvs(pr.expire$,3),d7=1 else prvkey$=pr$(1,26),d7=0
+wend
+
+rem ' compare to previous redundant sn_host record, if no match then it is a new_license 
+if prvkey$<>"" then 
+  extract record (sn_license,key=prvkey$)prevlic$
+  if redundant and pos(prvkey$=sn_host$)<>1 then new_license=1
+else 
+  current_count=0; REM 'if there is no prev record, it hasn't been registered
+fi
+
+prev_expire_dt$=cvs(prevlic.expire$,3)
+
+rem ' ---------------------------------------------------------------------------------
+rem ' check license type table for expiring licenses
+rem ' not sure this is useful any more, all expiring licenses have contracts
+rem ' ---------------------------------------------------------------------------------
+readrecord(csm05,key=firm$+exp_type$,dom=*next)csm05$
+if csm05.expires$="Y" then
+  if form_temp=0 then expire_dt$=cvs(csm05.expire_days$,3)
+  if exp_days_dt$<>"" then expire_dt$=exp_days_dt$
+  rem if prev_expire_dt$<>"" then expire_dt$=prev_expire_dt$
+fi
+rem ' demolic are D60,D1Y,DRD,R60, which are not used any longer
+if demolic and prev_expire_dt$<>"" then expire_dt$=prev_expire_dt$
+
+rem ' ---------------------------------------------------------------------------------
+rem ' Quick temp change to cause Audev permanent licenses to expire w/SAM contract
+rem ' Audev contracts are a mix of RN1, SM1 and DV1
+rem ' ---------------------------------------------------------------------------------
+if smc01.firm_id$+smc01.customer_nbr$="01007808" and smc01.contr_type$="SM1" then rent_or_kit=1
+
+rem ' ---------------------------------------------------------------------------------
+rem ' for expiring contracts where the contract is expired force a DEMO7
+rem ' and if the contract is not expired set expire_dt$ to the contract expire_on_dt
+rem ' ---------------------------------------------------------------------------------
+while 1
+  if rent_or_kit=0 or form_temp then break
+  if contract_ok=0 then 
+    rem 'force a demo7
+    new_license=1
+    current_count=1
+    break
+  fi
+  expire_dt$=FNXDT$(smc01.expire_on_dt$)
+  break
+wend 
+
+rem ' ---------------------------------------------------------------------------------
+rem ' multiple network card hostids in the hostid id?
+rem ' this is most lilely old code which has not impact any longer.
+rem ' ---------------------------------------------------------------------------------
+h1$=cvs(sn_license.hostid$,4)
+h2$=cvs(prevlic.hostid$,4)
+rem ' reset counter for bbj rev 5 hostids, if current host is COMPOSITE and previous was not, reset counter
+if pos("COMPOSITE"=h1$) and pos("COMPOSITE"=h2$)=0 then current_count=0
+rem 'remove quotes that may be around multiple network card id's
+while 1
+ p=pos($22$=h1$)
+ if p=0 then break 
+ h1$(p,1)=" "
+wend
+while 1
+ p=pos($22$=h2$)
+ if p=0 then break 
+ h2$(p,1)=" "
+wend
+rem 'if more than 1 network card in hostid, compare w/out regard for order
+match=0
+h1$=cvs(h1$,35)+" "
+h2$=cvs(h2$,35)+" "
+id1=pos(" "=h1$,1,0)
+id2=pos(" "=h2$,1,0)
+while 1
+ p1=pos(" "=h1$)
+ if p1=0 then break
+ temp$=h1$(1,p1-1) 
+ h1$=h1$(p1+1)
+ match=match+(pos(temp$=h2$)<>0)
+wend
+rem ' this is the line that causes a license with a hostid change to go DEMO7
+rem ' setting new_license = 1 forces it
+if match<min(id1,id2) and redundant=0 then new_license=1
+
+rem ' ---------------------------------------------------------------------------------
+rem ' current_count is the curren license count will be >0 if not reset
+rem ' new_license indicates that there has been some type of hostid change
+rem ' form_temp=1 means that this is a TEMPORARY* license (not used any longer?)
+rem ' force DEMO7 if new_license > 0 and current_count > 0
+rem ' ---------------------------------------------------------------------------------
+if new_license and current_count and form_temp=0 then 
+  flex_lic$=prod$+"DEMO7"
+  expire_dt$=""
+fi
+if form_temp and exp_days_dt$<>"" then expire_dt$=exp_days_dt$
+
+rem ' ---------------------------------------------------------------------------------
+rem ' Passing exp date overrides license type- by changing to STD
+rem ' we don't need more expiring license types in features.dat file (flexlic/data)
+rem ' ---------------------------------------------------------------------------------
+if expire_dt$<>"" and pos("K"=prod$)<>1 then flex_lic$=prod$+"STD"
+
+rem ' ---------------------------------------------------------------------------------
+rem ' Don't generate DEMO7 for these changes, but record change in sn_license
+rem ' ---------------------------------------------------------------------------------
+if cvs(flex_lic$,3)<>cvs(prevlic.prod_type$,3) then new_license=1
+if users<>prevlic.users or users2<>prevlic.users2 then new_license=1
+if cvs(prevlic.prod_rev$,3)<>revision$ then new_license=1
+
+rem ' ---------------------------------------------------------------------------------
+rem ' create the string feature$ which will get written to the serial number
+rem ' features file
+rem ' ---------------------------------------------------------------------------------
+feature_file$=""
+rem ' first ARE93
+read (are93,key=are93key$,dom=*next)
+while 1
+  read record (are93,end=*break)are93$
+  if pos(are93key$=are93$)<>1 then break
+
+  rem ' OSAS and Audev are submitting SAM feature lines through directcom as all upper case, skip them
+  if cvs(are93.feature$,3)="SOFTWAREASSETMANAGEMENT" then continue
+
+  cfvs_firm$ = are93.firm_id$, cfvs_feature$ = are93.feature$
+  gosub checkForVendorStrings
+  
+  if are93.user_based$="Y" then ub$=" true" else ub$=""
+  
+  rem ' changing fax to VENDOR_STRING=F 7/13/2016
+  rem ' fax$="";if are93.fax_flag$="Y" then fax$=" fax";if ub$<>"" then fax$(1,1)=","
+  fax$=""
+  if are93.fax_flag$="Y" then 
+  	fax$=" VENDOR_STRING=F"
+  	if cvs(cfvs_str$,3) <> "" then
+  		fax$ = fax$ + cvs(cfvs_str$,3)
+  	fi
+  	if ub$<>"" then fax$(1,1)=","
+  else
+  	if cvs(cfvs_str$,3) <> "" then
+  		fax$=" VENDOR_STRING=" + cvs(cfvs_str$,3)
+  	fi
+  	if ub$<>"" then fax$(1,1)=","
+  fi
+  
+  exp_dt$=FNXDT$(are93.expire_on_dt$)
+  if exp_dt$ = "" then exp_dt$ = "permanent"
+  exp_dt$=" "+exp_dt$
+  if ub$<>"" or fax$<>"" then exp_dt$(1,1)=","
+  feature$=feature$+cvs(are93.feature$,3)+" "+cvs(are93.feature_rev$,3)+" "+str(are93.users)+ub$+fax$+exp_dt$+$0a$
+wend
+
+rem ' next SNT04
+read (snt04,key=serial_num$,dom=*next)
+while 1
+  read record (snt04,end=*break)snt04$
+  if pos(serial_num$=snt04.serial_nbr$)=0 then break
+
+  if snt04.users<1 then continue
+
+  REM check to see if feature already set from are93
+  if pos(cvs(snt04.feature$,3)+" "=feature$) then continue
+
+  rem ' OSAS and Audev are submitting SAM feature lines through directcom as all upper case, skip them
+  if cvs(snt04.feature$,3)="SOFTWAREASSETMANAGEMENT" then continue
+
+  rem ' exlude SoftwareAssetManagement feature if contract not ok
+  if cvs(snt04.feature$,3)="SoftwareAssetManagement" and contract_ok = 0 then 
+  	if revert_rev$ <> "" then
+  		gosub record_feature_revert
+  	fi
+	continue
+  fi
+
+  cfvs_firm$ = snt01.firm_id$, cfvs_feature$ = snt04.feature$
+  gosub checkForVendorStrings
+
+  if snt04.user_based$="Y" then ub$=" true" else ub$=""
+  
+  rem ' changing fax to VENDOR_STRING=F 7/13/2016
+  rem ' fax$="";if snt04.fax_flag$="Y" then fax$=" fax";if ub$<>"" then fax$(1,1)=","
+  fax$=""
+  if snt04.fax_flag$="Y" then 
+  	fax$=" VENDOR_STRING=F"
+  	if cvs(cfvs_str$,3) <> "" then
+  		fax$ = fax$ + cvs(cfvs_str$,3)
+  	fi
+  	if ub$<>"" then fax$(1,1)=","
+  else
+  	if cvs(cfvs_str$,3) <> "" then
+  		fax$=" VENDOR_STRING=" + cvs(cfvs_str$,3)
+  	fi
+  	if ub$<>"" then fax$(1,1)=","
+  fi
+  
+  exp_dt$=FNXDT$(snt04.expire_on_dt$)
+  if exp_dt$ = "" then exp_dt$ = "permanent"
+  exp_dt$=" "+exp_dt$
+  if ub$<>"" or fax$<>"" then exp_dt$(1,1)=","
+
+  rem ' do we need a revision update or revert
+  if revert_rev$ = "" then
+  	gosub check_feature_rev_update
+  else
+  	gosub record_feature_revert
+  fi
+
+  feature$=feature$+cvs(snt04.feature$,3)+" "+cvs(snt04.feature_rev$,3)+" "+str(snt04.users)+ub$+fax$+exp_dt$+$0a$
+wend
+
+rem ' ---------------------------------------------------------------------------------
+rem ' do we have secondary serial numbers to include in this license as features
+rem ' because they are reside on the same host?
+rem ' ---------------------------------------------------------------------------------
+rem ' escape
+if snlist$ <> "" then
+	call flexhome$+"bin/flexlicAddSecondarySN.bbx", err=errmsg, snlist$, secondaryFeatures$
+	feature$ = feature$ + secondaryFeatures$
+fi
+rem ' escape	
+if feature$="" then goto feature_done
+temp$=""
+rem 'remove 0 user features
+while 1
+  p=pos($0a$=feature$)
+  if p=0 then break
+  xx$=feature$(1,p-1)+" "
+  feature$=feature$(p+1)
+  p1=pos(" "=xx$,1,2)
+  if p1=0 then continue
+  p2=pos(","=xx$(p1+1))
+  if p2=0 then p2=pos(" "=xx$(p1+1))
+  if p2<2 then continue
+  if xx$(p1+1,p2-1)>"0" then temp$=temp$+$0a$+cvs(xx$,3)
+wend
+if temp$="" then goto feature_done
+feature_file$=aon$+"tmp/"+cvs(serial_num$,3)+"feature.txt"
+erase feature_file$,err=*next
+string feature_file$
+ff=unt; open (ff)feature_file$
+write (ff)temp$(2)
+close (ff)
+feature_done: 
+
+gen_count=0
+genflexlic$=flexhome$+"bin/genflexlic.bbx"
+rem if users=1 and float=0 then users=0
+rem ' ---------------------------------------------------------------------------------
+rem ' if KIT lic, pass additional arguments w/ composite arg
+rem ' this adds a BARISTA feature to the license
+rem ' ---------------------------------------------------------------------------------
+if rent_or_kit>1 then 
+	rem ' check for a BARISTA feature line, if none then add the -F BARISTA to the
+	rem ' composite which will add a Barista feature to the DVK license
+
+	snt04CheckFound = 0
+	snt04CheckKey$=serial_num$+"BARISTA" + fill(30), snt04CheckKey$=snt04CheckKey$(1,50)
+	read record(snt04,key=snt04CheckKey$,dom=*next)snt04$; snt04CheckFound=1
+	if snt04CheckFound = 0 then
+		rem ' none found add the -F BARISTA
+		composite$=composite$+" -F BARISTA"
+	endif
+	dim snt04$:fattr(snt04$)
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem ' if we have a Tamper Resistant License option tack it onto the composite option string
+rem ' ---------------------------------------------------------------------------------
+if cvs(trl$,3)<>"" then composite$ = composite$ + " " + trl$
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' is this a virtual (cloud) license
+rem '
+rem ' ---------------------------------------------------------------------------------
+if cvs(snm01.media_type$,3) = "VIR" then 
+	expire_dt$="virtual"
+	if cvs(timezone$,3) <> "" then
+		composite$ = timezone$ + " " + composite$
+	fi
+	rem ' in force contracts
+	if contract_ok then
+		rem ' ensure that we do not have a DEMO7 based on hostid changing
+		if pos("K"=prod$)<>1 then 
+			flex_lic$=prod$+"STD"
+		else
+			flex_lic$ = prod$ + lic_type$
+		fi
+	fi	
+	rem ' expired SAM
+	if contract_ok = 0 then
+		composite$ = "-e " + smc01.annual_dt$(1,4) + "-" + smc01.annual_dt$(5,2) + "-" + smc01.annual_dt$(7,2) + " " +composite$
+		flex_lic$ = prod$ + "DEMO7"
+	fi
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' the IF structures below are handling the "perpetual" licensing temporary 30 day expiration dates and the "annual" licensing temporary
+rem ' one year expiration dates for those who can't or won't put their BLM box on the internet
+rem ' implemented on February 1, 2016
+rem '
+rem ' ---------------------------------------------------------------------------------
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' permanent and expring, non-virtual licenses will no longer be checked for changing hostid and will get a 30 expiring license
+rem '
+rem ' unless they are permanent licenses flagged as "annual" type then they will be checked for changing hostid and will require resets
+rem ' expiring licenses marked as "annual" will not be checked for changing hostids and thus will not require resets, but will get their 
+rem ' contract expiration date as the expiration date and not get a 30 day expiration date
+rem ' kew 2016-01-12
+rem '
+rem ' ---------------------------------------------------------------------------------
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' check the exclusion lists to see if this customer or specific serial number has been excluded from the 
+rem ' prepetual model
+rem '
+rem ' ---------------------------------------------------------------------------------
+gosub include_this
+
+org_sale_dt$ = ""
+perma_flag = 0
+annual_flag = 0
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' this section is for the permanent (STD) (RTM) non-virtual and non-annual license
+rem '
+rem ' ---------------------------------------------------------------------------------
+if include_serial_nbr and (cvs(snm01.license_type$,3) = "STD" or cvs(snm01.license_type$,3) = "RTM") and cvs(snm01.media_type$,3) <> "VIR" and cvs(snm01.media_type$,3) <> "ANN" then
+	expire_dt$ = "perpetual"
+	rem ' pass the day from the original sale date for use in calculating the new expiration date
+	org_sale_dt$ = FNOSDT$(snm01.orig_sale_date$)
+	rem ' ensure we do not have a DEMO7 based on hostid changing
+	rem ' not sure this test is needed, but will duplicate the logic in the virtual section above
+	if pos("K"=prod$)<>1 then 
+		flex_lic$=prod$+"STD"
+	else
+		flex_lic$ = prod$ + lic_type$
+	fi
+	perma_flag = 1
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' this section is for the permanent (STD) (RTM) annual licenses
+rem ' to go onto Annual the license must be reset first
+rem ' if the hostid changes we will send a demo7 emergency license
+rem ' to change the annual expiration date the license must be reset
+rem '
+rem ' ---------------------------------------------------------------------------------
+if include_serial_nbr and (cvs(snm01.license_type$,3) = "STD" or cvs(snm01.license_type$,3) = "RTM") and cvs(snm01.media_type$,3) = "ANN" then
+
+	rem ' find out if the license had already registered as an annual license and if so
+	rem ' what is the current expiration date
+	gosub findCurrentAnnualStatus
+
+	if !ann_registered then
+	    	rem ' first registration
+	    	if current_count > 0 then 
+			rem ' license has not been reset, emergency license, send the email
+			rem ' this will be the call to sending and email when first registering an annual license 
+			rem ' which has not been reset
+			rem ' call flexhome$+"bin/flexlicSendEmailFirstAnnualNotReset.bbx", err=errmsg, serial_num$
+			flex_lic$ = prod$+"DEMO7"
+			expire_dt$ = ""
+		else
+			gosub setNewAnnualExpirationDate
+			expire_dt$ = new_expire_dt$
+			rem ' ensure we do not have a DEMO7 based on hostid changing
+			rem ' not sure this test is needed, but will duplicate the logic in the virtual section above
+			if pos("K"=prod$)<>1 then 
+				flex_lic$=prod$+"STD"
+			else
+				flex_lic$ = prod$ + lic_type$
+			fi
+			annual_flag = 1
+		fi
+	else
+		rem ' already registered
+		if current_count = 0 or contract_ok then
+			rem ' license has been reset (current_count = 0) or the license has current sam
+			daysToExpiration = FNDaysBetweenNowAndThen(ann_exp_dt$)
+			if daysToExpiration > 60 then
+				rem ' expiration date may change based on a serial number either dropping off of SAM
+				rem ' or going on to SAM, otherwis expiration date stays the same, demo7 is removed
+				rem ' ensure we do not have a DEMO7 based on hostid changing
+				rem ' not sure this test is needed, but will duplicate the logic in the virtual section above
+				
+				gosub setNewAnnualExpirationDate
+				expire_dt$ = new_expire_dt$
+				rem ' expire_dt$ = ann_exp_dt$
+				
+				if pos("K"=prod$)<>1 then 
+					flex_lic$=prod$+"STD"
+				else
+					flex_lic$ = prod$ + lic_type$
+				fi
+				annual_flag = 1
+			else
+				rem ' new expiration date
+				rem ' ann_exp_dt$ = ann_exp_dt$(1,7) + str(num(ann_exp_dt$(8,4)) + 1)
+				rem ' expire_dt$ = ann_exp_dt$
+				gosub setNewAnnualExpirationDate
+				expire_dt$ = new_expire_dt$
+				annual_flag = 1
+			fi
+		else
+			rem ' license has not been reset, Sam is expired
+			if pos("DEMO7" = flex_lic$) = 0 then
+				rem ' just a normal register, not DEMO7, current_count > 0, expire_dt will stay the same or if expired go to demo7
+				daysToExpiration = FNDaysBetweenNowAndThen(ann_exp_dt$)
+				if daysToExpiration >= 0 then
+					expire_dt$ = ann_exp_dt$
+					annual_flag = 1
+				else
+					rem ' annual has expired, in emergency status, not reset, send it through as is
+					flex_lic$ = prod$+"DEMO7"
+					expire_dt$ = ""
+				fi
+	
+			else
+				rem ' already in emergency status, license has not been reset, not on SAM, stay in Emergency status
+				flex_lic$ = prod$+"DEMO7"
+				expire_dt$ = ""
+			fi
+		fi
+	fi
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' this section is for the expiring (RN1, DV1, NFR, EXP) annual licenses
+rem ' these serial numbers will get their actual expiration date in the license
+rem ' and because they are on SAM by definition will not be checked for changing hostids
+rem ' or require resets to go on Annual status
+rem '
+rem ' ---------------------------------------------------------------------------------
+if cvs(snm01.media_type$,3) = "ANN" then
+	rem ' do only expiring license types
+	if include_serial_nbr and (cvs(snm01.license_type$,3) = "RN1" or cvs(snm01.license_type$,3) = "NFR" or cvs(snm01.license_type$,3) = "KIT" or cvs(snm01.license_type$,3) = "EXP") then
+
+		rem ' all expiring licenses have contracts, if the hostid changes we could end up here with an empty expire_dt$
+		if cvs(expire_dt$,3) = "" then expire_dt$ = FNXDT$(holdexpire_dt$)
+
+		rem ' skip expired licenses, days between today and expiration date will be negative
+		rem ' process as normal, should result in an emergency license
+		daysToExpiration = FNDaysBetweenNowAndThen(expire_dt$)
+		if daysToExpiration >= 0 then
+			rem ' have not reached the expiration date
+			rem ' ensure we do not have a DEMO7 based on hostid changing
+			rem ' not sure this test is needed, but will duplicate the logic in the virtual section above
+			if pos("K"=prod$)<>1 then 
+				flex_lic$=prod$+"STD"
+			else
+				flex_lic$ = prod$ + lic_type$
+			fi
+			annual_flag = 1
+		else
+			rem ' daysToExpiration is negative
+			rem ' license is expired
+			expire_dt$ = ""
+		fi
+	fi
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' expiring, non-virtual licenses, non-annual will no longer be checked for changing hostid and will get a 30 expiring license
+rem ' until within 60 days of actual expiration when they will get the actual expiration date, or if the expiration day 
+rem ' has past it will be sent through as is.
+rem ' kew 2016-01-12
+rem '
+rem ' ---------------------------------------------------------------------------------
+
+rem ' skip virtual licenses and annual licenses
+if cvs(snm01.media_type$,3) <> "VIR" and cvs(snm01.media_type$,3) <> "ANN" then
+	rem ' do only expiring license types
+	if include_serial_nbr and (cvs(snm01.license_type$,3) = "RN1" or cvs(snm01.license_type$,3) = "NFR" or cvs(snm01.license_type$,3) = "KIT" or cvs(snm01.license_type$,3) = "EXP") then
+		
+		rem ' all expiring licenses have contracts, if the hostid changes we could end up here with and empty expire_dt$
+		if cvs(expire_dt$,3) = "" then expire_dt$ = FNXDT$(holdexpire_dt$)
+
+		rem ' skip expired licenses, days between today and expiration date will be negative
+		rem ' process as normal, should result in an emergency license
+		daysToExpiration = FNDaysBetweenNowAndThen(expire_dt$)
+		if daysToExpiration >= 0 then
+
+			if daysToExpiration > 60 then
+				rem ' more than 60 days until expiration handle as a perputal license which will result
+				rem ' in a 30 expiration 
+				expire_dt$ = "perpetual"
+				rem ' pass the day from the original sale date for use in calculating the new expiration date
+				org_sale_dt$ = FNOSDT$(snm01.orig_sale_date$)
+				rem ' ensure we do not have a DEMO7 based on hostid changing
+				rem ' not sure this test is needed, but will duplicate the logic in the virtual section above
+				if pos("K"=prod$)<>1 then 
+					flex_lic$=prod$+"STD"
+				else
+					flex_lic$ = prod$ + lic_type$
+				fi
+				perma_flag = 1
+			else
+				rem ' here the license is within 60 days of expiration
+				rem ' leave the expriation date at the actual expiration date, but remove any DEMO07
+				rem ' not sure this test is needed, but will duplicate the logic in the virtual section above
+				if pos("K"=prod$)<>1 then 
+					flex_lic$=prod$+"STD"
+				else
+					flex_lic$ = prod$ + lic_type$
+				fi
+			fi
+		else
+			rem ' daysToExpiration is negative
+			rem ' license is expred
+			expire_dt$ = ""
+		fi
+	fi
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem ' add the firm, customer number, and customer name to the command line via composite$
+rem ' ---------------------------------------------------------------------------------
+composite$ = composite$ + " -i " + firm$ + " -c " + cust$
+rem ' if custname$ has spaces enclose in double quotes
+if cvs(custname$,3) <> "" then 
+	if pos(" "=custname$) <> 0 then
+		composite$ = composite$ + " -n " + chr(34) + custname$ + chr(34)
+	else
+		composite$ = composite$ + " -n " + custname$
+	fi
+fi
+rem ' ---------------------------------------------------------------------------------
+rem ' add the an email address to the args that will be used in abuse emails in addition
+rem ' to the addresses that the license generator already uses
+rem ' ---------------------------------------------------------------------------------
+if firm$ = "02" then
+	rem ' all go to the same address
+	composite$ = composite$ + " -E " + chr(34) + "eu.sales@basis.cloud" + chr(34)
+else
+	rem ' firm id 01
+
+	rem ' get the salespersons email if there, if not use sales@basis.cloud
+	saddr$ = "sales@basis.cloud"; rem ' default
+	readit = 0
+	read record(arm02, key = snm01.firm_id$ + snm01.customer_nbr$ + "  ", err=*next)arm02$; readit = 1
+	if readit then
+		foundsls = 0
+		read record(arm10F, key = snm01.firm_id$ + "F" + arm02.slspsn_code$, err=*next)arm10f$; foundsls = 1
+		rem ' use the salespersons email address instead if there
+		if foundsls and cvs(arm10f.e_mail$,3) <> "" then 
+			saddr$ = cvs(arm10f.e_mail$,3)
+		fi	
+	fi	
+	
+	composite$ = composite$ + " -E " + chr(34) + saddr$
+	if cust$ = "002157" then
+		composite$ = composite$ + ",sales@essnet.com" + chr(34)
+	else
+		if cust$ = "001081" then
+			composite$ = composite$ + ",christine.menge@aptean.com" + chr(34)
+		else
+			if cust$="001022" then
+				composite$ = composite$ + ",licenseabuse@descore.com" + chr(34)
+			else
+				rem ' no additions
+				composite$ = composite$ + chr(34)
+			fi
+		fi
+	fi
+fi
+rem ' print composite$; escape
+
+rem ' ---------------------------------------------------------------------------------
+rem ' when a priamry serial number in a host id group registers for the first time
+rem ' we specify a 20 day perpetual expiration date so that the serial number starts trying
+rem ' to re-register tomorrow. The auto re-registraion will rename all conflicting lic files
+rem ' on the BLM leaving only the consolidated license.
+rem ' ---------------------------------------------------------------------------------
+if cvs(specPerPetExpire$,3) <> "" then 
+	composite$ = composite$ + " -e " + specPerPetExpire$
+fi
+rem ' escape
+
+rem ' add the -B option
+if isBLShostid then
+    composite$ = composite$ + " -B both"
+else
+    composite$ = composite$ + " -B FlexLM"
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem ' call genflexlic.bbx which executes a command line for bin/flex_license script
+rem ' ---------------------------------------------------------------------------------
+rem ' print composite$," ",feature_file$; escape
+
+rem ' for the initial BLS release candidate during the RC period BLS licenses will expire
+rem ' on 2022-04-11
+rem ' if isBLShostid then expire_dt$ = "20220412"
+rem ' remove the above code on 2022-04-12'
+
+host_id$ = hostidFull$
+call genflexlic$,flex_lic$,revision$,sn$,users+users2,host_id$,lic$,expire_dt$,feature_file$,xusers,composite$,org_sale_dt$
+if cvs(lic$,3)<>"" and pos("ERROR"=cvs(lic$,4))=0 then gen_count=1
+host_id$ = hostidToken$
+erase feature_file$,err=*next
+
+rem ' ---------------------------------------------------------------------------------
+rem ' read in testsn$ from a text file (old)
+rem ' ---------------------------------------------------------------------------------
+testfile$=flexhome$+"bin/basis_test_serial_numbers.txt"
+testfilechan=unt,ok=0,testsn$=""
+open (testfilechan,err=*next)testfile$; ok=1
+if ok then 
+  fininfo$=fin(testfilechan),fsiz=dec(fininfo$(1,4))
+  read record (testfilechan,siz=fsiz,err=*next)testsn$
+  close (testfilechan,err=*next)
+fi
+rem ' ---------------------------------------------------------------------------------
+rem ' No more processing required for temp license or above SN's or no gen_count
+rem ' ---------------------------------------------------------------------------------
+if pos(cvs(serial_num$,2)=testsn$) or form_temp or gen_count=0 then goto exit
+
+rem ' extract the expiration date from the license file if there
+expire_dt$=""
+p=pos("FEATURE"=lic$)
+if p then
+  expire_dt$=lic$(p+8)
+  sp=4
+  while sp
+    rem ' permanent licenses will now expire in 30 days (kew 2016-01-12)
+    rem ' if pos("PERMANENT"=cvs(expire_dt$,4)) then expire_dt$=""
+    p=pos(" "=expire_dt$)
+    if p<2 then break
+    if sp>1 then expire_dt$=expire_dt$(p+1) else expire_dt$=expire_dt$(1,p-1)
+    sp=sp-1
+  wend
+fi
+
+rem ' bump the license_count in are83 or snt04
+if found_sn=are83 then 
+  are83.license_cnt=1
+  are83$=field(are83$)
+  write record (are83,key=are83key$)are83$
+fi  
+if found_sn=snt01 then 
+  snt01.license_cnt=1
+  snt01$=field(snt01$)
+  write record (snt01,key=snt01key$)snt01$
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem ' d7 set if last lic generated was a demo7 -  
+rem ' write a new record if this lic is a good license
+rem ' finish filing in the sn_license record and write if needed
+rem ' ---------------------------------------------------------------------------------
+
+sn_license.prod_type$=flex_lic$
+rem ' do not write permanent or PERMANENT into the expire field
+if pos("PERMANENT"=cvs(expire_dt$,4)) then expire_dt$=""
+sn_license.expire$=expire_dt$
+sn_license.lic_count=prevlic.lic_count+1
+if perma_flag then sn_license.perpetual$ = "Y"
+if annual_flag then sn_license.annual$ = "Y"
+sn_license$=field(sn_license$)
+write record (sn_license)sn_license$
+if prev_expire_dt$=expire_dt$ and new_license=0 and d7=0 then goto exit
+if snlist$ <> "" then call flexhome$+"bin/flexlicLogSecondarySN.bbx", err=errmsg, snlist$, secondaryFeatures$, sn_license$, sn_license
+if cvs(expire_dt$,3)=demo7_dt$ and pos("DEMO7"=flex_lic$) then goto exit
+if redundant then write record (sn_host)sn_host1$
+goto exit
+
+check_feature_rev_update:
+
+	rem ' for the BASIS Add-On features we bump the revision when the revision is out of date
+	rem ' this sub-routine added 7/1/2009 by kew
+	
+	rem ' for rev reverts the contract is not ok and this code will be bypassed
+	
+	if contract_ok then
+		
+		if cvs(snt04.feature$,3)="SoftwareAssetManagement" then
+			rem ' ensure the the feature rev and users matches the bbj line
+			rem ' and the expire on dt matches smc01 expire on date
+			snt04.feature_rev$=str(fnConvertRevToNumber(current_rev$))+".0"
+			snt04.users=users+users2
+			snt04.expire_on_dt$ = smc01.expire_on_dt$
+			snt04$ = field(snt04$)
+			write record(snt04)snt04$
+
+			rem ' update the variable used to write the exipre date to the feature text file
+			exp_dt$ = exp_dt$(1,1) + FNXDT$(snt04.expire_on_dt$)
+
+		else
+			while 1
+				featKey$=firm$+"000000"
+				rem ' for BASIS features only
+				if pos("01007514"=snt04.feature$)<>1 AND pos("BARISTA"=cvs(snt04.feature$,4))<>1 then break
+				featKey$=featKey$+snt04.feature$
+				read record(arm40,key=featKey$,knum=0,dom=*break)arm40$
+
+				if fnConvertRevToNumber(cvs(snt04.feature_rev$,3)) < fnConvertRevToNumber(cvs(arm40.feature_rev$,3)) then
+					snt04.feature_rev$=arm40.feature_rev$
+					snt04$ = field(snt04$)
+					write record(snt04)snt04$
+				fi
+
+				break
+			wend
+		fi
+	fi
+
+return
+
+record_feature_revert:
+
+	rem ' this license is reverting one rev level - sub routine added 3/7/2011
+	rem ' when reverting the rev do not mess with expiration dates
+	
+	if cvs(snt04.feature$,3)="SoftwareAssetManagement" then
+		rem ' ensure the the feature rev and users matches the bbj line
+		rem ' expire on dt does not change
+		snt04.feature_rev$=str(fnConvertRevToNumber(revert_rev$))+".0"
+		snt04.users=users+users2
+		snt04$ = field(snt04$)
+		write record(snt04)snt04$
+
+	else
+		while 1
+			featKey$=firm$+"000000"
+			rem ' for BASIS features only
+			if pos("01007514"=snt04.feature$)<>1 AND pos("BARISTA"=cvs(snt04.feature$,4))<>1 then break
+
+			rem ' revert the rev
+			snt04.feature_rev$=str(fnConvertRevToNumber(revert_rev$))+".0"
+			snt04$ = field(snt04$)
+			write record(snt04)snt04$
+
+			break
+		wend
+	fi
+
+return
+
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' check the perpetual license exclusion lists to see if this customer or specific serial number is excluded
+rem '
+rem ' ---------------------------------------------------------------------------------
+include_this:
+	while 1
+		rem ' include it by default
+		include_serial_nbr = 1
+		
+		rem ' check the specific excluded serial numbers
+		found = 0
+		read record(sn_excl_sn, key = snm01.serial_nbr$, dom = *next)sn_excl_sn$; found = 1
+		if found then include_serial_nbr = 0; break
+		
+		rem ' check for exclusion by the firm owning the serial number
+		found = 0
+		rem ' if all license for a firm are exluced the customer number portion of the key 
+		rem ' will be ######
+		read record(sn_excl_cust, key = snm01.firm_id$ + "######", dom = *next)sn_excl_cust$; found = 1
+		if found then include_serial_nbr = 0; break
+		
+		rem ' check for exclusion by firm + customer_nbr owning the serial number
+		found = 0
+		read record(sn_excl_cust, key = snm01.firm_id$ + snm01.customer_nbr$, dom = *next)sn_excl_cust$; found = 1
+		if found then include_serial_nbr = 0; break
+
+		break
+	wend
+return
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' check the annual license current status, has it been registered yet and if so what is
+rem ' the current expiration date
+rem '
+rem ' ---------------------------------------------------------------------------------
+findCurrentAnnualStatus:
+	ann_exp_dt$ = ""
+	ann_registered = 0
+	dim sn_license_alt$:fattr(sn_license$)
+	dim sn_license1$:fattr(sn_license$)
+	found_a_record = 0
+	
+	read record(sn_license, key = cvs(snm01.serial_nbr$,3), dom = *next)sn_license1$
+	while 1
+		read record(sn_license, end = *break)sn_license_alt$
+		if pos(cvs(snm01.serial_nbr$,3) = sn_license_alt$) <> 1 then
+			rem ' we have a change of serial numbers
+			break
+		else
+			rem ' is it an annual registration
+			if sn_license_alt.annual$ = "Y" then
+				found_a_record = 1
+				sn_license1$ = sn_license_alt$
+			fi
+		fi
+	wend
+	if found_a_record then
+		ann_registered = 1
+		ann_exp_dt$ = sn_license1.expire$
+	fi
+return
+
+rem ' ---------------------------------------------------------------------------------
+rem '
+rem ' find what the new annual expiration date should be for Annaul STD licenses
+rem ' if on SAM it will be the SAM Expire Date + 60 days
+rem ' otherwise align to the original sale date
+rem ' if within 60 days from now move to the new expire date
+rem '
+rem ' ---------------------------------------------------------------------------------
+
+setNewAnnualExpirationDate:
+	
+	if contract_ok then
+		rem ' on SAM use SAM expire + 60 days
+		rem ' this will allow the SAM to be renewed and the annual expire date to be advanced with one registration
+		exp_jul = jul(num(holdexpire_dt$(1,4)), num(holdexpire_dt$(5,2)), num(holdexpire_dt$(7,2))) + 60
+		new_expire_dt$ =  FNXDT$(date(exp_jul:"%Y%Mz%Dz"))
+	else
+		rem ' not on SAM align to the date of original purchase
+		
+		dop$ = FNUNPDT$(snm01.orig_sale_date$)
+	
+		rem ' correct for leap year
+		if dop$(7,2) = "29" and dop$(5,2) = "02" then dop$(7,2) = "28"
+	
+		rem ' change year to current year
+		dop$ = date(0:"%Y") + dop$(5,4)
+
+		rem ' if less then today bump the year
+		if jul(num(dop$(1,4)),num(dop$(5,2)),num(dop$(7,2))) < jul(0,0,0) then
+			dop$ = str(num(dop$(1,4)) + 1) + dop$(5,4)
+		fi
+	
+		dop$ = FNXDT$(dop$)
+		daysToExpiration = FNDaysBetweenNowAndThen(dop$)
+		if daysToExpiration > 60 then
+			new_expire_dt$ = dop$
+		else
+			rem ' bump it one year
+			dop$ = dop$(1,7) + str(num(dop$(8,4)) + 1) 
+			new_expire_dt$ = dop$
+		fi		
+	fi
+return
+
+rem ' ---------------------------------------------------------------------------------
+rem ' see if there are any vendor strings on a feature
+rem ' ---------------------------------------------------------------------------------
+checkForVendorStrings:
+	
+	cfvs_str$ = ""
+	
+	rem ' positioining read
+	read record(arm40, key = cfvs_feature$ + cfvs_firm$, knum= 1, dom=*next)
+
+	rem ' the feature definition record should be the next record
+	read record(arm40, end = *return)arm40$
+	if cvs(arm40.feature$,3) <> cvs(cfvs_feature$,3) then return 
+
+	cfvs_str$ = cvs(arm40.vendor_string$,3)
+
+return
+
+
+
+rem ' lock retry routine
+nolock:
+if lockcount<5 then lockcount=lockcount+1; wait 1; retry
+msg$=auth_num$+" "+serial_num$+"- license not generated- Err "+str(err)+" in "+str(tcb(5))+" "+pgm(-2)
+who$="mis"
+
+  rem ' log it
+  sn_lic_reg_err.serial_nbr$ = serial_num$
+  if cvs(sn_lic_reg_err.serial_nbr$,3) = "" then sn_lic_reg_err.serial_nbr$ = "SN not set yet."
+  sn_lic_reg_err.reg_time$ = date(0:"%Y%Mz%Dz%Hz%mz%sz")
+  sn_lic_reg_err.prob_msg$ = msg$
+  write record(sn_lic_reg_err)sn_lic_reg_err$
+
+gosub email_alert
+goto exit
+
+entry_err:
+msg$="Err "+str(err)+" in "+str(tcb(5))+" "+pgm(-2),who$="mis"
+gosub email_alert
+goto exit
+
+email_alert:
+msg$ = msg$ + " " + INFO(3,4)
+a=scall(aon$+"email_alert "+who$+"@basis.cloud "+$22$+msg$+$22$+" "+aon$+"tmp/emailalert.txt")
+return
+
+write_comment:
+	rem ' write a comment when a serial number is reverted
+	seq = 1
+	read (snm04,key=snm01.serial_nbr$,dom=*NEXT)
+	while seq<100
+		read record (snm04,END=*break)snm04$
+		if snm04.serial_nbr$=snm01.serial_nbr$ then 
+		    let seq=num(snm04.comments_seq$)+1
+		    continue
+		fi
+		let snm04.serial_nbr$=snm01.serial_nbr$
+		let snm04.comments_seq$=STR(seq:"00"),seq=100
+		let snm04.cmt_line$=comment$
+		let snm04$=field(snm04$)
+		
+		write record (snm04,key=snm04$(1,22))snm04$
+	wend
+return
+
+DEF FNXDT$(Q1$)
+  x_jul=0,x_dt$=""
+  yy=num(q1$(1,4),err=*next)
+  mm=num(q1$(5,2),err=*next)
+  dd=num(q1$(7,2),err=*next)
+  if yy*dd*mm then x_jul=jul(yy,mm,dd,err=*next)
+  if x_jul then x_dt$=cvs(date(x_jul:"%Dz-%Ms-%Y"),8)
+RETURN x_dt$
+FNEND
+
+DEF FNOSDT$(Q1$)
+  unpck$ = fnc$(q1$)
+  if len(unpck$) = 6 then
+  	retday$ = unpck$(3,2)
+  else 
+  	rem ' return today
+  	retday$ = date(jul(0,0,0):"%D")
+  fi
+RETURN retday$
+FNEND
+
+DEF FNUNPDT$(q1$)
+	unpck$ = fnc$(q1$)
+	unpck$ = date(jul(fnyy_year(fnyear_yy21$(num(unpck$(5,2)))), num(unpck$(1,2)), num(unpck$(3,2))):"%Y%Mz%Dz")
+return unpck$
+FNEND
+
+DEF FNDaysBetweenNowAndThen(dbnat_date$)
+	dbnat_days = 0
+	if len(dbnat_date$) = 10 then dbnat_date$ = "0" + dbnat_date$
+	if len(dbnat_date$) <> 11 then
+		dbnat_days = 0
+	else		
+		rem ' date in the form of dd-mmm-yyyy
+		dbnat_mnth_lst$ = "janfebmaraprmayjunjulaugsepoctnovdec"
+		dbnat_month$ = dbnat_date$(4,3)
+		dbnat_month = pos(dbnat_month$ = dbnat_mnth_lst$)
+		if dbnat_month = 0 then
+			dbnat_days = 0
+		else
+			dbnat_month = int(dbnat_month / 3) + 1
+			dbnat_day = 0
+			dbnat_day = num(dbnat_date$(1,2), err=*next)
+			if dbnat_day = 0 then
+				dbnat_days = 0
+			else
+				dbnat_year = 0
+				dbnat_year = num(dbnat_date$(8,4), err=*next)
+				if dbnat_year = 0 then
+					dbnat_days = 0
+				else
+					dbnat_days = jul(dbnat_year, dbnat_month, dbnat_day) - jul(0,0,0)
+				fi
+			fi
+		fi
+	fi
+RETURN dbnat_days
+FNEND
+
+DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+
+DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+
+DEF FNYY_YEAR(Q1$)
+	LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+RETURN Q
+FNEND
+
+DEF FNYEAR_YY21$(Q)=FNYY_YY21$(STR(MOD(Q,100):"00"))
+
+DEF FNYY21_YY$(Q1$)
+	LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+
+DEF FNYY_YY21$(Q1$)
+	LET Q3$=" ABCDE56789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+
+no_sn:
+rem ' no data for the serial number found in SNT01 or ARE83
+ts$=date(0)+" "+date(0:"%Hz:%mz")
+msg$="Serial# and/or Authorization# not found "+serial_num$+auth_num$
+rem ' ef=unt
+rem ' errlog$=adata$+"flexlic.log"
+rem ' open(ef,err=exit)errlog$
+rem ' f$=fin(ef),ndx=dec(f$(1,4))
+rem ' write (ef,ind=ndx)ts$
+rem ' print (ef)msg$
+rem ' close(ef)
+
+errmsg:
+rem ' main seterr location
+if msg$="" then 
+  msg$="Err "+str(err)+" "+errmes(-1)+" in "+str(tcb(5))+" "+pgm(-2)+" "+sn$
+  who$="mis"
+  
+  rem ' log it
+  sn_lic_reg_err.serial_nbr$ = serial_num$
+  if cvs(sn_lic_reg_err.serial_nbr$,3) = "" then sn_lic_reg_err.serial_nbr$ = "SN not set yet."
+  sn_lic_reg_err.reg_time$ = date(0:"%Y%Mz%Dz%Hz%mz%sz")
+  sn_lic_reg_err.prob_msg$ = msg$
+  write record(sn_lic_reg_err)sn_lic_reg_err$
+  
+  gosub email_alert
+fi
+rem ' error file setup in the beginning
+rem ' file will be located in the flexlic/lic directory with the serial number in the name and the extension .err
+erase errfile$,err=*next
+string errfile$
+ef=unt; open (ef)errfile$
+write (ef)msg$
+close (ef)
+
+rem ' log it
+sn_lic_reg_err.serial_nbr$ = serial_num$
+if cvs(sn_lic_reg_err.serial_nbr$,3) = "" then sn_lic_reg_err.serial_nbr$ = "SN not set yet."
+sn_lic_reg_err.reg_time$ = date(0:"%Y%Mz%Dz%Hz%mz%sz")
+sn_lic_reg_err.prob_msg$ = msg$
+write record(sn_lic_reg_err)sn_lic_reg_err$
+
+
+exit:
+rem ' close all the files
+close(sn_lic_reg_err, err = *next)
+while len(channel$)
+  close (num(channel$(1,3)),err=*next)
+  channel$=channel$(4)
+wend
+
+exit2:
+if called_pgm then exit else release
+
+rem ' convert the rev number to a numeric
+def fnConvertRevToNumber(xrev$)
+	xNumRev = 0, newxrev$=""
+	if len(xrev$) > 0 then
+		for xrev = 1 to len(xrev$)
+			xchar$=xrev$(xrev,1)
+			if pos(xchar$="0123456789.")<>0 then newxrev$=newxrev$+xchar$
+		next xrev
+		xNumRev = num(newxrev$)
+	endif
+	return xNumRev
+fnend
+
+rem ' ---------------------------------------------------------------------------------
+rem ' define and declare some resources
+rem ' ---------------------------------------------------------------------------------
+
+useAndDeclare:
+  use ::HostId.src::HostId
+  use ::HostId.src::HostIdConstants
+
+  declare HostId HostidData!
+  declare HostIdConstants hostIdType!
+
+return
+
+rem ' ---------------------------------------------------------------------------------
+rem ' find the full hostid given the hostid token
+rem ' ---------------------------------------------------------------------------------
+
+lookupFullHostid:
+
+isBLShostid = 0
+hostIdType! = new HostIdConstants()
+HostidData! = new HostId(hostIdType!.TOKEN(), hostidToken$)
+if HostidData!.exists() then
+    hostidFull$ = HostidData!.getHostidFull()
+    isBLShostid = HostidData!.isNewHostid(hostidFull$)
+else
+    hostFull$ = ""
+fi
+
+return
+
+rem ' ---------------------------------------------------------------------------------
+rem ' find the hostid token given the full hostid
+rem ' ---------------------------------------------------------------------------------
+
+lookupHostidToken:
+
+isBLShostid = 0
+hostIdType! = new HostIdConstants()
+HostidData! = new HostId(hostIdType!.FULL(), hostidFull$)
+if HostidData!.exists() then
+    hostidToken$ = HostidData!.getHostidToken()
+    isBLShostid = HostidData!.isNewHostid(hostidFull$)
+else
+    hostidToken$ = ""
+fi
+
+return
+
+
+end

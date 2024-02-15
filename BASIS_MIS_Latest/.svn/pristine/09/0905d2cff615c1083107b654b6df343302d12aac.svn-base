@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="licenseSAMStatusExport" pageWidth="792" pageHeight="612" orientation="Landscape" columnWidth="752" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="P_FIRM_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA["01"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[CALL LICENSE_SAM_STATUS_FINAL($P{P_FIRM_ID})]]>
+	</queryString>
+	<field name="FIRM_ID" class="java.lang.String"/>
+	<field name="FIRM_NAME" class="java.lang.String"/>
+	<field name="RUN_DATE" class="java.lang.String"/>
+	<field name="CUSTOMER_NBR" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="EF_USERS_ON_SAM" class="java.math.BigDecimal"/>
+	<field name="EFOS_LIC_COUNT" class="java.math.BigDecimal"/>
+	<field name="SF_USERS_ON_SAM" class="java.math.BigDecimal"/>
+	<field name="SFOS_LIC_COUNT" class="java.math.BigDecimal"/>
+	<field name="EF_USERS_SAM_NO" class="java.math.BigDecimal"/>
+	<field name="EFNS_LIC_COUNT" class="java.math.BigDecimal"/>
+	<field name="SF_USERS_SAM_NO" class="java.math.BigDecimal"/>
+	<field name="SFNS_LIC_COUNT" class="java.math.BigDecimal"/>
+	<variable name="EF_USERS_ON_SAM_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{EF_USERS_ON_SAM}]]></variableExpression>
+	</variable>
+	<variable name="SF_USERS_ON_SAM_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SF_USERS_ON_SAM}]]></variableExpression>
+	</variable>
+	<variable name="EF_USERS_SAM_NO_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{EF_USERS_SAM_NO}]]></variableExpression>
+	</variable>
+	<variable name="SF_USERS_SAM_NO_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SF_USERS_SAM_NO}]]></variableExpression>
+	</variable>
+	<variable name="EFOS_LIC_COUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{EFOS_LIC_COUNT}]]></variableExpression>
+	</variable>
+	<variable name="SFOS_LIC_COUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SFOS_LIC_COUNT}]]></variableExpression>
+	</variable>
+	<variable name="EFNS_LIC_COUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{EFNS_LIC_COUNT}]]></variableExpression>
+	</variable>
+	<variable name="SFNS_LIC_COUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SFNS_LIC_COUNT}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="30" splitType="Stretch">
+			<staticText>
+				<reportElement x="350" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[SAM
+]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="550" y="0" width="50" height="15"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[NO SAM]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="0" width="40" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{FIRM_ID} + " " + $F{FIRM_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="40" y="0" width="310" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA["RUN DATE: " + $F{RUN_DATE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="450" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[SAM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="650" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[NO SAM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="15" width="40" height="15"/>
+				<textElement/>
+				<text><![CDATA[Cust #]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="40" y="15" width="310" height="15"/>
+				<textElement/>
+				<text><![CDATA[Customer Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="350" y="15" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[EF Usrs]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="400" y="15" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Lic Cnt]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="450" y="15" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[SF Usrs]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="15" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Lic Cnt]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="550" y="15" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[EF Usrs]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="600" y="15" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Lic Cnt]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="650" y="15" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[SF Usrs]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="700" y="15" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Lic Cnt]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="40" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{CUSTOMER_NBR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="40" y="0" width="310" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="700" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{SFNS_LIC_COUNT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="650" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{SF_USERS_SAM_NO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="350" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{EF_USERS_ON_SAM}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="400" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{EFOS_LIC_COUNT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="450" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{SF_USERS_ON_SAM}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="500" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{SFOS_LIC_COUNT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="550" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{EF_USERS_SAM_NO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="600" y="0" width="50" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{EFNS_LIC_COUNT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

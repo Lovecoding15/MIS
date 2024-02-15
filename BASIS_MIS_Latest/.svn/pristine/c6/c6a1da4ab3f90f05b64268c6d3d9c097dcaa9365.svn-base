@@ -1,0 +1,41 @@
+0010 REM "ADC - ADD+ON 6.0 Bridge - Kode Lookup"
+0020 REM "Program: ADC.LK"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 5.2.0 - 01May94 |"
+0026 REM "|      Copyright (c) 1994 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0080 SETERR 9900
+0084 REM "V1=Screen horizontal position for output
+0085 REM "V2=Screen vertical position for output
+0086 REM "V4=Description Field #, V5=Channel
+0087 REM "V6=Position of Code (in key), V7=Length of Code
+0088 REM "V8=Starting Pos of Desc, V9=Len of Desc, V$=Selection$
+0089 REM "V5$=Key Identifier, N0$=Filler
+0090 ENTER V1,V2,V4,V5,V6,V7,V8,V9,V$,V5$,N0$
+0500 REM " --- Initializations"
+0510 IF POS("GLM-01"=FNX$(V5))>0 THEN GOTO 2000
+0520 DIM DESCRIPTION$[1],FIELD[1],POSITION[1],LENGTH[1]
+0530 LET NUMBER=1,COLUMN=1,ROW=3,TITLE$="Code Lookup"
+0550 LET DESCRIPTION$[0]="Code",FIELD[0]=1
+0560 LET POSITION[0]=V6,LENGTH[0]=V7
+0570 LET DESCRIPTION$[1]="Description",FIELD[1]=V4
+0580 LET POSITION[1]=V8,LENGTH[1]=V9
+0590 IF V8=0 THEN LET POSITION[1]=POSITION[0]+LENGTH[0]
+0600 IF V6=0 THEN LET V6=3+LEN(V5$)
+1000 REM " --- Call windowed lookup"
+1010 CALL "SYC.LK",V5,V5$,NUMBER,TITLE$,DESCRIPTION$[ALL],FIELD[ALL],POSITION[ALL],LENGTH[ALL],COLUMN,ROW,V$
+1020 PRINT @(V1,V2),V$,
+1090 GOTO 9900
+2000 REM " --- G/L Lookup"
+2010 LET Q6=NUM(V$)
+2020 CALL "SYCWLG",V$
+2030 PRINT @(V1,V2),FNF$(V$(1,Q6),V5$)
+2090 GOTO 9900
+8000 REM " --- Functions"
+8010 DEF FNF$(Q$,Q1$)=STR(-NUM(Q$):Q1$)
+8020 DEF FNX$(Q)=FID(Q)
+9900 REM " --- Return to caller"
+9950 EXIT 
+9999 END

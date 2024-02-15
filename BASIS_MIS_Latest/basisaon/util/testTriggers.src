@@ -1,0 +1,92 @@
+rem ' test the write triggers on these files
+
+begin
+
+glt04 = unt
+open(glt04)"GLT-04"
+intemp$="FIRM_ID:C(2),JOURNAL_ID:C(2),GL_ADT_NBR:C(7),POSTING_YEAR_1:C(2),POSTING_PER_1:C(2),"
+intemp$=intemp$+"GL_POST_DATE:C(6),GL_ACCOUNT:C(10),GL_POST_SEQ:C(5*=10),REFERENCE_1:C(10),"
+intemp$=intemp$+"REFERENCE_2:C(10),REFERENCE_3:C(10),GL_POST_MEMO:C(30),POSTING_PER_2:C(2),"
+intemp$=intemp$+"POSTING_YEAR_2:C(2*=10),DEALER_STR:C(1*=10),GL_POST_AMT:N(7*=10),UNITS:N(7*=10),"
+intemp$=intemp$+"DEALER_NUM_1:N(1*=10),DEALER_NUM_2:N(1*=10),DEALER_NUM_3:N(1*=10)"
+dim glt04$:intemp$
+
+glt05 = unt
+open(glt05)"GLT-05"
+temp$="FIRM_ID:C(2),GL_POST_DATE:C(6),JOURNAL_ID:C(2),GL_ACCOUNT:C(10),GL_ADT_NBR:C(7),"
+temp$=temp$+"POSTING_YEAR:C(2),POSTING_PER:C(2),GL_POST_SEQ:C(5*=10)"
+dim glt05$:temp$
+
+call "ec_open::APM12"
+
+rem ' print "GLT-04 ",fattr(glt04$)
+rem ' print " "
+rem ' print "GLT-05 ",fattr(glt05$)
+rem ' print " "
+rem ' print "APM-12 ",fattr(apm12$)
+rem ' input *
+
+rem ' 01 CR 0003839 B5 04 B50409 1005000000 00000                               Summarized Cash Receipts            90 0 0 0 0 
+glt04.FIRM_ID$="01"
+glt04.JOURNAL_ID$="CR"
+glt04.GL_ADT_NBR$="0003839"
+glt04.POSTING_YEAR_1$="B5"
+glt04.POSTING_PER_1$="04"
+glt04.GL_POST_DATE$="B50409"
+glt04.GL_ACCOUNT$="1005000000"
+glt04.GL_POST_SEQ$="00000"
+glt04.REFERENCE_1$="          "
+glt04.REFERENCE_2$="          "
+glt04.REFERENCE_3$="          "
+glt04.GL_POST_MEMO$="Trigger Test"
+glt04.POSTING_PER_2$=""
+glt04.POSTING_YEAR_2$=""
+glt04.DEALER_STR$=""
+glt04.GL_POST_AMT=90
+glt04.UNITS=0
+glt04.DEALER_NUM_1=0
+glt04.DEALER_NUM_2=0
+glt04.DEALER_NUM_3=0
+
+rem ' 01 B50409 CR 1005000000 0003839 B5 04 00000 
+glt05.FIRM_ID$="01"
+glt05.GL_POST_DATE$="B50409"
+glt05.JOURNAL_ID$="CR"
+glt05.GL_ACCOUNT$="1005000000"
+glt05.GL_ADT_NBR$="0003839"
+glt05.POSTING_YEAR$="B5"
+glt05.POSTING_PER$="04"
+glt05.GL_POST_SEQ$="00000"
+
+rem ' 01 1005000000 CB50409 D O B50409 Cash Receipts Register 755.8 0
+apm12.FIRM_ID$="01"
+apm12.GL_ACCOUNT$="1005000000"
+apm12.TRANS_NO$="CB50409"
+apm12.TRANS_TYPE$="D"
+apm12.POSTED_CODE$="O"
+apm12.TRANS_DATE$="B50409"
+apm12.DESCRIPTION$="Test Trigger"
+apm12.RESERVED_STR$=""
+apm12.TRANS_AMT=755.8
+apm12.RESERVED_AMT=0
+
+input "ready to write: ",*
+escape
+
+glt04$=field(glt04$)
+write record(glt04)glt04$
+input "glt04 written: ",*
+escape
+
+glt05$=field(glt05$)
+write record(glt05)glt05$
+input "glt05 written: ",*
+escape
+
+rem ' skip apm12 for now, until new check rec table is know
+rem ' apm12$=field(apm12$)
+rem ' write record(apm12)apm12$
+rem ' input "apm12 written: ",*
+rem ' escape
+
+end

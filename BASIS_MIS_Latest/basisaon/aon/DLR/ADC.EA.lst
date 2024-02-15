@@ -1,0 +1,19 @@
+0010 REM "ADC - ADD+ON 6.0 Bridge - Process Program Errors"
+0020 REM "Program: ADC.EA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0040 REM 
+0090 ENTER LINE_LISTING$,LINE_NO$,PROG_NAME$,ERROR,MODE
+1000 REM " --- Adjust CALL/ENTER list
+1010 LET LINE=NUM(LINE_NO$),XMODE=0,STATEMENT$="",MODE=0,ROW=0
+1050 CALL "SYC.EA",ERR=9900,XMODE,PROG_NAME$,ERROR,LINE,STATEMENT$,MODE,ROW
+1100 REM " --- Check for escape"
+1110 IF MODE<>2 THEN GOTO 9900
+1120 CALL "SYC.ES",ERR=9900,PROG_NAME$,TCB(8),STATEMENT$,ROW,FKEY
+1130 IF FKEY=127 THEN LET MODE=2 ELSE LET MODE=3
+9900 REM " --- Exit"
+9990 EXIT 
+9999 END

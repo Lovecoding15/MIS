@@ -1,0 +1,34 @@
+REM /**
+REM  * EngineTest2SAM.src
+REM  * @author kwilliams
+REM  *
+REM  */
+
+use ::BasisPriceEngine.src::PriceElement
+use ::SerialNumber.src::SerialNumber
+use ::TransactionBuilder.src::TransactionBuilder
+
+declare TransactionBuilder tb!
+declare SerialNumber sn!
+declare PriceElement pel!
+declare BBjVector priceElemnts!
+
+tb! = new TransactionBuilder(0)
+sn! = new SerialNumber("BBX623594")
+priceElements! = tb!.calcAnnualSam(sn!)
+discPrice = tb!.sumDiscountedPrice(priceElements!)
+listPrice = tb!.sumListPrice(priceElements!)
+
+print "total discounted price: ", discPrice
+print "total list price: ", listPrice
+input *
+
+if priceElements!.size() > 0 then
+    for x = 0 to priceElements!.size() - 1
+        pel! = cast(PriceElement, priceElements!.getItem(x))
+        print pel!.toString()
+        input *
+    next x
+else
+    print "no price"
+endif

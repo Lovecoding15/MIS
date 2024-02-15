@@ -1,0 +1,205 @@
+REM /**
+REM  * custSalesAging.src
+REM  * Displays 2 dashboard widgets
+REM  * @author kwilliams
+REM  *
+REM  */
+
+seterr Finished
+
+firm$ = clientenv("firm")
+cust$ = clientenv("cust")
+
+rem ' given a BUI app loaded with the URL 
+rem ' http://localhost:8888/apps/sample?company=01&user=jsmith
+rem ' clientenv("company") would return "01" and clientenv("user") would return "jsmith".
+
+declare BBjSysGui sysgui!
+sysgui! = BBjAPI().openSysGui("X0")
+
+rem Use statements
+use ::dashboard/dashboard.bbj::Dashboard
+use ::dashboard/dashboard.bbj::DashboardCategory
+use ::dashboard/dashboard.bbj::DashboardWidget
+use ::dashboard/dashboard.bbj::WidgetControl
+use ::dashboard/widget.bbj::Widget
+use ::dashboard/widget.bbj::ChartWidget
+use ::dashboard/widget.bbj::PieChartWidget
+use ::dashboard/widget.bbj::BarChartWidget
+use ::BBUtils.bbj::BBUtils
+use ::BBXImage.bbj::BBXImageFactory
+use ::BBXImage.bbj::BBXImage
+use ::bbwindowutils.bbj::BBWindowUtils
+
+use java.awt.TexturePaint
+use java.awt.geom.Rectangle2D
+use java.awt.image.BufferedImage
+use java.util.LinkedHashMap
+
+rem Create a window
+width=760
+height=270
+context = sysgui!.getAvailableContext()
+rem ' xresp = msgbox("new context " + str(context),0,"debug")
+window! = sysgui!.addWindow(context,10,10,width,height,"Sales and Aging Summary for " + custName$,$01000010$)
+createWidgetStatic! = window!.addStaticText(100,10,10,90,20,"Creating Widgets")
+BBWindowUtils.centerWindow(window!)
+window!.setVisible(1)
+
+rem ' create the aging widget
+
+call "ec_open::ARM01"
+call "ec_open::ARM02"
+
+rem ' gather the data
+read record(arm01, key = firm$ + cust$)arm01$
+custName$ = arm01.cust_name$
+success = 0
+read record(arm02, key = firm$ + cust$ + "  ", err=*next)arm02$; success = 1
+if !success then
+    future = 0
+    current = 0
+    over30 = 0
+    over60 = 0
+    over90 = 0
+    over120 = 0
+    totalAging = future + current + over30 + over60 + over90 + over120
+else
+    future = arm02.aging_future
+    current = arm02.aging_cur
+    over30 = arm02.aging_30
+    over60 = arm02.aging_60
+    over90 = arm02.aging_90
+    over120 = arm02.aging_120
+    totalAging = future + current + over30 + over60 + over90 + over120
+endif
+
+rem Create the dashboard and category
+dashboard! = new Dashboard("CustomerSalesAndAging","Customer Sales and Aging")
+dashboardCategory! = dashboard!.addDashboardCategory("CustomerSalesAndAging","Customer Sales and Aging")
+dashboardCategory!.setWidgetTitlebarNameBackColor(bbjapi().makeColor(215,215,215))
+dashboardCategory!.setWidgetTitlebarDecorationBackColor(bbjapi().makeColor(225,225,225))    
+
+rem Create the widget
+widgetName$ = "CustomerAging"
+title$ = "Customer AR Aging"
+previewText$ = ""
+previewImage$ = ""
+chartTitle$ = ""
+flat = 1 
+legend = 0
+numSlices = 6
+agingdashboardWidget! = dashboardCategory!.addPieChartDashboardWidget(widgetName$,title$,previewText$,previewImage$,chartTitle$,flat,legend,numSlices)
+agingdashboardWidget!.setCloseEnabled(0,err=*NEXT)
+agingwidget! = agingdashboardWidget!.getWidget()
+            
+rem Get the background image for the AR Aging Chart
+declare BBXImage xImage!
+xImage! = BBXImageFactory.createImageFromServerFile(System.getProperty("basis.BBjHome") + "/utils/dashboard/images/chartBG.jpg")
+xImage!.setOpacity(20)
+tr! = new Rectangle2D.Double(0, 0, xImage!.getWidth(), xImage!.getHeight())
+chartTexturePaint! = new TexturePaint(xImage!.getBufferedImage(BufferedImage.TYPE_INT_ARGB), tr!)
+
+rem Customize the chart
+agingwidget!.setLabelFormat("{0}: {1} ({2})", java.text.NumberFormat.getCurrencyInstance(), java.text.NumberFormat.getPercentInstance())
+agingwidget!.setChartBackground(chartTexturePaint!)
+agingwidget!.setPlotPadding(.06)
+colors! = ChartWidget.getVectorOfJavaColorsFromHexColorStrings(4, "#f5bcbc", "#861313", .65, .65)
+colors!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#169c16", 0.65))
+colors!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#1d56c9", 0.65))
+agingwidget!.setChartColors(colors!)
+agingwidget!.setLegendPosition(ChartWidget.getSideLeft(), ChartWidget.getHAlignRight(), ChartWidget.getVAlignCenter())
+
+rem Set the Widget data
+agingwidget!.setDataSetValue("  Future", future)
+agingwidget!.setDataSetValue(" Current", current)
+agingwidget!.setDataSetValue(" 30 Days", over30)
+agingwidget!.setDataSetValue(" 60 Days", over60)
+agingwidget!.setDataSetValue(" 90 Days", over90)
+agingwidget!.setDataSetValue("120 Days", over120)
+
+widgetControl! = new WidgetControl(agingdashboardWidget!,window!,395,20,335,230,$$)
+widgetControl!.setMoveParentWindow(1)
+	
+close(arm01)
+close(arm02)
+
+rem ' create the customer sales widget
+
+call "ec_open::ARM06"
+
+rem ' gather the data
+success = 0
+read record(arm06, key = firm$ + cust$, err=*next)arm06$; success = 1
+if !success then
+    mtd_sales = 0
+    ytd_sales = 0
+    pyr_sales = 0
+    nmtd_sales = 0
+else
+    mtd_sales = arm06.mtd_sales
+    ytd_sales = arm06.ytd_sales
+    pyr_sales = arm06.pyr_sales
+    nmtd_sales = arm06.nmtd_sales
+endif
+
+rem Create the widget
+widgetName$ = "Sales"
+title$ = "Customer Sales"
+previewText$ = ""
+previewImage$ = ""
+chartTitle$ = ""
+flat = 0 
+legend = 0
+rem ' numSlices = 6
+domainTitle$ = ""
+rangeTitle$ = ""
+orientation=BarChartWidget.getORIENTATION_VERTICAL()
+salesdashboardWidget! = dashboardCategory!.addBarChartDashboardWidget(widgetName$,title$,previewText$,previewImage$,chartTitle$,domainTitle$,rangeTitle$,flat,orientation,legend)
+salesdashboardWidget!.setCloseEnabled(0,err=*NEXT)
+saleswidget! = salesdashboardWidget!.getWidget()
+        
+rem Customize the chart
+saleswidget!.setChartRangeAxisToCurrency()
+saleswidget!.setChartBackground(chartTexturePaint!)
+rem ' saleswidget!.setPlotPadding(.06)
+saleswidget!.setChartColors(colors!)
+saleswidget!.setLegendPosition(ChartWidget.getSideLeft(), ChartWidget.getHAlignRight(), ChartWidget.getVAlignCenter())
+      
+rem Set the Widget data
+saleswidget!.setDataSetValue("Sales", "MTD", mtd_sales)
+saleswidget!.setDataSetValue("Sales", "YTD", ytd_sales)
+saleswidget!.setDataSetValue("Sales", "PYTD", pyr_sales)
+saleswidget!.setDataSetValue("Sales", "NMTD", nmtd_sales)
+
+rem Set the Widget data
+saleswidget!.setDataSetValue("Sales", "MTD", mtd_sales)
+saleswidget!.setDataSetValue("Sales", "YTD", ytd_sales)
+saleswidget!.setDataSetValue("Sales", "PYTD", pyr_sales)
+saleswidget!.setDataSetValue("Sales", "NMTD", nmtd_sales)
+saleswidget!.refresh()
+
+widgetControl! = new WidgetControl(salesdashboardWidget!,window!,30,20,350,230,$$)
+widgetControl!.setMoveParentWindow(1)
+
+close(arm06)
+
+createWidgetStatic!.setVisible(0)
+
+process_events
+ 
+Finished:
+	if err <> 0 then xresp = msgbox("Error: " + str(err) + " stmt: " + str(tcb(5)) + " " + errmes(-1),0,"debug")
+	rem Clean up
+	
+	window!.destroy(err=*next)
+	window! = null()
+
+	close(arm01, err=*next)
+	close(arm02, err=*next)
+	close(arm06, err=*next)
+	
+	release
+
+
+

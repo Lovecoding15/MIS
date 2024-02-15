@@ -1,0 +1,451 @@
+0010 REM "SMC - SAM/Developer/Rental Contract Maintenance"
+0020 REM "Program SMC.01"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| December 2000                                             |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0060 BEGIN 
+0080 SETERR 9000
+0090 SETESC 9000
+0100 REM " --- Open/Lock Files"
+0110 LET FILES=4
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 LET FILES$[1]="SYS-01",FILES$[2]="ARM-01",FILES$[3]="SMC-01",FILES$[4]="SNM-01"
+0140 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0150 IF STATUS>0 THEN GOTO 9900
+0160 LET SYS01_DEV=CHANNELS[1],ARM01_DEV=CHANNELS[2],SMC01_DEV=CHANNELS[3],SNM01_DEV=CHANNELS[4]
+0200 REM " --- IOLIST's"
+0210 call "templates.pgm::ARM01"
+0220 call "templates.pgm::SMC01"
+0230 call "templates.pgm::SNM01"
+0260 ARS01A: IOLIST X$,P1$,P2$,P3$,P4$,M0$,M1$,M2$,M3$
+0270 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0280 CALL "ec_open::SERIALNUMBERS"
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET N0$=F0$(16,2),N1$=F4$,N2$="AR",N4$=F5$,security_level=num(f0$(15,1))
+0430 FIND (SYS01_DEV,KEY=N0$+N2$+"00",DOM=9800)IOL=ARS01A
+0500 REM " --- Initializations"
+0530 LET CHANNEL=ARM10_DEV,RECORD$="F",TITLE$="SAM/Developer Contracts"
+0700 REM " --- Background"
+0720 PRINT 'SB',@(4,3),"Contract #:",@(26,3),"Type:",@(64,3),"Active?",@(6,4),"Customer:",
+0725 print @(9,5),"Start:",@(34,5),"Disb/Bill Method:",@(8,6),"Annual:",@(34,6),"Committment Perc:",@(8,7),"Expire:",@(40,7),"Pay Cycles:",@(65,7),"Renew?",@(1,8),"E-Mail:",@(1,10),"Comment:",'SF',
+0730 serial_title$="Serial Numbers and Contract Active Flags"
+0740 print 'sb',@(40-int(len(serial_title$)/2),11),serial_title$,'sf'
+0750 rem gosub make_serial_file
+0900 REM " --- Position file"
+0910 position_file:
+0990 READ (SMC01_DEV,KEY="",DOM=*next)
+1000 REM " --- Contract #"
+1005 CONTRACT:
+1010 PRINT 'CF',@(0,12),'ce'
+1020 LET V2$="",V2$=KEY(SMC01_DEV,END=*next)
+1030 enter_contract:
+1040 new_cont=0,xx$="(<F3>=Lookup)";if security_level>7 then xx$="(<F2>=New <F3>=Lookup)"
+1050 V0$="S",V1$="EKC",V3$="",V0=6,V1=17,V2=3,V4$="Enter A Valid Contract Number "+xx$
+1060 GOSUB addon_input
+1070 IF V3=4 THEN GOTO finish_up
+1080 IF V3=3 THEN GOSUB lookup_contract
+1090 if v3=2 then goto new_contract
+1100 IF V$="" THEN GOTO position_file
+1110 LET SMC01.CONTRACT$=STR(NUM(V$,ERR=CONTRACT):"000000")
+1200 REM " --- Get record"
+1210 READ RECORD(smc01_dev,KEY=smc01.contract$,DOM=contract)smc01$
+1220 smc01$=field(smc01$)
+1300 REM " --- Display record"
+1320 GOSUB display_record
+1390 GOTO data_correct
+2000 REM " --- Start Date"
+2005 start_date:
+2010 LET V0$="D",V1$="",V2$=start_dt$,v3$="",V0=3,V1=17,V2=5,i0=0
+2020 LET V4$="Enter the Starting Date of the Contract"
+2030 GOSUB addon_input
+2050 ON V3 GOTO continue_start,start_date,next_field,start_date,next_field
+2055 continue_start:
+2060 LET start_dt$=v$
+2090 GOTO next_field
+2100 REM " --- Annual Date"
+2110 annual_date:
+2120 LET V0$="D",V1$="",V2$=annual$,V3$="",V1=17,V2=6,V0=3
+2130 LET V4$="Enter the Annual Date of the Contract"
+2140 GOSUB addon_input
+2150 ON V3 GOTO continue_annual,annual_date,next_field,annual_date,next_field
+2155 continue_annual:
+2160 LET annual$=V$
+2190 GOTO next_field
+2200 REM " --- Expiration Date"
+2210 expire_date:
+2220 LET V0$="D",V1$="",V2$=expire$,V3$="",V1=17,V2=7,V0=3
+2230 LET V4$="Enter the Expiration Date of the Contract"
+2240 GOSUB addon_input
+2250 ON V3 GOTO continue_expire,expire_date,next_field,expire_date,next_field
+2255 continue_expire:
+2260 LET expire$=V$
+2290 GOTO next_field
+2300 REM " --- Disbursement/Billing Method"
+2310 bill_method:
+2320 if smc01.contr_type$(1,2)="DV" then goto next_field
+2330 v0$="NMZ",v1$="",v2$=str(num(smc01.disb_method$)),v3$="####",v1=53,v2=5,v0=4
+2340 v4$="Enter the Number of Days for Disbursement/Billing, 0=yearly"
+2350 gosub addon_input
+2360 on v3 goto continue_bill,bill_method,next_field,bill_method,next_field
+2365 continue_bill:
+2370 smc01.disb_method$=str(num(v$,err=bill_method):"0000")
+2380 print @(53,5),smc01.disb_method$
+2390 goto next_field
+2400 REM " --- Committment Percentage of Base Price"
+2410 commit:
+2420 if smc01.contr_type$(1,2)<>"RN" then goto next_field
+2430 v0$="NMZ",v1$="",v2$=str(num(smc01.commit_perc$)),v3$="##.#",v1=53,v2=6,v0=4
+2440 v4$="Enter the Percentage of Base Price"
+2450 gosub addon_input
+2460 on v3 goto continue_commit,commit,next_field,commit,next_field
+2465 continue_commit:
+2470 smc01.commit_perc$=str(num(v$,err=commit):"00.0")
+2480 print @(53,6),smc01.commit_perc$
+2490 goto next_field
+2500 rem " --- Payment Cycles
+2510 pay_cycles:
+2520 if smc01.contr_type$(1,2)="DV" or smc01.disb_method$="0000" then goto next_field
+2530 v0$="NMZ",v1$="",v2$=str(num(smc01.pay_cycles$)),v3$="##",v1=53,v2=7,v0=2
+2540 v4$="Enter the Number of Payments to be made in a Year, 0=1 yearly"
+2550 gosub addon_input
+2560 on v3 goto continue_pay,pay_cycles,next_field,pay_cycles,next_field
+2565 continue_pay:
+2570 smc01.pay_cycles$=str(num(v$,err=pay_cycles):"00")
+2580 print @(53,7),smc01.pay_cycles$
+2590 goto next_field
+2600 REM " --- E-Mail"
+2610 e_mail:
+2620 LET V0$="S",V1$="C",V2$=smc01.e_mail$,V3$="",V1=1,V2=9,V0=78
+2630 LET V4$="Enter Customer's E-mail Address"
+2640 GOSUB addon_input
+2650 ON V3 GOTO continue_email,e_mail,next_field,e_mail,next_field
+2655 continue_email:
+2660 LET smc01.e_mail$=V$
+2690 GOTO next_field
+2700 rem " --- Comment"
+2705 comment:
+2710 v0$="S",v1$="C",v2$=smc01.comment$,v3$="",v1=11,v2=10,v0=60
+2720 v4$="Enter Information regarding this Contract"
+2730 gosub addon_input
+2740 on v3 goto continue_comment,comment,next_field,comment,next_field
+2745 continue_comment:
+2750 smc01.comment$=v$
+2760 goto next_field
+2800 REM " --- Serial Number Active"
+2803 serial_numbers:
+2805 if cnt=0 then goto next_field
+2820 LET V0$="Y",V1$="^",V2$=sn_numbers$[nbr,2],V3$="",V1=curr_col+11,V2=curr_line,v0=1
+2830 LET V4$="Y=Yes    N=No"
+2840 GOSUB addon_input
+2850 ON V3 GOTO do_next,serial_numbers,previous,serial_numbers,next_field
+2855 do_next:
+2860 if v$<>sn_numbers$[nbr,2] then changed_nbrs$=changed_nbrs$+sn_numbers$[nbr,1]+","+v$+","
+2865 LET sn_numbers$[nbr,2]=V$
+2870 nbr=nbr+1
+2880 if nbr>cnt then nbr=cnt;goto next_field
+2890 curr_col=curr_col+col_width
+2900 if curr_col>65 then curr_col=1,curr_line=curr_line+1
+2910 if curr_line<=end_line then goto serial_numbers
+2920 curr_line=end_line
+2930 print @(0,start_line),'ld',@(0,end_line),'ce'
+2940 save_nbr=nbr,factor=0
+2950 gosub do_serial_line
+2960 nbr=save_nbr
+2970 goto serial_numbers
+3000 previous:
+3010 nbr=nbr-1
+3020 if nbr<1 then nbr=1;goto next_field
+3030 curr_col=curr_col-col_width
+3040 if curr_col<1 then curr_col=65,curr_line=curr_line-1
+3050 if curr_line>=start_line then goto serial_numbers
+3060 curr_line=start_line
+3070 print @(0,start_line),'li',@(0,end_line+1),'ce'
+3080 save_nbr=nbr,factor=-4
+3090 gosub do_serial_line
+3100 nbr=save_nbr
+3110 goto serial_numbers
+3300 change_cust:
+3310 LET V0$="S",V1$="C",V2$=smc01.customer_nbr$,V3$="",V1=17,V2=4,V0=6
+3320 LET V4$="Enter New Customer #"
+3330 GOSUB addon_input
+3340 if new_cont=0 then ON V3 GOTO continue_cust,change_cust,data_correct,data_correct,data_correct
+3350 continue_cust:
+3360 v$=str(num(v$,err=change_cust):"000000")
+3370 find record(arm01_dev,key=smc01.firm_id$+v$,err=change_cust)arm01$
+3375 smc01.customer_nbr$=v$
+3380 PRINT @(17,4),arm01.customer_nbr$,@(26,4),arm01.cust_name$
+3390 if new_cont=0 then goto data_correct
+3900 REM " --- Next field"
+3903 next_field:
+3905 IF V3=4 THEN GOTO data_correct
+3910 IF V3<>2 THEN GOTO incr_field
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO do_on_io
+3935 incr_field:
+3940 LET I0=I0+1
+3950 do_on_io:
+3960 ON I0 GOTO start_date,annual_date,expire_date,bill_method,commit,pay_cycles,e_mail,comment,serial_numbers,continue_next
+3970 continue_next:
+3990 LET I0=K0
+4000 REM " --- Correct?"
+4003 data_correct:
+4005 v4$="Is the Above Correct (Y/N/<C>ust/<R>enew/",new_cont=0
+4010 if cnt then 
+4012    if smc01.sam_active$="N" then
+4014       v4$=v4$+"<A>ctivate)?" 
+4016    else
+4018       V4$=v4$+"<D>eactivate)?"
+4020    endif
+4022 else
+4024   v4$=v4$+"Delete)?"
+4026 endif
+4028 LET V0$="S",V1$="KC^",V2$="Y",V3$="",V0=8,V1=FNV(V4$),V2=22
+4030 GOSUB addon_input
+4040 ON V3 GOTO continue_correct,data_correct,data_correct,data_correct,9900
+4045 continue_correct:
+4050 IF V$="DELETE" THEN GOTO delete_record
+4055 if v$="R" then goto renew_flag
+4060 if v$="D" then goto cancel_contract
+4070 if v$="A" then goto activate_contract
+4080 if v$="C" then goto change_cust
+4090 ON POS(V$="YN") GOTO data_correct,write_record,start_date
+4100 REM " --- Write"
+4103 write_record:
+4105 gosub convert_dates
+4110 gosub write_smc01_rec
+4130 if changed_nbrs$<>"" then gosub update_serial_nbrs
+4190 GOTO contract
+4200 REM " --- Delete"
+4205 delete_record:
+4210 rem REMOVE (smc01_dev,KEY=smc01.contract$,DOM=*next)
+4290 GOTO contract
+4300 cancel_contract:
+4305 dim sn_nbr$(20)
+4307 if cnt=0 then goto cancel_sam
+4310 for cancel=1 to cnt
+4315 sn_nbr$(1)=sn_numbers$[cancel,1]
+4330 flag$="N"
+4340 gosub write_snm01
+4360 next cancel
+4365 cancel_sam:
+4370 smc01.sam_active$="N"
+4380 gosub write_smc01_rec
+4390 PRINT 'CF',@(0,12),'ce'
+4400 gosub display_record
+4410 goto data_correct
+4500 activate_contract:
+4510 dim sn_nbr$(20)
+4520 if cnt=0 then goto activate_sam
+4530 for activate=1 to cnt
+4540 sn_nbr$(1)=sn_numbers$[activate,1]
+4550 flag$="Y"
+4560 gosub write_snm01
+4570 next activate
+4580 activate_sam:
+4590 gosub activate_dates
+4600 PRINT 'CF',@(0,12),'ce'
+4605 gosub display_record
+4610 goto data_correct
+4700 renew_flag:
+4710 if smc01.Renew_flag$="N" then smc01.renew_flag$="Y" else smc01.renew_flag$="N"
+4720 gosub write_smc01_rec
+4730 gosub display_record
+4740 goto data_correct
+4900 finish_up:
+4910 if tmp_chan then close(tmp_chan)
+4920 erase serial_file$,err=9900
+4930 goto 9900
+5000 REM " --- Display record"
+5005 display_record:
+5010 find record(arm01_dev,key=smc01.firm_id$+smc01.customer_nbr$)arm01$
+5012 rem " convert to ADD-ON date format for maintenance
+5015 start_dt$=fndate$(jul(num(smc01.contr_start$(1,4)),num(smc01.contr_start$(5,2)),num(smc01.contr_start$(7,2))))
+5020 annual$=fndate$(jul(num(smc01.annual_dt$(1,4)),num(smc01.annual_dt$(5,2)),num(smc01.annual_dt$(7,2))))
+5030 expire$=fndate$(jul(num(smc01.expire_on_dt$(1,4)),num(smc01.expire_on_dt$(5,2)),num(smc01.expire_on_dt$(7,2))))
+5040 PRINT @(17,3),smc01.contract$,@(33,3),smc01.contr_type$,@(73,3),smc01.sam_active$,@(17,4),arm01.customer_nbr$,@(26,4),arm01.cust_name$,
+5050 PRINT @(17,5),fnb$(start_dt$),@(53,5),smc01.disb_method$,
+5060 print @(17,6),fnb$(annual$),@(53,6),smc01.commit_perc$,
+5065 if smc01.renew_flag$<>"N" then smc01.renew_flag$="Y"
+5070 print @(17,7),fnb$(expire$),@(53,7),smc01.pay_cycles$,@(73,7),smc01.renew_flag$,
+5075 print @(1,9),smc01.e_mail$,
+5077 print @(11,10),smc01.comment$
+5080 gosub display_serial_nbrs
+5090 RETURN 
+6000 REM " --- Code Lookup"
+6010 LOOKUP_CONTRACT: 
+6020 CALL "SYC.LQ",CONTR_SELECTION$
+6030 IF CONTR_SELECTION$="END" THEN LET CONTR_SELECTION$=""
+6040 LET V$=CONTR_SELECTION$
+6090 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7005 addon_input:
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO addon_input
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO addon_input
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8500 def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9220 GOTO position_file
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 REM " --- Return to menu"
+9950 RUN "SYS.AA"
+9999 END
+10000 display_serial_nbrs:
+10005 cnt=0,serial_nbrs$="",changed_nbrs$=""
+10010 call "SYC.WA",mode,42,5,18,10,"",name$
+10015 message$="Scanning serial numbers..."
+10020 print @(21-int(len(message$)/2),1),message$,
+10025 read(snm01_dev,key=smc01.contract$,knum=3,dom=*next)
+10030 serial_loop:
+10035 read record(snm01_dev,end=got_serial_nbrs)snm01$
+10040 if  snm01.contract$<>smc01.contract$ then goto got_serial_nbrs
+10045 if snm01.firm_id$+snm01.customer_nbr$<>smc01.firm_id$+smc01.customer_nbr$ or snm01.active_flag$="N" then goto serial_loop
+10050 if snm01.sam_active$=" " then snm01.sam_active$="Y"
+10060 cnt=cnt+1,serial_nbrs$=serial_nbrs$+cvs(snm01.serial_nbr$,1+2)+","+snm01.sam_active$+","
+10070 goto serial_loop
+10080 got_serial_nbrs:
+10085 call "SYC.WD",name$
+10090 if cnt=0 then goto serial_nbr_return
+10100 dim sn_numbers$[1:cnt,1:2];start_line=12,end_line=20,curr_line=12,curr_col=1,nbr=1,col_width=16
+10110 load_loop:
+10120 if serial_nbrs$="" then goto serial_nbr_return
+10130 comma=pos(","=serial_nbrs$)
+10140 sn_numbers$[nbr,1]=serial_nbrs$(1,comma-1),serial_nbrs$=serial_nbrs$(comma+1)
+10150 comma=pos(","=serial_nbrs$)
+10160 sn_numbers$[nbr,2]=serial_nbrs$(1,comma-1),serial_nbrs$=serial_nbrs$(comma+1)
+10170 if curr_line<=end_line then print 'sb',@(curr_col,curr_line),sn_numbers$[nbr,1],"  ",'sf',sn_numbers$[nbr,2];curr_col=curr_col+col_width
+10175 if curr_col>65 then curr_col=1,curr_line=curr_line+1
+10180 nbr=nbr+1
+10190 goto load_loop
+10200 serial_nbr_return:
+10210 curr_col=1,nbr=1,curr_line=12
+10300 return
+10400 do_serial_line:
+10410 nbr=nbr+factor,col=1
+10420 display_loop:
+10430 if nbr>cnt or col>65 then goto done_serial_line
+10440 print 'sb',@(col,curr_line),sn_numbers$[nbr,1],"  ",'sf',sn_numbers$[nbr,2]
+10450 nbr=nbr+1,col=col+col_width
+10460 goto display_loop
+10470 done_serial_line:
+10480 return
+10500 convert_dates:
+10510 start_dt$=fnb$(start_dt$),annual$=fnb$(annual$),expire$=fnb$(expire$)
+10520 dt$=start_dt$;gosub long_date
+10530 smc01.contr_start$=dt$
+10540 dt$=annual$;gosub long_date
+10550 smc01.annual_dt$=dt$
+10560 dt$=expire$;gosub long_date
+10570 smc01.expire_on_dt$=dt$
+10590 return
+10700 update_serial_nbrs:
+10710 dim sn_nbr$(20)
+10720 update_loop:
+10730 if changed_nbrs$="" then goto update_done
+10740 comma=pos(","=changed_nbrs$)
+10750 sn_nbr$(1)=changed_nbrs$(1,comma-1),changed_nbrs$=changed_nbrs$(comma+1)
+10760 comma=pos(","=changed_nbrs$)
+10770 flag$=changed_nbrs$(1,comma-1),changed_nbrs$=changed_nbrs$(comma+1)
+10780 gosub write_snm01
+10820 goto update_loop
+10880 update_done:
+10890 return
+10900 long_date:
+10910 mm=num(dt$(1,2)),dd=num(dt$(4,2)),yy=num(dt$(7,2))
+10920 if yy<50 then yy=yy+2000 else yy=yy+1900
+10930 dt$=str(yy:"0000")+str(mm:"00")+str(dd:"00")
+10940 return
+11000 make_serial_file:
+11010 serial_file$="serial_ctrs."+date(0:"%Y%M%D%H%m%s")
+11020 erase serial_file$,err=create_file
+11030 create_file:
+11040 if err<>12 then goto 9000
+11050 mkeyed serial_file$,[0:1:26],0,26
+11060 tmp_chan=unt;open(tmp_chan)serial_file$
+11070 dim serial_tmp$:"contract:c(6),serial_nbr:c(20)"
+11075 call "SYC.WA",mode,42,5,18,10,"",name$
+11080 message$="Scanning serial numbers..."
+11082 print @(21-int(len(message$)/2),1),message$,
+11085 build_file:
+11090 read record(snm01_dev,end=build_done)snm01$
+11100 if cvs(snm01.contract$,1+2)="" or snm01.active_flag$="N" then goto build_file
+11110 serial_tmp.contract$=snm01.contract$,serial_tmp.serial_nbr$=snm01.serial_nbr$
+11120 serial_tmp$=field(serial_tmp$)
+11130 write record(tmp_chan)serial_tmp$
+11140 goto build_file
+11150 build_done:
+11155 call "SYC.WD",name$
+11160 return
+11200 write_snm01:
+11210 extract record(snm01_dev,knum=0,key=sn_nbr$)snm01$
+11220 snm01.sam_active$=flag$
+11225 if flag$="N" then snm01.AVAIL_SUPPORT=0
+11230 snm01$=field(snm01$)
+11240 write record(snm01_dev)snm01$
+11290 return
+11300 activate_dates:
+11310 smc01.annual_dt$(1,4)=str(num(smc01.annual_dt$(1,4))+1:"0000")
+11320 if smc01.annual_dt$<=smc01.expire_on_dt$ then goto done_activate
+11370 smc01.expire_on_dt$=smc01.annual_dt$
+11380 done_activate:
+11390 smc01.sam_active$="Y"
+11400 gosub write_smc01_rec
+11410 return
+11500 write_smc01_rec:
+11510 smc01$=field(smc01$)
+11520 write record(smc01_dev)smc01$
+11530 return
+11700 new_contract:
+11710 V4$="Confirm: Generate a Contract? (Y/N) "
+11715 V0$="S",V1$="KC^",V2$="",V3$="",V0=1,V1=FNV(V4$),V2=22
+11720 GOSUB addon_input
+11730 if v$<>"Y" then goto contract
+11740 serialnumbers.serial_pfx$="CTR"
+11750 serialnumbers.serial_cntr=1
+11760 EXTRACT RECORD (SERIALNUMBERS,KEY=serialnumbers.serial_pfx$,DOM=*NEXT)serialnumbers$
+11770 v$=STR(serialnumbers.serial_cntr:"000000")
+11780 serialnumbers.serial_cntr$=STR((serialnumbers.serial_cntr+1):"000000")
+11790 serialnumbers$=FIELD(serialnumbers$)
+11800 WRITE RECORD (SERIALNUMBERS,KEY=serialnumbers.serial_pfx$)serialnumbers$
+11810 dim smc01$:fattr(smc01$)
+11820 smc01.contract$=v$,smc01.firm_id$=n0$,smc01.contr_type$="SM1"
+11830 smc01.contr_start$=date(0:"%Y%Mz%Dz")
+11840 smc01.annual_dt$=date(0:"%Y%Mz%Dz")
+11850 smc01.expire_on_dt$=date(0:"%Y%Mz%Dz")
+11860 gosub write_smc01_rec
+11870 PRINT @(17,3),smc01.contract$,@(33,3),smc01.contr_type$,@(73,3)
+11880 start_dt$=fndate$(jul(num(smc01.contr_start$(1,4)),num(smc01.contr_start$(5,2)),num(smc01.contr_start$(7,2))))
+11890 annual$=start_dt$,expire$=start_dt$,new_cont=1,i0=-1
+11900 goto change_cust

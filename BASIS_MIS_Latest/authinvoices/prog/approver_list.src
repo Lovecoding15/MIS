@@ -1,0 +1,176 @@
+rem Document Output Base
+rem Barista Application Framework.  Copyright BASIS International Ltd.
+rem Program ID: document_base.src  <Oct 14, 2007>
+
+rem	setesc std_error
+rem	seterr std_error
+
+rem --- Barista Presets
+
+rem	rd_task_val$ = Barista task ID assigned from menu system
+rem	rd_table_chans$[] = Barista open table array
+	milestone=20,milestone=num(stbl("+MILESTONE",err=*next),err=*next)
+
+rem --- Document Initializations
+
+	outVect!=bbjAPI().makeVector()
+	hdrVect!=bbjAPI().makeVector()
+	brkVect!=bbjAPI().makeVector()
+	totVect!=bbjAPI().makeVector()
+	rep_date$=date(0:"%Mz/%Dz/%Yd")
+	rep_date_stamp$=date(0:"%Yd%Mz%Dz")
+	rep_time$=date(0:"%hz:%mz %p")
+	rep_time_stamp$=date(0:"%Hz%mz%sz")
+
+rem --- Retrieve SYSINFO Data
+
+    sysinfo_template$=stbl("+SYSINFO_TPL",err=*next)
+    dim sysinfo$:sysinfo_template$
+    sysinfo$=stbl("+SYSINFO",err=*next)
+    firm_id$=sysinfo.firm_id$
+
+rem --- Open Files
+
+	num_files=2
+	dim open_tables$[1:num_files],open_opts$[1:num_files],open_chans$[1:num_files],open_tpls$[1:num_files]
+	open_tables$[1]="APM_APPROVERS",open_opts$[1]="OTA"
+	open_tables$[2]="ADM_USER",open_opts$[2]="OTA"
+
+	gosub open_tables
+
+	apm_approvers=num(open_chans$[1]);dim apm_approvers$:open_tpls$[1]
+	adm_user=num(open_chans$[2]);dim adm_user$:open_tpls$[2]
+
+rem --- Get Option Values
+
+	option_1_data$=option!.getOptionData("INCL_CHK_SIGNER")
+	rem ' option_2_data$=option!.getOptionData("<column_2_id>")
+	rem ' option_3_data$=option!.getOptionData("<column_3_id>")
+	if option_1_data$ = "Y" then inclcol5 = 1 else inclcol5 = 0
+
+rem --- Report Headings
+
+	headings=3
+	dim headings$[headings]
+		headings$[0]=sysinfo.firm_name$
+		headings$[1]=sysinfo.task_desc$
+		headings$[2]="AP Invoice Approvers"
+		headings$[3]=""
+
+rem --- Column Headings
+
+    if inclcol5 then columns=5 else columns=4
+    
+    dim columns$[columns,10]
+        columns$[0,0]="User ID",columns$[0,1]="C",columns$[0,2]="16"
+        columns$[1,0]="Name",columns$[1,1]="C",columns$[1,2]="30"
+        columns$[2,0]="Pre Apv",columns$[2,1]="C",columns$[2,2]="7"
+        columns$[3,0]="Sign",columns$[3,1]="C",columns$[3,2]="4"
+        columns$[4,0]="Clerk",columns$[4,1]="C",columns$[4,2]="5"
+        if inclcol5 then columns$[5,0]="Signature File",columns$[5,1]="C",columns$[5,2]="30"
+
+rem --- Start Progress Meter
+
+	total_recs=dec(xfin(apm_approvers)(77,4))
+	curr_rec=0
+
+	progress! = bbjAPI().getGroupNamespace()
+	progress!.setValue("+process_task",rd_task_val$+"^C^"+sysinfo.task_desc$+"^CNC^"+str(total_recs)+"^")
+
+rem --- Get Records
+
+	read(apm_approvers,knum=0,key="",dom=*next)
+
+	while 1
+		readrecord(apm_approvers,end=*break)apm_approvers$
+		readrecord(adm_user,key=apm_approvers.user_id$)adm_user$
+		
+		rem Set Output Vector
+		outVect!.addItem(apm_approvers.user_id$)
+		outVect!.addItem(adm_user.name$)
+		outVect!.addItem(apm_approvers.prelim_approval$)
+		outVect!.addItem(apm_approvers.check_signer$)
+		outVect!.addItem(apm_approvers.payables_clerk$)
+		if inclcol5 then outVect!.addItem(apm_approvers.signature_file$)
+
+		curr_rec=curr_rec+1
+		if mod(curr_rec,milestone)=0
+			progress!.setValue("+process_task",rd_task_val$+"^U^"+str(curr_rec)+"^")
+		endif
+	wend
+
+rem --- All done
+
+    outVect!.addItem(str(curr_rec)+" record(s) listed")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    outVect!.addItem("")
+    if inclcol5 then outVect!.addItem("")
+    
+    goto std_exit
+                    
+open_tables:rem --- Open Tables
+
+	call stbl("+DIR_SYP")+"bac_open_tables.bbj",
+:		open_beg,
+:		open_end,
+:		open_tables$[all],
+:		open_opts$[all],
+:		open_chans$[all],
+:		open_tpls$[all],
+:		rd_table_chans$[all],
+:		open_batch,
+:		open_status$
+
+	if open_status$<>""
+		msg_id$="ENTRY_OPEN_ERROR"
+		dim msg_tokens$[1]
+			msg_tokens$[1]=open_status$
+		gosub disp_message
+		goto std_exit
+	endif
+
+	return
+
+disp_message:rem --- Display Message Dialog
+
+	call stbl("+DIR_SYP")+"bac_message.bbj",
+:		msg_id$,
+:		msg_tokens$[all],
+:		msg_opt$,
+:		rd_table_chans$[all]
+
+	return
+
+std_error: rem --- Standard error handler (01Apr2006)
+
+	err_text$=""
+	if tcb(5)<>0 and pgm(-1)=pgm(-2) err_text$=pgm(tcb(5),err=*next)
+	call stbl("+DIR_SYP")+"bac_error.bbj",err=std_error_exit,pgm(-2),str(tcb(5)),str(err),err_text$,err_act$
+	if pos("EXIT"=err_act$) goto std_error_exit
+	if pos("ESCAPE"=err_act$) seterr 0;setesc 0
+	if pos("RETRY"=err_act$) retry
+
+std_error_exit:
+
+	master_user$=cvs(stbl("+MASTER_USER",err=std_error_release),2)
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=std_error_release)
+	if cvs(sysinfo.user_id$,2)=master_user$ escape
+
+std_error_release:
+
+	status=999
+	if pgm(-1)<>pgm(-2) exit
+
+	release
+
+std_exit: rem --- Standard program end (01Mar2006)
+
+	progress!.setValue("+process_task",rd_task_val$+"^D^")
+
+	run stbl("+DIR_SYP")+"bas_process_end.bbj",err=*next
+
+	release

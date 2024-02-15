@@ -1,0 +1,896 @@
+#Standard invoice English version for firm 01
+EN:
+{
+Thank you for your order. If you are not the individual in your organization responsible for processing invoice(s), please forward this e-mail to them and contact BASIS with the new Accounts Payable contact information. 
+
+Attached to this e-mail is your invoice(s) in Adobe Portable Document Format (PDF).
+
+Open and print the PDF invoices(s) with the Adobe Acrobat Reader, available for download free at www.adobe.com. 
+
+For utmost security, the .PDF version includes an authentic BASIS electronic signature. If the signature appears unverified, follow the instructions in http://www.basis.cloud/company/invoice_verification.pdf.
+
+Kind regards,
+
+
+BASIS International Ltd.
+Customer Service
+customer-service@basis.cloud
+ 1.505.938.6121 (US)
++1.505.338.4188 (International)
+}
+
+EN.old:
+{
+Thank you for your order. If you are not the individual in your organization responsible for processing invoice(s), please forward this e-mail to them and contact BASIS with the new Accounts Payable contact information. 
+
+Attached to this e-mail is your invoice(s) in two formats; plain text and Adobe Portable Document Format (PDF).
+
+==> .PDF
+
+Open and print the PDF invoices(s) with the Adobe Acrobat Reader, available for download free at www.adobe.com. 
+
+For utmost security, the .PDF version includes an authentic BASIS electronic signature. If the signature appears unverified, follow the instructions in http://www.basis.cloud/company/invoice_verification.pdf.
+
+==> .TXT
+
+Open the text version of the invoice. To print correctly, the font must be a 10 point or smaller fixed-width style such as Courier or System. Change the font, if necessary, and print the file.
+
+Kind regards,
+
+
+BASIS International Ltd.
+Customer Service
+customer-service@basis.cloud
+ 1.505.938.6121 (US)
++1.505.338.4188 (International)
+}
+#Standard invoice firm 01 Spanish
+ES:
+{
+Gracias por su orden. Si usted no es la persona en su organización responsable del trámite de facturas, por favor envíe este correo electrónico a la persona pertinente y póngase en contacto con BASIS para proporcionar la información del contacto nuevo de Cuentas por Pagar. 
+
+Anexo a este correo electrónico se encuentra su factura(s) en Formato PDF de Adobe.
+
+Abrir e imprimir la factura(s) en PDF con Adobe Acrobat Reader, el cual puede descargar gratis en www.adobe.com. 
+
+Para mayor seguridad la versión incluye una firma electrónica auténtica de BASIS. Si la firma aparece no verificada, siga las instrucciones en http://www.basis.cloud/company/invoice_verification.pdf.
+
+Saludos,
+
+
+BASIS International Ltd.
+Servicio al Cliente
+customer-service@basis.cloud
+ 1.505.938.6121 (US)
++1.505.338.4188 (Internacional)
+}
+
+#Standard invoice English version for firm 02
+EN2:
+{
+Subject: BASIS Invoice No. <invoice>
+
+Dear BASIS Customer,
+
+Attached is your invoice number <invoice> that contains a qualified electronic signature. Please pay this invoice before the due date according to your agreed terms. 
+
+View the invoice
+================
+BASIS generated this digitally signed invoice in PDF format. Reading and/or printing this PDF document requires ‘Adobe Reader’ version 7 or higher, available for free download at http://www.adobe.com/products/acrobat/readstep2.html.
+
+Verify the digital signature
+============================
+To verify the signature of this invoice, please read http://www.basis-europe.eu/billing.
+
+Call for assistance
+===================
+Do you have questions regarding your invoice? The BASIS Europe team is available by phone, Monday to Friday from 9:00 to 17:00 CET, at +49 (0)681 968140.
+
+Read our security instructions
+==============================
+Do you want to be able to distinguish fraudulent e-mail from our invoices? Please read our security instructions at http://www.basis-europe.eu/billing.
+
+Thank you for your confidence in BASIS products and services. We look forward to working with you in the future.
+
+Sincerely yours,
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email:
+eu.sales@basis.cloud
+}
+
+#Standard invoice w/ verification report
+IT_V:
+{
+Subject: Fattura <invoice>
+
+Gentile cliente BASIS,
+
+in allegato riceve la fattura numero <invoice> con la firma digitale e il relativo rapporto di verifca. Si prega di pagare la fattura entro il termine come da accordi nel contratto. 
+
+Nota sul formato e la firma digitale:
+=====================================
+La fattura con numero <invoice> è nel formato PDF, previsto con una firma digitale e il relativo rapporto di verifica, come previsto dalla legge fiscale. Per visualizzare o stampare il documento è necessario di aver installato Acrobat Reader versione 7 o più recente, che è scraricabile dal sito http://www.adobe.de/products/acrobat/readstep2.html.
+
+
+Verifica firma digitale:
+========================
+Se c`è la necessità di verificare la firma digitale e la fattura, consulta http://www.basis-europe.eu/signaturcheck.
+
+
+Aiuto & contatti:
+=================
+Ci sono delle domande sulla fattura? Consultare http://www.basis-europe.eu/billing.
+
+
+Informazione sulla sicurezza:
+==============================
+Vuole essere sicuro di distinguere tra le E-mail frode e quelle inviate da BASIS? Legga per favore le istruzioni su http://www.basis-europe.eu/billing.
+
+La ringraziamo per la Sua fiducia nei nostri prodotti e servizi e siamo lieti della continua collaborazione.
+
+Distinti saluti
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken
+Amtsgericht Saarbrücken HRB HRB 16820 - Geschäftsführer: Nico Spence
+Telefon: 0681 96814-0, Telefax: 0681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#Standard invoice w/ verification report
+DE_V:
+{
+Subject: Ihre Rechnung Nr. <invoice>
+
+Sehr geehrter BASIS Kunde,
+
+im Anhang erhalten Sie Ihre Rechnung Nr. <invoice> mit digitaler Signatur und den dazugehörigen Verifikationsbericht als PDF-Dokumente. Bitte zahlen Sie den Rechnungsbetrag gemäß der vereinbarten Zahlungsbedingungen.
+
+Hinweise zum Format und der digitalen Signatur:
+===============================================
+Ihre Rechnung ist im PDF-Format erstellt und mit einer digitalen Signatur versehen. Der Verifikationsbericht zeigt die Prüfung der digitalen Signatur. Damit erfüllt Ihre Rechnung die gesetzlichen Vorschriften nach dem Umsatzsteuergesetz.
+
+Zum Lesen und Ausdrucken der Dokumente im PDF-Format benötigen Sie den 'Adobe Reader' in der Version 7.0 oder höher. Dieses Programm können Sie unter dem folgenden Link zum kostenlosen Gebrauch herunterladen: http://www.adobe.de/products/acrobat/readstep2.html
+
+Prüfung der digitalen Signatur:
+===============================
+Wenn Sie neben dem angehängten Verifikationsbericht eine nachträgliche Signaturprüfung benötigen, erhalten Sie diese schnell und einfach und unter http://www.basis-europe.eu/signaturcheck.
+
+Hilfe & Kontakt:
+================
+Haben Sie Fragen zu Ihrer Rechnung? Hinweise zur digitalen Signatur finden Sie unter http://www.basis-europe.eu/billing. Gerne sind unsere Mitarbeiter auch telefonisch für Sie da. Sie erreichen uns montags bis freitags von 09:00 bis 17:00 Uhr unter (0681) 968 140.
+
+Sicherheitshinweis:
+===================
+Möchten Sie sicher sein, dass Sie stets betrügerische E-Mails von unseren Rechnungen sicher unterscheiden können? Lesen Sie dazu bitte unsere aktuellen Sicherheitshinweise ebenfalls unter http://www.basis-europe.eu/billing.
+
+Wir bedanken uns für Ihr Vertrauen in unsere Produkte und Leistungen und freuen uns auf die weitere Zusammenarbeit.
+
+Mit freundlichen Grüßen
+
+Ihre BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken
+Amtsgericht Saarbrücken HRB HRB 16820 - Geschäftsführer: Nico Spence
+Telefon: 0681 96814-0, Telefax: 0681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#Standard invoice without report
+IT:
+{
+Subject: Fattura <invoice>
+
+Gentile cliente BASIS,
+
+in allegato riceve la fattura numero <invoice> con la firma digitale. Si prega di pagare la fattura entro il termine come da accordi nel contratto. 
+
+Nota sul formato e la firma digitale:
+=====================================
+La fattura è nel formato PDF, previsto con una firma digitale. Per visualizzare o stampare il documento è necessario di aver installato Acrobat Reader versione 7 o più recente, che è scraricabile dal sito http://www.adobe.de/products/acrobat/readstep2.html.
+
+
+Verifica firma digitale:
+========================
+Se c`è la necessità di verificare la firma digitale e la fattura, consulta http://www.basis-europe.eu/signaturcheck.
+
+
+Aiuto & contatti:
+=================
+Ci sono delle domande sulla fattura? Consultare http://www.basis-europe.eu/billing.
+
+
+Informazione sulla sicurezza:
+==============================
+Vuole essere sicuro di distinguere tra le E-mail frode e quelle inviate da BASIS? Legga per favore le istruzioni su http://www.basis-europe.eu/billing.
+
+La ringraziamo per la Sua fiducia nei nostri prodotti e servizi e siamo lieti della continua collaborazione.
+
+Distinti saluti
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken
+Amtsgericht Saarbrücken HRB HRB 16820 - Geschäftsführer: Nico Spence
+Telefon: 0681 96814-0, Telefax: 0681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#Standard invoice without report
+DE:
+{
+Subject: Ihre BASIS-Rechnung Nr. <invoice>
+
+Sehr geehrter BASIS Kunde,
+
+im Anhang erhalten Sie Ihre Rechnung Nr. <invoice> mit digitaler Signatur. Bitte zahlen Sie den Rechnungsbetrag gemäß der vereinbarten Zahlungsbedingungen.
+
+Hinweise zum Format und der digitalen Signatur:
+===============================================
+Ihre Rechnung ist im PDF-Format erstellt und mit einer digitalen Signatur versehen. 
+
+Zum Lesen und Ausdrucken der Dokumente im PDF-Format benötigen Sie den 'Adobe Reader' in der Version 7.0 oder höher. Dieses Programm können Sie unter dem folgenden Link zum kostenlosen Gebrauch herunterladen: http://www.adobe.de/products/acrobat/readstep2.html
+
+Prüfung der digitalen Signatur:
+===============================
+Wenn Sie die Signatur dieser Rechnung prüfen möchten, so können Sie eine Online-Verifikation durchführen unter http://www.basis-europe.eu/signaturcheck. Weitere Hinweise zur Digitalen Signatur unserer Rechnungen erhalten Sie unter http://www.basis-europe.eu/billing.
+
+Hilfe & Kontakt:
+================
+Haben Sie Fragen zu Ihrer Rechnung? Gerne sind unsere Mitarbeiter auch telefonisch für Sie da. Sie erreichen uns montags bis freitags von 09:00 bis 17:00 Uhr unter +49 (0)681 968 140.
+
+Sicherheitshinweis:
+===================
+Möchten Sie sicher sein, dass Sie stets betrügerische E-Mails von unseren Rechnungen sicher unterscheiden können? Lesen Sie dazu bitte unsere aktuellen Sicherheitshinweise ebenfalls unter http://www.basis-europe.eu/billing.
+
+Wir bedanken uns für Ihr Vertrauen in unsere Produkte und Leistungen und freuen uns auf die weitere Zusammenarbeit.
+
+Mit freundlichen Grüßen
+
+Ihre BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken
+Amtsgericht Saarbrücken HRB HRB 16820 - Geschäftsführer: Nico Spence
+Telefon: +49 (0)681 96814-0, Telefax: +49 (0)681 96814-33, Email: eu.sales@basis.cloud
+}
+
+FR:
+{
+Subject: Votre facture BASIS No. <invoice>
+
+Cher client de l’entreprise BASIS,
+
+Veuillez trouver ci-jointe la facture N° <invoice>, pourvue d’une signature numérique. Nous vous remercions de régler le montant de cette facture en respectant les délais de règlement.
+
+Informations concernant le format et la signature numérique
+===========================================================
+Votre facture est en format PDF et pourvue d’une signature numérique.
+
+La lecture et l’impression de ce document nécessitent l’utilisation du programme 'Adobe Reader' (version 7.0 ou postérieure). Vous pouvez télécharger ce logiciel gratuitement sur le site internet suivant :
+http://www.adobe.fr/products/acrobat/readstep2.html
+
+Vérification de l’authenticité de la signature numérique
+========================================================
+Vous pouvez vérifier en ligne l’authenticité de la signature de cette facture grâce au lien suivant :
+http://www.basis-europe.eu/signaturcheck. Pour en savoir plus sur les signatures digitales utilisées dans nos factures, consultez le lien http://www.basis-europe.eu/billing.
+
+Informations & Contact
+======================
+Des questions à propos de votre facture? Nos collaborateurs y répondront volontiers par téléphone. Vous pouvez les joindre du lundi au vendredi de 9h à 17h au numéro suivant : +49 (0)681 968 140.
+
+Sécurité
+========
+Vous voulez vous assurer que vous pouvez distinguer de façon fiable nos factures d'emails mensongers? Vous trouverez des informations à propos des mesures de sécurité en consultant le lien http://www.basis-europe.eu/billing.
+
+Nous vous remercions de la confiance que vous accordez à nos produits et nos services, et serions heureux de pouvoir travailler de nouveau avec vous. 
+
+Cordialement
+
+L’équipe de BASIS Europe Distribution GmbH
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email: eu.sales@basis.cloud
+}
+
+NL:
+{
+Subject: Uw Basis factuur nr: <invoice>
+
+Geachte Basis klant,
+
+Bijgevoegd vindt u uw digitaal ondertekende factuur met nummer <invoice>.
+Wij verzoeken u deze factuur binnen de gestelde termijn te voldoen.
+
+Gedetailleerde informatie over het formaat en de digitale handtekening:
+=======================================================================
+Uw factuur is gegenereerd in PDF-formaat en digitaal ondertekend.
+
+Om dit document te kunnen lezen en afdrukken heeft u 'Adobe Reader' versie 7 of hoger nodig. Deze software kan gratis gedownload worden van http://www.adobe.com/nl/products/acrobat/readstep2.html
+
+Verificatie van de digitale handtekening:
+=========================================
+Indien u de digitale handtekening wenst te verifiëren, lees dan het overzicht op http://www.basis-europe.eu/billing.
+
+Help & Contact:
+===============
+Heeft u vragen over uw factuur? Het BASIS Europe team is telefonisch voor u beschikbaar. U kunt ons bereiken van maandag tot en met vrijdag van 9:00 tot 17:00 uur CET onder +49 681 968140
+
+Beveiligingsadvies
+===================
+Wilt u er zeker van zijn dat u altijd het onderscheid kunt maken tussen frauduleuze email en onze digitale facturen? Leest u dan de veiligheidsinstructies beschikbaar onder http://www.basis-europe.eu/billing.
+
+Dank u voor uw vertrouwen in BASIS producten en diensten. Wij verheugen ons op verdere samenwerking in de toekomst.
+
+Hoogachtend,
+
+BASIS Europe Distribution GmbH
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#English version for firm 02
+SM_EN2:
+{
+Subject: SAM renewal invoice No. <invoice>
+
+Dear BASIS Customer,
+
+Attached is the annual SAM (Software Asset Management) renewal invoice number <invoice> that contains a qualified electronic signature. 
+
+Continue your SAM coverage
+==========================
+Simply pay the attached invoice before the due date according to your agreed terms. 
+
+BASIS SAM provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + redundant license for fail safe solutions
+
+View the invoice
+================
+BASIS generated this digitally signed invoice in PDF format. Reading and/or printing this PDF document requires ‘Adobe Reader’ version 7 or higher, available for free download at http://www.adobe.com/products/acrobat/readstep2.html.
+
+Verify the digital signature
+============================
+To verify the signature of this invoice, please read http://www.basis-europe.eu/billing.
+
+Call for assistance
+===================
+Do you have questions regarding your invoice? The BASIS Europe team is available by phone, Monday to Friday from 9:00 to 17:00 CET, at +49 (0)681 968140.
+
+Read our security instructions
+==============================
+Do you want to be able to distinguish fraudulent e-mail from our invoices? Please read our security instructions at http://www.basis-europe.eu/billing.
+
+Thank you for your confidence in BASIS products and services. We look forward to working with you in the future.
+
+Sincerely yours,
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email:
+eu.sales@basis.cloud
+}
+#English version for firm 01
+SM_EN:
+{
+Subject: SAM renewal invoice  
+
+Your annual SAM (Software Asset Management) renewal invoice is attached. 
+
+To continue your SAM coverage, simply pay the attached invoice by the due date or pay online through b-commerce® at www.poweredbybbj.com.
+
+The BASIS SAM Plan software maintenance provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+
+If you have any questions, please contact BASIS Sales at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+#Spanish version for firm 01
+SM_ES:
+{
+Subject: Factura por renovación de SAM  
+
+Se adjunta su factura por renovación anual de SAM (Software Asset Management). 
+
+Para continuar con su cobertura SAM, simplemente page la factura anexa en la fecha de pago o pague en línea mediante b-commerce® en www.poweredbybbj.com.
+
+El mantenimiento de software del SAM Plan de BASIS ofrece
+  + actualizaciones del producto sin cargo
+  + soporte técnico sin cargo (aplican determinadas limitaciones)
+  + restablecimiento de licencia sin cargo
+  + sin cargo por restablecimiento (12% del costo de una licencia nueva)
+  + descuentos para usuarios adicionales
+  + descuentos en capacitación BASIS
+  + licencia redundante para soluciones seguras por falla
+Si tiene alguna pregunta, por favor póngase en contacto con Ventas de BASIS en sales@basis.cloud o por teléfono al 1.505.938.6120 (EUA) o +1.505.338.4188 (Internacional).
+
+Saludos,
+
+Departamento de Servicio al Cliente
+customer-service@basis.cloud
+1.505.938.6121
+}
+
+SM_NL:
+{
+Subject: Uw jaarlijkse Basis SAM factuur nr: <invoice>
+
+Geachte Basis klant,
+
+Bijgevoegd vindt u uw jaarlijkse digitaal ondertekende SAM (Software Asset Management) factuur met nummer <invoice> 
+
+BASIS SAM Plan - software-onderhoudsovereenkomst - voorziet in het volgende:
+============================================================================
+  + gratis produkt upgrades
+  + gratis technisch support voor BASIS producten
+  + gratis licentie resets
+  + geen heraktiveringskosten (normaal 12% van de licentieprijs)
+  + korting op extra gebruikers
+  + korting op BASIS trainingen
+  + redundant licentie voor fail safe solutions
+Om uw SAM-overeenkomst te verlengen eenvoudig betaalt u de bijgesloten faktuur vóór de vervaldatum.
+
+Gedetailleerde informatie over het formaat en de digitale handtekening:
+=======================================================================
+Uw factuur is gegenereerd in PDF-formaat en digitaal ondertekend.
+
+Om dit document te kunnen lezen en afdrukken heeft u 'Adobe Reader' versie 7 of hoger nodig. Deze software kan gratis gedownload worden van http://www.adobe.com/nl/products/acrobat/readstep2.html
+
+Verificatie van de digitale handtekening:
+=========================================
+Indien u de digitale handtekening wenst te verifiëren, lees dan het overzicht op http://www.basis-europe.eu/billing.
+
+Help & Contact:
+===============
+Heeft u vragen over uw factuur? Het BASIS Europe team is telefonisch voor u beschikbaar. U kunt ons bereiken van maandag tot en met vrijdag van 9:00 tot 17:00 uur CET onder +49 681 968140
+
+Beveiligingsadvies
+==================
+Wilt u er zeker van zijn dat u altijd het onderscheid kunt maken tussen frauduleuze email en onze digitale facturen? Leest u dan de veiligheidsinstructies beschikbaar onder http://www.basis-europe.eu/billing.
+
+Dank u voor uw vertrouwen in BASIS producten en diensten. Wij verheugen ons op verdere samenwerking in de toekomst.
+
+Hoogachtend,
+
+BASIS Europe Distribution GmbH
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email: eu.sales@basis.cloud
+}
+
+SM_FR:
+{
+Subject: Votre facture de renouvellement SAM No. <invoice>
+
+Cher client de l’entreprise BASIS,
+
+Veuillez trouver ci-jointe la facture de renouvellement annuel du contrat de maintenance SAM (« Software Asset Managemet ») N° <invoice>, pourvue d’une signature numérique. 
+
+Continuez à profiter de votre maintenance SAM
+=============================================
+Il vous suffit de payer la facture jointe par virement en respectant les délais de règlement pour continuer votre plan de maintenance.
+
+Le plan de maintenance BASIS SAM vous offre
+  + mise à jour gratuite des produits
+  + maintenance technique gratuite (sauf quelques exceptions)
+  + réinitialisation gratuite des licences
+  + absence de frais de réactivation SAM (à hauteur de 12% du prix d’une  nouvelle licence)
+  + remises pour utilisateurs supplémentaires
+  + license redondante pour vos solutions high availability
+
+
+Informations concernant le format et la signature numérique
+===========================================================
+Votre facture est en format PDF et pourvue d’une signature numérique.
+
+La lecture et l’impression de ce document nécessitent l’utilisation du programme 'Adobe Reader' (version 7.0 ou postérieure). Vous pouvez télécharger ce logiciel gratuitement sur le site internet suivant :
+http://www.adobe.fr/products/acrobat/readstep2.html
+
+Vérification de l’authenticité de la signature numérique
+========================================================
+Vous pouvez vérifier en ligne l’authenticité de la signature de cette facture grâce au lien suivant :
+http://www.basis-europe.eu/signaturcheck. Pour en savoir plus sur les signatures digitales utilisées dans nos factures, consultez le lien http://www.basis-europe.eu/billing.
+
+Informations & Contact
+======================
+Des questions à propos de votre facture? Nos collaborateurs y répondront volontiers par téléphone. Vous pouvez les joindre du lundi au vendredi de 9h à 17h au numéro suivant : +49 (0)681 968 140.
+
+Sécurité
+========
+Vous voulez vous assurer que vous pouvez distinguer de façon fiable nos factures d'emails mensongers? Vous trouverez des informations à propos des mesures de sécurité en consultant le lien http://www.basis-europe.eu/billing.
+
+Nous vous remercions de la confiance que vous accordez à nos produits et nos services, et serions heureux de pouvoir travailler de nouveau avec vous. 
+
+Cordialement
+
+L’équipe de BASIS Europe Distribution GmbH
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#SAM invoice w/ verification report
+SM_IT_V:
+{
+Subject: Rinnovamento SAM Fattura numero <invoice> 
+
+Gentile cliente BASIS,
+
+in allegato riceve la fattura annuale con numero <invoice> per rinnovamento del contratto SAM (Software Asset Management) con la firma digitale e il relativo rapporto di verifica. 
+
+Continua ad approfittare dell`assistenza Software:
+===============================================
+Paga la fattura con le condizioni di pagamento come previsto nel contratto SAM entro la data indicata.
+
+I vantaggi di una copertura SAM sono:
+
+    + Upgrades gratuito
+    + Assistenza tecnica gratuito (con particolare condizioni)
+    + Reset licenza gratuito
+    + Nessun costo per riattivare lo SAM (12% dal costo di una nuova licenza )
+    + Sconti sul prezzo per aggiungere utenti
+    + Sconti sul prezzo dei formazioni BASIS
+    + Licenze ridondante per una disponibilità sicura
+
+Nota sul formato e la firma digitale:
+=====================================
+La fattura è nel formato PDF, previsto con una firma digitale e il relativo rapporto di verifica, come previsto dalla legge fiscale. Per visualizzare o stampare il documento è necessario di aver installato Acrobat Reader versione 7 o più recente, che è scraricabile dal sito http://www.adobe.de/products/acrobat/readstep2.html.
+
+
+Verifica firma digitale:
+========================
+Se c`è la necessità di verificare la firma digitale e la fattura, consulta http://www.basis-europe.eu/signaturcheck.
+
+
+Aiuto & contatti:
+=================
+Ci sono delle domande sulla fattura? Consultare http://www.basis-europe.eu/billing.
+
+
+Informazione sulla sicurezza:
+==============================
+Vuole essere sicuro di distinguere tra le E-mail frode e quelle inviate da BASIS? Legga per favore le istruzioni su http://www.basis-europe.eu/billing.
+
+La ringraziamo per la Sua fiducia nei nostri prodotti e servizi e siamo lieti della continua collaborazione.
+
+Distinti saluti
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken
+Amtsgericht Saarbrücken HRB HRB 16820 - Geschäftsführer: Nico Spence
+Telefon: 0681 96814-0, Telefax: 0681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#SAM invoice w/ verification report
+SM_DE_V:
+{
+Subject: Ihre SAM-Plan Rechnung Nr. <invoice>
+
+Sehr geehrter BASIS Kunde,
+
+im Anhang erhalten Sie Ihre jährliche Rechnung Nr. <invoice> zur Verlängerung Ihres SAM-Planes (Software Asset Management) mit digitaler Signatur und den dazugehörigen Verifikationsbericht als PDF-Dokumente. 
+
+Erneuern Sie den SAM-Wartungsplan für Ihre BASIS Software
+=========================================================
+Zahlen Sie den Rechnungsbetrag gemäß der vereinbarten Zahlungsbedingungen bis zum genannten Zahlungsziel.
+
+Die BASIS SAM–Wartungsplan bietet
+  + kostenlose Produktupdates
+  + kostenlosen Produktsupport (mit einigen Einschränkungen)
+  + Kostenlose Lizenzresets bei Plattform- und Hardwarewechsel
+  + Keine Reinstatement-Gebühr (12% des Listenpreises einer Neulizenz)
+  + Nachlass beim Erwerb zusätzlicher Benutzerlizenzen
+  + Redundante Lizensierungsoption für hochverfügbare Installationen
+
+Hinweise zum Format und der digitalen Signatur:
+===============================================
+Ihre Rechnung ist im PDF-Format erstellt und mit einer digitalen Signatur versehen. Der Verifikationsbericht zeigt die Prüfung der digitalen Signatur. Damit erfüllt Ihre Rechnung die gesetzlichen Vorschriften nach dem Umsatzsteuergesetz.
+
+Zum Lesen und Ausdrucken der Dokumente im PDF-Format benötigen Sie den 'Adobe Reader' in der Version 7.0 oder höher. Dieses Programm können Sie unter dem folgenden Link zum kostenlosen Gebrauch herunterladen: http://www.adobe.de/products/acrobat/readstep2.html
+
+Prüfung der digitalen Signatur:
+===============================
+Wenn Sie neben dem angehängten Verifikationsbericht eine nachträgliche Signaturprüfung benötigen, erhalten Sie diese schnell und einfach und unter http://www.basis-europe.eu/signaturcheck.
+
+Hilfe & Kontakt:
+================
+Haben Sie Fragen zu Ihrer Rechnung? Hinweise zur digitalen Signatur finden Sie unter http://www.basis-europe.eu/billing. Gerne sind unsere Mitarbeiter auch telefonisch für Sie da. Sie erreichen uns montags bis freitags von 09:00 bis 17:00 Uhr unter (0681) 968 140.
+
+Sicherheitshinweis:
+===================
+Möchten Sie sicher sein, dass Sie stets betrügerische E-Mails von unseren Rechnungen sicher unterscheiden können? Lesen Sie dazu bitte unsere aktuellen Sicherheitshinweise ebenfalls unter http://www.basis-europe.eu/billing.
+
+Wir bedanken uns für Ihr Vertrauen in unsere Produkte und Leistungen und freuen uns auf die weitere Zusammenarbeit.
+
+Mit freundlichen Grüßen
+
+Ihre BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken
+Amtsgericht Saarbrücken HRB HRB 16820 - Geschäftsführer: Nico Spence
+Telefon: 0681 96814-0, Telefax: 0681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#SAM invoice without verification report
+SM_IT:
+{
+Subject: Rinnovamento SAM Fattura numero <invoice> 
+
+Gentile cliente BASIS,
+
+in allegato riceve la fattura annuale con numero <invoice> per rinnovamento del contratto SAM (Software Asset Management) con la firma digitale e il relativo rapporto di verifica. 
+
+Continua ad approfittare dell`assistenza Software:
+===============================================
+Paga la fattura con le condizioni di pagamento come previsto nel contratto SAM entro la data indicata.
+
+I vantaggi di una copertura SAM sono:
+
+    + Upgrades gratuito
+    + Assistenza tecnica gratuito (con particolare condizioni)
+    + Reset licenza gratuito
+    + Nessun costo per riattivare lo SAM (12% dal costo di una nuova licenza )
+    + Sconti sul prezzo per aggiungere utenti
+    + Sconti sul prezzo dei formazioni BASIS
+    + Licenze ridondante per una disponibilità sicura
+
+Nota sul formato e la firma digitale:
+=====================================
+La fattura è nel formato PDF, previsto con una firma digitale. Per visualizzare o stampare il documento è necessario di aver installato Acrobat Reader versione 7 o più recente, che è scraricabile dal sito http://www.adobe.de/products/acrobat/readstep2.html.
+
+
+Verifica firma digitale:
+========================
+Se c`è la necessità di verificare la firma digitale e la fattura, consulta http://www.basis-europe.eu/signaturcheck.
+
+
+Aiuto & contatti:
+=================
+Ci sono delle domande sulla fattura? Consultare http://www.basis-europe.eu/billing.
+
+
+Informazione sulla sicurezza:
+==============================
+Vuole essere sicuro di distinguere tra le E-mail frode e quelle inviate da BASIS? Legga per favore le istruzioni su http://www.basis-europe.eu/billing.
+
+La ringraziamo per la Sua fiducia nei nostri prodotti e servizi e siamo lieti della continua collaborazione.
+
+Distinti saluti
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken
+Amtsgericht Saarbrücken HRB HRB 16820 - Geschäftsführer: Nico Spence
+Telefon: 0681 96814-0, Telefax: 0681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#SAM invoice without verification report
+SM_DE:
+{
+Subject: Ihre SAM-Plan Rechnung Nr. <invoice>
+
+Sehr geehrter BASIS Kunde,
+
+im Anhang erhalten Sie Ihre jährliche Rechnung Nr. <invoice> zur Verlängerung Ihres SAM-Planes (Software Asset Management) mit digitaler Signatur und den dazugehörigen Verifikationsbericht als PDF-Dokumente. 
+
+Erneuern Sie den SAM-Wartungsplan für Ihre BASIS Software
+=========================================================
+Zahlen Sie den Rechnungsbetrag gemäß der vereinbarten Zahlungsbedingungen bis zum genannten Zahlungsziel.
+
+Die BASIS SAM–Wartungsplan bietet
+  + kostenlose Produktupdates
+  + kostenlosen Produktsupport (mit einigen Einschränkungen)
+  + Kostenlose Lizenzresets bei Plattform- und Hardwarewechsel
+  + Keine Reinstatement-Gebühr (12% des Listenpreises einer Neulizenz)
+  + Nachlass beim Erwerb zusätzlicher Benutzerlizenzen
+  + Redundante Lizensierungsoption für hochverfügbare Installationen
+
+
+Hinweise zum Format und der digitalen Signatur:
+===============================================
+Ihre Rechnung ist im PDF-Format erstellt und mit einer digitalen Signatur versehen. 
+
+Zum Lesen und Ausdrucken der Dokumente im PDF-Format benötigen Sie den 'Adobe Reader' in der Version 7.0 oder höher. Dieses Programm können Sie unter dem folgenden Link zum kostenlosen Gebrauch herunterladen: http://www.adobe.de/products/acrobat/readstep2.html
+
+Prüfung der digitalen Signatur:
+===============================
+Wenn Sie die Signatur dieser Rechnung prüfen möchten, so können Sie eine Online-Verifikation durchführen unter http://www.basis-europe.eu/signaturcheck. Weitere Hinweise zur Digitalen Signatur unserer Rechnungen erhalten Sie unter http://www.basis-europe.eu/billing.
+
+Hilfe & Kontakt:
+================
+Haben Sie Fragen zu Ihrer Rechnung? Gerne sind unsere Mitarbeiter auch telefonisch für Sie da. Sie erreichen uns montags bis freitags von 09:00 bis 17:00 Uhr unter +49 (0)681 968 140.
+
+Sicherheitshinweis:
+===================
+Möchten Sie sicher sein, dass Sie stets betrügerische E-Mails von unseren Rechnungen sicher unterscheiden können? Lesen Sie dazu bitte unsere aktuellen Sicherheitshinweise ebenfalls unter http://www.basis-europe.eu/billing.
+
+Wir bedanken uns für Ihr Vertrauen in unsere Produkte und Leistungen und freuen uns auf die weitere Zusammenarbeit.
+
+Mit freundlichen Grüßen
+
+Ihre BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken
+Amtsgericht Saarbrücken HRB HRB 16820 - Geschäftsführer: Nico Spence
+Telefon: +49 (0)681 96814-0, Telefax: +49 (0)681 96814-33, Email: eu.sales@basis.cloud
+}
+
+#Rental Renewal invoice English version for firm 01
+RN_EN:
+{
+Subject: Rental renewal invoice  
+
+Your annual Rental license renewal invoice is attached. 
+
+To continue your rental license, simply pay the attached invoice by the due date or pay online through b-commerce® at www.poweredbybbj.com.
+
+The BASIS Rental License provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+
+If you have any questions, please contact BASIS Sales at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+
+#Developer Kit Renewal invoice English version for firm 01
+DV_EN:
+{
+Subject: Developer Kit renewal invoice  
+
+Your annual Developer Kit license renewal invoice is attached. 
+
+To continue your Developer Kit license, simply pay the attached invoice by the due date or pay online through b-commerce® at www.poweredbybbj.com.
+
+The BASIS Developer Kit License provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+
+If you have any questions, please contact BASIS Sales at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+
+#Rental Renewal Invoice English version for firm 02
+RN_EN2:
+{
+Subject: Rental renewal invoice No. <invoice>
+
+Dear BASIS Customer,
+
+Attached is the annual Rental License renewal invoice number <invoice> that contains a qualified electronic signature. 
+
+Continue your Rental License
+============================
+Simply pay the attached invoice before the due date according to your agreed terms. 
+
+BASIS Rental License provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + redundant license for fail safe solutions
+
+View the invoice
+================
+BASIS generated this digitally signed invoice in PDF format. Reading and/or printing this PDF document requires ‘Adobe Reader’ version 7 or higher, available for free download at http://www.adobe.com/products/acrobat/readstep2.html.
+
+Verify the digital signature
+============================
+To verify the signature of this invoice, please read http://www.basis-europe.eu/billing.
+
+Call for assistance
+===================
+Do you have questions regarding your invoice? The BASIS Europe team is available by phone, Monday to Friday from 9:00 to 17:00 CET, at +49 (0)681 968140.
+
+Read our security instructions
+==============================
+Do you want to be able to distinguish fraudulent e-mail from our invoices? Please read our security instructions at http://www.basis-europe.eu/billing.
+
+Thank you for your confidence in BASIS products and services. We look forward to working with you in the future.
+
+Sincerely yours,
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email:
+eu.sales@basis.cloud
+}
+
+DV_EN2:
+{
+Subject: Developer Kit renewal invoice No. <invoice>
+
+Dear BASIS Customer,
+
+Attached is the annual Developer Kit License renewal invoice number <invoice> that contains a qualified electronic signature. 
+
+Continue your Developer Kit License
+===================================
+Simply pay the attached invoice before the due date according to your agreed terms. 
+
+BASIS Developer Kit License provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + redundant license for fail safe solutions
+
+View the invoice
+================
+BASIS generated this digitally signed invoice in PDF format. Reading and/or printing this PDF document requires ‘Adobe Reader’ version 7 or higher, available for free download at http://www.adobe.com/products/acrobat/readstep2.html.
+
+Verify the digital signature
+============================
+To verify the signature of this invoice, please read http://www.basis-europe.eu/billing.
+
+Call for assistance
+===================
+Do you have questions regarding your invoice? The BASIS Europe team is available by phone, Monday to Friday from 9:00 to 17:00 CET, at +49 (0)681 968140.
+
+Read our security instructions
+==============================
+Do you want to be able to distinguish fraudulent e-mail from our invoices? Please read our security instructions at http://www.basis-europe.eu/billing.
+
+Thank you for your confidence in BASIS products and services. We look forward to working with you in the future.
+
+Sincerely yours,
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email:
+eu.sales@basis.cloud
+}

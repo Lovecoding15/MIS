@@ -1,0 +1,391 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<PQY_INACTIVE_PAR>
+	<ALIAS id="ddm_tables">
+		<ID id="ddm_tables">DDM_TABLES</ID>
+		<RECORD id="ddm_tables.pqy_inactive_par">
+			<DD_TABLE_ALIAS id="ddm_tables.pqy_inactive_par">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_ALIAS_DESC id="ddm_tables.pqy_inactive_par">Inactive Partners</DD_ALIAS_DESC>
+			<DD_TABLE_PATH id="ddm_tables.pqy_inactive_par">[PARTNERQUEIRES]</DD_TABLE_PATH>
+			<DD_ALIAS_TYPE id="ddm_tables.pqy_inactive_par">P</DD_ALIAS_TYPE>
+			<DD_KEY_LENGTH id="ddm_tables.pqy_inactive_par">0</DD_KEY_LENGTH>
+			<DD_NBR_RECORD id="ddm_tables.pqy_inactive_par">0</DD_NBR_RECORD>
+			<DD_RECORD_LEN id="ddm_tables.pqy_inactive_par">0</DD_RECORD_LEN>
+			<RESTRICT_CREATE id="ddm_tables.pqy_inactive_par">Y</RESTRICT_CREATE>
+			<RESTRICT_REBUILD id="ddm_tables.pqy_inactive_par">Y</RESTRICT_REBUILD>
+			<RESTRICT_AUTOADD id="ddm_tables.pqy_inactive_par">Y</RESTRICT_AUTOADD>
+			<ASC_COMP_ID id="ddm_tables.pqy_inactive_par">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_tables.pqy_inactive_par">PQY</ASC_PROD_ID>
+			<ASC_VERSION_ID id="ddm_tables.pqy_inactive_par">1.0</ASC_VERSION_ID>
+			<DD_EXPORT_DATA id="ddm_tables.pqy_inactive_par">N</DD_EXPORT_DATA>
+			<DD_CREATE_DATE id="ddm_tables.pqy_inactive_par">20080915</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_tables.pqy_inactive_par">20081103</DD_LSTREV_DATE>
+			<DD_LSTSYNC_DATE id="ddm_tables.pqy_inactive_par">20110708</DD_LSTSYNC_DATE>
+			<DD_LSTSYNC_TIME id="ddm_tables.pqy_inactive_par">152238</DD_LSTSYNC_TIME>
+			<DD_ATTR_CPGM id="ddm_tables.pqy_inactive_par">[+DIR_CPP]pqy_inactive_par_cpt.bbj</DD_ATTR_CPGM>
+			<DD_ATTR_FTYP id="ddm_tables.pqy_inactive_par">S</DD_ATTR_FTYP>
+			<DD_ATTR_PCAL id="ddm_tables.pqy_inactive_par">pqy_inactive_query.src</DD_ATTR_PCAL>
+			<DD_ATTR_WINT id="ddm_tables.pqy_inactive_par">Inactive Partners</DD_ATTR_WINT>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_aopt">
+		<ID id="ddm_table_aopt">DDM_TABLE_AOPT</ID>
+		<RECORD id="ddm_table_aopt.pqy_inactive_par01">
+			<DD_TABLE_ALIAS id="ddm_table_aopt.pqy_inactive_par01">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_ATTR_SEQ id="ddm_table_aopt.pqy_inactive_par01">01</DD_ATTR_SEQ>
+			<DD_ATTR_AOPT id="ddm_table_aopt.pqy_inactive_par01">Output Partners</DD_ATTR_AOPT>
+			<DD_ATTR_AOPT_CD id="ddm_table_aopt.pqy_inactive_par01">OUTP</DD_ATTR_AOPT_CD>
+			<DD_ATTR_AOPT_FM id="ddm_table_aopt.pqy_inactive_par01">M</DD_ATTR_AOPT_FM>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_cpro">
+		<ID id="ddm_table_cpro">DDM_TABLE_CPRO</ID>
+		<RECORD id="ddm_table_cpro.pqy_inactive_paracus">
+			<DD_TABLE_ALIAS id="ddm_table_cpro.pqy_inactive_paracus">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_ATTR_CPRO id="ddm_table_cpro.pqy_inactive_paracus">ACUS</DD_ATTR_CPRO>
+		</RECORD>
+		<RECORD id="ddm_table_cpro.pqy_inactive_pararec">
+			<DD_TABLE_ALIAS id="ddm_table_cpro.pqy_inactive_pararec">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_ATTR_CPRO id="ddm_table_cpro.pqy_inactive_pararec">AREC</DD_ATTR_CPRO>
+		</RECORD>
+		<RECORD id="ddm_table_cpro.pqy_inactive_parasiz">
+			<DD_TABLE_ALIAS id="ddm_table_cpro.pqy_inactive_parasiz">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_ATTR_CPRO id="ddm_table_cpro.pqy_inactive_parasiz">ASIZ</DD_ATTR_CPRO>
+		</RECORD>
+		<RECORD id="ddm_table_cpro.pqy_inactive_parbsho">
+			<DD_TABLE_ALIAS id="ddm_table_cpro.pqy_inactive_parbsho">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_ATTR_CPRO id="ddm_table_cpro.pqy_inactive_parbsho">BSHO</DD_ATTR_CPRO>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_tpls">
+		<ID id="ddm_table_tpls">DDM_TABLE_TPLS</ID>
+		<RECORD id="ddm_table_tpls.pqy_inactive_par">
+			<DD_TABLE_ALIAS id="ddm_table_tpls.pqy_inactive_par">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_TABLE_TPL id="ddm_table_tpls.pqy_inactive_par">inactive_date:c(8*),partner_type:c(2*),partner_types:c(30*),num_users:n(4*)</DD_TABLE_TPL>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_table_cols">
+		<ID id="ddm_table_cols">DDM_TABLE_COLS</ID>
+		<RECORD id="ddm_table_cols.pqy_inactive_par001">
+			<DD_TABLE_ALIAS id="ddm_table_cols.pqy_inactive_par001">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.pqy_inactive_par001">001</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.pqy_inactive_par001">PQY_DATE        </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.pqy_inactive_par001">INACTIVE_DATE   </DD_DVAR_NAME>
+			<DD_COL_REPEATS id="ddm_table_cols.pqy_inactive_par001">0</DD_COL_REPEATS>
+			<DD_COL_OCCURS id="ddm_table_cols.pqy_inactive_par001">0</DD_COL_OCCURS>
+			<DD_FIELD_DELIM id="ddm_table_cols.pqy_inactive_par001">Y</DD_FIELD_DELIM>
+			<DD_DELIM_CHAR id="ddm_table_cols.pqy_inactive_par001">0A</DD_DELIM_CHAR>
+			<DD_CREATE_DATE id="ddm_table_cols.pqy_inactive_par001">20080915</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.pqy_inactive_par001">20080915</DD_LSTREV_DATE>
+			<DD_ATTR_COLW id="ddm_table_cols.pqy_inactive_par001">0</DD_ATTR_COLW>
+			<DD_ATTR_CTLX id="ddm_table_cols.pqy_inactive_par001">-5</DD_ATTR_CTLX>
+			<DD_ATTR_CTLY id="ddm_table_cols.pqy_inactive_par001">0</DD_ATTR_CTLY>
+			<DD_ATTR_CTLW id="ddm_table_cols.pqy_inactive_par001">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_table_cols.pqy_inactive_par001">0</DD_ATTR_CTLH>
+			<DD_ATTR_LABL id="ddm_table_cols.pqy_inactive_par001">Last Sale <=</DD_ATTR_LABL>
+			<DD_ATTR_MLAN id="ddm_table_cols.pqy_inactive_par001">N</DD_ATTR_MLAN>
+			<DD_ATTR_MAXL id="ddm_table_cols.pqy_inactive_par001">8</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.pqy_inactive_par001">1</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.pqy_inactive_par002">
+			<DD_TABLE_ALIAS id="ddm_table_cols.pqy_inactive_par002">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.pqy_inactive_par002">002</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.pqy_inactive_par002">PQY_PARTNER_TYPE</DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.pqy_inactive_par002">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_COL_REPEATS id="ddm_table_cols.pqy_inactive_par002">0</DD_COL_REPEATS>
+			<DD_COL_OCCURS id="ddm_table_cols.pqy_inactive_par002">0</DD_COL_OCCURS>
+			<DD_FIELD_DELIM id="ddm_table_cols.pqy_inactive_par002">Y</DD_FIELD_DELIM>
+			<DD_DELIM_CHAR id="ddm_table_cols.pqy_inactive_par002">0A</DD_DELIM_CHAR>
+			<DD_CREATE_DATE id="ddm_table_cols.pqy_inactive_par002">20080916</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.pqy_inactive_par002">20080916</DD_LSTREV_DATE>
+			<DD_ATTR_CPGM id="ddm_table_cols.pqy_inactive_par002">[+DIR_CPP]pqy_inactive_par_cpt.bbj</DD_ATTR_CPGM>
+			<DD_ATTR_COLW id="ddm_table_cols.pqy_inactive_par002">0</DD_ATTR_COLW>
+			<DD_ATTR_CTLY id="ddm_table_cols.pqy_inactive_par002">0</DD_ATTR_CTLY>
+			<DD_ATTR_CTLW id="ddm_table_cols.pqy_inactive_par002">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_table_cols.pqy_inactive_par002">0</DD_ATTR_CTLH>
+			<DD_ATTR_MLAN id="ddm_table_cols.pqy_inactive_par002">N</DD_ATTR_MLAN>
+			<DD_ATTR_MAXL id="ddm_table_cols.pqy_inactive_par002">3</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.pqy_inactive_par002">2</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.pqy_inactive_par003">
+			<DD_TABLE_ALIAS id="ddm_table_cols.pqy_inactive_par003">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.pqy_inactive_par003">003</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.pqy_inactive_par003">PQY_TEXT_30     </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.pqy_inactive_par003">PARTNER_TYPES   </DD_DVAR_NAME>
+			<DD_COL_REPEATS id="ddm_table_cols.pqy_inactive_par003">0</DD_COL_REPEATS>
+			<DD_COL_OCCURS id="ddm_table_cols.pqy_inactive_par003">0</DD_COL_OCCURS>
+			<DD_FIELD_DELIM id="ddm_table_cols.pqy_inactive_par003">Y</DD_FIELD_DELIM>
+			<DD_DELIM_CHAR id="ddm_table_cols.pqy_inactive_par003">0A</DD_DELIM_CHAR>
+			<DD_CREATE_DATE id="ddm_table_cols.pqy_inactive_par003">20080916</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.pqy_inactive_par003">20080916</DD_LSTREV_DATE>
+			<DD_ATTR_COLW id="ddm_table_cols.pqy_inactive_par003">0</DD_ATTR_COLW>
+			<DD_ATTR_CTLY id="ddm_table_cols.pqy_inactive_par003">0</DD_ATTR_CTLY>
+			<DD_ATTR_CTLW id="ddm_table_cols.pqy_inactive_par003">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_table_cols.pqy_inactive_par003">0</DD_ATTR_CTLH>
+			<DD_ATTR_LABL id="ddm_table_cols.pqy_inactive_par003">Partner Types</DD_ATTR_LABL>
+			<DD_ATTR_MLAN id="ddm_table_cols.pqy_inactive_par003">N</DD_ATTR_MLAN>
+			<DD_ATTR_MAXL id="ddm_table_cols.pqy_inactive_par003">30</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.pqy_inactive_par003">3</DD_ATTR_TIND>
+		</RECORD>
+		<RECORD id="ddm_table_cols.pqy_inactive_par004">
+			<DD_TABLE_ALIAS id="ddm_table_cols.pqy_inactive_par004">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_SEQUENCE id="ddm_table_cols.pqy_inactive_par004">004</DD_SEQUENCE>
+			<DD_DATA_NAME id="ddm_table_cols.pqy_inactive_par004">PQY_NUM_USERS   </DD_DATA_NAME>
+			<DD_DVAR_NAME id="ddm_table_cols.pqy_inactive_par004">NUM_USERS       </DD_DVAR_NAME>
+			<DD_COL_REPEATS id="ddm_table_cols.pqy_inactive_par004">0</DD_COL_REPEATS>
+			<DD_COL_OCCURS id="ddm_table_cols.pqy_inactive_par004">0</DD_COL_OCCURS>
+			<DD_FIELD_DELIM id="ddm_table_cols.pqy_inactive_par004">Y</DD_FIELD_DELIM>
+			<DD_DELIM_CHAR id="ddm_table_cols.pqy_inactive_par004">0A</DD_DELIM_CHAR>
+			<DD_CREATE_DATE id="ddm_table_cols.pqy_inactive_par004">20080917</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_table_cols.pqy_inactive_par004">20080917</DD_LSTREV_DATE>
+			<DD_ATTR_COLW id="ddm_table_cols.pqy_inactive_par004">0</DD_ATTR_COLW>
+			<DD_ATTR_CTLX id="ddm_table_cols.pqy_inactive_par004">0</DD_ATTR_CTLX>
+			<DD_ATTR_CTLY id="ddm_table_cols.pqy_inactive_par004">0</DD_ATTR_CTLY>
+			<DD_ATTR_CTLW id="ddm_table_cols.pqy_inactive_par004">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_table_cols.pqy_inactive_par004">0</DD_ATTR_CTLH>
+			<DD_ATTR_LABL id="ddm_table_cols.pqy_inactive_par004">Users</DD_ATTR_LABL>
+			<DD_ATTR_MLAN id="ddm_table_cols.pqy_inactive_par004">N</DD_ATTR_MLAN>
+			<DD_ATTR_MAXL id="ddm_table_cols.pqy_inactive_par004">4</DD_ATTR_MAXL>
+			<DD_ATTR_TIND id="ddm_table_cols.pqy_inactive_par004">4</DD_ATTR_TIND>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_column_cpro">
+		<ID id="ddm_column_cpro">DDM_COLUMN_CPRO</ID>
+		<RECORD id="ddm_column_cpro.pqy_inactive_parpartner_typeamod">
+			<DD_TABLE_ALIAS id="ddm_column_cpro.pqy_inactive_parpartner_typeamod">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_cpro.pqy_inactive_parpartner_typeamod">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_CPRO id="ddm_column_cpro.pqy_inactive_parpartner_typeamod">AMOD</DD_ATTR_CPRO>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_column_ldat">
+		<ID id="ddm_column_ldat">DDM_COLUMN_LDAT</ID>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type01">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type01">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type01">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type01">01</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type01">RS</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type01">Resellers</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type02">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type02">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type02">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type02">02</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type02">PB</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type02">Partners, Bronze</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type03">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type03">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type03">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type03">03</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type03">PS</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type03">Partners, Silver</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type04">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type04">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type04">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type04">04</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type04">PG</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type04">Partners, Gold</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type05">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type05">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type05">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type05">05</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type05">3RD</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type05">Third Pary Resellers</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type06">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type06">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type06">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type06">06</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type06">DRI</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type06">Dist/Reseller Int'l</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type07">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type07">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type07">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type07">07</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type07">DSI</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type07">Int'l Distributor</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type08">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type08">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type08">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type08">08</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type08">EU</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type08">End User</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type09">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type09">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type09">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type09">09</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type09">EUI</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type09">Int'l End User</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type10">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type10">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type10">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type10">10</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type10">EUM</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type10">Major Acct End User</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type11">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type11">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type11">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type11">11</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type11">MB</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type11">Member - Bronze</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type12">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type12">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type12">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type12">12</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type12">MG</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type12">Member - Gold</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type13">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type13">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type13">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type13">13</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type13">MS</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type13">Member - Silver</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type14">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type14">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type14">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type14">14</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type14">OEM</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type14">OEM</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type15">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type15">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type15">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type15">15</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type15">PBI</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type15">Partner, Int'l Bronze</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type16">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type16">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type16">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type16">16</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type16">PGI</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type16">Partner, Int'l Gold</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type17">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type17">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type17">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type17">17</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type17">PP</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type17">Partners, Platinum</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type18">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type18">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type18">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type18">18</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type18">PPI</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type18">Partner, Int'l Platinum</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type19">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type19">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type19">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type19">19</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type19">PSI</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type19">Partner, Int'l Silver</DD_ATTR_LDAT_DS>
+		</RECORD>
+		<RECORD id="ddm_column_ldat.pqy_inactive_parpartner_type20">
+			<DD_TABLE_ALIAS id="ddm_column_ldat.pqy_inactive_parpartner_type20">PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+			<DD_DVAR_NAME id="ddm_column_ldat.pqy_inactive_parpartner_type20">PARTNER_TYPE    </DD_DVAR_NAME>
+			<DD_ATTR_SEQ id="ddm_column_ldat.pqy_inactive_parpartner_type20">20</DD_ATTR_SEQ>
+			<DD_ATTR_LDAT id="ddm_column_ldat.pqy_inactive_parpartner_type20">RSI</DD_ATTR_LDAT>
+			<DD_ATTR_LDAT_DS id="ddm_column_ldat.pqy_inactive_parpartner_type20">Reseller International</DD_ATTR_LDAT_DS>
+		</RECORD>
+	</ALIAS>
+	<ALIAS id="ddm_elements">
+		<ID id="ddm_elements">DDM_ELEMENTS</ID>
+		<RECORD id="ddm_elements.pqy_date">
+			<DD_DATA_NAME id="ddm_elements.pqy_date">PQY_DATE        </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.pqy_date">Date</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.pqy_date">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.pqy_date">8</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.pqy_date">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.pqy_date">PQY</ASC_PROD_ID>
+			<LOCALIZATION_EX id="ddm_elements.pqy_date">N</LOCALIZATION_EX>
+			<DD_CREATE_DATE id="ddm_elements.pqy_date">20080915</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.pqy_date">20080915</DD_LSTREV_DATE>
+			<DD_ATTR_BLNK id="ddm_elements.pqy_date">N</DD_ATTR_BLNK>
+			<DD_ATTR_CTLW id="ddm_elements.pqy_date">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_elements.pqy_date">0</DD_ATTR_CTLH>
+			<DD_ATTR_CTYP id="ddm_elements.pqy_date">D</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.pqy_date">Date</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.pqy_date">Date</DD_ATTR_LABS>
+			<DD_ATTR_MAXL id="ddm_elements.pqy_date">0</DD_ATTR_MAXL>
+			<DD_ATTR_MAXR id="ddm_elements.pqy_date">0</DD_ATTR_MAXR>
+			<DD_ATTR_MINL id="ddm_elements.pqy_date">0</DD_ATTR_MINL>
+			<DD_ATTR_MSKI id="ddm_elements.pqy_date">00/00/0000</DD_ATTR_MSKI>
+			<DD_ATTR_PREC id="ddm_elements.pqy_date">0</DD_ATTR_PREC>
+			<DD_ATTR_STYP id="ddm_elements.pqy_date">1</DD_ATTR_STYP>
+		</RECORD>
+		<RECORD id="ddm_elements.pqy_partner_type">
+			<DD_DATA_NAME id="ddm_elements.pqy_partner_type">PQY_PARTNER_TYPE</DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.pqy_partner_type">Partner Type</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.pqy_partner_type">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.pqy_partner_type">3</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.pqy_partner_type">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.pqy_partner_type">PQY</ASC_PROD_ID>
+			<LOCALIZATION_EX id="ddm_elements.pqy_partner_type">N</LOCALIZATION_EX>
+			<DD_CREATE_DATE id="ddm_elements.pqy_partner_type">20080916</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.pqy_partner_type">20080929</DD_LSTREV_DATE>
+			<DD_ATTR_BLNK id="ddm_elements.pqy_partner_type">N</DD_ATTR_BLNK>
+			<DD_ATTR_CTLW id="ddm_elements.pqy_partner_type">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_elements.pqy_partner_type">0</DD_ATTR_CTLH>
+			<DD_ATTR_CTYP id="ddm_elements.pqy_partner_type">L</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.pqy_partner_type">Partner Type</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.pqy_partner_type">Partner Type</DD_ATTR_LABS>
+			<DD_ATTR_MAXL id="ddm_elements.pqy_partner_type">0</DD_ATTR_MAXL>
+			<DD_ATTR_MAXR id="ddm_elements.pqy_partner_type">0</DD_ATTR_MAXR>
+			<DD_ATTR_MINL id="ddm_elements.pqy_partner_type">0</DD_ATTR_MINL>
+			<DD_ATTR_PREC id="ddm_elements.pqy_partner_type">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.pqy_text_30">
+			<DD_DATA_NAME id="ddm_elements.pqy_text_30">PQY_TEXT_30     </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.pqy_text_30">Text 30</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.pqy_text_30">C</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.pqy_text_30">30</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.pqy_text_30">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.pqy_text_30">PQY</ASC_PROD_ID>
+			<LOCALIZATION_EX id="ddm_elements.pqy_text_30">N</LOCALIZATION_EX>
+			<DD_CREATE_DATE id="ddm_elements.pqy_text_30">20080916</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.pqy_text_30">20080916</DD_LSTREV_DATE>
+			<DD_ATTR_BLNK id="ddm_elements.pqy_text_30">N</DD_ATTR_BLNK>
+			<DD_ATTR_CTLW id="ddm_elements.pqy_text_30">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_elements.pqy_text_30">0</DD_ATTR_CTLH>
+			<DD_ATTR_CTYP id="ddm_elements.pqy_text_30">E</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.pqy_text_30">Text 30</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.pqy_text_30">Text 30</DD_ATTR_LABS>
+			<DD_ATTR_MAXL id="ddm_elements.pqy_text_30">0</DD_ATTR_MAXL>
+			<DD_ATTR_MAXR id="ddm_elements.pqy_text_30">0</DD_ATTR_MAXR>
+			<DD_ATTR_MINL id="ddm_elements.pqy_text_30">0</DD_ATTR_MINL>
+			<DD_ATTR_PREC id="ddm_elements.pqy_text_30">0</DD_ATTR_PREC>
+		</RECORD>
+		<RECORD id="ddm_elements.pqy_num_users">
+			<DD_DATA_NAME id="ddm_elements.pqy_num_users">PQY_NUM_USERS   </DD_DATA_NAME>
+			<DD_DESCRIPTION id="ddm_elements.pqy_num_users">Number of Users</DD_DESCRIPTION>
+			<DD_DATA_TYPE id="ddm_elements.pqy_num_users">N</DD_DATA_TYPE>
+			<DD_DATA_LENGTH id="ddm_elements.pqy_num_users">4</DD_DATA_LENGTH>
+			<ASC_COMP_ID id="ddm_elements.pqy_num_users">01007514</ASC_COMP_ID>
+			<ASC_PROD_ID id="ddm_elements.pqy_num_users">PQY</ASC_PROD_ID>
+			<LOCALIZATION_EX id="ddm_elements.pqy_num_users">N</LOCALIZATION_EX>
+			<DD_CREATE_DATE id="ddm_elements.pqy_num_users">20080917</DD_CREATE_DATE>
+			<DD_LSTREV_DATE id="ddm_elements.pqy_num_users">20080922</DD_LSTREV_DATE>
+			<DD_ATTR_BLNK id="ddm_elements.pqy_num_users">N</DD_ATTR_BLNK>
+			<DD_ATTR_CTLW id="ddm_elements.pqy_num_users">0</DD_ATTR_CTLW>
+			<DD_ATTR_CTLH id="ddm_elements.pqy_num_users">0</DD_ATTR_CTLH>
+			<DD_ATTR_CTYP id="ddm_elements.pqy_num_users">n</DD_ATTR_CTYP>
+			<DD_ATTR_LABL id="ddm_elements.pqy_num_users">Number of Users</DD_ATTR_LABL>
+			<DD_ATTR_LABS id="ddm_elements.pqy_num_users">Number of Users</DD_ATTR_LABS>
+			<DD_ATTR_MAXL id="ddm_elements.pqy_num_users">0</DD_ATTR_MAXL>
+			<DD_ATTR_MAXR id="ddm_elements.pqy_num_users">0</DD_ATTR_MAXR>
+			<DD_ATTR_MINL id="ddm_elements.pqy_num_users">0</DD_ATTR_MINL>
+			<DD_ATTR_PREC id="ddm_elements.pqy_num_users">0</DD_ATTR_PREC>
+		</RECORD>
+	</ALIAS>
+</PQY_INACTIVE_PAR>

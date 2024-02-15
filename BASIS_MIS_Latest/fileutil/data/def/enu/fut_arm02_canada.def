@@ -1,0 +1,22 @@
+Table Definition Module
+FUT_ARM02_CANADA - Flags Customers as using Canadian Pricing
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_ARM02_CANADA^^^^^Flags Customers as using Canadian Pricing^Flags Customers as using Canadian Pricing^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_ARM02_CANADA^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+CUSTOMER_NBR^FUT_ARM02_CANADA^002^C^^3002^dis_customer_nbr^0^^^2^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^^^^0^^^^N^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_ARM02_CANADA^PRIMARY^FUT_ARM02_CANADA.FIRM_ID                FUT_ARM02_CANADA.CUSTOMER_NBR           ^FUT_ARM02_CANADA.FIRM_ID$+FUT_ARM02_CANADA.CUSTOMER_NBR$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.CUSTOMER_NBR$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.CUSTOMER_NBR$               
+{KeyDefsEnd}
+{GridCols}
+001FUT_ARM02_CANADA.FIRM_ID                ;002FUT_ARM02_CANADA.CUSTOMER_NBR           ;
+{GridColsEnd}

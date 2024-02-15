@@ -1,0 +1,111 @@
+rem 'job_queue.pgm 
+begin
+seterr errmsg
+tmpdir$=stbl("TEMP")
+call "ec_open::job_queue"
+
+REM "Main loop
+while 1 
+  jqk$=key(job_queue,err=*break)
+  readrecord(job_queue,key=jqk$)job_queue$
+  firm$=job_queue.firm_id$
+  cust$=job_queue.customer_nbr$
+  email$=cvs(job_queue.e_mail$,3)
+  job$=cvs(job_queue.job$,7)
+  if pos("REV"=job$)=1 then call "auto_lic_updt.bbj",job_queue$
+
+  rem ' if job$="ACTIVE_SN" then call "BSI.01",firm$,cust$,email$
+  if job$="ACTIVE_SN" then 
+	x = scall("/mnt/data/bbj/bin/bbj -tIO -c/mnt/data/basis/bbj/client-config/basisaon_config.web BSI.00 - " + firm$ + " " + cust$ + " " + email$ + " &")
+  fi
+  
+  if job$="AR_AGING" or job$="CUSTSALES" then call "bcomm_aging_rpt.pgm",job_queue$
+  if pos("EMAIL_INV"=job$)=1 then 
+    inv$=cvs(job_queue.job_date$,3) 
+    call "retrieve_invoice.bbj",firm$,inv$,email$,status
+    while status 
+      rem ' if firm$="02" then
+        rem ' NOTE: this path is no longer valid
+        rem ' archive$="/mnt/data/archives/bsg/invoices/"
+        rem ' pipe=unt
+        rem ' open(pipe)"| find "+archive$+" -name "+inv$+".eml"
+        rem ' while 1
+        rem '   read(pipe,end=*break)temp$
+        rem ' wend
+        rem ' close(pipe,err=*next)
+        rem ' p=pos("/"+inv$=temp$)
+        rem ' if p then
+        rem ' use of unix send email has been discontinued
+        rem '   i=scall("/usr/bin/formail -s send mail "+email$+" < "+temp$)
+        rem '   break
+        rem ' fi
+      rem ' fi
+      call "email_invoice.pgm",job_queue$
+      break
+    wend
+  fi
+  if len(job$)>5 then if pos(job$(1,6)="RNWSAM,CANSAM,CRDSAM") then call "sam_emails.pgm",job_queue$
+  remove(job_queue,key=jqk$,dom=*next)
+wend
+
+rem ' changed to starting sign_invoice.bbj in its own session 1/2011
+rem ' call "sign_invoice.bbj",err=*next
+rem ' DECLARE BBjConfig config!
+rem ' DECLARE BBjCommandLineObject cmd!
+rem ' config! = BBjAPI().getConfig()
+rem ' use the sscp signamus
+rem ' cmd! = config!.getCommandLineObject("-tIO -CPsignamus -c/mnt/data/basisaon/config.web sign_invoice.bbj")
+rem ' x = BBjAPI().newBBjSession(cmd!)
+rem ' x = scall("/mnt/data/bbj/bin/bbj -tIO -CPsignamus -c/mnt/data/basisaon/config.web sign_invoice.bbj &")
+rem ' classpath for signamus no longer needed 05/2017
+x = scall("/mnt/data/bbj/bin/bbj -tIO -c/mnt/data/basis/bbj/client-config/basisaon_config.web sign_invoice.bbj &")
+
+rem ' check on some problems in the database
+hour$ = date(0:"%Hz")
+minute$ = date(0:"%mz")
+if hour$ = "07" or hour$ = "09" or hour$ = "11" or hour$ = "12" or hour$ = "13" or hour$ = "15" or hour$ = "17" then
+	if minute$ >= "00" and minute$ <= "04" then
+		call "prob_queries.src"
+	fi
+fi
+
+rem ' changed the way that arm04 is opened in GUI Addon this check is no longer needed.
+rem ' run the arm04 open check at 10:00PM and 10:15PM
+rem ' if hour$ = "22" then
+rem ' 	if minute$ >= "00" and minute$ <= "04" then
+rem ' 		call "arm04Open.src"
+rem ' 	else
+rem ' 		if minute$ >= "15" and minute$ <= "19" then
+rem ' 			call "arm04Open.src"
+rem ' 		fi
+rem ' 	fi
+rem ' fi
+
+call "ec_open::smc01"
+remove(smc01,key="      ",dom=pgm_end)
+job$="CONTRACT FILE HAD BLANK RECORD"
+rem goto errmsg
+
+pgm_end:
+close(job_queue,err=*next)
+close(smc01,err=*next)
+release
+
+errmsg:
+
+  to$ = "mis@basis.cloud"
+  from$ = "customer-service@basis.cloud"
+  cc$ = ""
+  bcc$ = ""
+  subject$ = "Job queue program error " + str(err) + " in " + str(tcb(5))
+  
+  msg$ = "Job queue program error " + str(err) + " " + errmes(-1) + " in " + str(tcb(5)) + " of " + pgm(-2)
+  msg$=msg$+$0a$+$0a$+firm$+cust$
+  msg$=msg$+$0a$+email$
+  msg$=msg$+$0a$+job$+$0a$
+
+  call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msg$, ""
+  
+goto pgm_end
+
+end

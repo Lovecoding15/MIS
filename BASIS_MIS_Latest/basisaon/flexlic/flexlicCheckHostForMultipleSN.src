@@ -1,0 +1,378 @@
+rem ' <flexlicCheckHostForMultipeSN.src>
+
+seterr errmsg 
+
+enter sn$, auth_num$, host_id$, snlist$, primarySN$, primaryAuth$, specPerPetExpire$
+
+sncount = 0
+snlist$ = ""
+primarySN$ = ""
+firstPrimaryRegistration = 0
+
+rem ' ---------------------------------------------------------------------------------
+rem ' open the Hosts with multiple serial numbers table and check
+rem ' ---------------------------------------------------------------------------------
+call "ec_open::SN_HOST_MULTI_SN"
+call "ec_open::SNM01"
+call "ec_open::SMC01"
+
+thissn$ = sn$ + fill(20), thissn$ = thissn$(1,20)
+
+rem ' ---------------------------------------------------------------------------------
+rem ' is the serial number in the table
+rem ' ---------------------------------------------------------------------------------
+found = 0
+read record (sn_host_multi_sn, key = thissn$, dom = *next)sn_host_multi_sn$; found = 1
+
+rem ' ---------------------------------------------------------------------------------
+rem ' NOT FOUND
+rem ' if sn is not in the table, is the the host id? If so we add the sn to the table
+rem ' ---------------------------------------------------------------------------------
+if !found then
+	
+	thishostid$ = host_id$ + fill(60), thishostid$ = thishostid$(1,60)
+	rem ' position key pointer
+	read record(sn_host_multi_sn, knum = 1, key = thishostid$, err = *next)sn_host_multi_sn$
+	
+	added = 0
+	
+	while 1
+		dim sn_host_multi_sn$:fattr(sn_host_multi_sn$)
+		read record(sn_host_multi_sn, end = *break)sn_host_multi_sn$
+		if thishostid$ = sn_host_multi_sn.hostid$ then
+			rem ' host id is in the table - add this sn to table
+			read record(snm01, key = thissn$)snm01$
+			dim sn_host_multi_sn$:fattr(sn_host_multi_sn$)
+			sn_host_multi_sn.serial_nbr$ = thissn$
+			sn_host_multi_sn.firm_id$ = snm01.firm_id$
+			sn_host_multi_sn.customer_nbr$ = snm01.customer_nbr$
+			sn_host_multi_sn.hostid$ = thishostid$
+			write record(sn_host_multi_sn)sn_host_multi_sn$
+			read record (sn_host_multi_sn, knum = 0, key = thissn$)sn_host_multi_sn$
+			added = 1
+		fi
+		
+		break
+	wend
+
+	if !added then
+		rem ' host id was not already in the table
+		rem ' we have single sn on this host id
+		snlist$=""
+		goto pgm_exit
+	else
+		rem ' sn added it an existing host id group
+		found = 1
+	fi
+	
+fi	
+
+rem ' ---------------------------------------------------------------------------------
+rem ' FOUND
+rem ' sn found in the table, we might have a multi sn host
+rem ' ---------------------------------------------------------------------------------
+if found then
+
+	if cvs(host_id$,3) <> cvs(sn_host_multi_sn.hostid$,3) then
+		
+		rem ' ---------------------------------------------------------------------------------
+		rem ' incoming host id is different than the one in the table
+		rem ' move existing records to the new host id			
+		rem ' ---------------------------------------------------------------------------------
+		
+		oldhostid$ = sn_host_multi_sn.hostid$
+		thishostid$ = host_id$ + fill(60), thishostid$ = thishostid$(1,60)
+		
+		while 1
+			rem ' position key point on knum 1
+			read record(sn_host_multi_sn, knum = 1, key = oldhostid$, dom=*next)sn_host_multi_sn$
+
+			read record(sn_host_multi_sn, end = *break)sn_host_multi_sn$
+			if oldhostid$ <> sn_host_multi_sn.hostid$ then break
+			sn_host_multi_sn.hostid$ = thishostid$
+			write record(sn_host_multi_sn)sn_host_multi_sn$
+		wend
+
+		read record (sn_host_multi_sn, knum = 0, key = thissn$)sn_host_multi_sn$
+	fi
+
+	if cvs(host_id$,3) = cvs(sn_host_multi_sn.hostid$,3) then
+
+		rem ' ---------------------------------------------------------------------------------
+		rem ' incoming host id matches host id in the serial number record
+		rem ' ---------------------------------------------------------------------------------
+		
+		rem ' position key point on knum 1
+		read record(sn_host_multi_sn, knum = 1, key = sn_host_multi_sn.hostid$, dom=*next)sn_host_multi_sn$
+	
+		while 1
+			read record(sn_host_multi_sn,end=*break)sn_host_multi_sn$
+			if pos(host_id$ = sn_host_multi_sn.hostid$) <> 1 then break
+			gosub is_sn_active
+			if active then
+				sncount = sncount + 1
+				snlist$ = snlist$ + sn_host_multi_sn$ + $0A$
+			fi
+		wend
+	
+	fi	
+
+	rem ' do we actually have more than one serial number
+	if sncount > 1 then
+		gosub which_is_primary
+	else
+		if sncount = 1
+			rem ' here we have only one serial number, others are no longer active
+			rem ' it might not be the one passed in
+			gosub which_is_primary
+			snlist$=""
+			goto pgm_exit
+		else
+			rem ' sncount = 0, non of the serial numbers are active
+			snlist$ = ""
+			goto pgm_exit
+		fi		
+	fi
+
+fi
+
+rem ' ---------------------------------------------------------------------------------
+rem ' here we have a host id group with more than one serial number
+rem ' ---------------------------------------------------------------------------------
+rem ' escape
+gosub is_this_first_reg_by_primary_sn
+if firstPrimaryRegistration then
+	rem ' with first primary registration we want to have the BLM immediately start
+	rem ' attempting to auto re-register, setting expire date out 20 days
+	specPerPetExpire$ = date(jul(0, 0, 0) + 20:"%Y-%Mz-%Dz")
+else
+	rem ' not the first primary sn registration, no special expire date
+	specPerPetExpire$ = ""
+
+	rem ' may be a registration by a secondary serial number
+	if primarySN$ <> "" then
+		gosub record_secondary_sn_registration
+	fi
+fi
+
+goto pgm_exit
+
+is_sn_active:
+rem ' ---------------------------------------------------------------------------------
+rem ' is the serial number active
+rem ' ---------------------------------------------------------------------------------
+
+	active = 0
+	
+	rem ' check active flag in serial number record
+	read record(snm01, key = sn_host_multi_sn.serial_nbr$)snm01$
+	if snm01.active_flag$ = "N" then
+		active = 0
+	else
+		rem ' check contract file to see if expired
+		if cvs(snm01.contract$,3) <> "" then
+			read record(smc01, key = snm01.contract$)smc01$
+			rent_or_kit = pos(smc01.contr_type$(1,2) = "RN,DV")
+			if snm01.license_type$ = "EXP" and smc01.contr_type$ = "SM1" then rent_or_kit=1
+			today$ = date(0:"%Y%Mz%Dz")
+			if rent_or_kit and smc01.expire_on_dt$ < today$ then
+				rem ' expired
+				active = 0
+			else
+				rem ' not expired
+				active = 1
+			fi
+		else
+			rem ' not a rent or kit, no contract
+			active = 1
+		fi
+	fi
+return
+
+which_is_primary:
+rem ' ---------------------------------------------------------------------------------
+rem ' which serial number is the primary
+rem ' ---------------------------------------------------------------------------------
+
+	temp$ = snlist$
+	dim oneitem$ : fattr(sn_host_multi_sn$)
+	productseq$="ODBDS5VP5PR5BAS"
+	currentHighRank = 0, currentHighSN$ = ""
+	
+	rem ' rank the serial numbers
+	while len(temp$)
+	
+		p = pos($0A$ = temp$)
+		oneitem$ = temp$(1,p-1)
+		temp$ = temp$(p+1)
+		
+		read record(snm01, key = oneitem.serial_nbr$)snm01$
+		product$ = snm01.product$
+		rank = pos(product$ = productseq$)
+		if rank > currentHighRank then
+			currentHighRank = rank
+			currentHighSN$ = oneitem.serial_nbr$
+		fi
+	wend
+	
+	rem ' pull out the high rank from the list
+	temp$ = snlist$, snlist$ = ""
+	while len(temp$)
+
+		p = pos($0A$ = temp$)
+		oneitem$ = temp$(1,p-1)
+		temp$ = temp$(p+1)
+		if oneitem.serial_nbr$ <> currentHighSN$ then
+			snlist$ = snlist$ + oneitem$ + $0A$
+		fi
+	
+	wend
+
+	if currentHighSN$ <> sn$ then
+		rem ' ---------------------------------------------------------------------------------
+		rem ' primary serial nubmer in host id group is not the one passed into this program
+		rem ' ---------------------------------------------------------------------------------
+		primarySN$ = currentHighSN$
+
+		rem ' get authorization code
+		call "ec_open::SNT01"
+		primaryAuth$ = ""
+		read record(snt01,key=primarySN$,err=*next)snt01$
+		while 1
+			read record(snt01,end=*break)snt01$
+			if pos(primarySN$ = snt01.serial_nbr$) <> 1 then break
+			if cvs(snt01.auth_code$,3) <> "" then
+				primaryAuth$ = cvs(snt01.auth_code$,3)
+			fi
+		wend
+	
+		rem ' write serial number back to the front end
+		x = 0
+		while 1
+			vari$ = info(4,x, err=*break)
+			p = pos("=" = vari$)
+			if p <> 0 then 
+				tag$ = vari$(1, p-1)
+				if tag$ = "LICTMPDIR" then
+					lictmpdir$ = vari$(p+1)
+					foundit = 1
+					break
+				fi
+			fi
+			x = x + 1
+		wend
+		if lictmpdir$ = "" then
+			lictmpdir$ = "/u/docfiles/flexlic/tmp"
+		fi
+		if lictmpdir$(len(lictmpdir$),1) <> "/" then lictmpdir$ = lictmpdir$ + "/"
+		lictmpdir$ = lictmpdir$ + cvs(sn$,3) + "ChangedTo.txt"
+		erase lictmpdir$, err=*next
+		string lictmpdir$
+		lictmpdir = unt
+		open(lictmpdir)lictmpdir$
+		write(lictmpdir)cvs(primarySN$, 3)
+		close(lictmpdir)
+		rem ' if !foundit then a = scall("touch /u/docfiles/flexlic/tmp/foundItNot.txt")
+	fi
+	
+return
+
+is_this_first_reg_by_primary_sn:
+rem ' ---------------------------------------------------------------------------------
+rem ' we know we have a group, we know which is primary, is it the frist reg by the 
+rem ' primary?
+rem ' ---------------------------------------------------------------------------------
+rem ' to be a primary sn registration, primarySN$ = ""
+firstPrimaryRegistration = 0
+rem ' escape
+if primarySN$ = "" then
+
+	rem ' it is a primary sn reg, is it the first?
+	read record (sn_host_multi_sn, knum = 0, key = thissn$)sn_host_multi_sn$
+
+	if cvs(sn_host_multi_sn.primary_sn$,3) = "" or sn_host_multi_sn.primary_sn$ <> thissn$ then
+		rem ' first registration registration of the group by primary or
+		rem ' the old primary is inactive and another sn in the group is now the primary
+		
+		firstPrimaryRegistration = 1
+		
+		rem ' update the prmary_sn field
+		
+		rem ' position key pointer
+		thishostid$ = sn_host_multi_sn.hostid$
+		read record(sn_host_multi_sn, knum = 1, key = thishostid$, err = *next)sn_host_multi_sn$
+
+		while 1
+			read record(sn_host_multi_sn, end = *break)sn_host_multi_sn$
+			if sn_host_multi_sn.hostid$ <> thishostid$ then break
+			
+			rem ' set the primary_sn field and clear the lastreg_scndry field
+			sn_host_multi_sn.primary_sn$ = thissn$
+			sn_host_multi_sn.lastreg_scndry$ = ""
+			write record(sn_host_multi_sn)sn_host_multi_sn$
+		wend
+	
+	else
+		rem ' a primary registration, but not the first clear lastreg_scndry
+
+		rem ' position key pointer
+		thishostid$ = sn_host_multi_sn.hostid$
+		read record(sn_host_multi_sn, knum = 1, key = thishostid$, err = *next)sn_host_multi_sn$
+
+		while 1
+			read record(sn_host_multi_sn, end = *break)sn_host_multi_sn$
+			if sn_host_multi_sn.hostid$ <> thishostid$ then break
+			
+			rem ' clear the lastreg_scndry field
+			sn_host_multi_sn.lastreg_scndry$ = ""
+			write record(sn_host_multi_sn)sn_host_multi_sn$
+		wend
+	fi
+fi
+
+return
+
+record_secondary_sn_registration:
+rem ' ---------------------------------------------------------------------------------
+rem ' when a secondary SN registers the group we want record that fact and send an email
+rem ' ---------------------------------------------------------------------------------
+rem ' a primary registration, but not the first clear lastreg_scndry
+
+	read record (sn_host_multi_sn, knum = 0, key = thissn$)sn_host_multi_sn$
+	
+	rem ' position key pointer
+	thishostid$ = sn_host_multi_sn.hostid$
+	read record(sn_host_multi_sn, knum = 1, key = thishostid$, err = *next)sn_host_multi_sn$
+
+	rem ' write 
+	while 1
+		read record(sn_host_multi_sn, end = *break)sn_host_multi_sn$
+		if sn_host_multi_sn.hostid$ <> thishostid$ then break
+
+		rem ' set the lastreg_scndry field
+		sn_host_multi_sn.lastreg_scndry$ = thissn$
+		write record(sn_host_multi_sn)sn_host_multi_sn$
+	wend
+
+	rem ' ---------------------------------------------------------------------------------
+	rem ' send an email informing the customer
+	rem ' ---------------------------------------------------------------------------------
+	flexhome$=stbl("FLEXHOME")
+	rem ' en error in the email program should not tank the registration
+	call flexhome$+"bin/flexlicEmailNoticeSecondarySNRegistration.bbx", err=*next, sn$, primarysn$, host_id$ 
+	rem ' escape	
+return
+
+errmsg:
+	msg$="(Err "+str(err)+" "+errmes(-1)+" at "+str(tcb(5))+" "+pgm(-2)+" "+cvs(sn$,3)+")"
+	throw msg$, 455
+	exit
+
+pgm_exit:
+	
+	close(sn_host_multi_sn, err=*next)
+	close(snm01, err=*next)
+	close(smc01, err=*next)
+	close(snt01, err=*next)
+	exit
+end

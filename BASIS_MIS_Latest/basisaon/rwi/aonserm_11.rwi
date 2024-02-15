@@ -1,0 +1,73 @@
+
+// Display sn header and look at associated records  <serm_11>
+
+enter snm01;
+//find snm01 using "PRO568884           ";
+find/noerror arm01 using snm01.firm_id+snm01.customer_nbr;
+
+if available(arm01)=0 then 
+{
+init arm01;
+arm01.cust_name="**Not on file** ";
+}
+
+find/noerror csm04 using snm01.firm_id+snm01.product_rev;  
+rv$="";
+if available(csm04) then
+	{rv$=cvs(csm04.description,3);
+	p=pos(" "=rv$);if p=0 then p=len(rv$);
+	rv$=rv$(1,p); }
+//find/noerror csm03 using snm01.firm_id+snm01.os_level;  
+//if available(csm04) then port$=csm03.port_id;
+port$=snm01.port_id;
+item$=snm01.product+platform+os_level+product_rev+license_type;
+
+detail=1;
+if pos("Order"=snm01.serial_desc)=1 then 
+	{item$=cvs(snm01.serial_desc,2);detail=0;}
+if pos("OEM"=snm01.serial_desc)=1 then gosub get_oem;
+//  Display serial header record and get option for what to do with it
+repeat
+{
+display/form="MAS_HEAD" screen_desc="SERIAL NUMBER INQUIRY" firm_name="";
+display/form="aonserm_11" arm01 snm01 port_id=port$ item_num=item$ rev_level=rv$;
+get_choice:
+a=0;
+prompt for a
+	/prompt="1=Trans  2=LicTrans  3=LicResets  4=VendorFeatures  Enter=Exit"
+	/len=1 /nobox /drop /row=23;
+
+switch a
+  {
+case 1: if detail then 
+		call/window=(0,14,65,9,"SERIAL NUMBER TRANSACTIONS") 
+		"(BBX)aonserm_111.bbx",snm01;
+case 2: call "(PROJECT)bas/license_history.bbx",snm01.serial_nbr;
+/*
+case 2: {call "(M90_DATA)findlogx.bbx",snm01.serial_nbr;
+	call "(M90_DATA)sn_license_window.bbx",snm01.serial_nbr;}
+*/
+case 3: call/window=(0,14,65,9,"SERIAL NUMBER COUNTER RESETS") 
+		"(BBX)aonserm_112.bbx",snm01;
+case 4: call/window=(5,13,52,11,cvs(snm01.serial_nbr,2)+" Features") 
+		"(BBX)snvf_1.bbx",snm01.serial_nbr;
+case 0: exit;
+
+default: goto get_choice;
+  } // end switch 
+} // end repeat
+
+subroutine get_oem
+{
+detail=0;
+k$=snm01.serial_desc(5,13);
+find/noerror oem_sn_trans using k$;
+if available(oem_sn_trans)=0 then break;
+item$="OEM";
+port$=oem_sn_trans.item_num(1,5);
+snm01.users=oem_sn_trans.new_user;
+snm01.active_flag=oem_sn_trans.active_flag;
+rv$=oem_sn_trans.rev_level;
+}
+
+//

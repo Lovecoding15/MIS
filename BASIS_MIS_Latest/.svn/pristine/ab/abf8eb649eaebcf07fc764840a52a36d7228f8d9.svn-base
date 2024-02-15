@@ -1,0 +1,248 @@
+rem '-----------------------------------------------------------------
+rem ' GUI Interface to run the Customer License Count by user type 
+rem ' and SAM status
+rem '-----------------------------------------------------------------
+
+	rem ' seterr err_trap
+	rem ' seterr esc_trap
+
+rem '-----------------------------------------------------------------
+rem ' USE and Declares
+rem '-----------------------------------------------------------------
+
+	declare BBjSysGui sysgui!
+	declare BBjTopLevelWindow win!
+
+	declare BBjStaticText label1!
+	declare BBjListButton firmID!
+
+	declare BBjButton runReport!
+	declare BBjButton exportReport!
+	declare BBjButton exportDetailReport!
+	declare BBjButton exitProg!
+	
+	declare BBjStaticText message!
+
+	use ::bbjasper.bbj::BBJasperReport
+	use ::bbjasper.bbj::BBJasperViewerWindow
+	use ::SQLProperties.bbj::SQLProperties
+
+	declare BBJasperReport BBjReport!
+	declare BBJasperViewerWindow BBjReportWindow!
+	declare SQLProperties props!
+	
+	use ::ClientServerFileMover.src::ClientServerFileMover
+	declare ClientServerFileMover clientServerFileMover!
+
+	use ::SQLProperties.bbj::SQLProperties
+	declare SQLProperties props!
+	
+	declare BBjRecordSet rs!
+	declare BBjRecordData data!
+
+	
+rem '-----------------------------------------------------------------
+rem ' Common information
+rem '-----------------------------------------------------------------
+
+	REM set environment
+
+	rem ' Open the BBj SysGUI Channel
+	sysgui!=BBjAPI().openSysGui("X0") 
+	
+	rem ' set the connect str
+	props! = new SQLProperties()
+	connect_str$ = props!.getDBConnectForDatabase("AddOnData")
+
+rem '-----------------------------------------------------------------
+rem ' Create the Window for the program
+rem '-----------------------------------------------------------------
+
+	winWidth = 300
+	winHeight = 115
+
+	win! = sysgui!.addWindow(50, 150, winWidth, winHeight, "License Counts by User Type and SAM Status",$00010012$)
+	win!.setCallback(win!.ON_CLOSE, "progClose")
+
+	label1! = win!.addStaticText(win!.getAvailableControlID(), 10, 10, 40, 16,"Firm:", $0000$)
+	firmIDs$ = "01 BAS" + $0A$ + "02 BSG" + $0A$
+	firmID! = win!.addListButton(win!.getAvailableControlID(), 60, 10, 70, 60, firmIDs$, $0000$)
+	firmID!.setCallback(firmID!.ON_LIST_SELECT, "firmSelected")	
+	
+	runReport! =  win!.addButton(win!.getAvailableControlID(), 175, 10, 120, 19, "Run Report")
+	runReport!.setCallback(runReport!.ON_BUTTON_PUSH, "runReport")
+
+	exportReport! =  win!.addButton(win!.getAvailableControlID(), 175, 35, 120, 19, "Export Report")
+	exportReport!.setCallback(exportReport!.ON_BUTTON_PUSH, "exportReport")
+	
+	exportDetailReport! =  win!.addButton(win!.getAvailableControlID(), 175, 60, 120, 19, "Exp Det Report")
+	exportDetailReport!.setCallback(exportDetailReport!.ON_BUTTON_PUSH, "exportDetailReport")
+	
+	exitProg! =  win!.addButton(win!.getAvailableControlID(), 175, 85, 120, 19, "Exit")
+	exitProg!.setCallback(exitProg!.ON_BUTTON_PUSH, "progClose")
+	
+	message! = win!.addStaticText(win!.getAvailableControlID(), 10, 60, 140, 16,"", $0000$)
+		
+	win!.setVisible(1)
+	firmID!.focus()
+
+	process_events 
+	
+firmSelected:
+	
+	temp$ = firmID!.getText()
+	firmID$ = temp$(1,2)
+	firmName$ = temp$(3)
+	
+	return
+
+runReport:
+
+	if cvs(firmID$ ,3) = "" then return
+	
+	reportName$ = "licenseSAMStatus.jasper"
+		
+	message!.setText("Building report, please wait.")
+	BBjReport! = new BBJasperReport(reportName$, connect_str$)
+
+	BBjReport!.putParam("P_FIRM_ID",firmID$)
+	BBjReport!.fill()
+	
+	BBjReportWindow! = new BBJasperViewerWindow(BBjReport!, 0, 0, 920, 700,"BASIS International, Ltd.", $93$)
+	BBjReportWindow!.center()
+	BBjReportWindow!.show(1)
+	BBjReportWindow!.destroy()
+	BBjReport!.destroy()
+	message!.setText("")
+	
+	return
+	
+exportReport:
+
+	if cvs(firmID$ ,3) = "" then return
+	
+	reportName$ = "licenseSAMStatusExport.jasper"
+			
+	message!.setText("Building report, please wait.")
+	BBjReport! = new BBJasperReport(reportName$, connect_str$)
+	
+	BBjReport!.putParam("P_FIRM_ID",firmID$)
+	BBjReport!.fill()
+
+	path$=stbl("TEMP")
+	reportfile$ = "licenseSAMStatus_" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".csv"
+	BBjReport!.exportToCSV(BBjAPI().FALSE, path$ + reportfile$)
+	BBjReport!.destroy()
+
+	rem ' download to the client
+	clientServerFileMover! = new ClientServerFileMover()
+	success$ = clientServerFileMover!.downloadToClient("Save Report File", "", reportfile$, "", "", path$)
+	if pos("::GOOD::"=success$) = 1 then
+	    msg$="The report has been saved as a CVS file."
+	    title$="Save Complete"
+	    resp=msgbox(msg$, 64, title$)
+	else
+	    if pos("::BAD::" = success$) = 1 then
+		msg$="The report file save failed."
+		title$="Save Failed"
+		resp=msgbox(msg$, 16, title$)
+	    fi
+	fi
+
+	message!.setText("")
+	
+	return
+	
+exportDetailReport:
+
+	if cvs(firmID$ ,3) = "" then return
+	
+	reportName$ = "licenseSAMStatusExportDetail.jasper"
+
+	message!.setText("Building report, please wait.")
+
+	rem ' disable the bbjjasper out put of this
+	if firmID$="03" then
+		BBjReport! = new BBJasperReport(reportName$, connect_str$)
+	
+		BBjReport!.putParam("P_FIRM_ID",firmID$)
+		BBjReport!.fill()
+
+		path$=stbl("TEMP")
+		reportfile$ = "licenseSAMStatusDetail_" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".csv"
+		BBjReport!.exportToCSV(BBjAPI().FALSE, path$ + reportfile$)
+		BBjReport!.destroy()
+
+	else
+		props! = new SQLProperties()
+		sqlConnect$ = props!.getDBConnectForDatabase("AddOnData")
+
+		sql$ = "CALL LICENSE_SAM_STATUS('" + firmID$ + "')"
+		
+		rem ' execute query	
+		rs! = BBjAPI().createSQLRecordSet(sqlConnect$,"",sql$)
+
+		path$=stbl("TEMP")
+		reportfile$ = "licenseSAMStatusDetail_" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".csv"
+		string path$ + reportfile$
+		outcsv = unt
+		open(outcsv)path$ + reportfile$
+		row$ = firmID$ + " " + firmName$ + ",RUN DATE: " + date(0:"%Y-%Mz-%Dz") + ",,SAM,SAM,NO SAM,NO SAM"
+		write(outcsv)row$
+		row$="Cust #,Customer Name,Serial Number,EF Usrs,SF Usrs,EF Usrs,SF Usrs"
+		write(outcsv)row$
+		
+		
+		if rs!.isEmpty() then
+			close(outcsv)
+		else
+			while 1
+			        data! = rs!.getCurrentRecordData()
+
+				row$ = data!.getFieldValue("CUSTOMER_NBR") + ","
+
+				custName$ = data!.getFieldValue("CUST_NAME")
+				if pos(","=custName$) <> 0 then
+					custName$ = chr(34) + custName$ + chr(34)
+				fi
+				row$ = row$ + custName$ +","
+
+				row$ = row$ + data!.getFieldValue("SERIAL_NBR") + ","
+				row$ = row$ + data!.getFieldValue("EF_USERS_ON_SAM") + ","
+				row$ = row$ + data!.getFieldValue("SF_USERS_ON_SAM") + ","
+				row$ = row$ + data!.getFieldValue("EF_USERS_SAM_NO") + ","
+				row$ = row$ + data!.getFieldValue("SF_USERS_SAM_NO")
+		
+				write(outcsv)row$
+		
+				rs!.next(err=*break)
+			wend
+			close(outcsv)
+		fi		
+	fi
+
+	rem ' download to the client
+	clientServerFileMover! = new ClientServerFileMover()
+	success$ = clientServerFileMover!.downloadToClient("Save Report File", "", reportfile$, "", "", path$)
+	if pos("::GOOD::"=success$) = 1 then
+	    msg$="The report has been saved as a CVS file."
+	    title$="Save Complete"
+	    resp=msgbox(msg$, 64, title$)
+	else
+	    if pos("::BAD::" = success$) = 1 then
+		msg$="The report file save failed."
+		title$="Save Failed"
+		resp=msgbox(msg$, 16, title$)
+	    fi
+	fi
+
+	message!.setText("")
+
+	return
+	
+progClose:
+
+	release
+	return
+	
+end

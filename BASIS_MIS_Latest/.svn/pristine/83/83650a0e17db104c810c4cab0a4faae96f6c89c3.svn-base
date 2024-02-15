@@ -1,0 +1,90 @@
+// Menu driver for OEM Activation Key entry, reporting, and inquiry  <oem_mnu>
+
+#3glbegin
+if tcb(13) then release_on_exit=0 else release_on_exit=1
+#3glend
+
+// Only select few can use this menu, the rest go to inquiry menu
+if pos(info(3,2)="grobled plewis  sportwo gparra  thines  ",8)=0 then
+	{
+	call "(BBX)oem_mnu1.bbx";
+	if release_on_exit then
+		exit/release;
+	else
+		exit;
+	}
+
+repeat
+{
+display/form="MAS_HEAD" 
+	screen_desc="OEM SERIAL NUMBER MODULE" 
+	printer="";
+
+choose
+	/traditional
+	/title="@ENTER CHOICE"
+	/help="((#F6)=end)"
+	/black
+	/drop
+	a from
+	"GENERATE KEYS",
+	"DEACTIVATE OEM SERIAL NUMBERS",
+	"OEM MAINTENANCE",
+	"PORT AUTHORIZATION MAINTENANCE",
+	"EDIT/DELETE SUBMITTED TRANSACTIONS",
+	"WRITE REPORTS",
+	"END";
+
+switch a
+{
+case 6:goto exit_point;
+case 0:call/nowindow "(BBX)oemm_1.bbx";
+case 1:call/nowindow "(BBX)oemm_2.bbx";
+case 2:call/nowindow "(BBX)oemm_3.bbx";
+case 3:call/nowindow "(BBX)oemm_4.bbx";
+case 4:call/nowindow "(BBX)oemm_5.bbx";
+case 5:
+	{
+	choose
+		/traditional
+		/title="@ENTER REPORT CHOICE"
+		/help="<(#F6)>=End"
+		/black
+		/drop
+		a from
+		"TRANSACTION HISTORY"
+			/help="SERIAL NUMBERS FOR SELECTED OEMS IN SPECIFIED DATE RANGE",
+		"CURRENTLY AUTHORIZED PORTS"
+			/help="CURRENTLY AUTHORIZED PORTS AND REVS FOR SELECTED OEMS",
+		"AUTHORIZED PORTS HISTORY"
+			/help="ALL PORTS AND REVS EVER AUTHORIZED FOR SELECTED OEMS",
+		"OEM PORT MASTERS SORTED BY PORT"
+			/help="PORT MASTER INFO SORTED BY PORT ID",
+		"OEM PORT MASTER SORTED BY OEM"
+			/help="PORT MASTER INFO SORTED BY OEM",
+		"ACTIVE OR INACTIVE SERIAL NUMBER LIST"
+			/help="SERIAL#'s FOR AN OEM, DATE RANGE, ACTIVE OR INACTIVE",
+
+		"END";
+	switch a
+		{
+		case 0:call/window "(BBX)oemr_1.bbx";
+		case 1:call/window "(BBX)oemr_5.bbx";
+		case 2:call/window "(BBX)oemr_2.bbx";
+		case 3:call/window "(BBX)oemr_3.bbx";
+		case 4:call/window "(BBX)oemr_4.bbx";
+		case 5:call/window "(BBX)oemr_6.bbx";
+		case 6:break;
+		}
+	}
+}
+
+}
+exit_point:
+if release_on_exit then
+	exit/release;
+else
+	exit;
+
+//
+

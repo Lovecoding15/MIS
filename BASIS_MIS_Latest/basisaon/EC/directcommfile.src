@@ -1,0 +1,121 @@
+rem ' Program to read and submit Direct Commerce transactions from a file
+rem ' directcommfile
+rem '
+
+begin
+
+  sam_chn=unt
+  open(sam_chn)"augsam.csv"
+
+setup:
+  action$="",reference$="",serial_nbr$="",product_id$="",rev$="",license_type$="",users=0,port_id$="",alt_cust$="",options$=""
+  annual_dt$=""
+  dim features$[1:1,1:3],license$[1,3],serial_nbr$[1:1]
+  nbr_features=0,serial_nums=0,hold_ref$=""
+
+get_parameters:
+  read (sam_chn,end=finished)rec$
+  if rec$="" then
+     goto get_parameters
+  endif
+
+  gosub get_var
+  reference$=variable$
+
+  if hold_ref$="" then
+     gosub do_init
+     hold_ref$=reference$
+  endif
+
+  if hold_ref$<>reference$ then
+     old_reference$=hold_ref$
+     hold_ref$=reference$
+     reference$=old_reference$
+     gosub do_buy
+     reference$=hold_ref$
+     gosub do_init
+  endif   
+
+  gosub get_var
+  print variable$
+  serial_nbr$[1]=variable$
+  
+  gosub get_var
+  product_id$=variable$
+  
+  gosub get_var
+  rev$=variable$
+  
+  gosub get_var
+  license_type$=variable$
+  
+  gosub get_var
+  users=num(variable$)
+  
+  gosub get_var
+  port_id$=variable$
+  
+  gosub get_var
+  alt_cust$=""
+  
+  gosub get_var
+  features$[1,1]=variable$
+  
+  gosub get_var
+  options$=variable$
+  
+  gosub get_var
+  annual_dt$=variable$
+  
+  gosub do_add
+  
+  goto get_parameters
+  
+finished:
+  reference$=hold_ref$
+  gosub do_buy
+  
+  escape
+
+get_var:
+  variable$=""
+  comma_pos=pos(","=rec$)
+  if comma_pos then
+     variable$=rec$(1,comma_pos-1)
+     rec$=rec$(comma_pos+1)
+  else
+     variable$=rec$
+     rec$=""
+  endif
+return
+
+do_init:
+  call "basdirect.bbj::initial_cart",reference$,stat
+  if stat then
+     escape
+  endif
+return
+
+do_add:
+  call "basdirect.bbj::add_cart",reference$,serial_nbr$[all],product_id$,rev$,license_type$,users,port_id$,alt_cust$,features$[all],options$,stat,annual_dt$
+  if stat then
+     escape
+  endif
+return
+
+do_buy:
+  call "basdirect.bbj::buy_cart",reference$,nbr_licenses,license$[all],stat
+  if stat then
+     escape
+  endif
+  print nbr_licenses
+  print license$[all]
+return
+
+do_reset:
+  call "basdirect.bbj::reset_license",reference$,serial_nbr$,stat
+  if stat then
+     escape
+  endif
+return
+

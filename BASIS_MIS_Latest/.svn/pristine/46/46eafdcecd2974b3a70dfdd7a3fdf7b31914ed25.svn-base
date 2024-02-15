@@ -1,0 +1,164 @@
+seterr errmsg
+enter job_queue$
+tmpdir$=stbl("TEMP")
+
+firm$=job_queue.firm_id$
+cust$=job_queue.customer_nbr$
+email$=cvs(job_queue.e_mail$,3)
+
+rem ' strip a trailing comma if there
+if email$(len(email$),1)= "," then email$=email$(1,len(email$)-1)
+
+user_code$=cvs(job_queue.e_mail2$,3)
+job$=cvs(job_queue.job$(1,6),7)
+dt$=cvs(job_queue.job_date$,3)
+lang$=job_queue.available$(1,2)
+pass$=cvs(job_queue.available$(3),7)
+lf$=$0d0a$
+call "ec_open::tmm01"
+call "ec_open::arm10f"
+read record(tmm01,key=firm$+cust$+"000000",err=*next)tmm01$
+READ RECORD (arm10f,KEY=firm$+"F"+tmm01.slsperson$,err=*next)arm10f$
+sls_email$=cvs(arm10f.e_mail$,3)
+if pos("@"=sls_email$)=0 THEN LET sls_email$="sales@basis.cloud"
+close(tmm01)
+close(arm10f)
+
+txtchan=unt,emsg$=""
+open(txtchan)"sam_emails.txt"
+f$=fin(txtchan),sz=dec(f$(1,4))
+if sz>0 then readrecord(txtchan,siz=sz)emsg$
+close(txtchan)
+
+rem job$="RNWSAM" "CANSAM" "CRDSAM" 
+var$=pass$
+if job$="CRDSAM" then
+   call "ec_open::art03"
+   found = 0
+   read record (art03, key = firm$ + "  " + cust$ + pass$ + "000", dom=*next)art03$; found = 1 
+   if found then
+      if cvs(art03.ar_po_number$,3) = "RNT Renew" then job$="CRDRN1"
+      if cvs(art03.ar_po_number$,3) = "DVK Renew" then job$="CRDDV1"
+   fi
+   close(art03)
+fi
+
+if job$="RNWSAM" then
+  call "ec_open::snm01"
+  var$=""
+  read(snm01,key=pass$,knum=3,dom=*next)
+  while 1
+    read record(snm01,end=*break)snm01$
+    if snm01.contract$<>pass$ then break
+    if snm01.sam_active$="N" or snm01.active_flag$="N" then continue
+    var$=var$+cvs(snm01.serial_nbr$,3)+" (users: " + str(snm01.users) + ") "
+    if pos(snm01.license_type$="NFR,KIT") then job$="RNWDV1"
+  wend
+  close(snm01)
+fi
+msgtext$="",subject$="Subject: "+pass$
+while 1
+  sr$=job$+"_"+lang$+":"
+  while 2
+    p0=pos(sr$=cvs(emsg$,4));if p0=0 then break
+    txt$=emsg$(p0)
+    p0=pos("{"=txt$);if p0=0 then break
+    txt$=txt$(p0+1),p0=pos("}"=txt$)
+    if p0=0 then break
+    msgtext$=txt$(1,p0-1)
+    break
+  wend
+  if msgtext$="" and lang$<>"EN" then lang$="EN";continue
+  break
+wend
+
+p=pos("<invoice>"=msgtext$),l=9
+if p=0 then p=pos("<sn>"=msgtext$),l=4
+if p then msgtext$=msgtext$(1,p-1)+var$+msgtext$(p+l)
+
+p=pos("SUBJECT:"=cvs(msgtext$,4))
+if p then
+  txt$=msgtext$(p),p1=pos($0a$=txt$)
+  if p1 then subject$=cvs(txt$(1,p1-2),3),msgtext$=txt$(p1+1)
+fi
+
+p=pos("<date>"=msgtext$)
+while p 
+  jul_dt=jul(num(dt$(1,4)),num(dt$(5,2)),num(dt$(7,2)),err=*break)
+  dt_mask$="%Dz %Ms %Y"
+  expdt$=date(jul_dt:dt_mask$)
+  msgtext$=msgtext$(1,p-1)+expdt$+msgtext$(p+6)
+  break
+wend
+
+p=pos("<bcomm>"=msgtext$)
+if p then msgtext$=msgtext$(1,p-1)+cust$+user_code$+msgtext$(p+7)
+
+rem ' converted to used sendMail.src/email.bbj 12/18/14 by kew
+
+rem ' outfile$=tmpdir$+job$+pass$+".txt"
+rem ' erase outfile$,err=*next
+rem ' string outfile$
+rem ' outchan=unt
+rem ' open (outchan)outfile$
+
+From$="BASIS Customer Service <customer-service@basis.cloud>"
+cc$=sls_email$
+if firm$="02" then from$="eu.sales@basis.cloud"
+if firm$="01" and pos("CANSAM"=job$) then cc$=cc$+",customer-service@basis.cloud"
+
+rem ' for debugging
+rem ' print email$
+rem ' email$="kw5121151@gmail.com"
+rem ' cc$="williams.kurt@comcast.net"
+rem ' print email$
+rem ' print cc$
+
+file$ = ""
+rem ' use bcc for debugging and monitoring
+bcc$ = "kurt.e.williams@comcast.net"
+rem ' bcc$=""
+if pos("Subject: "=subject$) then subject$ = subject$(10)
+
+call "sendEmail.src", from$, email$, cc$, bcc$, subject$, msgtext$, file$
+
+rem ' PRINT (outchan)"To: "+email$
+rem ' print (outchan)"From: "+from$
+rem ' print (outchan)"Cc: "+cc$
+rem ' print (outchan)subject$
+rem ' print (outchan)
+rem ' print (outchan)msgtext$
+
+rem ' close (outchan,err=*next)
+rem ' a=scall("/usr/lib/sendmail -t < "+outfile$)
+rem ' erase outfile$,err=*next
+
+pgm_end:
+exit
+
+errmsg:
+  to$ = "mis@basis.cloud"
+  rem ' to$ = "kurt.e.williams@comcast.net"
+  from$ = "customer-service@basis.cloud"
+  cc$ = ""
+  bcc$ = ""
+  
+  Subject$ = "Queued email failed-error "+str(err)+" in "+str(tcb(5))+" of "+pgm(-2)
+  
+  msg$ = job_queue$
+  file$ = ""
+  
+  rem ' email$=tmpdir$+"sammsg_err.txt"
+  rem ' erase email$,err=*next
+  rem ' string email$
+  rem ' em=unt
+  rem ' open(em)email$
+  rem ' writerecord(em)msg$
+  rem ' close(em)
+  
+  call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msg$, file$
+  
+  rem ' let a=scall("/usr/lib/sendmail -t < "+email$)
+  rem ' erase email$,err=*next
+
+goto pgm_end

@@ -1,0 +1,44 @@
+rem ' BSI.00 lead in to BSI.01
+
+begin
+
+seterr err_rtn
+setesc err_rtn
+
+if argc <> 4 then goto program_end
+
+firm$ = argv(1)
+customer$ = argv(2)
+email$ = argv(3)
+
+starttime = tim
+start$ = date(0:"%Hz:%mz:%sz")
+
+call "BSI.01",firm$,customer$,email$
+
+endtime = tim
+elapsed = endtime - starttime
+end$ = date(0:"%Hz:%mz:%sz")
+
+rem ' email a status
+	rem ' from$ = "customer-service@basis.cloud"
+	rem ' to$ = "misdev@basis.cloud"
+	rem ' subject$ = "b-comm active serial number report"
+	rem ' msgtxt$ = "b-comm active serial number report run for " + firm$ + " " + customer$ + ". emailed to: " + email$ + $0A$ + $0A$ 
+	rem ' msgtxt$ = msgtxt$ + "Start: " + start$ + " finished: " + end$ + " elapsed: " + str(elapsed) + $0A$ + $0A$
+	rem ' msgtxt$ = msgtxt$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	rem ' call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+
+program_end:
+	release
+
+err_rtn:
+	rem ' email the error
+	from$ = "customer-service@basis.cloud"
+	to$ = "misdev@basis.cloud"
+	subject$ = "b-comm active serial number report error"
+	msgtxt$ = "b-comm active serial number report run for " + firm$ + " " + customer$ + ". emailed to: " + email$ + $0A$ + $0A$ 
+	msgtxt$ = "An Error occurred: " + str(err) + " at line " + str(tcb(5)) + " in BSI.00 " + errmes(-1) + $0A$ + $0A$
+	msgtxt$ = msgtxt$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	release

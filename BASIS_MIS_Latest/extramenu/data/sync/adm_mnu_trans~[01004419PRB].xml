@@ -1,0 +1,890 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_MNU_TRANS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>00e32ca7-7513-4d7e-947a-f40db01fc14e</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Employee Cross Reference Report</MENU_DESC>
+		<HELP_TAG>properations_employeecrossreference_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>01a2f1b7-139b-4698-b698-9641807a31a3</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Accrual Status Report</MENU_DESC>
+		<HELP_TAG>properations_accrualstatusreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>0683f7c5-df1c-4060-9fd5-3d623d424ee6</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Deduction Report</MENU_DESC>
+		<HELP_TAG>properations_deductionreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>12c85986-bdc7-4436-857b-9799bbb39380</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Employees</MENU_DESC>
+		<HELP_TAG>properations_employees_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>13feeb4c-9123-4db1-8412-80266f5ca006</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Payroll Distribution History Report</MENU_DESC>
+		<HELP_TAG>properations_payrolldistributionhistoryreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>14fca138-a13a-46c2-a774-42f128dc155f</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W-2 Printing</MENU_DESC>
+		<HELP_TAG>properations_w2printing_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>1684d799-7c9e-49bb-a33c-2cdc9ecccfe3</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Pay Codes</MENU_DESC>
+		<HELP_TAG>properations_paycodes_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>16dc538a-8760-4c4b-b01f-6823e6bb0897</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Copy/Remove/Install 94X Configuration</MENU_DESC>
+		<HELP_TAG>properations_copyremoveinstall94xconfiguratio_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>1ed43aaa-ecb1-4fbe-a0fd-8e772d9e7e5f</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W2 Form Box ID Definition</MENU_DESC>
+		<HELP_TAG>properations_w2formboxiddefinition_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>26af586d-7dc4-4529-8a1c-2c318dbeea79</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Payroll Earnings Entry Report</MENU_DESC>
+		<HELP_TAG>properations_earningsentryreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>2a4f19a8-1f03-4b8a-8777-a3358ace4048</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Daily Processing</MENU_DESC>
+		<HELP_TAG>properations_menu4_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>30f45df4-e36a-485b-af66-e23aa19c028d</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Reports</MENU_DESC>
+		<HELP_TAG>properations_menu1_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>348b0e7d-6a9f-4d71-a2cf-ac09dfe8992e</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>Combine PR Check History</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>3598d429-2b8e-4a66-973b-8fe1209d1eb1</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W-2 Export</MENU_DESC>
+		<HELP_TAG>properations_w2export_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>3f234ea3-00ab-4fcf-bfda-7d6c3430b2d8</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Contribution Codes</MENU_DESC>
+		<HELP_TAG>properations_contributioncodes_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>44b634f8-5448-421a-b786-00001c36c95a</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Title Codes</MENU_DESC>
+		<HELP_TAG>properations_titlecodes_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>45a5b82e-098a-458b-863c-0985a175e835</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Earnings Status Report</MENU_DESC>
+		<HELP_TAG>properations_earningsstatusreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>46bff547-512c-49ba-a333-05b404730a02</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W4-Oregon Tax Form Printing</MENU_DESC>
+		<HELP_TAG>properations_w4_oregon_tax_form_printing_htm</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>4896c6af-7b1d-4a5e-8b42-343bb59da7a8</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>94X Box Definition</MENU_DESC>
+		<HELP_TAG>properations_94xboxdefinition_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>4a090b56-8f16-4e82-ba40-8564a0b8f422</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Deduction Codes</MENU_DESC>
+		<HELP_TAG>properations_deductioncodes_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>4ac9a3da-e34c-415f-a41c-260856429251</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W2 Box Definition</MENU_DESC>
+		<HELP_TAG>properations_w2boxdefinition_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>4d09c4c0-3e57-4c58-89ba-cbd3d1f42edb</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>Update PR Display Description</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>4d542be0-0512-4299-9bf3-d5d0593cec36</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Tax Status Report</MENU_DESC>
+		<HELP_TAG>properations_taxstatusreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>52f31ab6-2811-4b5b-9f42-ef056f2ef67f</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Install PR Fonts</MENU_DESC>
+		<HELP_TAG>properations_installprfonts_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>58b19e1c-dcd3-4668-8bdf-16c1246af6bf</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Periodic Processing</MENU_DESC>
+		<HELP_TAG>properations_menu2_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>5c2838e1-f02a-4f30-aa53-f8102380fb29</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W2 State ID Definition</MENU_DESC>
+		<HELP_TAG>properations_w2stateiddefinition_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>5c81455b-25f2-4d63-acce-0a147ed14416</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W-2 Calculation</MENU_DESC>
+		<HELP_TAG>properations_w2calculation_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>5d7baa39-1dfa-45ba-8faf-cece0c063066</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Check Printing</MENU_DESC>
+		<HELP_TAG>properations_checkprinting_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>62baf1fa-aa3b-4948-854e-09fe54b5aa0c</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Daily Entry</MENU_DESC>
+		<HELP_TAG>properations_menu3_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>63c1fcac-0da8-4706-9bdb-52fe21a7f512</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Payroll Entry</MENU_DESC>
+		<HELP_TAG>properations_payrollentry_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>6a38cbbc-7d5c-4110-8890-8340ba995661</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Union Code</MENU_DESC>
+		<HELP_TAG>properations_unioncode_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>6f3179d9-f641-4803-a86b-eeb4e3916571</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Application Parameters</MENU_DESC>
+		<HELP_TAG>properations_applicationparameters_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>6fca59ed-94c0-47d7-9b25-93ce53c645c0</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Exception Report</MENU_DESC>
+		<HELP_TAG>properations_exceptionreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>71ff3e0a-70d6-4d48-aea3-c79b0188b2b9</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Earnings Register</MENU_DESC>
+		<HELP_TAG>properations_earningsregister_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>728f06c5-78bf-4f13-9ec4-80937a7acbfa</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Accrual Report</MENU_DESC>
+		<HELP_TAG>properations_accrualreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>746f8ffa-b979-438d-914b-848d78086f11</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Contribution Report</MENU_DESC>
+		<HELP_TAG>properations_contributionreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>77bccfbb-532d-43f3-bc3b-63fe2d1ecff0</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Parameters</MENU_DESC>
+		<HELP_TAG>properations_applicationparameters_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>78090e66-c37e-4b22-924d-0ad39a24031a</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Purge Check Work File</MENU_DESC>
+		<HELP_TAG>properations_purgecheckworkfile_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>7a06e6c7-7b08-4742-ba9c-6840261abb35</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>94X Form Printing</MENU_DESC>
+		<HELP_TAG>properations_94x_form_printing_htm</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>7b9166d0-d169-47f0-9608-e4d57ace10aa</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Report Codes</MENU_DESC>
+		<HELP_TAG>properations_reportcodes_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>7c6a774f-1ce9-49b5-b96b-a599bb78ee92</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Tax Report</MENU_DESC>
+		<HELP_TAG>properations_taxreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>82702cd9-e679-4e54-8448-93b062dd2aec</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>GL Distribution Report</MENU_DESC>
+		<HELP_TAG>properations_gldistributionreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>86563b85-91e5-4e14-b330-f3a0133b1fb0</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Copy/Remove/Install  W-2 Configuration</MENU_DESC>
+		<HELP_TAG>properations_copyremoveinstallw2configuration_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>88399dc7-cc7b-43e1-b47f-5d710bd13871</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Inquiry and Maintenance</MENU_DESC>
+		<HELP_TAG>properations_menu_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>88efb041-cb32-4fb8-8251-ffce90335ae7</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Tax Tables</MENU_DESC>
+		<HELP_TAG>properations_taxtables_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>8d6f500c-b9d0-4210-b9f0-7acd7c7a2199</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Install PR Fonts on JNLP Client</MENU_DESC>
+		<HELP_TAG>properations_installprfontsonjnlpclient_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>913adf28-8493-4889-a3ad-61096f4fb0d4</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Employee Labels</MENU_DESC>
+		<HELP_TAG>properations_employeelabels_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>926bf759-31d6-486f-8ea5-a952f5ede7eb</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W4 Tax Form Printing</MENU_DESC>
+		<HELP_TAG>properations_w2_tax_form_printing_htm</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>9744fa89-5862-443f-97ed-3d0bb94f9e81</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Utilities</MENU_DESC>
+		<HELP_TAG>properations_menu5_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>9a4d4223-20cf-416f-9a35-7eb3db92b3c7</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Distribution Report</MENU_DESC>
+		<HELP_TAG>properations_distributionreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>9c4ae59b-f47d-4cce-9a7d-c4b315ad8ac6</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Payroll Period Definition</MENU_DESC>
+		<HELP_TAG>properations_payrollperioddefinition_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>9e3e03aa-4931-420f-be6f-aa7f32358e49</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Employee Detail Listing</MENU_DESC>
+		<HELP_TAG>properations_employeedetaillisting_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>9ea0cea6-0f5b-4f04-964e-b1215127f56b</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>California DE9 Form Preparation</MENU_DESC>
+		<HELP_TAG>properations_california_de9_form_preparation_htm</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>9fa7c822-9294-4681-a8cc-9b7b6043998d</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Check Register</MENU_DESC>
+		<HELP_TAG>properations_checkregister_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>a3f14f4a-c491-4560-a49c-e3ca08a999d8</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W-2 Processing</MENU_DESC>
+		<HELP_TAG>properations_w2processmenu_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>a59e41ce-21ee-4e28-9bf6-7efd602de774</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Deduction Status Report</MENU_DESC>
+		<HELP_TAG>properations_deductionstatusreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>ac1780b0-ee1f-4f30-8aa6-4fde29325331</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Payroll Check History Report</MENU_DESC>
+		<HELP_TAG>properations_payrollcheckhistoryreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>ac6424a4-8e9c-44d0-bf12-9f5f3c51b061</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>W-2 E-File</MENU_DESC>
+		<HELP_TAG>properations_w2efile_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>ad35615f-3fff-4deb-9c1d-7f9dc1819b2c</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Report Parameters</MENU_DESC>
+		<HELP_TAG>properations_reportparameters_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>b36250f2-4f89-4eb1-a4cd-43c474c87636</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Employer Returns Processing</MENU_DESC>
+		<HELP_TAG>properations_employerreturnsprocessing_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>bd8f76bb-c6fe-44b6-a541-27617f96dae3</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Total Codes</MENU_DESC>
+		<HELP_TAG>properations_totalcodes_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>c0c712a2-147f-4f3c-a683-680492920f83</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Contribution Status Report</MENU_DESC>
+		<HELP_TAG>properations_contributionstatusreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>c1c73bed-2c21-4788-a613-8ae4cb149644</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Monthly Check Report</MENU_DESC>
+		<HELP_TAG>properations_monthlycheckreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>cd0ba1ee-04a5-47df-870e-5f673336aefc</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Payroll Date Listing</MENU_DESC>
+		<HELP_TAG>properations_payrolldatelisting_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>cf4ccb9a-f419-4117-8c0f-b97ab5ffe335</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Labor Distribution</MENU_DESC>
+		<HELP_TAG>properations_labordistribution_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>cf815a24-4421-4468-ae7f-05d57b07f2eb</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>Convert PR Union History</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>d0eca328-d002-4686-95b6-5c8b8329079b</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Earnings History Report</MENU_DESC>
+		<HELP_TAG>properations_earningshistoryreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>d0f93049-2d3d-46d6-ab93-5b6a6e8d0c1a</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Detail Report</MENU_DESC>
+		<HELP_TAG>properations_detailreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>d3f3cb70-568e-4b81-911a-5cbb6bc5d8d0</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Daily Entry Register</MENU_DESC>
+		<HELP_TAG>properations_dailyentryregister_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>d76194ff-f579-4f52-b18f-bbb1cf8124a4</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Year End Update</MENU_DESC>
+		<HELP_TAG>properations_yearendupdate_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>dfec9a86-d26d-4047-b467-bd7006562da4</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW>Y</NO_SHOW>
+		<MENU_DESC>Convert PR Employee Comments</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>e0c0c537-1401-4a3d-b08b-f1ab65614e14</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Month End Update</MENU_DESC>
+		<HELP_TAG>properations_monthendupdate_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>e0c404bd-3d24-4a80-9f9e-1dd84be8a9d5</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Payroll Calculation</MENU_DESC>
+		<HELP_TAG>properations_payrollcalculation_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>e3062dfa-fcb5-44ac-9eac-8c873fda83e5</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Employee Master Listing</MENU_DESC>
+		<HELP_TAG>properations_employeemasterlisting_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>e9d9c49c-31ea-4fb6-acaf-deca3ba4e823</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Pre-Check Report</MENU_DESC>
+		<HELP_TAG>properations_precheckreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>ea70ab05-b6e7-4c50-86aa-e91340560afb</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Daily Entry</MENU_DESC>
+		<HELP_TAG>properations_dailyentry1_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>ebfe98d1-1653-4a08-9563-fcd62b6e9fa0</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Department Codes</MENU_DESC>
+		<HELP_TAG>properations_departmentcodes_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>edc943cc-4477-4ce3-b422-462e860a5a97</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Union History Report</MENU_DESC>
+		<HELP_TAG>properations_unionhistoryreport_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>f0314d4f-9670-4869-aca5-4e2b93f4685d</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Payroll</MENU_DESC>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>f390c6ab-9250-41b6-91bb-54f5fd14251b</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Tax Codes</MENU_DESC>
+		<HELP_TAG>properations_taxcodes_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<MOUNT_SYS_ID>PRBABS          </MOUNT_SYS_ID>
+		<MENUITEM_ID>fb40159f-f1a6-455c-b9df-1008806503d7</MENUITEM_ID>
+		<LANG_ID>ENU</LANG_ID>
+		<NO_SHOW> </NO_SHOW>
+		<MENU_DESC>Import Shop Floor Employees</MENU_DESC>
+		<HELP_TAG>properations_importshopflooremployees_html</HELP_TAG>
+		<ASC_COMP_ID>01004419</ASC_COMP_ID>
+		<ASC_PROD_ID>PRB</ASC_PROD_ID>
+		<USER_MODIFIED> </USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

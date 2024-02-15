@@ -1,0 +1,22 @@
+// Vendor features for serial number <snvf_1>
+
+enter serial_number$; 
+sn$=cvs(serial_number$,4)+fill(20);
+
+display/header "Feature                         Revision  Users";
+display/header "-------                         --------  -----";
+find/noerror snm01 using sn$(1,20);
+if available(snm01) then 
+{
+ctr=0;
+for each snt04 of snm01
+	{
+	display/notitle snt04.feature
+	snt04.feature_rev/col=33
+	snt04.users/col=43/mask="-###0";
+	ctr=ctr+1;
+	}
+if ctr=0 then display/notitle "";
+}
+
+//

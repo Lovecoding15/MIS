@@ -1,0 +1,110 @@
+// Link clients and ODBCs to data servers manually  <aon_misc1>
+
+if pos(info(3,2)="cdinkel  gparra   sportwo  gcorcor  thines   ")=0 then
+{pause/message="Restricted to customer service.";exit;}
+
+loop:
+set display term();
+display/form="MAS_HEAD"
+	screen_desc="Link Clients/ODBC's to Servers" firm_name="";
+serial_num$="";
+prompt for
+	/prompt="Data server serial number"
+	/notitle /imask="ZZZNNNNNN" /drop
+	/help="Enter=exit"
+	serial_num$;
+if ctl(2) or cvs(serial_num$,2)="" then exit;
+serial_num$=serial_num$+fill(20);
+find/noerror snm01 using serial_num$(1,20);
+if available(snm01)=0 then
+	{
+	pause/message="Serial number not found";
+	goto loop;
+	}
+
+if pos("12"=snm01.port_id)<>1 then
+	{
+	msg$="This serial number is for port "+cvs(snm01.port_id,3)+
+		", which is not a data server";
+	pause/message=msg$;
+	goto loop;
+	}
+
+// Check if any clients are already linked to the server
+serial_counter=0;
+for each snt02 where data_server=snm01.serial_nbr
+	serial_counter=serial_counter+1;
+
+if serial_counter then
+	{
+	choose/yesno
+	/prompt=str(serial_counter)+
+		" Serial numbers are already linked to this server.\"+
+		"Do you want to list them? "
+	/drop
+	show_list;
+
+	if show_list then
+		{
+		display $$;
+		for each snt02 where data_server=snm01.serial_nbr
+			display/notitle snt02.serial_nbr;
+		display/newpage;
+		display/form="MAS_HEAD" firm_name=""
+		screen_desc="Link Clients/ODBC's to Servers";
+		}
+	}
+
+do_form:
+prompt for/form="misc_1"
+	/nobreak
+	start_serial=start_serial$
+	end_serial=end_serial$;
+start_serial$=start_serial$+fill(20-len(start_serial$));
+end_serial$=end_serial$+fill(20-len(end_serial$));
+if ctl(2) then goto loop;
+
+get_action:
+action$="Y";
+prompt for
+    /nobox /row=22 /imask="A"
+    /prompt="Is the above correct? (Yes, No, End)"
+    action$;
+if ctl(2) then exit;
+switch action$
+    {
+    case "Y": {}
+    case "N": goto do_form;
+	case "E": exit;
+	default:  goto get_action;
+	}
+display $$;
+linked=0;
+for each snm01 where serial_nbr between start_serial$ and end_serial$
+	{
+	if pos(port_id(1,2)="1014")=0 then
+		{display/notitle cvs(serial_nbr,2) 
+		"Not Linked - port="+snm01.port_id ;
+		continue; }
+	find/next/noerror snt01 using snm01.serial_nbr;
+	nxt_snt01:
+   	if available(snt01) and snt01.serial_nbr=snm01.serial_nbr then
+		{ snt01.server_nbr=serial_num$(1,20);
+		update snt01;
+		find/next/noerror snt01; goto nxt_snt01;}
+	sq=0;
+	nxt_sq:
+	sq=sq+1;
+	find/noerror snt02 using serial_num$(1,20)+str(sq:"00000");
+	if available(snt02) then 
+		{if snt02.serial_nbr=snm01.serial_nbr then continue;
+		 else goto nxt_sq;}
+	snt02.data_server=serial_num$(1,20);
+	snt02.serial_nbr=snm01.serial_nbr;
+	snt02.sn_serv_seq=str(sq:"00000");
+	insert snt02;
+	linked=linked+1;
+	display/notitle "Linked" cvs(snt02.serial_nbr,2) "as #"+str(sq);
+	}
+if linked=0 then display/notitle "Nothing linked";
+goto loop;

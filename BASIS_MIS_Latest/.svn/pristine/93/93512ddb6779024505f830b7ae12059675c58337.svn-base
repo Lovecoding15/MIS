@@ -1,0 +1,79 @@
+0010 REM "DDC - Get Data Field Mask"
+0020 REM "Program DDC.MA"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.1.0 - 01Apr99 |"
+0026 REM "|         Copyright (c) 1999 ADD+ON Software, Inc.          |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0050 REM "FIRM$     : Firm ID providing mask (input)"
+0055 REM "SYSTEM$   : System ID for mask TYPE$ (input)"
+0060 REM "TYPE$     : Type of mask (input)"
+0065 REM "MASK$     : Default mask (input)/selected mask (returned)"
+0066 REM "          :   when error encounter, default mask is returned
+0070 REM "SYS01_DEV : SYS-01 channel number (input)"
+0075 REM 
+0080 SETERR 9000
+0085 SETESC 9000
+0090 ENTER FIRM$,SYSTEM$,TYPE$,MASK$,SYS01_DEV
+0200 REM " --- IOLists
+0210 APS01A: IOLIST M$[ALL]
+0215 ARS01A: IOLIST M$[ALL]
+0220 BMS01A: IOLIST M$[ALL]
+0225 GLS01A: IOLIST M$[ALL]
+0230 IVS01A: IOLIST M$[ALL]
+0235 PRS01A: IOLIST M$[ALL]
+0240 WOS01A: IOLIST M$[ALL]
+0300 SYS01A: IOLIST M$[ALL]
+0400 REM " --- Parameters
+0410 LET N0$=FIRM$,DEFAULT$=MASK$
+0500 REM " --- Initializations
+0600 LET MASKSYS$="APARBMGLIVPRWO"
+0605 DIM MASKTYPES$[LEN(MASKSYS$)/2]
+0610 LET MASKTYPES$[INT((POS("AP"=MASKSYS$,2)+1)/2)]="NAUR"
+0615 LET MASKTYPES$[INT((POS("AR"=MASKSYS$,2)+1)/2)]="NAUR"
+0620 LET MASKTYPES$[INT((POS("BM"=MASKSYS$,2)+1)/2)]="HMO"
+0625 LET MASKTYPES$[INT((POS("GL"=MASKSYS$,2)+1)/2)]="NAU%"
+0630 LET MASKTYPES$[INT((POS("IV"=MASKSYS$,2)+1)/2)]="AUCPV"
+0635 LET MASKTYPES$[INT((POS("PR"=MASKSYS$,2)+1)/2)]="NAUR"
+0640 LET MASKTYPES$[INT((POS("WO"=MASKSYS$,2)+1)/2)]="NAUR"
+0700 REM " --- Verify System ID For Mask
+0710 LET SYSINDEX=INT((POS(SYSTEM$=MASKSYS$,2)+1)/2)
+0720 IF SYSINDEX=0 THEN GOTO 4000
+0800 REM " --- Verify Mask Type For System
+0810 LET SYSTYPES$=MASKTYPES$[SYSINDEX]
+0820 IF POS(TYPE$=SYSTYPES$)=0 THEN GOTO 4000
+1000 REM " --- Build IOLIST For System
+1010 DIM M$[8]; LET IOLPOS$=FILL(4)+SYSTYPES$
+1020 IF SYSTEM$="BM" THEN DIM M$[3]; LET IOLPOS$=SYSTYPES$
+1030 IF SYSTEM$="IV" THEN DIM M$[10]; LET IOLPOS$=FILL(5)+SYSTYPES$
+1200 REM " --- Get System Parameter Record
+1210 FIND (SYS01_DEV,KEY=N0$+SYSTEM$+"00",DOM=4000)IOL=SYS01A
+1400 REM " --- Extract Mask From Parameter Record
+1410 LET MASK$=M$[POS(TYPE$=IOLPOS$)]
+4000 REM " --- All done
+4090 GOTO 9900
+8000 REM " --- Functions"
+8070 DEF FNP$(Q$)=CVS(Q$,2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 LET MASK$=DEFAULT$
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 REM " --- Return to calling program"
+9910 LET MASK$=FNP$(MASK$)
+9950 EXIT 
+9999 END

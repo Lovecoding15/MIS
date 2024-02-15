@@ -1,0 +1,488 @@
+rem ' program <hostidGroupsWithSecondaryRegistrationNotice.src>
+rem ' send email to a host id group where the last Registration is by a secondary SN
+
+begin
+
+seterr errmsg
+
+rem ' open files
+
+call "ec_open::SN_HOST_MULTI_SN"
+sn_host_multi_sn_alt = sn_host_multi_sn
+dim sn_host_multi_sn_alt$:fattr(sn_host_multi_sn$)
+
+call "ec_open::SN_HOST_MULTI_SN"
+call "ec_open::SNM01"
+call "ec_open::ARM01"
+
+call "ec_open::tmm01"
+call "ec_open::tmm03"
+call "ec_open::tmm05"
+call "ec_open::logextract"
+call "ec_open::country"
+
+rem ' end user links and data
+call "ec_open::snmel"
+call "ec_open::snmeu"
+
+rem ' read the email text 
+txt_chan=unt
+open(txt_chan)"secondarySerialNumberRegNag.txt"
+sz=0
+file_text$=""
+f$=fin(txt_chan),sz=dec(f$(1,4))
+if sz then readrecord(txt_chan,siz=sz)file_text$
+close(txt_chan,err=*next)
+
+rem ' break up the email text
+p=pos(str(x) + "EN:" = file_text$)
+file_text$ = file_text$(p + 4)
+p = pos("{" = file_text$)
+file_text$ = file_text$(p + 1)
+p = pos("}" = file_text$)
+notice$ = file_text$(1, p - 1)
+
+
+recaptxt$ = "<table><tr><td colspan=" + chr(34) + "3" + chr(34) + " align=" + chr(34) + "left" + chr(34) + ">Notice that the most recent registration for a host id group was by a secondary serial number was sent to the following serial numbers</td></tr>"
+recaptxt$ = recaptxt$ + "<tr><td colspan=" + chr(34) + "3" + chr(34) + " align=" + chr(34) + "left" + chr(34) + "></td></tr>"
+
+rem ' pass the SN_HOST_MULTI_SN table looking for candidates
+read record(sn_host_multi_sn, key = "", knum = 1, dom=*next)sn_host_multi_sn$
+
+recentHost$ = ""
+noticecnt = 0
+reccnt = 0
+gotBSE = 0
+gotBAS = 0
+
+rem ' escape
+while 1
+	read record(sn_host_multi_sn, end = *break)sn_host_multi_sn$
+	reccnt = reccnt + 1
+	
+	rem ' in the current group?
+	if sn_host_multi_sn.hostid$ = recentHost$ then continue
+	
+	rem ' first sn in a new group
+	recentHost$ = sn_host_multi_sn.hostid$
+
+	rem ' is last registration by secondary empty, if so skip
+	if cvs(sn_host_multi_sn.lastreg_scndry$,3) = "" then continue
+	
+	if cvs(sn_host_multi_sn.primary_SN$,3) = "" then
+		rem ' first primary registration has not happened yet, find the primary
+		gosub which_is_primary
+		if primarySN$ = "" then break
+	else
+		primarySN$ = sn_host_multi_sn.primary_sn$
+	fi
+	
+	sn$ = cvs(sn_host_multi_sn.lastreg_scndry$,3)
+	secSN$ = sn$ + fill(20," "), secSN$ = secSN$(1,20)
+	read record(snm01, key = secSN$)snm01$
+	secondaryProd$ = snm01.product$
+
+	rem ' get the user count
+	read record(snm01, key = primarySN$)snm01$
+	users = snm01.users
+	primaryProd$ = snm01.product$
+	
+	primarySN$ = cvs(primarySN$,3)
+	hostid$ = cvs(sn_host_multi_sn.hostid$,3)
+	
+	dim prod$[5]
+	prod$[1] = "BAS"
+	prod$[2] = "PR5"
+	prod$[3] = "VP5"
+	prod$[4] = "DS5"
+	prod$[5] = "ODB"
+	
+	dim proddesc$[5]
+	proddesc$[1] = "BASIS License (BBj/P5 Rev4+)"
+	proddesc$[2] = "PRO/5"
+	proddesc$[3] = "Visual PRO/5"
+	proddesc$[4] = "PRO/5 Data Server"
+	proddesc$[5] = "ODBC Driver"
+	
+	for x = 1 to 5
+		if prod$[x] = primaryProd$ then
+			primaryProdDesc$ = proddesc$[x]
+			break
+		fi
+	next x
+	
+	for x = 1 to 5
+		if prod$[x] = secondaryProd$ then
+			secondaryProdDesc$ = proddesc$[x]
+			break
+		fi
+	next x
+
+	rem ' send the email
+	gosub lookup_enduser_data
+	gosub lookup_email_addresses
+	gosub fill_in_message
+	gosub send_email
+
+	noticecnt = noticecnt + 1
+	
+	recaptxt$ = recaptxt$ + "<tr><td>" + custnbr$ + "</td><td>" + primarySN$ + "</td><td>" + custname$ + "</td></tr>"
+
+	if custnbr$(1,2) = "02" then gotBSE = 1
+	if custnbr$(1,2) = "01" then gotBAS = 1
+wend
+
+rem ' send recap email
+
+if noticecnt = 0 then
+	recaptxt$ = recaptxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">No notices sent.</td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "right" + chr(34) + "></td></tr>"
+fi
+recaptxt$ = recaptxt$ + "<tr><td colspan=" + chr(34) + "3" + chr(34) + " align=" + chr(34) + "left" + chr(34) + "></td></tr>"
+recaptxt$ = recapTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Timestamp:</td><td align=" + chr(34) + "left" + chr(34) +  ">" + date(0:"%Y%Mz%Dz %Hz%mz%sz") + "</td><td align=" + chr(34) + "right" + chr(34) + "></td></tr>"
+
+from$ = "customer-service@basis.cloud"
+to$ = ""
+if gotBSE then
+	to$ = to$ + "eu.sales@basis.cloud, "
+fi
+if gotBAS then
+	to$ = to$ + "sales@basis.cloud, "
+fi
+to$ = to$ + "customer-service@basis.cloud, support@basis.cloud"
+
+
+rem ' cc$ = "kurt.e.williams@comcast.net, mschned@basis.cloud, nspence@basis.cloud, kking@basis.cloud"
+cc$ = "kurt.e.williams@comcast.net, mschned@basis.cloud, nspence@basis.cloud"
+bcc$ = ""
+subject$ = "Notices that the most recent reg for a host id group was by a secondary SN"
+
+rem ' print "to: " + to$
+rem ' print "cc: " + cc$
+rem ' print "bcc: " + bcc$
+rem ' print "subject: " + subject$
+rem ' escape
+rem ' to$ = "kurt.e.williams@comcast.net"
+rem ' cc$ = ""
+rem ' bcc$ = ""
+
+rem ' msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+call "sendEmailHtml.src", from$, to$, cc$, bcc$, subject$, recaptxt$, ""
+
+release
+
+which_is_primary:
+rem ' ---------------------------------------------------------------------------------
+rem ' which serial number is the primary
+rem ' ---------------------------------------------------------------------------------
+
+	rem ' get list of serial numbers
+	snlist$ = "", sncount = 0
+	read record(sn_host_multi_sn_alt, key = sn_host_multi_sn.hostid$, knum = 1, dom = *next)sn_host_multi_sn_alt$
+	while 1
+		read record(sn_host_multi_sn_alt, end=*break)sn_host_multi_sn_alt$
+		if sn_host_multi_sn_alt.hostid$ <> sn_host_multi_sn.hostid$ then break
+		snlist$ = snlist$ + sn_host_multi_sn_alt.serial_nbr$ + $0A$
+		sncount = sncount + 1
+	wend
+	
+	if sncount = 0 then primarySN$ = ""
+	if sncount = 0 then return
+	
+	productseq$="ODBDS5VP5PR5BAS"
+	currentHighRank = 0, currentHighSN$ = ""
+	
+	rem ' rank the serial numbers
+	while len(snlist$)
+	
+		p = pos($0A$ = snlist$)
+		oneitem$ = snlist$(1,p-1)
+		snlist$ = snlist$(p+1)
+		
+		read record(snm01, key = oneitem$)snm01$
+		product$ = snm01.product$
+		rank = pos(product$ = productseq$)
+		if rank > currentHighRank then
+			currentHighRank = rank
+			currentHighSN$ = oneitem$
+		fi
+	wend
+	
+	primarySN$ = currentHighSN$
+	
+return
+
+lookup_enduser_data:
+	rem ' get end user name if present
+	endusername$="", enduseremail$=""
+	read record(snmel, key = primarySN$, dom=done_enduser)snmel$
+	read record(snmeu, key = snmel.end_user_nbr$, dom=done_enduser)snmeu$
+	endusername$=cvs(snmeu.company_name$,3)
+	enduseremail$=cvs(snmeu.email_address$,3)
+	done_enduser:
+return
+
+lookup_email_addresses:
+
+	ap_contact$ = ""
+	sam_contact$ = ""
+	main_contact$ = ""
+	backup_address$ = "sales@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	recipient$ = ""
+
+	rem ' look up customer name
+	custnbr$  = snm01.firm_id$ + snm01.customer_nbr$
+	read record(arm01, key=custnbr$)arm01$
+	custname$ = cvs(arm01.cust_name$,3)
+
+	key$ = snm01.firm_id$ + snm01.customer_nbr$
+	
+	rem ' find the main contact (not sure this is the best way)
+	read(tmm05, key = key$, dom=*next)
+	while 1
+		readrecord(tmm05, end =*break)tmm05$
+		if pos(key$ = tmm05$) <> 1 then break
+		main_contact$ = cvs(tmm05.email$,3)
+		break
+	wend
+
+	rem ' lookup addresses in the TMM Contact table
+	read(tmm03, key = key$,dom = *next)
+	while 1
+		read record(tmm03, end = *break)tmm03$
+		if pos(key$ = tmm03$) <> 1 then break
+		if tmm03.sam_contact$ = "Y" then sam_contact$ = cvs(tmm03.e_mail$,3)
+		if tmm03.primary_contact$ = "Y" and cvs(main_contact$,3) = "" then main_contact$ = cvs(tmm03.e_mail$,3)
+		if tmm03.ap_contact$ = "Y" then ap_contact$ = cvs(tmm03.e_mail$,3)
+	wend
+
+	rem ' lookup up email address from the log extract table
+	date$="00000000"
+
+	read(logextract, key = primarySN$, dom = *next)
+	while 1
+		readrecord(logextract, end =*break)logextract$
+    		if pos(primarSN$ = logextract.serialnum$) = 0 then break
+		if date$<logextract.date$ then
+			date$=logextract.date$
+      			em$=cvs(logextract.email$,3)
+			if em$ <> "" and pos("@"=em$) then recipient$ = em$ 
+		fi
+  	wend
+	
+	if date$ <> "00000000" and recipient$ <> "" then
+		rem ' not sure this is needed, since all these will be perpetual expiration dates 
+		rem ' which means the last registration would have been 60 or less days ago
+		jul_dt = jul(num(date$(1,4)), num(date$(5,2)), num(date$(7,2)))
+		today = jul(0, 0, 0)
+		rem 'if last reg. email is older than 2 years (730 days ago), don't use it
+		if today - jul_dt > 730 then recipient$=""
+	fi
+	
+	rem ' set the from email address
+	from$="customer-service@basis.cloud"
+	
+	rem ' set the to email address
+	rem ' convert any ; to ,
+	addr$ = main_contact$ + "," + sam_contact$ + "," + recipient$ + ","
+	if enduseremail$ <> "" then addr$ = addr$ + enduseremail$ + ","
+	while 1
+		p = pos(";" = addr$)
+		if p = 0 then break
+		addr$(p,1) = ","
+	wend
+	addr$=cvs(addr$,43)
+	
+	rem ' clean up the to email address
+	eaddr$=""
+	while 1
+		p = pos("," = addr$)
+		if p=0 then break
+		if p > 1 then t1$ = cvs(addr$(1,p - 1), 3) else t1$ = ""
+		addr$ = addr$(p + 1)
+		if pos(t1$ = addr$) = 0 and pos("@" = t1$) then eaddr$ =eaddr$ + "," + t1$
+	wend
+	l=len(eaddr$)
+	rem ' trim a trailing comma
+	if l and eaddr$(l,1)="," then eaddr$(l,1)=" "
+	rem ' trim a leading comma
+	if l and eaddr$(1,1)="," then eaddr$(1,1)=" "
+	eaddr$ = cvs(eaddr$, 3)
+	if eaddr$="" then eaddr$ = backup_address$
+	to$ = eaddr$
+	
+	rem ' get the language
+	readrecord(tmm01, key = key$ + "000000", dom = *next)tmm01$
+	lang$=cvs(tmm01.lang_code$,7)
+	read record(country, key = tmm01.country_code$, dom = *next)country$
+	if lang$ = "" then lang$ = cvs(country.lang_code$,7)
+	if lang$ = "" then lang$="EN"
+	rem ' first pass at this program everything will be done in English
+
+	rem ' set the cc address
+	msg_trailer$ = ""
+	if snm01.firm_id$ = "01" then 
+		if cvs(tmm01.slsperson$, 3) <> "" then
+			msg_trailer$ = "Rep: " + cvs(tmm01.slsperson$, 3)
+		fi
+		rem ' exclude info@basis.cloud from the cc$ if it was used as the to address
+		if pos(backup_address$ = to$) = 0 then cc$ = backup_address$ + ", "
+		cc$ = cc$ + "customer-service@basis.cloud, support@basis.cloud"
+	fi
+
+	if snm01.firm_id$ = "02" then
+		cc$="eu.support@basis.cloud, "
+		rem ' exclude info@basis.cloud from the cc$ if it was used as the to address
+		if pos(backup_address$ = to$) = 0 then cc$ = cc$ + backup_address$ + ", "
+		cc$ = cc$ + "customer-service@basis.cloud, support@basis.cloud"
+	fi
+	
+	bcc$ = "kurt.e.williams@comcast.net"
+
+return
+
+rem ' ---------------------------------------------------------------------------------
+rem ' replace varialble values in the email boiler plate
+rem ' ---------------------------------------------------------------------------------
+
+fill_in_message:
+
+	rem ' what message
+	msgtxt$ = notice$
+	
+	rem ' replace <custnbr> with the firm_id + customer_nbr
+	while 1
+		p = pos("<custnbr>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + custnbr$ + msgtxt$(p + 9)
+	wend
+	
+	rem ' replace <custname> with the firm_id + customer_nbr
+	while 1
+		p = pos("<custname>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + custname$ + msgtxt$(p + 10)
+	wend
+	
+	rem ' replace <sn> with the secondary serial number
+	firstone = 1
+	while 1
+		p = pos("<sn>" = msgtxt$)
+		if p = 0 then break
+		if firstone and secondaryProdDesc$ <> "" then
+			msgtxt$ = msgtxt$(1, p - 1) + cvs(sn$, 3) + " - " + secondaryProdDesc$ + msgtxt$(p + 4)
+		else
+			msgtxt$ = msgtxt$(1, p - 1) + cvs(sn$, 3) + msgtxt$(p + 4)
+		fi
+		firstone = 0
+	wend
+
+	rem ' replace <primarysn> with the primary serial number
+	firstone = 1, secondone = 0
+	while 1
+		p = pos("<primarysn>" = msgtxt$)
+		if p = 0 then break
+		if secondone and primaryProdDesc$ <> "" then
+			msgtxt$ = msgtxt$(1, p - 1) + cvs(primarySN$, 3) + " - " + primaryProdDesc$  + msgtxt$(p + 11)
+			secondone = 0
+		else
+			msgtxt$ = msgtxt$(1, p - 1) + cvs(primarySN$, 3) + msgtxt$(p + 11)
+		fi
+		if firstone then
+			firstone = 0
+			secondone = 1
+		fi
+	wend
+
+	rem ' replace <hostid> with the primary serial number
+	while 1
+		p = pos("<hostid>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + cvs(hostid$, 3) + msgtxt$(p + 8)
+	wend
+
+	rem ' replace <users> with the actual users
+	while 1
+		p = pos("<users>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + str(users) + msgtxt$( p + 7)
+	wend
+	
+	rem ' replace <enduser> with the actual data if any
+	while 1
+		p = pos("<enduser>" = msgtxt$)
+		if p = 0 then break
+		if cvs(endusername$, 3) <> "" then
+			msgtxt$ = msgtxt$(1, p - 2) + ", " + cvs(endusername$, 3) + msgtxt$(p + 9)
+		else
+	  		msgtxt$ = msgtxt$(1, p - 2) + msgtxt$(p + 9)
+		fi
+	wend
+	
+	rem ' replace <expirationdate> with the actual data
+	rem ' expDateRepl = jul(num(workrec.expire_date$(1,4)), num(workrec.expire_date$(5,2)), num(workrec.expire_date$(7,2)))
+	rem ' expDateRepl$ =  date(expDateRepl:"%D-%Ml-%Y")
+	rem ' while 1
+	rem ' 	p = pos("<expirationdate>" = msgtxt$)
+	rem ' 	if p = 0 then break
+	rem ' 	msgtxt$ = msgtxt$(1, p - 1) + expDateRepl$ + msgtxt$( p + 16)
+	rem ' wend
+
+	rem ' add the message trailer if there
+	if cvs(msg_trailer$, 3) <> "" then
+		msgtxt$ = msgtxt$ + msg_trailer$
+	fi
+	
+	rem ' extract out the Subject
+	p = pos("SUBJECT:" = cvs(msgtxt$, 4))
+	msgtxt$ = msgtxt$(p), p1 = pos($0a$ = msgtxt$)
+	subject$ = cvs(msgtxt$(1, p1 - 2), 3), msgtxt$ = msgtxt$(p1 + 1)
+	rem ' remove the text "Subject:"
+	p = pos(" " = subject$)
+	subject$ = subject$(p + 1)
+	rem ' trim any CR and LF from the front of the message
+	while 1
+		if pos($0D$ = msgtxt$) = 1 or pos($0A$ = msgtxt$) = 1 then
+			msgtxt$ = msgtxt$(2)
+		else
+			break
+		fi
+	wend
+
+return
+
+send_email:
+		
+	rem ' for debugging
+	rem ' print "to: " + to$
+	rem ' print "enduseremail: " + enduseremail$
+	rem ' print "cc: " + cc$
+	rem ' print "bcc: " + bcc$
+	rem ' print "subject: " + subject$
+	rem ' escape
+	
+	rem ' for debugging
+	rem ' to$ = "kurt.e.williams@comcast.net"
+	rem ' cc$ = ""
+	rem ' bcc$ = ""
+	rem ' print "send email "
+	rem ' input *
+	
+	rem ' from$, to$, cc$, bcc$, subject$, msgtxt$ should have already been set
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	wait 2
+return
+
+
+errmsg:
+	from$ = "customer-service@basis.cloud"
+	to$ = "mis@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	subject$ = "Notices To Host ID Groups with most recent registration by a secondary SN error"	
+	msgtxt$ = "Error " + str(err) + " in " + str(tcb(5)) + " in " + pgm(-1) + $0a$ + errmes(err)
+	msgtxt$ = msgtxt$ + $0a$ + $0a$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	release
+end

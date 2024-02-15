@@ -1,0 +1,947 @@
+# RN is the SAM Renew notice email that goes out 46 or 31 days prior to expiration depending on the customers terms
+RN_EN:
+{{Subject: Renew SAM today
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>BASIS SAM Software Maintenance Renewal</title>
+	<meta name="viewport" content="width=device-width">
+
+	<!-- Dark mode support -->
+	<meta name="color-scheme" content="light dark">
+	<meta name="supported-color-schemes" content="light dark">
+
+	<!-- Global fonts and styles that may be stripped by the email client -->
+	<link href="https://fonts.googleapis.com/css2?family=Inria+Sans:wght@400;700&amp;family=Roboto&amp;display=swap" rel="stylesheet" />
+
+	<!-- Workaround for Outlook forcing Times New Roman font family -->
+	<!--[if mso]>
+	<style> body, table tr, table td, a, span { font-family: 'Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; }</style>
+	<![endif]-->
+
+	<style media="screen" type="text/css">
+		/* CSS for font and link styles */
+		* { font-family: 'Inria Sans','Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; font-size: 18px; }
+		#bottomSection * { font-size: 16.5px; }
+		#licenseInfo th, #licenseInfo td { padding-left: 2px; }
+		#licenseInfo td { font-weight: 700 !important; }
+		a:link, a:visited { transition: all 150ms ease-out; color: #e64d00; padding: 1px 2px; border-radius: 4px !important; }
+		a:hover { color: #cc4400; background: #ffeee6; text-shadow: none !important; }
+		a:active  {color: #993300; background: #ffddcc; }
+		#renewButtonContainer { box-shadow: 0 1px 8px 1px #d0d0d0; }
+		#renewButtonContainer, #renewButtonContainer a:link, #renewButtonContainer a:visited { transition: all 150ms ease-out; color: #ffffff !important; }
+		#renewButtonContainer:hover, #renewButtonContainer:hover a { color: #ffffff !important; background: #569b33 !important; border-color: #4d8a2e !important; }
+		#renewButtonContainer:active, #renewButtonContainer:active a { background: #e1f2d9 !important; color: #48812b !important; border-color: #48812b !important; }
+		ul { display: block; margin-block-start: 0.5em; margin-block-end: 0.5em; margin-inline-start: 0px; margin-inline-end: 0px; padding-inline-start: 40px; }
+		ul li { font-size: 90%; }
+
+		/* Force telephone number link color for iPhones */
+		a[x-apple-data-detectors] { color: #e64d00 !important; text-decoration: underline !important; text-decoration-color: #e64d00 !important; }
+
+	   /* CSS for devices that support dark mode */
+	   @media (prefers-color-scheme: dark) {
+		   body, #bodyTable { background: #252525 !important; }
+		   #header { color: #e6f2ff !important; }
+		   #basisHeader { background-color: #dce6ef !important; }
+		   #emailContainer { background: #2e2e2e !important; border-color: #55595e !important; color: #dedede !important; }
+		   div { text-shadow: none !important; }
+		   #licenseInfo { background: #313335 !important; border-color: #8598ad !important; box-shadow: 0 0 4px #303030 !important; }
+		   .licenseData { background: #c9cccf !important; }
+		   #renew { border-color: #616161 !important; }
+		   a:link,  a.ln:visited { color: #ff7733 !important; text-shadow: none !important; }
+		   a:hover { color: #ff9966 !important; background: #662200 !important; }
+   		   a:active  {color: #b33c00 !important; background: #ffaa80 !important; }
+		   #renewButtonContainer { box-shadow: none !important; }
+		   #expireDays { background: #602020 !important; color: #f2d9d9 !important; }
+		   .faintText1 { color: #cfcfcf !important; }
+		   .faintText2 { color: #9c9c9c !important; }
+		   .socialContainer { background: #43413d !important; border-color: #616161 !important; }
+		   a[x-apple-data-detectors] { color: #ff7733 !important; }
+	   }
+
+	   /* CSS for smaller devices like tablets */
+	   @media only screen and (max-width:700px) {
+		   * { font-size: 17px; }
+		   #bottomSection * { font-size: 15.5px; }
+		   #header { font-size: 100% !important; }
+		   #emailContainer { width: 100% !important; }
+		   #headerSpacer { height: 0 !important; }
+		   #licenseInfo { width: 100% !important; border-top-color: #2b4776 !important; border-radius: 0 !important; border-left-width: 0 !important; border-right-width: 0 !important; box-shadow: none !important; }
+		   #licenseInfo th, #licenseInfo td { font-size: 14px !important; font-weight: 800 !important; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-family: 'Lucida Console', 'Monaco', 'Andale Mono', monospace !important; font-size: 12px !important; font-weight: 900 !important; }
+		   #renewButtonContainer { border-radius: 6px !important; border-width: 2px !important; }
+		   ul li { font-size: 100% !important; }
+	   }
+	   /* CSS for small devices like smartphones */
+	   @media only screen and (max-width:550px) {
+		   * { font-size: 15px; }
+		   #bottomSection * { font-size: 13.5px; }
+		   #licenseInfo th, #licenseInfo td { font-size: 11px !important; padding: 1px; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-size: 10px !important; }
+	   }
+	   /* CSS for very small devices like smartphones */
+	   @media only screen and (max-width:480px) {
+		   #header { font-size: 120% !important; }
+	   }
+	</style>
+</head>
+<body>
+<table border="0" cellpadding="0" cellspacing="0" height="100%" id="bodyTable" width="100%">
+	<tbody>
+ 		<tr>
+			<td align="center" valign="top">
+			<table id="emailContainer" border="0" cellpadding="0" cellspacing="0" style="background: #f4f7fa; border: 1px solid #c9d9e8;" width="700">
+				<tbody>
+					<!--INCLUDE HS_SG_EN -->
+					<tr>
+						<td align="center" valign="top" style="padding: 10px 8px; background: #1d73c9; color: #f5faff;" >
+							<div id="header" style="font-size: 105%; font-weight: 800; ">It is time to renew software maintenance on the following %licenseHdr%:</div>
+						</td>
+					</tr>
+					<tr><td id="headerSpacer" style="height: 20px;" ></td></tr>
+					<tr>
+						<td>
+							<table id="licenseInfo" align="center" style="width:90%; text-align:left; border: 1px solid #afc8e9; border-radius: 3px; overflow: hidden; border-spacing: 0px; box-shadow: 0 0 4px #e0e0e0;" >
+								<tbody>
+									<tr>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Serial #</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Users</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">List/User</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">List USD</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Expires</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">End User</th>
+									</tr>
+									<!--begin licenseData -->
+									<tr>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%sn%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%users%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%ulist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: right; font-family: monospace !important; padding-right: 18px;">%tlist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%expdt%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%endusr%</td>
+									</tr>
+									<!--end licenseData -->
+								</tbody>
+							</table>
+						</td>
+					</tr>
+
+					<tr><td height="15"></td></tr>
+
+					<tr>
+						<td>
+							<div style="margin: 5px 25px; text-shadow: 0 1px 0 #ffffff;" >
+								Your current coverage expires within <span id="expireDays" style="background: #fff5f5; border: 1px solid #df9f9f; border-radius: 4px; color: #7f0000; font-weight: 600; display: inline-block">&nbsp;%days%&nbsp;</span>&nbsp;days.
+								In 15 days, you will receive an invoice by e-mail for a 12-month renewal. The invoice will reflect any applicable discounts. Please pay that invoice by its due date or renew Software Asset Management (SAM) coverage today through
+								<a href="https://www.poweredbybbj.com/apps/b-commerce" style="color: #e64d00;" target="_blank" title="BASIS b-commerce System">b-commerce&reg;</a> or simply click on the &quot;Renew Now&quot; button below.
+							</div>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<table align="center" width="75%" border="0" cellpadding="0" cellspacing="10">
+
+								<tr><td width="100" height="5" style="border-top: 1px solid #cfd9e2;" ></td></tr>
+
+								<tr>
+									<td>
+										<table id="renewButtonContainer" align="center" border="0" cellpadding="0" cellspacing="0" style="color: #ffffff; background: #60ac39; border: 2px solid #569b33; border-radius: 5px;" >
+											<tr>
+												<td align="center" valign="middle" style="padding: 12px 24px;" >
+											  		<a href="https://bbjserver.basis.com:8443/apps/DIRECT-RENEW?sn=%SNURL%" style="color: inherit !important; background: inherit !important; font-size: 22px; font-weight: 700; text-decoration: none;" target="_blank" title="Renew Your License(s) Now">Renew Now!</a>
+										    	</td>
+										  	</tr>
+										</table>
+									</td>
+								</tr>
+
+								<tr><td width="50%" height="5" style="border-bottom: 1px solid #cfd9e2;" ></td></tr>
+
+							</table>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<div id='bottomSection' style="font-size: 90%; text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								Renewing SAM coverage on or before the due date assures you of continued:
+								<!--INCLUDE BF_SG_EN -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								For more information, please contact BASIS Sales via e-mail at <a href="mailto:sales@basis.com" style="color: #e64d00;" target="_blank" title="Email BASIS Sales">sales@basis.com</a> or by phone at <a href="tel:1-505-938-6120" style="color: #e64d00;">1.505.938.6120</a> (U.S.) or <a href="tel:+1-505-338-4188" style="color: #e64d00;">+1.505.338.4188</a> (International).
+								<!--INCLUDE SS_SG_EN -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px;">
+								<!--INCLUDE FS_SG_EN -->
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		</tr>
+	</tbody>
+</table>
+</body>
+</html>
+}}
+
+# RN is the SAM Renew notice email that goes out 65, 46 or 31 days prior to expiration depending on the customers terms
+RN_DE:
+{{Subject: Verlängern Sie Ihren SAM-Plan noch heute!
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>BASIS SAM Software Maintenance Renewal</title>
+	<meta name="viewport" content="width=device-width">
+
+	<!-- Dark mode support -->
+	<meta name="color-scheme" content="light dark">
+	<meta name="supported-color-schemes" content="light dark">
+
+	<!-- Global fonts and styles that may be stripped by the email client -->
+	<link href="https://fonts.googleapis.com/css2?family=Inria+Sans:wght@400;700&amp;family=Roboto&amp;display=swap" rel="stylesheet" />
+
+	<!-- Workaround for Outlook forcing Times New Roman font family -->
+	<!--[if mso]>
+	<style> body, table tr, table td, a, span { font-family: 'Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; }</style>
+	<![endif]-->
+
+	<style media="screen" type="text/css">
+		/* CSS for font and link styles */
+		* { font-family: 'Inria Sans','Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; font-size: 18px; }
+		#bottomSection * { font-size: 16.5px; }
+		#licenseInfo th, #licenseInfo td { padding-left: 2px; }
+		#licenseInfo td { font-weight: 700 !important; }
+		a:link, a:visited { transition: all 150ms ease-out; color: #e64d00; padding: 1px 2px; border-radius: 4px !important; }
+		a:hover { color: #cc4400; background: #ffeee6; text-shadow: none !important; }
+		a:active  {color: #993300; background: #ffddcc; }
+		#renewButtonContainer { box-shadow: 0 1px 8px 1px #d0d0d0; }
+		#renewButtonContainer, #renewButtonContainer a:link, #renewButtonContainer a:visited { transition: all 150ms ease-out; color: #ffffff !important; }
+		#renewButtonContainer:hover, #renewButtonContainer:hover a { color: #ffffff !important; background: #569b33 !important; border-color: #4d8a2e !important; }
+		#renewButtonContainer:active, #renewButtonContainer:active a { background: #e1f2d9 !important; color: #48812b !important; border-color: #48812b !important; }
+		ul { display: block; margin-block-start: 0.5em; margin-block-end: 0.5em; margin-inline-start: 0px; margin-inline-end: 0px; padding-inline-start: 40px; }
+		ul li { font-size: 90%; }
+
+		/* Force telephone number link color for iPhones */
+		a[x-apple-data-detectors] { color: #e64d00 !important; text-decoration: underline !important; text-decoration-color: #e64d00 !important; }
+
+	   /* CSS for devices that support dark mode */
+	   @media (prefers-color-scheme: dark) {
+		   body, #bodyTable { background: #252525 !important; }
+		   #header { color: #e6f2ff !important; }
+		   #basisHeader { background-color: #dce6ef !important; }
+		   #emailContainer { background: #2e2e2e !important; border-color: #55595e !important; color: #dedede !important; }
+		   div { text-shadow: none !important; }
+		   #licenseInfo { background: #313335 !important; border-color: #8598ad !important; box-shadow: 0 0 4px #303030 !important; }
+		   .licenseData { background: #c9cccf !important; }
+		   #renew { border-color: #616161 !important; }
+		   a:link,  a.ln:visited { color: #ff7733 !important; text-shadow: none !important; }
+		   a:hover { color: #ff9966 !important; background: #662200 !important; }
+   		   a:active  {color: #b33c00 !important; background: #ffaa80 !important; }
+		   #renewButtonContainer { box-shadow: none !important; }
+		   #expireDays { background: #602020 !important; color: #f2d9d9 !important; }
+		   .faintText1 { color: #cfcfcf !important; }
+		   .faintText2 { color: #9c9c9c !important; }
+		   .socialContainer { background: #43413d !important; border-color: #616161 !important; }
+		   a[x-apple-data-detectors] { color: #ff7733 !important; }
+	   }
+
+	   /* CSS for smaller devices like tablets */
+	   @media only screen and (max-width:700px) {
+		   * { font-size: 17px; }
+		   #bottomSection * { font-size: 15.5px; }
+		   #header { font-size: 100% !important; }
+		   #emailContainer { width: 100% !important; }
+		   #headerSpacer { height: 0 !important; }
+		   #licenseInfo { width: 100% !important; border-top-color: #2b4776 !important; border-radius: 0 !important; border-left-width: 0 !important; border-right-width: 0 !important; box-shadow: none !important; }
+		   #licenseInfo th, #licenseInfo td { font-size: 14px !important; font-weight: 800 !important; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-family: 'Lucida Console', 'Monaco', 'Andale Mono', monospace !important; font-size: 12px !important; font-weight: 900 !important; }
+		   #renewButtonContainer { border-radius: 6px !important; border-width: 2px !important; }
+		   ul li { font-size: 100% !important; }
+	   }
+	   /* CSS for small devices like smartphones */
+	   @media only screen and (max-width:550px) {
+		   * { font-size: 15px; }
+		   #bottomSection * { font-size: 13.5px; }
+		   #licenseInfo th, #licenseInfo td { font-size: 11px !important; padding: 1px; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-size: 10px !important; }
+	   }
+	   /* CSS for very small devices like smartphones */
+	   @media only screen and (max-width:480px) {
+		   #header { font-size: 120% !important; }
+	   }
+	</style>
+</head>
+<body>
+<table border="0" cellpadding="0" cellspacing="0" height="100%" id="bodyTable" width="100%">
+	<tbody>
+ 		<tr>
+			<td align="center" valign="top">
+			<table id="emailContainer" border="0" cellpadding="0" cellspacing="0" style="background: #f4f7fa; border: 1px solid #c9d9e8;" width="700">
+				<tbody>
+					<!--INCLUDE HS_SG_EN -->
+					<tr>
+						<td align="center" valign="top" style="padding: 10px 8px; background: #1d73c9; color: #f5faff;" >
+							<div id="header" style="font-size: 105%; font-weight: 800; ">Es ist Zeit, Ihren Software-Wartungsvertrag SAM f&uuml;r die %licenseHdr% zu verl&auml;ngern:</div>
+						</td>
+					</tr>
+					<tr><td id="headerSpacer" style="height: 20px;" ></td></tr>
+					<tr>
+						<td>
+							<table id="licenseInfo" align="center" style="width:90%; text-align:left; border: 1px solid #afc8e9; border-radius: 3px; overflow: hidden; border-spacing: 0px; box-shadow: 0 0 4px #e0e0e0;" >
+								<tbody>
+									<tr>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Serien-Nr.#</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">User</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Liste/User</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Liste EUR</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Erlischt</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">End-User</th>
+									</tr>
+									<!--begin licenseData -->
+									<tr>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%sn%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%users%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%ulist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: right; font-family: monospace !important; padding-right: 18px;">%tlist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%expdt%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%endusr%</td>
+									</tr>
+									<!--end licenseData -->
+								</tbody>
+							</table>
+						</td>
+					</tr>
+
+					<tr><td height="15"></td></tr>
+
+					<tr>
+						<td>
+							<div style="margin: 5px 25px; text-shadow: 0 1px 0 #ffffff;" >
+								Ihr aktueller Vertrag l&auml;uft innerhalb der n&auml;chsten <span id="expireDays" style="background: #fff5f5; border: 1px solid #df9f9f; border-radius: 4px; color: #7f0000; font-weight: 600; display: inline-block">&nbsp;%days%&nbsp;</span>&nbsp;Tage aus.
+								In 15 Tagen erhalten Sie per E-Mail eine Rechnung f&uuml;r die Vertragsverl&auml;ngerung um 12 Monate. Die Rechnung, die Sie erhalten werden, wird
+								 alle g&uuml;ltigen Konditionen ber&uuml;cksichtigen. Bitte zahlen Sie diese Rechnung zum F&auml;lligkeitsdatum oder erneuern Sie bereits heute Ihren SAM-Vertrag &uuml;ber
+								<a href="https://www.poweredbybbj.com/apps/b-commerce" style="color: #e64d00;" target="_blank" title="BASIS b-commerce System">b-commerce&reg;</a> oder klicken Sie einfach unten auf &nbsp;&quot;Jetzt&nbsp;erneuern!&quot;.
+							</div>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<table align="center" width="75%" border="0" cellpadding="0" cellspacing="10">
+
+								<tr><td width="100" height="5" style="border-top: 1px solid #cfd9e2;" ></td></tr>
+
+								<tr>
+									<td>
+										<table id="renewButtonContainer" align="center" border="0" cellpadding="0" cellspacing="0" style="color: #ffffff; background: #60ac39; border: 2px solid #569b33; border-radius: 5px;" >
+											<tr>
+												<td align="center" valign="middle" style="padding: 12px 24px;" >
+											  		<a href="https://bbjserver.basis.com:8443/apps/DIRECT-RENEW?sn=%SNURL%" style="color: inherit !important; background: inherit !important; font-size: 22px; font-weight: 700; text-decoration: none;" target="_blank" title="Renew Your License(s) Now">Jetzt Erneuern!</a>
+										    	</td>
+										  	</tr>
+										</table>
+									</td>
+								</tr>
+
+								<tr><td width="50%" height="5" style="border-bottom: 1px solid #cfd9e2;" ></td></tr>
+
+							</table>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<div id='bottomSection' style="font-size: 90%; text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								So k&ouml;nnen Sie auch weiterhin folgende Features und Vorteile nutzen:
+								<!--INCLUDE BF_SG_DE -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								N&auml;here Informationen gibt Ihnen Ihr BASIS Vertrieb.
+								<br>Per E-Mail: <a href="mailto:eu.sales@basis.com" style="color: #e64d00;" target="_blank" title="Email BASIS Sales">eu.sales@basis.com.</a>
+								<br>Per Telefon: <a href="tel:+49 681 96814-0" style="color: #e64d00;">+49 681 96814-0</a>
+								<!--INCLUDE SS_SG_DE -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px;">
+								<!--INCLUDE FS_SG_EN -->
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		</tr>
+	</tbody>
+</table>
+</body>
+</html>
+}}
+
+# RN is the SAM Renew notice email that goes out 65 days prior to expiration for customer with Net 15 EOM terms
+RN_EN_EOM:
+{{Subject: Renew SAM today
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>BASIS SAM Software Maintenance Renewal</title>
+	<meta name="viewport" content="width=device-width">
+
+	<!-- Dark mode support -->
+	<meta name="color-scheme" content="light dark">
+	<meta name="supported-color-schemes" content="light dark">
+
+	<!-- Global fonts and styles that may be stripped by the email client -->
+	<link href="https://fonts.googleapis.com/css2?family=Inria+Sans:wght@400;700&amp;family=Roboto&amp;display=swap" rel="stylesheet" />
+
+	<!-- Workaround for Outlook forcing Times New Roman font family -->
+	<!--[if mso]>
+	<style> body, table tr, table td, a, span { font-family: 'Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; }</style>
+	<![endif]-->
+
+	<style media="screen" type="text/css">
+		/* CSS for font and link styles */
+		* { font-family: 'Inria Sans','Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; font-size: 18px; }
+		#bottomSection * { font-size: 16.5px; }
+		#licenseInfo th, #licenseInfo td { padding-left: 2px; }
+		#licenseInfo td { font-weight: 700 !important; }
+		a:link, a:visited { transition: all 150ms ease-out; color: #e64d00; padding: 1px 2px; border-radius: 4px !important; }
+		a:hover { color: #cc4400; background: #ffeee6; text-shadow: none !important; }
+		a:active  {color: #993300; background: #ffddcc; }
+		#renewButtonContainer { box-shadow: 0 1px 8px 1px #d0d0d0; }
+		#renewButtonContainer, #renewButtonContainer a:link, #renewButtonContainer a:visited { transition: all 150ms ease-out; color: #ffffff !important; }
+		#renewButtonContainer:hover, #renewButtonContainer:hover a { color: #ffffff !important; background: #569b33 !important; border-color: #4d8a2e !important; }
+		#renewButtonContainer:active, #renewButtonContainer:active a { background: #e1f2d9 !important; color: #48812b !important; border-color: #48812b !important; }
+		ul { display: block; margin-block-start: 0.5em; margin-block-end: 0.5em; margin-inline-start: 0px; margin-inline-end: 0px; padding-inline-start: 40px; }
+		ul li { font-size: 90%; }
+
+		/* Force telephone number link color for iPhones */
+		a[x-apple-data-detectors] { color: #e64d00 !important; text-decoration: underline !important; text-decoration-color: #e64d00 !important; }
+
+	   /* CSS for devices that support dark mode */
+	   @media (prefers-color-scheme: dark) {
+		   body, #bodyTable { background: #252525 !important; }
+		   #header { color: #e6f2ff !important; }
+		   #basisHeader { background-color: #dce6ef !important; }
+		   #emailContainer { background: #2e2e2e !important; border-color: #55595e !important; color: #dedede !important; }
+		   div { text-shadow: none !important; }
+		   #licenseInfo { background: #313335 !important; border-color: #8598ad !important; box-shadow: 0 0 4px #303030 !important; }
+		   .licenseData { background: #c9cccf !important; }
+		   #renew { border-color: #616161 !important; }
+		   a:link,  a.ln:visited { color: #ff7733 !important; text-shadow: none !important; }
+		   a:hover { color: #ff9966 !important; background: #662200 !important; }
+   		   a:active  {color: #b33c00 !important; background: #ffaa80 !important; }
+		   #renewButtonContainer { box-shadow: none !important; }
+		   #expireDays { background: #602020 !important; color: #f2d9d9 !important; }
+		   .faintText1 { color: #cfcfcf !important; }
+		   .faintText2 { color: #9c9c9c !important; }
+		   .socialContainer { background: #43413d !important; border-color: #616161 !important; }
+		   a[x-apple-data-detectors] { color: #ff7733 !important; }
+	   }
+
+	   /* CSS for smaller devices like tablets */
+	   @media only screen and (max-width:700px) {
+		   * { font-size: 17px; }
+		   #bottomSection * { font-size: 15.5px; }
+		   #header { font-size: 100% !important; }
+		   #emailContainer { width: 100% !important; }
+		   #headerSpacer { height: 0 !important; }
+		   #licenseInfo { width: 100% !important; border-top-color: #2b4776 !important; border-radius: 0 !important; border-left-width: 0 !important; border-right-width: 0 !important; box-shadow: none !important; }
+		   #licenseInfo th, #licenseInfo td { font-size: 14px !important; font-weight: 800 !important; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-family: 'Lucida Console', 'Monaco', 'Andale Mono', monospace !important; font-size: 12px !important; font-weight: 900 !important; }
+		   #renewButtonContainer { border-radius: 6px !important; border-width: 2px !important; }
+		   ul li { font-size: 100% !important; }
+	   }
+	   /* CSS for small devices like smartphones */
+	   @media only screen and (max-width:550px) {
+		   * { font-size: 15px; }
+		   #bottomSection * { font-size: 13.5px; }
+		   #licenseInfo th, #licenseInfo td { font-size: 11px !important; padding: 1px; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-size: 10px !important; }
+	   }
+	   /* CSS for very small devices like smartphones */
+	   @media only screen and (max-width:480px) {
+		   #header { font-size: 120% !important; }
+	   }
+	</style>
+</head>
+<body>
+<table border="0" cellpadding="0" cellspacing="0" height="100%" id="bodyTable" width="100%">
+	<tbody>
+ 		<tr>
+			<td align="center" valign="top">
+			<table id="emailContainer" border="0" cellpadding="0" cellspacing="0" style="background: #f4f7fa; border: 1px solid #c9d9e8;" width="700">
+				<tbody>
+					<!--INCLUDE HS_SG_EN -->
+					<tr>
+						<td align="center" valign="top" style="padding: 10px 8px; background: #1d73c9; color: #f5faff;" >
+							<div id="header" style="font-size: 105%; font-weight: 800; ">It is time to renew software maintenance on the following %licenseHdr%:</div>
+						</td>
+					</tr>
+					<tr><td id="headerSpacer" style="height: 20px;" ></td></tr>
+					<tr>
+						<td>
+							<table id="licenseInfo" align="center" style="width:90%; text-align:left; border: 1px solid #afc8e9; border-radius: 3px; overflow: hidden; border-spacing: 0px; box-shadow: 0 0 4px #e0e0e0;" >
+								<tbody>
+									<tr>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Serial #</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Users</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">List/User</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">List USD</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Expires</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">End User</th>
+									</tr>
+									<!--begin licenseData -->
+									<tr>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%sn%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%users%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%ulist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%tlist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%expdt%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%endusr%</td>
+									</tr>
+									<!--end licenseData -->
+								</tbody>
+							</table>
+						</td>
+					</tr>
+
+					<tr><td height="15"></td></tr>
+
+					<tr>
+						<td>
+							<div style="margin: 5px 25px; text-shadow: 0 1px 0 #ffffff;" >
+								Your current coverage expires within <span id="expireDays" style="background: #fff5f5; border: 1px solid #df9f9f; border-radius: 4px; color: #7f0000; font-weight: 600; display: inline-block">&nbsp;65&nbsp;</span>&nbsp;days.
+								On the first business day of the month preceding the month in which your coverage expires you will receive an invoice by e-mail for a 12-month renewal. The invoice will reflect any applicable discounts. Please pay that invoice by its due date or renew Software Asset Management (SAM) coverage today through
+								<a href="https://www.poweredbybbj.com/apps/b-commerce" style="color: #e64d00;" target="_blank" title="BASIS b-commerce System">b-commerce&reg;</a> or simply click on the &quot;Renew Now&quot; button below.
+							</div>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<table align="center" width="75%" border="0" cellpadding="0" cellspacing="10">
+
+								<tr><td width="100" height="5" style="border-top: 1px solid #cfd9e2;" ></td></tr>
+
+								<tr>
+									<td>
+										<table id="renewButtonContainer" align="center" border="0" cellpadding="0" cellspacing="0" style="color: #ffffff; background: #60ac39; border: 2px solid #569b33; border-radius: 5px;" >
+											<tr>
+												<td align="center" valign="middle" style="padding: 12px 24px;" >
+											  		<a href="https://bbjserver.basis.com:8443/apps/DIRECT-RENEW?sn=%SNURL%" style="color: inherit !important; background: inherit !important; font-size: 22px; font-weight: 700; text-decoration: none;" target="_blank" title="Renew Your License(s) Now">Renew Now!</a>
+										    	</td>
+										  	</tr>
+										</table>
+									</td>
+								</tr>
+
+								<tr><td width="50%" height="5" style="border-bottom: 1px solid #cfd9e2;" ></td></tr>
+
+							</table>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<div id='bottomSection' style="font-size: 90%; text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								Renewing SAM coverage on or before the due date assures you of continued:
+								<!--INCLUDE BF_SG_EN -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								For more information, please contact BASIS Sales via e-mail at <a href="mailto:sales@basis.com" style="color: #e64d00;" target="_blank" title="Email BASIS Sales">sales@basis.com</a> or by phone at <a href="tel:1-505-938-6120" style="color: #e64d00;">1.505.938.6120</a> (U.S.) or <a href="tel:+1-505-338-4188" style="color: #e64d00;">+1.505.338.4188</a> (International).
+								<!--INCLUDE SS_SG_EN -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px;">
+								<!--INCLUDE FS_SG_EN -->
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		</tr>
+	</tbody>
+</table>
+</body>
+</html>
+}}
+
+# RE is the DVK and RNT Renew notice email that goes out 46 or 31 days prior to expiration depending on the customers terms
+RE_EN:
+{{Subject: Renew Your %type% License Today
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>BASIS SAM Software Maintenance Renewal</title>
+	<meta name="viewport" content="width=device-width">
+
+	<!-- Dark mode support -->
+	<meta name="color-scheme" content="light dark">
+	<meta name="supported-color-schemes" content="light dark">
+
+	<!-- Global fonts and styles that may be stripped by the email client -->
+	<link href="https://fonts.googleapis.com/css2?family=Inria+Sans:wght@400;700&amp;family=Roboto&amp;display=swap" rel="stylesheet" />
+
+	<!-- Workaround for Outlook forcing Times New Roman font family -->
+	<!--[if mso]>
+	<style> body, table tr, table td, a, span { font-family: 'Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; }</style>
+	<![endif]-->
+
+	<style media="screen" type="text/css">
+		/* CSS for font and link styles */
+		* { font-family: 'Inria Sans','Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; font-size: 18px; }
+		#bottomSection * { font-size: 16.5px; }
+		#licenseInfo th, #licenseInfo td { padding-left: 2px; }
+		#licenseInfo td { font-weight: 700 !important; }
+		a:link, a:visited { transition: all 150ms ease-out; color: #e64d00; padding: 1px 2px; border-radius: 4px !important; }
+		a:hover { color: #cc4400; background: #ffeee6; text-shadow: none !important; }
+		a:active  {color: #993300; background: #ffddcc; }
+		#renewButtonContainer { box-shadow: 0 1px 8px 1px #d0d0d0; }
+		#renewButtonContainer, #renewButtonContainer a:link, #renewButtonContainer a:visited { transition: all 150ms ease-out; color: #ffffff !important; }
+		#renewButtonContainer:hover, #renewButtonContainer:hover a { color: #ffffff !important; background: #569b33 !important; border-color: #4d8a2e !important; }
+		#renewButtonContainer:active, #renewButtonContainer:active a { background: #e1f2d9 !important; color: #48812b !important; border-color: #48812b !important; }
+		ul { display: block; margin-block-start: 0.5em; margin-block-end: 0.5em; margin-inline-start: 0px; margin-inline-end: 0px; padding-inline-start: 40px; }
+		ul li { font-size: 90%; }
+
+		/* Force telephone number link color for iPhones */
+		a[x-apple-data-detectors] { color: #e64d00 !important; text-decoration: underline !important; text-decoration-color: #e64d00 !important; }
+
+	   /* CSS for devices that support dark mode */
+	   @media (prefers-color-scheme: dark) {
+		   body, #bodyTable { background: #252525 !important; }
+		   #header { color: #e6f2ff !important; }
+		   #basisHeader { background-color: #dce6ef !important; }
+		   #emailContainer { background: #2e2e2e !important; border-color: #55595e !important; color: #dedede !important; }
+		   div { text-shadow: none !important; }
+		   #licenseInfo { background: #313335 !important; border-color: #8598ad !important; box-shadow: 0 0 4px #303030 !important; }
+		   .licenseData { background: #c9cccf !important; }
+		   #renew { border-color: #616161 !important; }
+		   a:link,  a.ln:visited { color: #ff7733 !important; text-shadow: none !important; }
+		   a:hover { color: #ff9966 !important; background: #662200 !important; }
+   		   a:active  {color: #b33c00 !important; background: #ffaa80 !important; }
+		   #renewButtonContainer { box-shadow: none !important; }
+		   #expireDays { background: #602020 !important; color: #f2d9d9 !important; }
+		   .faintText1 { color: #cfcfcf !important; }
+		   .faintText2 { color: #9c9c9c !important; }
+		   .socialContainer { background: #43413d !important; border-color: #616161 !important; }
+		   a[x-apple-data-detectors] { color: #ff7733 !important; }
+	   }
+
+	   /* CSS for smaller devices like tablets */
+	   @media only screen and (max-width:700px) {
+		   * { font-size: 17px; }
+		   #bottomSection * { font-size: 15.5px; }
+		   #header { font-size: 100% !important; }
+		   #emailContainer { width: 100% !important; }
+		   #headerSpacer { height: 0 !important; }
+		   #licenseInfo { width: 100% !important; border-top-color: #2b4776 !important; border-radius: 0 !important; border-left-width: 0 !important; border-right-width: 0 !important; box-shadow: none !important; }
+		   #licenseInfo th, #licenseInfo td { font-size: 14px !important; font-weight: 800 !important; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-family: 'Lucida Console', 'Monaco', 'Andale Mono', monospace !important; font-size: 12px !important; font-weight: 900 !important; }
+		   #renewButtonContainer { border-radius: 6px !important; border-width: 2px !important; }
+		   ul li { font-size: 100% !important; }
+	   }
+	   /* CSS for small devices like smartphones */
+	   @media only screen and (max-width:550px) {
+		   * { font-size: 15px; }
+		   #bottomSection * { font-size: 13.5px; }
+		   #licenseInfo th, #licenseInfo td { font-size: 11px !important; padding: 1px; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-size: 10px !important; }
+	   }
+	   /* CSS for very small devices like smartphones */
+	   @media only screen and (max-width:480px) {
+		   #header { font-size: 120% !important; }
+	   }
+	</style>
+</head>
+<body>
+<table border="0" cellpadding="0" cellspacing="0" height="100%" id="bodyTable" width="100%">
+	<tbody>
+ 		<tr>
+			<td align="center" valign="top">
+			<table id="emailContainer" border="0" cellpadding="0" cellspacing="0" style="background: #f4f7fa; border: 1px solid #c9d9e8;" width="700">
+				<tbody>
+					<!--INCLUDE HS_SG_EN -->
+					<tr>
+						<td align="center" valign="top" style="padding: 10px 8px; background: #1d73c9; color: #f5faff;" >
+							<div id="header" style="font-size: 105%; font-weight: 800; ">It is time to renew the following %type% %licenseHdr%:</div>
+						</td>
+					</tr>
+					<tr><td id="headerSpacer" style="height: 20px;" ></td></tr>
+					<tr>
+						<td>
+							<table id="licenseInfo" align="center" style="width:90%; text-align:left; border: 1px solid #afc8e9; border-radius: 3px; overflow: hidden; border-spacing: 0px; box-shadow: 0 0 4px #e0e0e0;" >
+								<tbody>
+									<tr>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Serial #</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Users</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">List/User</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">List USD</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Expires</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">End User</th>
+									</tr>
+									<!--begin licenseData -->
+									<tr>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%sn%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%users%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%ulist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%tlist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%expdt%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%endusr%</td>
+									</tr>
+									<!--end licenseData -->
+								</tbody>
+							</table>
+						</td>
+					</tr>
+
+					<tr><td height="15"></td></tr>
+
+					<tr>
+						<td>
+							<div style="margin: 5px 25px; text-shadow: 0 1px 0 #ffffff;" >
+								The expiration is within <span id="expireDays" style="background: #fff5f5; border: 1px solid #df9f9f; border-radius: 4px; color: #7f0000; font-weight: 600; display: inline-block">&nbsp;%days%&nbsp;</span>&nbsp;days.
+								We will be sending you an invoice by email within the next 15 days for a 12-month renewal. To maintain continued use, please pay that invoice by its due date or renew online today in 
+								<a href="https://www.poweredbybbj.com/apps/b-commerce" style="color: #e64d00;" target="_blank" title="BASIS b-commerce System">b-commerce&reg;</a> or simply click on the &quot;Renew Now&quot; button below.
+							</div>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<table align="center" width="75%" border="0" cellpadding="0" cellspacing="10">
+
+								<tr><td width="100" height="5" style="border-top: 1px solid #cfd9e2;" ></td></tr>
+
+								<tr>
+									<td>
+										<table id="renewButtonContainer" align="center" border="0" cellpadding="0" cellspacing="0" style="color: #ffffff; background: #60ac39; border: 2px solid #569b33; border-radius: 5px;" >
+											<tr>
+												<td align="center" valign="middle" style="padding: 12px 24px;" >
+											  		<a href="https://bbjserver.basis.com:8443/apps/DIRECT-RENEW?sn=%SNURL%" style="color: inherit !important; background: inherit !important; font-size: 22px; font-weight: 700; text-decoration: none;" target="_blank" title="Renew Your License(s) Now">Renew Now!</a>
+										    	</td>
+										  	</tr>
+										</table>
+									</td>
+								</tr>
+
+								<tr><td width="50%" height="5" style="border-bottom: 1px solid #cfd9e2;" ></td></tr>
+
+							</table>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<div id='bottomSection' style="font-size: 90%; text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								Renewing SAM coverage on or before the due date assures you of continued:
+								<!--INCLUDE BF_SG_EN -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								For more information, please contact BASIS Sales via e-mail at <a href="mailto:sales@basis.com" style="color: #e64d00;" target="_blank" title="Email BASIS Sales">sales@basis.com</a> or by phone at <a href="tel:1-505-938-6120" style="color: #e64d00;">1.505.938.6120</a> (U.S.) or <a href="tel:+1-505-338-4188" style="color: #e64d00;">+1.505.338.4188</a> (International).
+								<!--INCLUDE SS_SG_EN -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px;">
+								<!--INCLUDE FS_SG_EN -->
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		</tr>
+	</tbody>
+</table>
+</body>
+</html>
+}}
+
+# RE is the DVK and RNT Renew notice email that goes out on the first business day of the month prior to expiration of Net 15 EOM customers
+RE_EN_EOM:
+{{Subject: Renew Your %type% License Today
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>BASIS SAM Software Maintenance Renewal</title>
+	<meta name="viewport" content="width=device-width">
+
+	<!-- Dark mode support -->
+	<meta name="color-scheme" content="light dark">
+	<meta name="supported-color-schemes" content="light dark">
+
+	<!-- Global fonts and styles that may be stripped by the email client -->
+	<link href="https://fonts.googleapis.com/css2?family=Inria+Sans:wght@400;700&amp;family=Roboto&amp;display=swap" rel="stylesheet" />
+
+	<!-- Workaround for Outlook forcing Times New Roman font family -->
+	<!--[if mso]>
+	<style> body, table tr, table td, a, span { font-family: 'Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; }</style>
+	<![endif]-->
+
+	<style media="screen" type="text/css">
+		/* CSS for font and link styles */
+		* { font-family: 'Inria Sans','Trebuchet MS','Tahoma','Verdana','Arial',sans-serif !important; font-size: 18px; }
+		#bottomSection * { font-size: 16.5px; }
+		#licenseInfo th, #licenseInfo td { padding-left: 2px; }
+		#licenseInfo td { font-weight: 700 !important; }
+		a:link, a:visited { transition: all 150ms ease-out; color: #e64d00; padding: 1px 2px; border-radius: 4px !important; }
+		a:hover { color: #cc4400; background: #ffeee6; text-shadow: none !important; }
+		a:active  {color: #993300; background: #ffddcc; }
+		#renewButtonContainer { box-shadow: 0 1px 8px 1px #d0d0d0; }
+		#renewButtonContainer, #renewButtonContainer a:link, #renewButtonContainer a:visited { transition: all 150ms ease-out; color: #ffffff !important; }
+		#renewButtonContainer:hover, #renewButtonContainer:hover a { color: #ffffff !important; background: #569b33 !important; border-color: #4d8a2e !important; }
+		#renewButtonContainer:active, #renewButtonContainer:active a { background: #e1f2d9 !important; color: #48812b !important; border-color: #48812b !important; }
+		ul { display: block; margin-block-start: 0.5em; margin-block-end: 0.5em; margin-inline-start: 0px; margin-inline-end: 0px; padding-inline-start: 40px; }
+		ul li { font-size: 90%; }
+
+		/* Force telephone number link color for iPhones */
+		a[x-apple-data-detectors] { color: #e64d00 !important; text-decoration: underline !important; text-decoration-color: #e64d00 !important; }
+
+	   /* CSS for devices that support dark mode */
+	   @media (prefers-color-scheme: dark) {
+		   body, #bodyTable { background: #252525 !important; }
+		   #header { color: #e6f2ff !important; }
+		   #basisHeader { background-color: #dce6ef !important; }
+		   #emailContainer { background: #2e2e2e !important; border-color: #55595e !important; color: #dedede !important; }
+		   div { text-shadow: none !important; }
+		   #licenseInfo { background: #313335 !important; border-color: #8598ad !important; box-shadow: 0 0 4px #303030 !important; }
+		   .licenseData { background: #c9cccf !important; }
+		   #renew { border-color: #616161 !important; }
+		   a:link,  a.ln:visited { color: #ff7733 !important; text-shadow: none !important; }
+		   a:hover { color: #ff9966 !important; background: #662200 !important; }
+   		   a:active  {color: #b33c00 !important; background: #ffaa80 !important; }
+		   #renewButtonContainer { box-shadow: none !important; }
+		   #expireDays { background: #602020 !important; color: #f2d9d9 !important; }
+		   .faintText1 { color: #cfcfcf !important; }
+		   .faintText2 { color: #9c9c9c !important; }
+		   .socialContainer { background: #43413d !important; border-color: #616161 !important; }
+		   a[x-apple-data-detectors] { color: #ff7733 !important; }
+	   }
+
+	   /* CSS for smaller devices like tablets */
+	   @media only screen and (max-width:700px) {
+		   * { font-size: 17px; }
+		   #bottomSection * { font-size: 15.5px; }
+		   #header { font-size: 100% !important; }
+		   #emailContainer { width: 100% !important; }
+		   #headerSpacer { height: 0 !important; }
+		   #licenseInfo { width: 100% !important; border-top-color: #2b4776 !important; border-radius: 0 !important; border-left-width: 0 !important; border-right-width: 0 !important; box-shadow: none !important; }
+		   #licenseInfo th, #licenseInfo td { font-size: 14px !important; font-weight: 800 !important; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-family: 'Lucida Console', 'Monaco', 'Andale Mono', monospace !important; font-size: 12px !important; font-weight: 900 !important; }
+		   #renewButtonContainer { border-radius: 6px !important; border-width: 2px !important; }
+		   ul li { font-size: 100% !important; }
+	   }
+	   /* CSS for small devices like smartphones */
+	   @media only screen and (max-width:550px) {
+		   * { font-size: 15px; }
+		   #bottomSection * { font-size: 13.5px; }
+		   #licenseInfo th, #licenseInfo td { font-size: 11px !important; padding: 1px; }
+		   #licenseInfo td, #licenseInfo td a[x-apple-data-detectors] { font-size: 10px !important; }
+	   }
+	   /* CSS for very small devices like smartphones */
+	   @media only screen and (max-width:480px) {
+		   #header { font-size: 120% !important; }
+	   }
+	</style>
+</head>
+<body>
+<table border="0" cellpadding="0" cellspacing="0" height="100%" id="bodyTable" width="100%">
+	<tbody>
+ 		<tr>
+			<td align="center" valign="top">
+			<table id="emailContainer" border="0" cellpadding="0" cellspacing="0" style="background: #f4f7fa; border: 1px solid #c9d9e8;" width="700">
+				<tbody>
+					<!--INCLUDE HS_SG_EN -->
+					<tr>
+						<td align="center" valign="top" style="padding: 10px 8px; background: #1d73c9; color: #f5faff;" >
+							<div id="header" style="font-size: 105%; font-weight: 800; ">It is time to renew the following %type% %licenseHdr%:</div>
+						</td>
+					</tr>
+					<tr><td id="headerSpacer" style="height: 20px;" ></td></tr>
+					<tr>
+						<td>
+							<table id="licenseInfo" align="center" style="width:90%; text-align:left; border: 1px solid #afc8e9; border-radius: 3px; overflow: hidden; border-spacing: 0px; box-shadow: 0 0 4px #e0e0e0;" >
+								<tbody>
+									<tr>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Serial #</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Users</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">List/User</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">List USD</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">Expires</th>
+										<th style="background: #2b5ea1; color: #ebf1fa; padding: 2px 0; text-align: center;">End User</th>
+									</tr>
+									<!--begin licenseData -->
+									<tr>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%sn%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%users%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%ulist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%tlist%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%expdt%</td>
+										<td class="licenseData" style="background: #fcfcfd; color: #204679; font-weight: 700; font-size: 90%; padding: 6px 0; text-align: center;">%endusr%</td>
+									</tr>
+									<!--end licenseData -->
+								</tbody>
+							</table>
+						</td>
+					</tr>
+
+					<tr><td height="15"></td></tr>
+
+					<tr>
+						<td>
+							<div style="margin: 5px 25px; text-shadow: 0 1px 0 #ffffff;" >
+								The expiration is within <span id="expireDays" style="background: #fff5f5; border: 1px solid #df9f9f; border-radius: 4px; color: #7f0000; font-weight: 600; display: inline-block">&nbsp;%days%&nbsp;</span>&nbsp;days.
+								We will be sending you an invoice by email on the first business day of the month preceding the month in which your license expires. The invoice will be for a 12-month renewal. The invoice will reflect any applicable discounts. To maintain continued use, please pay that invoice by its due date or renew online today in 
+								<a href="https://www.poweredbybbj.com/apps/b-commerce" style="color: #e64d00;" target="_blank" title="BASIS b-commerce System">b-commerce&reg;</a> or simply click on the &quot;Renew Now&quot; button below.
+							</div>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<table align="center" width="75%" border="0" cellpadding="0" cellspacing="10">
+
+								<tr><td width="100" height="5" style="border-top: 1px solid #cfd9e2;" ></td></tr>
+
+								<tr>
+									<td>
+										<table id="renewButtonContainer" align="center" border="0" cellpadding="0" cellspacing="0" style="color: #ffffff; background: #60ac39; border: 2px solid #569b33; border-radius: 5px;" >
+											<tr>
+												<td align="center" valign="middle" style="padding: 12px 24px;" >
+											  		<a href="https://bbjserver.basis.com:8443/apps/DIRECT-RENEW?sn=%SNURL%" style="color: inherit !important; background: inherit !important; font-size: 22px; font-weight: 700; text-decoration: none;" target="_blank" title="Renew Your License(s) Now">Renew Now!</a>
+										    	</td>
+										  	</tr>
+										</table>
+									</td>
+								</tr>
+
+								<tr><td width="50%" height="5" style="border-bottom: 1px solid #cfd9e2;" ></td></tr>
+
+							</table>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<div id='bottomSection' style="font-size: 90%; text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								Renewing SAM coverage on or before the due date assures you of continued:
+								<!--INCLUDE BF_SG_EN -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px; text-align: left;" >
+								For more information, please contact BASIS Sales via e-mail at <a href="mailto:sales@basis.com" style="color: #e64d00;" target="_blank" title="Email BASIS Sales">sales@basis.com</a> or by phone at <a href="tel:1-505-938-6120" style="color: #e64d00;">1.505.938.6120</a> (U.S.) or <a href="tel:+1-505-338-4188" style="color: #e64d00;">+1.505.338.4188</a> (International).
+								<!--INCLUDE SS_SG_EN -->
+							</div>
+							<div style="text-shadow: 0 1px 0 #ffffff; margin: 5px 25px;">
+								<!--INCLUDE FS_SG_EN -->
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		</tr>
+	</tbody>
+</table>
+</body>
+</html>
+}}

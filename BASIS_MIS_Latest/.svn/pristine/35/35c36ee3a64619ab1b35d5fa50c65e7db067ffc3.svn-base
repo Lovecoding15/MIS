@@ -1,0 +1,30 @@
+rem '  convert canadian to us and us to canadian dollar
+
+seterr pgmexit
+
+enter canadian_exch$, toUS, amountin, amountout
+
+rem ' canadian_exch$ is the exchange rates to use read from CANADIAN_EXCH
+rem ' toUS is a boolean when true indicates converting to US Dollars when false indicates converting to Canadian Dollars
+rem ' amountin is the amount to convert
+rem ' amountout is the converted amount
+
+rem ' conversion rates can be up to 4 decimal places
+precision 4
+
+if toUS then
+	rem ' convert amountin to US Dollars putting result in amountout
+	conversionFactor = canadian_exch.to_us_doll
+	amountout = round(amountin * conversionFactor , 2)
+else
+	rem ' convert amountout to Canadian Dollars putting result in amountout
+	rem ' to avoid rounding problems we will divide by to_us_doll factor
+	conversionFactor = canadian_exch.to_us_doll
+	amountout = round(amountin / conversionFactor , 2)
+endif
+
+pgmexit:
+
+precision 2
+
+exit

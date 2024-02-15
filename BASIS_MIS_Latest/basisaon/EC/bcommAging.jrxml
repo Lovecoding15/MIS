@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.4.3.final using JasperReports Library version 6.4.3  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="bcommAging" pageWidth="792" pageHeight="612" orientation="Landscape" whenNoDataType="AllSectionsNoDetail" columnWidth="752" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="26cb38ae-d350-4921-9afc-0abd3c6466c9">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="FIRM_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA["01"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="CUSTOMER" class="java.lang.String">
+		<defaultValueExpression><![CDATA["001022"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ASOFDATE" class="java.lang.String">
+		<defaultValueExpression><![CDATA["20180914"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[CALL BCOMM_AGING($P{FIRM_ID},$P{CUSTOMER},$P{ASOFDATE})]]>
+	</queryString>
+	<field name="FIRM_NAME" class="java.lang.String"/>
+	<field name="RUN_DATE" class="java.lang.String"/>
+	<field name="CUSTOMER_NBR" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="INVOICE_NBR" class="java.lang.String"/>
+	<field name="INVOICE_DATE" class="java.lang.String"/>
+	<field name="DUE_DATE" class="java.lang.String"/>
+	<field name="PO_NUMBER" class="java.lang.String"/>
+	<field name="ORDER_NUMBER" class="java.lang.String"/>
+	<field name="TERMS_CODE" class="java.lang.String"/>
+	<field name="INV_TYPE" class="java.lang.String"/>
+	<field name="CURRENCY" class="java.lang.String"/>
+	<field name="CURRENT" class="java.math.BigDecimal"/>
+	<field name="AGING_30" class="java.math.BigDecimal"/>
+	<field name="AGING_60" class="java.math.BigDecimal"/>
+	<field name="AGING_90" class="java.math.BigDecimal"/>
+	<field name="AGING_120" class="java.math.BigDecimal"/>
+	<field name="INVBALANCE" class="java.math.BigDecimal"/>
+	<field name="CURRENTHDR" class="java.lang.String"/>
+	<field name="AGING30HDR" class="java.lang.String"/>
+	<field name="AGING60HDR" class="java.lang.String"/>
+	<field name="AGING90HDR" class="java.lang.String"/>
+	<field name="AGING120HDR" class="java.lang.String"/>
+	<variable name="AGING_30_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AGING_30}]]></variableExpression>
+	</variable>
+	<variable name="CURRENT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{CURRENT}]]></variableExpression>
+	</variable>
+	<variable name="AGING_60_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AGING_60}]]></variableExpression>
+	</variable>
+	<variable name="AGING_90_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AGING_90}]]></variableExpression>
+	</variable>
+	<variable name="AGING_120_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AGING_120}]]></variableExpression>
+	</variable>
+	<variable name="INVBALANCE_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{INVBALANCE}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="81" splitType="Stretch">
+			<image>
+				<reportElement x="0" y="0" width="230" height="79" uuid="50b04b0c-1195-4770-891e-ca5d89992189"/>
+				<imageExpression><![CDATA["BASISlogo.png"]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="241" y="0" width="250" height="20" uuid="7edcc170-87e5-4302-ad32-415fd2aaab37"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{FIRM_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="241" y="20" width="350" height="20" uuid="f23d774f-6ffd-4209-b127-6be6ca8af886"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Detail Aging Report as of " +$F{RUN_DATE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="241" y="60" width="200" height="20" uuid="81308574-48ec-46fd-8f8e-8a6002c05d8c"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Based on Invoice Date]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="720" y="0" width="30" height="20" uuid="fb815e46-818e-410e-ac4e-941f8ba6f578"/>
+				<textElement textAlignment="Right">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="620" y="0" width="100" height="20" uuid="352ff14b-87e3-43b2-8f10-c826b61fa438"/>
+				<textElement textAlignment="Right">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Page:]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="80" width="750" height="1" uuid="fda58e79-8ad7-486c-8fb4-7fc3ad4f4694"/>
+			</line>
+			<textField>
+				<reportElement x="241" y="40" width="400" height="20" uuid="bd77390d-2cad-49bd-bf1c-9313629c704a"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["For:  " + $F{CUSTOMER_NBR} + "  " + $F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="32" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="45" height="30" forecolor="#000000" backcolor="#FFFFFF" uuid="ba7025ff-b612-4339-a4c7-5e047cd15d8e"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Invoice Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="45" y="0" width="55" height="30" uuid="40b8dc88-312f-455a-a676-84494994b501"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Invoice Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="170" y="0" width="55" height="30" uuid="57687b18-80de-4332-b541-3b280d1dc25f"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[P.O. Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="670" y="3" width="70" height="27" uuid="e54181d7-e19a-4b9f-9bab-98ac9d918b6f"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Invoice Balance]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="31" width="750" height="1" uuid="860f71e2-302f-475c-887b-50e8ca7326bb"/>
+			</line>
+			<staticText>
+				<reportElement x="108" y="0" width="40" height="30" uuid="71d99ea4-19f4-4c8a-8863-a3c80a35894d">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Due Date]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="268" y="0" width="62" height="30" uuid="4cc2afde-c75e-483a-a921-fc0d002a7e9d"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CURRENTHDR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="350" y="0" width="62" height="30" uuid="2cbbefb8-66d4-4845-a1c9-d95ddd1845ca"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AGING30HDR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="432" y="0" width="62" height="30" uuid="88ec294b-3856-4203-8764-147b0e1688b2"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AGING60HDR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="514" y="0" width="62" height="30" uuid="ad599da0-c767-4e19-bba7-01b5dc43eca0"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AGING90HDR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="596" y="0" width="62" height="30" uuid="311f10b7-c544-4f06-a69a-bbfc1937714b"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AGING120HDR}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="45" height="20" uuid="4584f9e9-68b6-416e-9d0f-d17cc8ed8118"/>
+				<textFieldExpression><![CDATA[$F{INVOICE_NBR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="45" y="0" width="63" height="20" uuid="b002351d-8ab0-4034-b898-8b9ecb253396"/>
+				<textFieldExpression><![CDATA[$F{INVOICE_DATE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="170" y="0" width="55" height="20" uuid="23c2e75c-1b66-423c-b239-6fc63afdde11"/>
+				<textFieldExpression><![CDATA[$F{PO_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="225" y="0" width="25" height="20" uuid="845c343f-0d26-44b7-8395-69cbdca75c20"/>
+				<textFieldExpression><![CDATA[$F{CURRENCY}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="250" y="0" width="80" height="20" uuid="0381c409-7a7d-4d6e-995d-c4fc2a7161fa"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{CURRENT}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="332" y="0" width="80" height="20" uuid="7c62db3f-d6c7-4a5c-beba-feebd3158196"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{AGING_30}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="414" y="0" width="80" height="20" uuid="c8c6fb0c-607f-4789-8f7f-28873d7c77b3"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{AGING_60}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="496" y="0" width="80" height="20" uuid="7093164b-7c0f-4ca5-b126-2b417e2ba876"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{AGING_90}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="578" y="0" width="80" height="20" uuid="f83763ef-1bf7-4e31-aa12-697a15080095"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{AGING_120}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="660" y="0" width="80" height="20" uuid="13ee8326-a86d-41f2-b267-9a1570604c6e"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{INVBALANCE}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField>
+				<reportElement x="108" y="0" width="62" height="20" uuid="fae5fa4f-0179-45fd-83ef-14d612ba5992"/>
+				<textFieldExpression><![CDATA[$F{DUE_DATE}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="35" splitType="Stretch">
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="332" y="5" width="80" height="20" uuid="3b292a95-aea0-4d8b-b5dd-c563a34e4ce7"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AGING_30_1}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="250" y="5" width="80" height="20" uuid="73529882-2c9d-413a-aec8-5b6fd3e625c2"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{CURRENT_1}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="414" y="5" width="80" height="20" uuid="d078d8f4-4d00-46be-85db-6d4b1393f573"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AGING_60_1}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="496" y="5" width="80" height="20" uuid="b1289188-9d39-45a7-9d5a-700752635165"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AGING_90_1}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="578" y="5" width="80" height="20" uuid="51d11e06-aefd-4443-a4b2-ff3bed25e9d4"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AGING_120_1}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="660" y="5" width="80" height="20" uuid="57a713ba-5e14-474d-80a9-8f86933ce92f"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{INVBALANCE_1}]]></textFieldExpression>
+				<patternExpression><![CDATA[$P{FIRM_ID}.equalsIgnoreCase("01")?"$ ##,##0.00":"€ ##,##0.00"]]></patternExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="0" width="750" height="1" uuid="d58de313-565c-4b71-b95b-bb6f53684498"/>
+			</line>
+			<line>
+				<reportElement x="250" y="25" width="500" height="1" uuid="d4102203-60e0-40db-9816-88c529bfe608"/>
+			</line>
+			<line>
+				<reportElement x="250" y="28" width="500" height="1" uuid="d7ff3305-d35b-4f42-9809-2120fd5b31ff"/>
+			</line>
+		</band>
+	</summary>
+</jasperReport>

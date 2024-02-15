@@ -1,0 +1,558 @@
+0010 REM "OPR - Invoice Printing (Form #201)"
+0020 REM "Program OPR.CA"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.3 - 15May97 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "20Feb97 WGH: Use IV Price Mask for price fields (550)"
+0032 REM "MAS * JCM * Sort by invoice
+0036 REM 
+0040 REM "O9=9 - From invhist_print.bbj
+0041 REM "O9=5 - From BIN.11 to print using PX for pdf file conversion
+0042 REM "O9=4 - From OPR.NA: print picklist only by printing "---" in 
+0043 REM "   place of cust type, signalling unform to print picklist only
+0050 REM "O9$=Return program
+0051 REM "O9=1 - Batch print from OPR.GA
+0052 REM "O9=2 - On demand print from OPE.CE
+0053 REM "O9=3 - Historical invoice print from ARM.ML
+0054 REM "       ARE03_DEV=ART03_DEV
+0055 REM "       ARE13_DEV=ART13_DEV
+0056 REM "       ARE23_DEV=ART23_DEV
+0057 REM "       ARE33_DEV=ART33_DEV
+0058 REM "       ARE73_DEV=ART73_DEV
+0059 REM "       ARE83_DEV=ART83_DEV
+0070 REM "PRTR_DEV=Open printer channel
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/lock files"
+0105 if o9=5 or o9=9 then goto iolists
+0110 LET FILES1=5; REM "WA:200
+0120 DIM FILES1$[FILES1],OPTIONS1$[FILES1],CHANNELS1[FILES1]
+0130 LET FILES1$[1]="TMM-01",FILES1$[2]="ARE-73"
+0140 LET FILES1$[3]="ARE-83",FILES1$[4]="CSM-03"
+0150 LET FILES1$[5]="SMC-01"
+0155 if o9=3 then files1$[2]="ART-73",files1$[3]="ART-83"
+0160 CALL "SYC.DA",1,1,FILES1,FILES1$[ALL],OPTIONS1$[ALL],CHANNELS1[ALL],BATCH,STATUS
+0170 IF STATUS<>0 THEN GOTO 4100
+0180 LET TMM01_DEV=CHANNELS1[1],ARE73_DEV=CHANNELS1[2]
+0190 LET ARE83_DEV=CHANNELS1[3],CSM03_DEV=CHANNELS1[4]
+0195 LET SMC01_DEV=CHANNELS1[5]
+0200 iolists: REM " --- IOLists" 
+0210 ARE03A: IOLIST A0$(1),A[ALL]
+0220 ARE13A: IOLIST W0$,W1$(1),W[ALL]
+0230 ARE20A: IOLIST Z0$,Z1$
+0240 ARE23A: IOLIST T0$,T1$(1),T2$,T[ALL]
+0250 ARE33A: IOLIST D0$,D1$
+0260 ARM01A1: IOLIST B0$,B1$
+0265 ARM01A2: IOLIST A0$,A1$
+0270 ARM02A: IOLIST B0$,B1$,B[ALL]
+0280 ARM03A: IOLIST C0$,C1$
+0300 ARM10A: IOLIST X1$
+0310 ARM10C: IOLIST Y7$,Y9$
+0320 ARM10E: IOLIST Y0$(1)
+0330 ARM10F: IOLIST X3$
+0340 ARM10G: IOLIST *,X4$
+0350 ARM10I: IOLIST *,disc_pct
+0360 IVM01A: IOLIST *,X2$,X9$(1),*,*,X5$(1); REM "WA:200
+0370 CSM03A: IOLIST CS0$,CS1$,CS2$
+0380 ARE73A: IOLIST WX0$,WX1$,WX[ALL]; REM WA# 207
+0390 ARE83A: IOLIST WY0$,WY1$,WY2$,WY[ALL]; REM WA# 207
+0400 ARW43A: IOLIST ARW43_K$
+0410 call "templates.pgm::TMM01"
+0420 call "templates.pgm::SMC01"
+0430 call "ec_open::SNMEL"
+0440 call "ec_open::SNMEU"
+0450 if o9<>5 then call "ec_open::country"
+0460 CALL "ec_open::ARM02_CANADA"
+0470 call "ec_open::ART03_CANADA"
+0480 call "templates.pgm::CANADIAN_EXCH"
+0500 REM " --- Initialize Data"
+0505 DIM WX[4],WY[2],X5$(2); REM WA# 207
+0510 PRECISION I[2]
+0520 LET L9=25,u1=11
+0530 DIM H9$(50,$0A$)
+0540 DIM W1$(64),W[14]
+0550 LET PRICE_MASK$=M4$,EXT_MASK$=M1$
+0600 tmp=unt,file_text$="",sz=-1
+0610 open(tmp)"bas_invoice.txt"
+0620 f$=fin(tmp),sz=dec(f$(1,4))
+0630 if sz then readrecord(tmp,siz=sz)file_text$
+0640 close(tmp,err=*next)
+0700 REM " --- Background"
+0710 IF O9>1 THEN GOTO 0990
+0720 DIM A0$(117),A[10]
+0800 LET PAGECOUNT=0,CLOSEPRTR=0
+0990 IF O9>1 and o9<5 THEN PRINT @(0,21),'CL',@(30,21),"Printing:",; LET COLUMN=40,ROW=21
+0993 IF O9=1 THEN CALL "SYC.NB","Printing",LEN(M0$)+8,COLUMN; LET ROW=11
+0995 IF O9>1 THEN READ (ARE03_DEV,KEY=A0$(1,20),DOM=4100)IOL=ARE03A; GOTO 1142
+1000 REM " --- Initial Read"
+1005 REM "P5$=Starting customer number on restart"
+1010 READ (ARW43_DEV,KEY=N0$,DOM=1011); REM "WA:200
+1020 READ (ARE04_DEV,KEY=N0$+"I  "+P5$,DOM=1030)
+1100 REM " --- Main Read"
+1105 sam_renew=0
+1110 IF O9>1 THEN GOTO 4100
+1115 LET ARW43_K$=KEY(ARW43_DEV,END=4000)
+1116 READ (ARW43_DEV)
+1117 LET K1$=ARW43_K$(1,2)+"I"+ARW43_K$(3,2)+ARW43_K$(12,13)
+1118 READ (ARE04_DEV,KEY=K1$,DOM=1115)
+1130 IF K1$(1,3)<>N0$+"I" THEN GOTO 4000
+1140 EXTRACT (ARE03_DEV,KEY=K1$(1,2)+K1$(4)+"000",DOM=1200)IOL=ARE03A
+1142 gosub canadian_invoice
+1145 IF A0$(99,1)="N" THEN GOTO 1170
+1150 DIM Y7$(30),Y9$(21),Z0$(56),Z1$(30); LET Y7$(7)="Invalid Receipt Code",Y9$(21,1)="C"
+1155 IF ARE20_DEV=0 THEN GOTO 1170
+1160 FIND (ARE20_DEV,KEY=A0$(1,17),DOM=1170,ERR=1170)IOL=ARE20A
+1165 FIND (ARM10_DEV,KEY=N0$+"C"+Z0$(21,3),DOM=1170)IOL=ARM10C
+1170 IF A0$(21,1)="V" THEN GOTO 1100
+1172 IF O9>1 THEN GOTO 1400
+1175 IF A0$(22,1)<>"I" THEN GOTO 1200
+1180 IF A0$(68,1)="Y" THEN GOTO 1100
+1185 IF A0$(68,1)<>"B" AND A0$(69,1)="Y" THEN GOTO 1100
+1190 LET A0$(69,1)="Y"; WRITE (ARE03_DEV,KEY=A0$(1,20))IOL=ARE03A
+1195 GOTO 1400
+1200 REMOVE (ARE04_DEV,KEY=K1$)
+1210 GOTO 1100
+1400 REM " --- Heading"
+1405 sam_renew=(CVS(A0$(49,10),7)="SAM RENEW")
+1410 if o9<5 then PRINT @(COLUMN,ROW),FNF$(A0$(5,P[0]),M0$)," ",A0$(42,7),
+1420 GOSUB EURO_OR_DOLLAR
+1430 memo_only=(a0$(30,1)="M");rem 'Print memo lines only on I/C invoices
+1440 DIM B$(150),B1$(325)
+1450 LET B1$(1)="Not On File",CONTACT$=""
+1460 READ (ARM01_DEV,KEY=N0$+A0$(5,6),DOM=1490)IOL=ARM01A1
+1465 LET CONTACT$=B1$(228,20)
+1495 GOSUB 10000
+1500 shipto: REM " --- Ship-To"
+1510 LET C$=B$
+1520 IF FNP$(A0$(102,6))="" THEN GOTO 1600
+1530 DIM C1$(190)
+1540 IF A0$(102,6)<>"000099" THEN GOTO 1600
+1545 LET SHIPTO$=""
+1550 FIND (ARE33_DEV,KEY=N0$+A0$(5,13),DOM=1690)IOL=ARE33A
+1555 LET C1$=D1$(1,90)+FILL(30)+D1$(91)
+1560 GOTO 1630
+1600 LET SHIPTO$=""
+1610 FIND (ARM03_DEV,KEY=N0$+A0$(5,6)+A0$(102,6),DOM=1690)IOL=ARM03A
+1620 LET SHIPTO$=A0$(102,6)
+1630 LET C$=C1$(31,90)+FILL(30)+C1$(121,25)+" "+C1$(146,2)+"  "+C1$(157,15)+FILL(15," ")+C1$(148,9)
+1640 CALL "SYC.AX",C$,30,6,P[2],30
+1650 LET C$=C1$(1,30)+C$
+1690 IF LEN(C$)<LEN(B$) THEN LET C$=C$+FILL(40); GOTO 1690
+1700 REM " --- Terms"
+1710 DIM X1$(20)
+1720 FIND (ARM10_DEV,KEY=N0$+"A"+A0$(62,2),DOM=1740)IOL=ARM10A
+1730 LET terms$=X1$(6,18)
+1735 if cvs(terms$,7)="CREDIT CARD" and lang$<>"EN" then terms$=tr$[32]
+1736 if cvs(terms$,7)="NET 15" and lang$<>"EN" then terms$=tr$[33]
+1740 REM " --- Salesperson"
+1745 LET X3$=""
+1750 FIND (ARM10_DEV,KEY=N0$+"F"+A0$(59,3),DOM=1770)IOL=ARM10F
+1760 LET X3$=X3$(7,20)
+1770 disc_pct=0,discount$=""
+1780 FIND (ARM10_DEV,KEY=N0$+"I"+A0$(64,2),DOM=*next)IOL=ARM10I
+1790 if disc_pct and o9<>4 then discount$=str(disc_pct)+"%"
+1795 if A0$(5,P[0]) = "007688" then discount$ = ""; rem don't print the discount on BSG invoices
+1800 REM 
+1900 REM " --- Print Heading"
+1910 LET P=0
+1920 GOSUB 15000
+1940 LET T0=0,X6$=""
+1990 READ (ARE13_DEV,KEY=A0$(1,17),DOM=2000)
+2000 REM " --- Detail"
+2020 LET K$=KEY(ARE13_DEV,END=3000)
+2040 IF K$(1,17)<>A0$(1,17) THEN GOTO 3000
+2060 READ (ARE13_DEV)IOL=ARE13A
+2070 if canadian_invoice then gosub convertToCanadian
+2100 REM " --- Type"
+2110 if memo_only and w0$(21,1)<>"M" then goto 2000
+2120 DIM Y0$(30)
+2130 FIND (ARM10_DEV,KEY=N0$+"E"+W0$(21,1),DOM=2160)IOL=ARM10E
+2150 LET X2$=W0$(23)
+2160 IF POS(Y0$(25,1)=" SP")=0 THEN GOTO 2200
+2170 DIM X9$(62),X2$(60)
+2180 firm$=n0$,ivm01_itm$=w0$(33,20);gosub ivm01_itm
+2190 LET X2$=CVS(X2$,35)
+2200 IF Y0$(25,1)="M" AND POS(Y0$(28,1)="BI ")=0 THEN GOTO 2300
+2210 GOSUB 12000; REM "WA:200
+2220 GOSUB 5200
+2250 REM " --- Print configurator/serial number info - WA# 207
+2260 GOSUB config_detail
+2300 REM " --- Total"
+2320 LET T0=T0+fneu(W[6])
+2400 REM " --- Any Serial/Lot #'s?"
+2410 IF POS(I3$(17,1)="LS")=0 THEN GOTO 2900
+2420 IF POS(Y0$(25,1)="PS")=0 THEN GOTO 2900
+2430 IF X9$(19,1)<>"Y" THEN GOTO 2900
+2500 REM " --- OK, There Are Lots"
+2505 DIM T1$(20),T[2]; LET T$="",T9=0
+2510 READ (ARE23_DEV,KEY=W0$(1,20),DOM=2520)
+2520 LET K9$=KEY(ARE23_DEV,END=2600)
+2540 IF K9$(1,20)<>W0$(1,20) THEN GOTO 2600
+2560 READ (ARE23_DEV)IOL=ARE23A
+2570 IF T[0]=0 THEN GOTO 2520
+2580 GOSUB 5400
+2585 LET T9=T9+T[1]
+2590 GOTO 2520
+2610 IF T9>=W[4] THEN GOTO 2660
+2620 DIM T1$(20,"_"),T[2]
+2630 FOR Y=1 TO W[4]-T9
+2635 IF I3$(17,1)="L" THEN LET Y=W[4]-T9
+2640 GOSUB 5400
+2650 NEXT Y
+2660 IF L+1>L9 THEN GOTO 2700
+2670 PRINT (PRTR_DEV)""
+2680 LET L=L+1
+2900 GOTO 2000
+3000 REM " --- Total"
+3020 GOSUB 5600
+3080 IF O9=1 THEN LET A0$(68,1)="B"; WRITE (ARE03_DEV,KEY=A0$(1,20))IOL=ARE03A; GOTO 1100
+4000 REM " --- Totals"
+4005 CLOSE (PRTR_DEV,ERR=4010)
+4010 IF O9=2 THEN GOSUB 4500; GOTO 4085
+4015 IF O9>2 THEN GOTO 4100
+4020 PRINT @(0,9),'CE',
+4025 LET V4$="Are You Ready To Update The Invoice Print File"
+4030 CALL "SYC.YN",0,V4$,0,V$,V3
+4035 IF V$<>"YES" THEN GOTO 9900
+4040 CALL "SYC.NB","Updating",LEN(M0$)+8,COLUMN
+4050 READ (ARE04_DEV,KEY=N0$+"I",DOM=4060)
+4060 LET K1$=KEY(ARE04_DEV,END=4100); READ (ARE04_DEV)
+4065 IF K1$(1,3)<>N0$+"I" THEN GOTO 4100
+4070 PRINT @(COLUMN,11),FNF$(A0$(5,P[0]),M0$)," ",A0$(42,7),
+4075 EXTRACT (ARE03_DEV,KEY=K1$(1,2)+K1$(4)+"000",DOM=4060)IOL=ARE03A
+4080 IF A0$(68,1)<>"B" THEN GOTO 4060
+4085 LET A0$(68,2)="YN"
+4090 WRITE (ARE03_DEV,KEY=A0$(1,20))IOL=ARE03A
+4095 IF O9=1 THEN GOTO 4060
+4100 REM " --- Close Files"
+4105 CLOSE (PRTR_DEV,ERR=*next)
+4110 CLOSE (SNMEU,ERR=*next)
+4115 CLOSE (SNMEL,ERR=*next)
+4117 CLOSE (ARM02_CANADA,ERR=*next)
+4118 CLOSE (ART03_CANADA,ERR=*next)
+4120 IF O9<>3 THEN GOTO 4180
+4125 READ (ARE03_DEV,KEY=A0$(1,10),DOM=4130)
+4130 READ (ARM01_DEV,KEY=A0$(1,2)+A0$(5,6))IOL=ARM01A2
+4140 READ (ARM02_DEV,KEY=A0$+"  ")IOL=ARM02A
+4150 for f=1 to files1;close(channels1[f],err=*next)
+4160 next f
+4190 RUN O9$
+4500 REM " --- Cash Box Open"
+4502 IF POS(" "<>R1$(17,2))=0 THEN GOTO 4590
+4505 LET CASHBOX_DEV=UNT; OPEN (CASHBOX_DEV,ERR=4590)R1$(17,2)
+4510 FOR X=1 TO POS(" "<>R1$(1,8),-1) STEP 2
+4511 IF POS(" "<>R1$(X,2))=0 THEN GOTO 4515
+4512 IF R1$(X,2)="1B" THEN PRINT (CASHBOX_DEV)'ES', ELSE PRINT (CASHBOX_DEV)ATH(R1$(X,2)),
+4515 NEXT X; PRINT (CASHBOX_DEV)
+4520 FOR I=1 TO NUM(R1$(29,4))
+4530 PRINT (CASHBOX_DEV)ATH(R1$(21,POS(" "<>R1$(21,8),-1)))
+4540 NEXT I
+4550 FOR X=1 TO POS(" "<>R1$(9,8),-1) STEP 2
+4551 IF POS(" "<>R1$(8+X,2))=0 THEN GOTO 4555
+4552 IF R1$(8+X,2)="1B" THEN PRINT (CASHBOX_DEV)'ES', ELSE PRINT (CASHBOX_DEV)ATH(R1$(8+X,2)),
+4555 NEXT X; PRINT (CASHBOX_DEV)
+4560 CLOSE (CASHBOX_DEV,ERR=4590)
+4590 RETURN 
+5200 REM " --- Item Detail"
+5210 IF L>L9-1 THEN GOSUB 5800
+5250 IF POS(Y0$(25,1)="MO")<>0 THEN GOTO 5280
+5260 PRINT (PRTR_DEV)@(0),W[2],
+5280 IF POS(Y0$(25,1)="MNO")<>0 THEN PRINT (PRTR_DEV)@(u1),W1$(1,40),
+5300 IF POS(Y0$(25,1)=" SRDP")<>0 THEN PRINT (PRTR_DEV)@(u1+2),W0$(33),
+5330 PRINT (PRTR_DEV)@(42),PORT$,
+5340 IF POS(Y0$(25,1)=" SRDNP")<>0 THEN PRINT (PRTR_DEV)@(58),fneu(W[1]):PRICE_MASK$,
+5360 IF POS(Y0$(25,1)="M")=0 THEN PRINT (PRTR_DEV)@(68),fneu(W[6]):EXT_MASK$,
+5380 PRINT (PRTR_DEV)'LF',
+5382 LET L=L+1
+5387 IF POS(Y0$(25,1)="SP")<>0 AND L>L9-1 THEN GOSUB 5800
+5390 IF POS(Y0$(25,1)="SP")<>0 THEN PRINT (PRTR_DEV)@(u1),X2$,'LF',
+5394 IF POS(Y0$(25,1)="SP")<>0 THEN LET L=L+1
+5396 RETURN 
+5400 REM " --- Serial #'s Here"
+5410 IF L<=L9-1 THEN GOTO 5440
+5415 GOSUB 5800
+5420 IF POS(Y0$(25,1)=" SP")<>0 THEN PRINT (PRTR_DEV)@(u1+5),W0$(33); LET L=L+1
+5440 IF I3$(17,1)="L" THEN GOTO 5470
+5450 PRINT (PRTR_DEV)@(u1+5),"S/N: ",T1$(1,I[3])
+5460 GOTO 5480
+5470 PRINT (PRTR_DEV)@(u1+5),"Lot: ",T1$(1,I[3]),"   Shipped: ",
+5475 IF T[1]<>0 THEN PRINT (PRTR_DEV)T[1]:M2$ ELSE PRINT (PRTR_DEV)FILL(M2,"-")
+5480 LET L=L+1
+5490 RETURN 
+5600 REM " --- Total"
+5610 PRINT (PRTR_DEV)H9$(1,L9-L+4);xx=65
+5620 IF A0$(99,1)="Y" THEN GOSUB 6900
+5625 if memo_only then t0=fneu(a[6])
+5630 PRINT (PRTR_DEV)@(0),MESSAGE$,@(xx-lt[19]),tr$[19],@(68),T0:EXT_MASK$
+5640 PRINT (PRTR_DEV)@(xx-11-lt[20]),a0$(32,10)," ",tr$[20],@(68),fneu(A[1]):EXT_MASK$
+5650 PRINT (PRTR_DEV)@(xx-lt[21]),tr$[21],@(68),fneu(A[0]):EXT_MASK$
+5660 ITOT=T0+fneu(A[0]-A[2]+A[1]),x0=0;if lang$<>"EN" then currency$="USD",x0=1
+5665 gosub print_total_line
+5670 rem ' PRINT (PRTR_DEV)'LF','lf',@(xx-lt[22]-2*x0+3*(x0=0)),tr$[22],@(68-5*x0),ITOT:EXT_MASK$,currency$
+5680 PRINT (PRTR_DEV)'FF',
+5684 REM Close and reopen printer approx. every 10 invoices if not printing to file to keep spooler from choking on graphics in UnForm
+5685 IF CLOSEPRTR THEN LET PRINTER$=FID(PRTR_DEV); IF PRINTER$(1,1)>$07$ THEN CLOSE (PRTR_DEV); OPEN (PRTR_DEV)PRINTER$ FI; LET CLOSEPRTR=0
+5690 RETURN 
+5800 REM " --- Continued"
+5820 PRINT (PRTR_DEV)H9$(1,L9-L+1)
+5840 PRINT (PRTR_DEV)@(79-lt[31]),tr$[31],'FF',
+5870 GOSUB 15000
+5890 RETURN 
+6900 REM " --- Print Paid Info"
+6920 LET X6$="PAID: "+FNP$(Y7$(7,20))+" "
+6930 IF Y9$(21,1)="P" THEN LET X6$=X6$+"# "+Z0$(31,16)
+6940 IF Y9$(21,1)="C" THEN LET X6$=X6$+"# "+Z0$(24,7)
+6950 LET X6$=X6$+" NAME: "+Z1$
+6990 RETURN 
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+8090 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+8245 LET Q=1,Q0=0
+8250 WHILE LEN(Q2$(Q))
+8255 IF POS(Q2$(Q,1)="-()") THEN LET Q0=Q0+1 ELSE LET Q2$(Q,1)="X"
+8260 LET Q=Q+1
+8265 WEND
+8270 IF LEN(Q1$)>LEN(Q2$)-Q0 THEN LET Q1$=Q1$(1,LEN(Q2$)-Q0)
+8280 RETURN STR(Q1$:Q2$)
+8290 FNEND
+8350 DEF FNEU(Q1)
+8360 IF PRICING$="E" THEN LET Q1=Q1/EURORATE
+8370 RETURN Q1
+9000 REM " --- Standard Error Routine (15May95)"
+9005 if o9=9 then goto 4000;rem 'Gui AddOn exit
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END
+10000 REM " --- Get 30 character address from Telemaster"
+10010 READ (TMM01_DEV,KNUM=0,KEY=A0$(1,2)+A0$(5,6),DOM=*next)
+10020 LET TMM01_K$=KEY(TMM01_DEV,END=10090)
+10030 IF POS(A0$(1,2)+A0$(5,6)=TMM01_K$)<>1 THEN GOTO 10090
+10040 READrecord (TMM01_DEV,KEY=TMM01_K$)TMM01$
+10050 LET CUST_TYPE$=TMM01.cust_type$
+10055 if o9=3 or o9=9 or o9=5 then let cust_type$="+++";rem 'force unform basis.rul to print customer copy only
+10060 if o9=4 then let cust_type$="---";rem 'cause unform basis.rul to print pick sheet
+10070 LET B$=TMM01.address_1$+TMM01.address_2$+tmm01.address_3$+tmm01.address_4$+TMM01.city$+" "+TMM01.state$+"  "+tmm01.country_code$+FILL(28," ")+TMM01.zip_code$
+10080 CALL "SYC.AX",B$,30,6,P[2],30
+10090 LET B$=B1$(1,30)+B$
+10100 lang$=cvs(tmm01.lang_code$,7)
+10110 if lang$="" then
+10120   country.lang_code$="EN"
+10130   readrecord(country,key=tmm01.country_code$,dom=*next)country$
+10140   lang$=cvs(country.lang_code$,7)
+10150   if lang$="" then lang$="EN"
+10160 fi
+10170 gosub translate
+10190 RETURN 
+12000 REM " --- Find Port Id
+12010 LET PORT$=""
+12030 IF Y0$(25,1)<>"S" THEN GOTO 12090
+12040 FIND (CSM03_DEV,KEY=N0$+W0$(39,3),DOM=12090)IOL=CSM03A; REM "WA:200
+12050 LET PORT$=CS2$(1,5); IF W0$(33,2)="P4" THEN LET PORT$(5,1)="4"
+12090 RETURN 
+13000 translate:
+13010 items=33,notrans=0
+13020 dim tr$[items],lt[items]
+13030 for loop=1 to items
+13040 srch$=str(loop:"00")
+13050 gosub get_text
+13060 tr$[loop]=cvs(text$,3),lt[loop]=len(tr$[loop])
+13065 if tr$[loop]="" then notrans=notrans+1
+13070 next loop
+13080 if notrans>5 and lang$<>"EN" then lang$="EN";goto translate
+13090 return
+13500 get_text:
+13510 srch$=cvs(srch$+"_"+lang$+":",4),text$=""
+13520 p0=pos(srch$=file_text$)
+13530 if p0=0 then return
+13540 tmp$=file_text$(p0+len(srch$))
+13550 p0=pos("{"=tmp$),p1=pos("}"=tmp$)
+13560 if p0=0 or p1=0 or p1<p0 then return
+13570 text$=tmp$(p0+1,p1-p0-1)
+13580 return
+14500 REM Date with 4 digit year
+14505 DEF FNA4$(Q$,Q2$)=STR(((ASC(Q$)-32)+1900)*POS(" "<>Q2$(2,1)):"0000")
+14510 DEF FNB4$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA4$(Q1$(1),Q1$)
+15000 REM " --- Heading"
+15002 IF PAGECOUNT>10 THEN LET CLOSEPRTR=(o9<>5),PAGECOUNT=0
+15005 LET L=0,P=P+1,PAGECOUNT=PAGECOUNT+1,xx=61
+15010 IF O9=3 or o9=9 THEN LET ORDER$=A0$(42,7),INVOICE$=A0$(11,7) ELSE LET ORDER$=A0$(11,7),INVOICE$=A0$(42,7)
+15020 IF O9=3 or o9=9 THEN PRINT (PRTR_DEV)@(60),"DUPLICATE" ELSE PRINT (PRTR_DEV)""
+15025 PRINT (PRTR_DEV)'LF','LF','LF','LF',@(xx-lt[1]),tr$[1],@(64),INVOICE$
+15030 print(prtr_dev)@(xx-lt[3]),tr$[3],@(64),FNB4$(A0$(24,3)),'LF',@(xx-lt[4]),tr$[4],@(64),P
+15035 PRINT (PRTR_DEV)@(xx-lt[5]),tr$[5],@(64),ORDER$,'LF',@(xx-lt[6]),tr$[6],@(64),FNB4$(A0$(77,3)),'LF',@(xx-lt[7]),tr$[7],@(64),FNF$(A0$(5,P[0]),M0$),"  ",CUST_TYPE$,N0$,lang$,H9$(1,2),@(7),tr$[8],@(46),tr$[9]
+15040 FOR I=1 TO 6
+15045 PRINT (PRTR_DEV)@(7),B$(I*30-29,30),@(46),C$(I*30-29,30)
+15050 NEXT I
+15055 IF CVS(CONTACT$,2)<>"" THEN PRINT (PRTR_DEV)@(1),tr$[10]+" ",CONTACT$,'LF' ELSE PRINT (PRTR_DEV)'LF'
+15060 PRINT (PRTR_DEV)@(1),tr$[11],@(19),tr$[12],@(35),tr$[13],@(62),tr$[14]
+15065 PRINT (PRTR_DEV)@(3),A0$(49,10),@(19),discount$,@(35),X3$,@(61),terms$
+15080 PRINT (PRTR_DEV)'LF',@(0),tr$[15],@(u1),tr$[16],@(62),tr$[17],@(79-lt[18]),tr$[18],'LF'
+15090 RETURN 
+15300 REM " --- configuration detail
+15310 config_detail:
+15320 IF X5$(1,1)<>"Y" THEN GOTO 15900
+15330 FIND (ARE73_DEV,KEY=W0$(1,20),DOM=15900)IOL=ARE73A
+15340 IF L+1>L9 THEN GOSUB 5800
+15350 PRINT (PRTR_DEV)@(u1+2),"Type: ",WX1$(4,3),
+15360 IF WX1$(4,1)="S" or wx1$(16,3)="RN1" THEN 
+15365   READ RECORD (SMC01_DEV,KEY=WX1$(31,6),ERR=*endif)SMC01$
+15370   annual_dt$=smc01.annual_dt$(5,2)+"/"+smc01.annual_dt$(7,2)+"/"+smc01.annual_dt$(1,4)
+15375   if sam_renew then annual_dt$(7,4)=str(num(annual_dt$(7,4))+1:"0000")
+15380   if o9<>3 and o9<>9 then PRINT (PRTR_DEV)" ",tr$[23]," ",annual_dt$,
+15390 fi
+15400 IF WX[1]<>0 THEN PRINT (PRTR_DEV)" Media: ",WX1$(1,3),
+15410 IF WX[1]<>0 THEN PRINT (PRTR_DEV)"  Sets: ",WX[1]:"#0",
+15420 PRINT (PRTR_DEV)'LF',
+15430 LET L=L+1
+15440 IF L+1>L9 THEN GOSUB 5800
+15450 u$=tr$[24]+": "+str(wx[2]:"###0- ")+wx1$(10,2)+" "+str(WX[3]:"#### ")+wx1$(12,2)
+15460 if wx1$(4,3)="ADD" and wx1$(8,1)="T" then u$=tr$[27]+" "+u$
+15470 PRINT (PRTR_DEV)@(u1+2),cvs(u$,35),
+15480 PRINT (PRTR_DEV)'LF',
+15490 LET L=L+1
+15500 REM " --- serial number detail"
+15510 LET ACT$="",DEACT$="",MOD$=""
+15520 READ (ARE83_DEV,KEY=W0$(1,20),DOM=*next)
+15530 LET ARE83_K$=KEY(ARE83_DEV,END=15600)
+15540 IF POS(W0$(1,20)=ARE83_K$)<>1 THEN GOTO 15600
+15550 READ (ARE83_DEV,KEY=ARE83_K$)IOL=ARE83A
+15560 IF WY1$(1,1)="M" THEN LET MOD$=MOD$+WY2$
+15570 IF WY1$(1,1)="A" THEN LET ACT$=ACT$+WY2$
+15580 IF WY1$(1,1)="D" THEN LET DEACT$=DEACT$+WY2$
+15590 GOTO 15530
+15600 REM " --- print them
+15610 LET STR$=MOD$,TITLE$=tr$[25]+": ",filler=max(20-lt[25],1)
+15615 if sam_renew then title$=tr$[25]+fill(filler)+tr$[26]
+15620 GOSUB 15700
+15630 LET STR$=ACT$,TITLE$=tr$[27]+" "+tr$[25]+": "
+15640 GOSUB 15700
+15650 LET STR$=DEACT$,TITLE$=tr$[28]+" "+tr$[25]+": "
+15660 GOSUB 15700
+15665 PRINT (PRTR_DEV)'LF',; LET L=L+1; IF L>L9 THEN GOSUB 5800
+15670 GOTO 15900
+15700 REM " --- print them
+15705 IF STR$="" THEN return
+15710 LET SNUMBS=INT(LEN(STR$)/20)
+15720 IF L+2>L9 THEN GOSUB 5800
+15730 PRINT (PRTR_DEV)@(u1+2),TITLE$; LET L=L+1
+15740 FOR SL=1 TO SNUMBS
+15745 sn$=STR$((SL-1)*20+1,20),eu$="",x0=u1+4+22*(mod(sl,2)=0)
+15750 if sam_renew then
+15752   eu$=tr$[29],x0=u1+4
+15755   readrecord(snmel,key=sn$,dom=*endif)snmel$
+15760   readrecord(snmeu,key=snmel.end_user_nbr$,dom=*endif)snmeu$
+15765   eu$=cvs(snmeu.company_name$,3)
+15770 fi
+15775 PRINT (PRTR_DEV)@(x0),sn$(1,20),eu$,
+15780 IF x0>u1+4 or sam_renew THEN PRINT (PRTR_DEV)'LF',; LET L=L+1
+15785 IF L+1>L9 THEN GOSUB 5800
+15790 NEXT SL
+15795 IF MOD(SNUMBS,2)<>0 and sam_renw=0 THEN PRINT (PRTR_DEV)'LF',; LET L=L+1
+15800 IF L+1>L9 THEN GOSUB 5800
+15810 RETURN 
+15900 REM " --- Done"
+15990 RETURN 
+16200 ivm01_itm:
+16210 ivmok=0
+16220 READ (ivm01_dev,KEY=firm$+ivm01_itm$,ERR=*next)iol=ivm01a;ivmok=1
+16230 if ivmok or len(cvs(ivm01_itm$,3))<15 then return
+16240 ivm01_itm$(10,3)="CUR"
+16250 if ivm01_itm$(13,3)<>"STD" and ivm01_itm$(1,3)="BAS" then ivm01_itm$(13,3)="EXP"
+16260 READ (ivm01_dev,KEY=firm$+ivm01_itm$,ERR=*next)iol=ivm01a;ivmok=1
+16290 return
+17100 EURO_OR_DOLLAR:
+17110 LET currency$="",EURORATE=1,PRICING$="D"
+17115 if n0$="02" then goto eord_end
+17120 READ (ARM02_DEV,KEY=N0$+A0$(5,6)+"  ",DOM=EORD_END)*,X$
+17130 p=POS(x$(37,1)="DE")
+17140 if p=2 then currency$=CHR(238),pricing$="E"
+17150 EORD_END: 
+17160 RETURN
+20000 canadian_invoice:
+20010 rem ' determine if this is a canadain invoice
+20020 dim art03_canada$:fattr(art03_canada$)
+20030 filekey$ = A0$(1,2) + A0$(5,6); rem ' firm id + customer number
+20040 if o9 = 9 then
+20041 	filekey$ = filekey$ + A0$(24,3) + A0$(42,7); rem ' invoice date + order number - printing an invoice from history (ART03)
+20042 else
+20043   filekey$ = filekey$ + A0$(24,3) + A0$(11,7); rem ' invoice date + order number - printing an invoice from the order file (ARE03)
+20044 fi
+20050 canadian_invoice = 0
+20055 read record(art03_canada,key=filekey$,dom=*next)art03_canada$; canadian_invoice = 1
+20060 if canadian_invoice then
+20062   dim canadian_exch$:fattr(canadian_exch$)
+20064   canadian_exch.ratedate$ = art03_canada.ratedate$
+20066   canadian_exch.sequence_nbr$ = art03_canada.sequence_nbr$
+20068   canadian_exch.to_us_doll = art03_canada.to_us_doll
+20070   canadian_exch.to_cana_doll = art03_canada.to_cana_doll
+20072 fi
+20080 return
+20100 convertToCanadian:
+20110 rem ' convert unit price [1], ext price [6] and taxable amt [7]
+20120 amountin = W[1]; amountout = 0
+20130 call "canDollConversion", canadian_exch$, 0, amountin, amountout
+20140 W[1] = amountout
+20150 amountin = W[6]; amountout = 0
+20160 call "canDollConversion", canadian_exch$, 0, amountin, amountout
+20170 W[6] = amountout
+20180 amountin = W[7]; amountout = 0
+20190 call "canDollConversion", canadian_exch$, 0, amountin, amountout
+20200 W[7] = amountout
+20210 return
+
+20300 print_total_line:
+20310 if canadian_invoice then 
+20320    totamt$ = cvs(str(ITOT:EXT_MASK$),3)
+20330    if len(totamt$) <= 6 then
+20340        totamt$ = "  " + totamt$ + " CAD"
+20350    else
+20360        if len(totamt$) < 9 then
+20370            totamt$ = " " + totamt$ + "CAD"
+20380        else
+20390            totamt$ = totamt$ + "CAD"
+20400        fi
+20410    fi
+20420    PRINT (PRTR_DEV)'LF','lf',@(xx-lt[22]-2*x0+3*(x0=0)),tr$[22],@(68-5*x0),totamt$
+
+20430 else
+20431    totamt$ = cvs(str(ITOT:EXT_MASK$),3)
+20432    if len(totamt$) <= 6 then
+20433        totamt$ = "  " + totamt$ + " USD"
+20434    else
+20435        if len(totamt$) < 9 then
+20436            totamt$ = " " + totamt$ + "USD"
+20437        else
+20438            totamt$ = totamt$ + "USD"
+20439        fi
+20440	     if len(totamt$) > 12 then totamt$ = totamt$(1,12)
+20441    fi
+20442    PRINT (PRTR_DEV)'LF','lf',@(xx-lt[22]-2*x0+3*(x0=0)),tr$[22],@(68-5*x0),totamt$
+20450 fi
+
+20460 return
+46500 END

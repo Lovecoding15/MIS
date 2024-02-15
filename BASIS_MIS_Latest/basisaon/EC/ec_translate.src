@@ -1,0 +1,50 @@
+seterr pgm_exit
+enter param$
+rem dim param$:"mbid:c(4),lang:c(2*),text1:c(1*),text2:c(1*)"
+XT$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ec_translation.txt"
+xt=unt
+open(xt)Xt$
+id=0
+lang=0
+bracket1=0
+bracket2=0
+txt$=""
+while 1
+  read(xt,end=*break)xline$
+  if cvs(xline$,3)="" then continue
+  if id=0 then id=pos(cvs(param.mbid$,3)+":"=xline$) 
+  if id=0 then continue
+  if lang=0 then lang=pos(param.lang$=xline$)
+  if lang=0 then continue
+  if bracket1=0 then 
+    bracket1=pos("{"=xline$)
+    if bracket1 then xline$=xline$(bracket1+1)
+  fi
+  if bracket1=0 then continue
+  bracket2=pos("}"=xline$)
+  if bracket2 then if bracket2>1 then xline$=xline$(1,bracket2-1) else xline$=""
+  txt$=txt$+cvs(xline$,3)
+  if bracket2 then break
+wend
+close(xt)
+tmp$=" "+param.text1$+$0a$+" "+param.text2$+$0a$
+txt$=" "+txt$
+while 1
+  p=pos("<>"=txt$)
+  if p=0 then break
+  p1=pos($0a$=tmp$)
+  if p1=0 then break
+  txt$=txt$(1,p-1)+tmp$(1,p1-1)+txt$(p+2)
+  tmp$=tmp$(p1+1)
+wend
+while 1
+  p=pos("\n"=txt$)
+  if p=0 then break
+  txt$=txt$(1,p-1)+$0a$+txt$(p+2)
+wend
+p=pos("~"=txt$)
+if p then param.text1$=cvs(txt$(1,p-1),35),txt$=" "+txt$(p+1)
+p=pos("~"=txt$)
+if p then param.text2$=cvs(txt$(1,p-1),35),txt$=" "+txt$(p+1)
+pgm_exit:
+exit

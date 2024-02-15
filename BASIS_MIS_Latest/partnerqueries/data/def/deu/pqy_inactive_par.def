@@ -1,0 +1,24 @@
+Barista Application Framework - Definition Module
+PQY_INACTIVE_PAR - Inactive Partners
+Proprietary Information. BASIS International Ltd. All rights reserved.
+Version: 8.0
+
+{TableAttrs}
+ALID;CPGM;CPRO;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;
+{TableDefs}
+PQY_INACTIVE_PAR^[+DIR_CPP]pqy_inactive_par_cpt.bbj^ACUS;AREC;ASIZ;BSHO;^^Inactive Partners^Inactive Partners^^^^^^^^S^^^^^^N;U;^pqy_inactive_query.src^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;CTLI;CTLN;CTLC;DCHN;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;
+{ColumnDefs}
+INACTIVE_DATE^PQY_INACTIVE_PAR^001^C^3001^ind_inactive_date^0^^1^^N^^^C^^PQY_DATE^Date^Last Sale on or Before^Date^C^1^D^^^^0^0^0^0^0^^^^^^^^^^^^^^8^0^^^00/00/0000^^^^^^^0^^^^
+PARTNER_TYPE^PQY_INACTIVE_PAR^002^C^3002^lbx_partner_type^0^^2^^N^[+DIR_CPP]pqy_inactive_par_cpt.bbj^AVAL;^^^PQY_PARTNER_TYPE^Partner Type^Partner Type^Partner Type^C^^L^^^^0^^0^0^0^^^^^^^^^^^^Resellers                     ~RS  ;Partners, Bronze              ~PB  ;Partners, Silver              ~PS  ;Partners, Gold                ~PG  ;^^3^0^^^^^^^^^^0^^^^
+PARTNER_TYPES^PQY_INACTIVE_PAR^003^C^3003^ine_partner_types^0^^3^^N^^^^^PQY_TEXT_30^Text 30^Partner Types^Text 30^C^^E^^^^0^0^0^0^0^^^^^^^^^^^^^^30^0^^^^^^^^^^0^^^^
+NUM_USERS^PQY_INACTIVE_PAR^004^C^3004^inn_num_users^0^^4^^N^[+DIR_CPP]pqy_inactive_par_cpt.bbj^AVAL;^^^PQY_NUM_USERS^Number of Users^Number of Users^Number of Users^N^^n^^^^0^0^0^0^0^^^^^^^^^^^^^^4^0^^^^^^^^^^0^^^^
+{ColumnDefsEnd}
+{KeyDefs}
+PQY_INACTIVE_PAR^PRIMARY^^^^
+{KeyDefsEnd}
+{GridCols}
+001PQY_INACTIVE_PAR.INACTIVE_DATE          ;002PQY_INACTIVE_PAR.PARTNER_TYPE           ;003PQY_INACTIVE_PAR.PARTNER_TYPES          ;004PQY_INACTIVE_PAR.NUM_USERS              ;
+{GridColsEnd}

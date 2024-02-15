@@ -1,0 +1,177 @@
+rem ' query add-on for inactive partners based on options entered on form  
+
+enter
+
+use java.util.StringTokenizer
+
+rem ' get the criteria data
+	pqy_inactive_date$=callpoint!.getColumnData("PQY_INACTIVE_PAR.INACTIVE_DATE")
+	if len(pqy_inactive_date$)<>8 then goto eoj
+	pqy_inactive_date$=pqy_inactive_date$(1,4)+"-"+pqy_inactive_date$(5,2)+"-"+pqy_inactive_date$(7,2)
+	
+	pqy_part_types$=callpoint!.getColumnData("PQY_INACTIVE_PAR.PARTNER_TYPES")
+	selectedTypes! = new StringTokenizer(pqy_part_types$, ",")
+
+        if selectedTypes!.countTokens() = 0 then
+            msg$="You must select at least one partner type."
+            title$="No Partner Type"
+            x = msgbox(msg$,0,title$)
+            goto eoj
+        fi
+
+	pqy_num_users=num(callpoint!.getColumnData("PQY_INACTIVE_PAR.NUM_USERS"))
+
+rem ' set the query string
+
+	sql$="SELECT DISTINCT t1.CUSTOMER_NBR, t2.CUST_TYPE, t1.CUST_NAME, "
+        sql$=sql$+"DATE(t2.LASTINV_DATE, '%Mz/%Dz/%Y') as LAST_SALE, "
+        sql$=sql$+"t1.CONTACT_NAME, t2.SLSPSN_CODE, "
+        sql$=sql$+"CONCAT(CONCAT(CONCAT(CONCAT(LEFT(t1.PHONE_NUMBER,3),'-'),SUBSTRING(t1.PHONE_NUMBER,4,3)),'-'), RIGHT(t1.PHONE_NUMBER,4)) as PHONE "
+	sql$=sql$+"FROM ARM01 t1 "
+	sql$=sql$+"INNER JOIN ARM02 t2 on t1.FIRM_ID = t2.FIRM_ID and t1.CUSTOMER_NBR = t2.CUSTOMER_NBR "
+	rem ' adding the following line + the DISTINCT keyword to limit to customer with serial numbers more than a given number
+	rem ' see the rem line below
+	sql$=sql$+"INNER JOIN SNM01 t3 on t1.FIRM_ID = t3.FIRM_ID and t1.CUSTOMER_NBR = t3.CUSTOMER_NBR "
+	sql$=sql$+"WHERE t1.FIRM_ID = '01' AND "
+        sql$=sql$+"t2.LASTINV_DATE <= '"+pqy_inactive_date$+"' "
+	
+	sql1$=""
+	while selectedTypes!.hasMoreTokens()
+		pqyPartType$=selectedTypes!.nextToken()
+		if len(sql1$)=0 then
+			sql1$="t2.CUST_TYPE = '"+pqyPartType$+"' "
+		else
+			sql1$=sql1$+"OR t2.CUST_TYPE = '"+pqyPartType$+"' "
+		fi
+	wend
+	if len(sql1$) > 0 then
+		sql1$="("+cvs(sql1$,3)+") "
+		sql$=sql$+"AND "+sql1$
+	fi
+	
+	rem ' also need this line  instead of the IN clause below
+	sql$ = sql$ + "AND t3.USERS >= " + STR(pqy_num_users) + " AND t3.ACTIVE_FLAG = 'Y' "
+	
+	rem ' add the user count check 
+	rem ' this method is faster, but is not working with the createSQLRecordset() method see QA Memo 21076
+	rem ' sql$=sql$+"AND t1.CUSTOMER_NBR IN (SELECT DISTINCT CUSTOMER_NBR FROM SNM01 WHERE FIRM_ID = '01' AND USERS >= " + STR(pqy_num_users) + ") "
+	
+	sql$=sql$+"ORDER BY t2.CUST_TYPE, t2.LASTINV_DATE"
+
+rem ' get the recordset
+	rem ' bambam2
+	rem connect_str$ = "jdbc:basis:bambam2:2001?DATABASE=Add on&USER=admin&PWD=admin123"
+	rem ' kazoo2
+	rem ' connect_str$ = "jdbc:basis:kazoo2-a:2001?DATABASE=AddOnData&USER=admin&PWD=newone"
+	connect_str$=stbl("PQY_CONNECT")
+
+	pqy_inactive_rs!=bbjapi().createSQLRecordSet(connect_str$,"",sql$)
+
+rem ' bind the grid
+	
+	pqyGridID = 30000
+        pqyNavID = 30001
+        pqySerGridID = 30002
+        pqySerHistoryID=30004
+        
+	context=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLC"))
+	pqyWindow!=bbjapi().getSysGui().getWindow(context)
+	pqyDataGrid!=pqyWindow!.getControl(pqyGridID)
+        pqyNavigator!=pqyWindow!.getControl(pqyNavID)
+        pqySerGrid!=pqyWindow!.getControl(pqySerGridID)
+        pqySerHistory!=pqyWindow!.getControl(pqySerHistoryID)
+        pqySerHistory!.setText("")
+        
+        pqyDataGrid!.setEnabled(0)
+        pqyNavigator!.setEnabled(0)
+        pqySerGrid!.setEnabled(0)
+        pqySerHistory!.setEnabled(0)
+
+        rem ' unbind first
+	pqyDataGrid!.unbindRecordSet(err=*next)
+        pqyNavigator!.unbindRecordSet(err=*next)
+        paySerGrid!.unbindRecordSet(err=*next)
+
+        rem ' now bind it
+	pqyDataGrid!.bindRecordSet(pqy_inactive_rs!)
+	pqyNavigator!.bindRecordSet(pqy_inactive_rs!, "CUSTOMER_NBR")
+
+	rem ' set up grid columns
+	
+		rem ' col 0 cust num
+		colNum=0
+		pqyDataGrid!.setColumnAlignment(colNum, pqyDataGrid!.GRID_ALIGN_LEFT)
+		pqyDataGrid!.setColumnHeaderCellAlignment(colNum, pqyDataGrid!.GRID_ALIGN_LEFT)
+		pqyDataGrid!.setColumnWidth(colNum,60)
+		
+		rem ' col 1 cust type
+		colNum=1
+		pqyDataGrid!.setColumnAlignment(colNum, pqyDataGrid!.GRID_ALIGN_CENTER)
+		pqyDataGrid!.setColumnHeaderCellAlignment(colNum, pqyDataGrid!.GRID_ALIGN_CENTER)
+		pqyDataGrid!.setColumnWidth(colNum,60)
+		
+		rem ' col 2 cust name
+		colNum=2
+		pqyDataGrid!.setColumnAlignment(colNum,pqyDataGrid!.GRID_ALIGN_LEFT)
+		pqyDataGrid!.setColumnHeaderCellAlignment(colNum, pqyDataGrid!.GRID_ALIGN_LEFT)
+		pqyDataGrid!.setColumnWidth(colNum,200)
+		
+		rem ' col 3 last inv date
+		colNum=3
+		pqyDataGrid!.setColumnAlignment(colNum,pqyDataGrid!.GRID_ALIGN_CENTER)
+		pqyDataGrid!.setColumnHeaderCellAlignment(colNum, pqyDataGrid!.GRID_ALIGN_CENTER)
+		pqyDataGrid!.setColumnWidth(colNum,80)
+		rem ' waiting on QA Memo 20924
+		rem ' pqyDataGrid!.setColumnStyle(colNum,pqyDataGrid!.GRID_STYLE_INPUTD)
+		rem ' pqyDataGrid!.setColumnMask(colNum,"%Mz/%Dz%Y")
+
+		rem ' col 4 contact name
+		colNum=4
+		pqyDataGrid!.setColumnAlignment(colNum,pqyDataGrid!.GRID_ALIGN_LEFT)
+		pqyDataGrid!.setColumnHeaderCellAlignment(colNum, pqyDataGrid!.GRID_ALIGN_LEFT)
+		pqyDataGrid!.setColumnWidth(colNum,150)
+
+		rem ' col 5 salesperson code
+		colNum=5
+		pqyDataGrid!.setColumnAlignment(colNum,pqyDataGrid!.GRID_ALIGN_CENTER)
+		pqyDataGrid!.setColumnHeaderCellAlignment(colNum, pqyDataGrid!.GRID_ALIGN_CENTER)
+		pqyDataGrid!.setColumnWidth(colNum,60)
+
+		rem ' col 6 phone number
+		colNum=6
+		pqyDataGrid!.setColumnAlignment(colNum,pqyDataGrid!.GRID_ALIGN_LEFT)
+		pqyDataGrid!.setColumnHeaderCellAlignment(colNum, pqyDataGrid!.GRID_ALIGN_LEFT)
+		pqyDataGrid!.setColumnWidth(colNum,100)
+
+		
+	pqyColHeaders!=bbjapi().makeVector()
+	pqyColHeaders!.add("Cust Nbr")
+	pqyColHeaders!.add("Cust Type")
+	pqyColHeaders!.add("Cust Name")
+	pqyColHeaders!.add("Last Purchase")
+	pqyColHeaders!.add("Contact")
+	pqyColHeaders!.add("Sls Psn")
+	pqyColHeaders!.add("Phone")
+	pqyDataGrid!.setColumnHeaderText(pqyColHeaders!)
+
+	pqyDataGrid!.setEnabled(1)
+        pqyDataGrid!.setEditable(0)
+
+        pqyNavigator!.setEnabled(1)
+
+        
+        rem ' populate the serial number grid
+        pqyNumUser$ = callpoint!.getColumnData("PQY_INACTIVE_PAR.NUM_USERS")
+	if pqy_inactive_rs!.isEmpty() then
+		pqyResellerNbr$="" 
+	else
+		pqyRecordData! = pqy_inactive_rs!.getCurrentRecordData()
+		pqyResellerNbr$ = pqyRecordData!.getFieldValue("CUSTOMER_NBR")
+	fi
+
+        call stbl("PQY_PROGRAMS")+"pqy_serial_nbr_query.src", pqyResellerNbr$, pqyNumUser$, context, pqySerGridID, pqySerHistoryID
+
+eoj:
+
+exit
+

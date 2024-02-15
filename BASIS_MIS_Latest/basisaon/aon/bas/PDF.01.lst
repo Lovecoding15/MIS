@@ -1,0 +1,63 @@
+rem "Program: PDF.01
+rem "1- txtfile$=text file to be converted
+rem "2- dest$=output file;if not passed, use txtfile w/pdf extenstion
+rem "3- option$ - "E" means digital signature (Europe) 
+rem "             "U" means digital signature (US) 
+rem "             "X" means base64 encode
+rem "Pass only dest$ (pdf file), no txtfile$, to base64 encode existing pdf
+
+seterr entry_err
+dest$="",option$=""
+enter txtfile$,dest$,option$
+entry_err:
+seterr pgm_exit
+if txtfile$="" and dest$="" then goto pgm_exit
+if dest$="" then dest$=txtfile$
+base64=0,signed=0
+if pos("E"=option$) then signed=1
+if pos("U"=option$) then signed=2
+if pos("X"=option$) then base64=1
+
+rem "Check for pdf/txt extension - output file will get pdf extension
+p=pos(".pdf "=dest$+" ")
+if p=0 then p=pos(".txt "=dest$+" ")
+if p=0 then p=len(dest$)+1
+pdfout$=dest$(1,p-1)+".pdf"
+
+rem "Use temporary work files in temp directory
+tmppdf$=stbl("TEMP")+info(3,2)+date(0:"%m%s")+".pdf"
+tmptxt$=stbl("TEMP")+info(3,2)+date(0:"%m%s")+".txt"
+
+if txtfile$="" and base64 then goto base64_encode
+
+a=scall("cp "+txtfile$+" "+tmptxt$)
+
+com$="unform50 -p pdf -f basis.rul -i "+tmptxt$+" -o "+tmppdf$ 
+a=scall(com$)
+a=scall("chmod 666 "+tmppdf$)
+
+rem "Move pdf to final destination, get rid of temp files
+com$="cp "+tmppdf$+" "+pdfout$
+pwd$=dir("")
+if signed then
+  chdir("/basisaon")
+  jv$=" SignBASISPDF"
+  if signed=1 then jv$=jv$+"A4"
+  rem com$="/share/usr/local/jdk1.5.0_06/bin/java -classpath "+chr(34)+"/basisaon:/basisaon/itext-1.3.jar"+chr(34)+jv$+" "+tmppdf$+" "+pdfout$
+  com$="/usr/java/latest/bin/java -classpath "+chr(34)+"/basisaon:/basisaon/itext-1.3.jar"+chr(34)+jv$+" "+tmppdf$+" "+pdfout$
+fi
+a=scall(com$)
+chdir(pwd$)
+
+base64_encode:
+if base64 then
+  com$="cp "+pdfout$+" "+tmppdf$
+  a=scall(com$)
+  com$="cat "+tmppdf$+" | /usr/bin/perl -MMIME::Base64 -0777 -ne 'print encode_base64($_)' > "+pdfout$
+  a=scall(com$)
+fi
+a=scall("rm "+tmptxt$+" 2>/dev/null")
+a=scall("rm "+tmppdf$+" 2>/dev/null")
+
+pgm_exit:
+exit

@@ -1,0 +1,1020 @@
+rem ' perpetual license scan of the SN_LICENSE table
+
+begin
+
+seterr errmsg
+
+goto checkBypass
+
+rem Bypass until the switch over is complete
+
+rem ' must run on bbjserver.basis.cloud only
+use java.net.InetAddress
+declare java.net.InetAddress ip! 
+declare java.net.InetAddress host!
+
+ip! = InetAddress.getLocalHost()
+thisIpAddr$ = ip!.getHostAddress()
+thisHostName$ = ip!.getHostName()
+
+host! = InetAddress.getByName("bbjserver.basis.cloud")
+bbjServerIpAddr$ = host!.getHostAddress()
+bbjServerHostName$ = host!.getHostName()
+
+if thisIpAddr$ <> bbjServerIpAddr$ then
+	msg$ = "perpetualLicExpireScan.src attempted to run on " + thisHostName$ + " (" + thisIpAddr$ + "). This program is limited to " + bbjServerHostName$ + " (" + bbjServerIpAddr$ + "). Run terminated."
+	subject$ = "Wrong Server"
+	call "sendEmail.src","customer-service@basis.cloud", "misdev@basis.cloud","", "", subject$, msg$, ""
+	rem ' debug
+	rem ' call "sendEmail.src","customer-service@basis.cloud", "kurt.e.williams@comcast.net","", "", subject$, msg$, ""
+	release
+fi
+
+checkBypass:
+
+rem ' open files
+call "ec_open::SN_LICENSE"
+dim sn_license_alt$:fattr(sn_license$)
+
+call "ec_open::SNM01"
+snm01alt = snm01
+dim snm01alt$:fattr(snm01$)
+call "ec_open::SNM01"
+call "ec_open::SMC01"
+
+call "ec_open::SN_HOST_MULTI_SN"
+call "ec_open::SN_DORMANT_SN"
+
+sn_excl_basis = unt
+open(sn_excl_basis)"sn_excl_basis.dat"
+
+call "ec_open::arm01"
+call "ec_open::tmm01"
+call "ec_open::tmm03"
+call "ec_open::tmm05"
+call "ec_open::logextract"
+call "ec_open::country"
+
+rem ' end user links and data
+call "ec_open::snmel"
+call "ec_open::snmeu"
+
+rem ' open the LicRequests data files
+requests = unt
+open(requests)"/mnt/data/databases/LicRequests/REQUESTS.dat"
+dim requests$:"REQID:U(4),REQTIME:U(4),COMPANY:C(64),LASTNAME:C(20),FIRSTNAME:C(20),PHONENUM:C(25),FAXNUM:C(25),EMAILADDR:C(40),SERIALNUM:C(9),AUTHNUM:C(10),DELIVMETHOD:C(12),FROM:C(40),PRODUCTINFO:I(2),PRODUCTINFOEMAIL:C(40),STATUS:I(2),PRIMARYSN:C(15)"
+hostinfo = unt 
+open(hostinfo)"/mnt/data/databases/LicRequests/HOSTINFO.dat"
+dim hostinfo$:"REQID:U(4),HOSTID:C(42),HOSTNAME:C(64),PORT:I(4)"
+ 
+rem ' open the HistLicRequests data files 
+hrequests = unt
+open(hrequests)"/mnt/data/databases/HistLicRequests/REQUESTS.dat"
+dim hrequests$:"REQID:U(4),REQTIME:U(4),COMPANY:C(64),LASTNAME:C(20),FIRSTNAME:C(20),PHONENUM:C(25),FAXNUM:C(25),EMAILADDR:C(40),SERIALNUM:C(9),AUTHNUM:C(10),DELIVMETHOD:C(12),FROM:C(40),PRODUCTINFO:I(2),PRODUCTINFOEMAIL:C(40),STATUS:I(2),PRIMARYSN:C(15)"
+hhostinfo = unt
+open(hhostinfo)"/mnt/data/databases/HistLicRequests/HOSTINFO.dat"
+dim hhostinfo$:"REQID:U(4),HOSTID:C(42),HOSTNAME:C(64),PORT:I(4)"
+
+rem ' create a workfile to be sequence by the expire date
+workfile$ = "/tmp/perpetlicWorkfile" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".dat"
+workfiletemp$ = "EXPIRE_DATE:C(8),SERIAL_NBR:C(20),PRODUCT:C(3),LICENSE_TYPE:C(3),FIRM_ID:C(2),CUSTOMER_NBR:C(6),PERPET_OR_ANN:C(1),REG_DATE:C(8),REG_TIME:C(6),HOSTID:C(60*),USERS:N(4*),DAYS_TO_EXPIRE:N(3*)"
+dim workrec$:workfiletemp$
+xkeyed workfile$, [1:28], 0, 160
+workfile = unt
+open(workfile)workfile$
+
+rem ' create a workfile to hold the customers that will get a follow up email because they have a third or fourth notice
+followupfile$ = "/tmp/perpetlicFollowup" + date(0:"%Y%Mz%Dz%Hz%mz%sz") + ".dat"
+followupfiletemp$ = "FIRM_ID:C(2),CUSTOMER_NBR:C(6)"
+dim followuprec$:followupfiletemp$
+xkeyed followupfile$, [1:8], 0, 16
+followupfile = unt
+open(followupfile)followupfile$
+
+rem ' build the work file
+curSN$ = ""
+read record(sn_license,key = "", dom = *next)sn_license$
+while 1
+	read record(sn_license, end=*break)sn_license_alt$
+	if curSN$ = "" then
+		curSN$ = sn_license_alt.serial_num$
+		sn_license$ = sn_license_alt$
+	else
+		if pos(curSN$ = sn_license_alt$) <> 1 then
+			rem ' we have a change of serial numbers
+			gosub change_of_serial_numbers
+			curSN$ = sn_license_alt.serial_num$
+			sn_license$ = sn_license_alt$
+		else
+			rem ' not the last record for this serial number
+			sn_license$ = sn_license_alt$
+		fi
+	fi
+wend
+rem ' pick up the last serial number
+gosub change_of_serial_numbers
+
+rem ' first annual notice at 45 days out
+rem ' notice 1 at 17 days out
+rem ' notice 2 at 14 days out - 2nd annual notice at 14 days
+rem ' notice 3 at 7 days out
+rem ' notice 4 at 1 days out - 3rd annual notice at 1 day
+noteA = 45
+note1 = 17
+note2 = 14
+note3 = 7
+note4 = 1
+
+rem ' send the emails if needed
+noteAcount = 0
+note1count = 0
+note2count = 0
+note3count = 0
+note4count = 0
+
+rem ' read the email text 
+txt_chan=unt
+open(txt_chan)"perpetualLicExpireNotices.txt"
+sz=0
+file_text$=""
+f$=fin(txt_chan),sz=dec(f$(1,4))
+if sz then readrecord(txt_chan,siz=sz)file_text$
+close(txt_chan,err=*next)
+
+rem ' chop up the email text
+dim notice$[7]
+for x = 1 to 7
+	p=pos(str(x) + "EN:" = file_text$)
+	file_text$ = file_text$(p + 4)
+	p = pos("{" = file_text$)
+	file_text$ = file_text$(p + 1)
+	p = pos("}" = file_text$)
+	notice$[x] = file_text$(1, p - 1), file_text$ = file_text$(p + 1)
+next x
+
+rem ' goto bypass
+
+rem ' read the workfile to decide if an email is needed
+summaryMsg$ = ""
+read record(workfile, key = "", dom = *next)workrec$
+while 1
+	read record(workfile,end = *break)workrec$
+	
+	rem ' skip Heimbas 020005
+	if workrec.customer_nbr$ = "020005" then continue
+	
+	rem ' skip BASIS 007514
+	if workrec.customer_nbr$ = "007514" then continue
+	
+	rem ' already expired
+	if workrec.days_to_expire < 0 then continue
+	
+	rem ' getting last notice, notice 4 (Perpetual) or notice 7 (Annual)
+	if workrec.days_to_expire <= note4 then
+		rem ' check for already sent
+		read record(sn_license, key = workrec.serial_nbr$(1,12) + workrec.reg_date$ + workrec.reg_time$)sn_license$
+		if num(sn_license.notice$) = 4 or num(sn_license.noticeA$) = 7 then continue
+		
+		rem ' get the serial number record
+		read record(snm01, key = workrec.serial_nbr$)snm01$
+		
+		rem ' annual and perpetual get different notices
+		if workrec.perpet_or_ann$ = "P" then 
+			msgCode = 4
+		else
+			msgCode = 7
+		fi
+		
+		rem ' lookup enduser, if there is any it will be returned in endusername$
+		gosub lookup_enduser_data
+
+		rem ' look up email addresses, will set from$, to$, cc$ and bcc$
+		gosub lookup_email_addresses
+		
+		rem ' parse the email text, make data replacements
+		gosub fill_in_message
+		
+		rem ' send the mail
+		gosub send_email
+		
+		rem ' record that the notice was sent
+		gosub write_sn_license
+		
+		note4count = note4count + 1
+		
+		summaryMsg$ = summaryMsg$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">" + cvs(workrec.serial_nbr$,3) + "</td><td align=" + chr(34) + "left" + chr(34) + ">4th Notice Sent</td><td align=" + chr(34) + "left" + chr(34) + ">" + workrec.expire_date$(1,4) + "-" + workrec.expire_date$(5,2) + "-" + workrec.expire_date$(7,2) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(workrec.users) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + custnbr$ + " " + custname$ + "</td></tr>"
+		
+		rem ' write the followup file
+		dim followuprec$:followupfiletemp$
+		followuprec.firm_id$ = workrec.firm_id$
+		followuprec.customer_nbr$ = workrec.customer_nbr$
+		write record(followupfile)followuprec$
+		
+		continue
+	fi
+	
+	rem ' getting 3rd notice, notice 3, perpetual only
+	if workrec.days_to_expire <= note3 and workrec.perpet_or_ann$ = "P" then
+		rem ' check for already sent
+		read record(sn_license, key = workrec.serial_nbr$(1,12) + workrec.reg_date$ + workrec.reg_time$)sn_license$
+		if num(sn_license.notice$) >= 3 then continue
+
+		rem ' get the serial number record
+		read record(snm01, key = workrec.serial_nbr$)snm01$
+		
+		msgCode = 3
+		
+		rem ' lookup enduser, if there is any it will be returned in endusername$
+		gosub lookup_enduser_data
+
+		rem ' look up email addresses, will set from$, to$, cc$ and bcc$
+		gosub lookup_email_addresses
+		
+		rem ' parse the email text, make data replacements
+		gosub fill_in_message
+		
+		rem ' send the mail
+		gosub send_email
+		
+		rem ' record that the notice was sent
+		gosub write_sn_license
+		
+		note3count = note3count + 1
+		
+		summaryMsg$ = summaryMsg$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">" + cvs(workrec.serial_nbr$,3) + "</td><td align=" + chr(34) + "left" + chr(34) + ">3rd Notice Sent</td><td align=" + chr(34) + "left" + chr(34) + ">" + workrec.expire_date$(1,4) + "-" + workrec.expire_date$(5,2) + "-" + workrec.expire_date$(7,2) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(workrec.users) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + custnbr$ + " " + custname$ + "</td></tr>"
+		
+		rem ' write the followup file
+		dim followuprec$:followupfiletemp$
+		followuprec.firm_id$ = workrec.firm_id$
+		followuprec.customer_nbr$ = workrec.customer_nbr$
+		write record(followupfile)followuprec$
+
+		continue
+	fi
+
+	rem ' getting 2nd notice, notice 2 (Perpetual) or notice 6 (Annual)
+	if workrec.days_to_expire <= note2 then
+		rem ' check for already sent
+		read record(sn_license, key = workrec.serial_nbr$(1,12) + workrec.reg_date$ + workrec.reg_time$)sn_license$
+		if num(sn_license.notice$) >= 2 or num(sn_license.noticeA$) >= 6 then continue
+
+		rem ' get the serial number record
+		read record(snm01, key = workrec.serial_nbr$)snm01$
+		
+		if workrec.perpet_or_ann$ = "A" then
+			msgCode = 6
+		else
+			msgCode = 2
+		fi
+		
+		rem ' lookup enduser, if there is any it will be returned in endusername$
+		gosub lookup_enduser_data
+
+		rem ' look up email addresses, will set from$, to$, cc$ and bcc$
+		gosub lookup_email_addresses
+		
+		rem ' parse the email text, make data replacements
+		gosub fill_in_message
+		
+		rem ' send the mail
+		gosub send_email
+		
+		rem ' record that the notice was sent
+		gosub write_sn_license
+		
+		note2count = note2count + 1
+		
+		summaryMsg$ = summaryMsg$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">" + cvs(workrec.serial_nbr$,3) + "</td><td align=" + chr(34) + "left" + chr(34) + ">2nd Notice Sent</td><td align=" + chr(34) + "left" + chr(34) + ">" + workrec.expire_date$(1,4) + "-" + workrec.expire_date$(5,2) + "-" + workrec.expire_date$(7,2) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(workrec.users) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + custnbr$ + " " + custname$ + "</td></tr>"
+				
+		continue
+	fi
+	
+	rem ' getting 1st notice, notice 1 perpetual only
+	if workrec.days_to_expire <= note1 and workrec.perpet_or_ann$ = "P" then
+		rem ' check for already sent
+		read record(sn_license, key = workrec.serial_nbr$(1,12) + workrec.reg_date$ + workrec.reg_time$)sn_license$
+		if num(sn_license.notice$) >= 1 then continue
+		
+		rem ' get the serial number record
+		read record(snm01, key = workrec.serial_nbr$)snm01$
+		
+		msgCode = 1
+		
+		rem ' lookup enduser, if there is any it will be returned in endusername$
+		gosub lookup_enduser_data
+
+		rem ' look up email addresses, will set from$, to$, cc$ and bcc$
+		gosub lookup_email_addresses
+		
+		rem ' parse the email text, make data replacements
+		gosub fill_in_message
+		
+		rem ' send the mail
+		gosub send_email
+		
+		rem ' record that the notice was sent
+		gosub write_sn_license
+		
+		note1count = note1count + 1
+		
+		summaryMsg$ = summaryMsg$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">" + cvs(workrec.serial_nbr$,3) + "</td><td align=" + chr(34) + "left" + chr(34) + ">1st Notice Sent</td><td align=" + chr(34) + "left" + chr(34) + ">" + workrec.expire_date$(1,4) + "-" + workrec.expire_date$(5,2) + "-" + workrec.expire_date$(7,2) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(workrec.users) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + custnbr$ + " " + custname$ + "</td></tr>"
+				
+		continue
+
+	fi
+
+	rem ' getting 1st Annual notice, notice A at 45 days
+	rem ' annual only
+	if workrec.days_to_expire <= noteA and workrec.perpet_or_ann$ = "A" then
+		rem ' check for already sent
+		read record(sn_license, key = workrec.serial_nbr$(1,12) + workrec.reg_date$ + workrec.reg_time$)sn_license$
+		if num(sn_license.noticeA$) >= 5 then continue
+
+		rem ' get the serial number record
+		read record(snm01, key = workrec.serial_nbr$)snm01$
+
+		msgCode = 5
+
+		rem ' lookup enduser, if there is any it will be returned in endusername$
+		gosub lookup_enduser_data
+
+		rem ' look up email addresses, will set from$, to$, cc$ and bcc$
+		gosub lookup_email_addresses
+
+		rem ' parse the email text, make data replacements
+		gosub fill_in_message
+
+		rem ' send the mail
+		gosub send_email
+
+		rem ' record that the notice was sent
+		gosub write_sn_license
+
+		noteAcount = noteAcount + 1
+
+		summaryMsg$ = summaryMsg$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">" + cvs(workrec.serial_nbr$,3) + "</td><td align=" + chr(34) + "left" + chr(34) + ">1st Annaul Notice Sent</td><td align=" + chr(34) + "left" + chr(34) + ">" + workrec.expire_date$(1,4) + "-" + workrec.expire_date$(5,2) + "-" + workrec.expire_date$(7,2) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(workrec.users) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + custnbr$ + " " + custname$ + "</td></tr>"
+
+		continue
+	fi
+
+	rem ' if we get here then no notice was sent, continue if the days_to expire is less than or equal to the noteA day count
+	rem ' break (finish) if the days_to_expire is greater than the noteA day count
+	if workrec.days_to_expire > noteA then
+		break
+	else
+		continue
+	fi
+	
+wend
+
+rem ' bypass:
+
+rem ' notices complete
+msgtxt$ = "<table><tr><td colspan=" + chr(34) + "5" + chr(34) + " align=" + chr(34) + "left" + chr(34) + ">Recap of Licenses with a Perpetual License Model Expiration Date and Warning Notices Sent.</td></tr>"
+if summaryMsg$ <> "" then 
+	if noteAcount <> 0 msgtxt$ = msgtxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Annual Notice emails sent:</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(noteAcount) + "</td><td></td><td></td><td></td></tr>"
+	if note1count <> 0 msgtxt$ = msgtxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Notice 1 emails sent:</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(note1count) + "</td><td></td><td></td><td></td></tr>"
+	if note2count <> 0 msgtxt$ = msgtxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Notice 2 emails sent:</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(note2count) + "</td><td></td><td></td><td></td></tr>"
+	if note3count <> 0 msgtxt$ = msgtxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Notice 3 emails sent:</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(note3count) + "</td><td></td><td></td><td></td></tr>"
+	if note4count <> 0 msgtxt$ = msgtxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Notice 4 emails sent:</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(note4count) + "</td><td></td><td></td><td></td></tr>"
+	summaryMsg$ =  "<tr><td align=" + chr(34) + "left" + chr(34) + ">Serial #</td><td align=" + chr(34) + "left" + chr(34) + ">Status</td><td align=" + chr(34) + "left" + chr(34) + ">Expires</td><td align=" + chr(34) + "left" + chr(34) + ">Users</td><td align=" + chr(34) + "left" + chr(34) + ">Customer</td></tr>" + summaryMsg$ 
+	msgtxt$ = msgtxt$ + summaryMsg$ + "<tr><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td></td><td></td></tr>"
+else
+	msgtxt$ = msgtxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">No notices sent.</td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td></td><td></td></tr>"
+	msgtxt$ = msgtxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td></td><td></td></tr>"
+fi
+
+
+rem ' read the workfile, build the summary
+read record(workfile, key = "", dom = *next)workrec$
+count = 0
+pcount = 0
+pusers = 0
+acount = 0
+ausers = 0
+lic_count = 0
+daysToExpire = 0
+lusers = 0
+curDate$ = ""
+msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td></td></tr>"
+msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Expire Date</td><td align=" + chr(34) + "left" + chr(34) + ">Days To Expire</td><td align=" + chr(34) + "left" + chr(34) + ">Licenses</td><td align=" + chr(34) + "left" + chr(34) + ">Total Users</td><td></td></tr>"
+while 1
+	read record(workfile,end = *break)workrec$
+	count = count + 1
+	
+	rem ' count perpet or annual
+	if workrec.perpet_or_ann$ = "P" then
+		pcount = pcount + 1
+		pusers = pusers + workrec.users
+	else
+		acount = acount + 1
+		ausers = ausers + workrec.users
+	fi
+	
+	if curDate$ = "" then
+		rem ' first row
+		curDate$ = workrec.expire_date$
+		daysToExpire = workrec.days_to_expire
+		lic_count = 1
+	else
+		if pos(curDate$ = workrec.expire_date$) <> 1 then
+			rem ' change of date
+			msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">" + curDate$(1,4) + "-" + curDate$(5,2) + "-" + curDate$(7,2) + "</td><td align=" + chr(34) + "left" + chr(34) +  ">" + str(daysToExpire:"-###0") + "</td><td align=" + chr(34) + "left" + chr(34) +  ">" + str(lic_count) + "</td><td align=" + chr(34) + "left" + chr(34) +  ">" + str(lusers) + "</td><td></td></tr>"
+			curDate$ = workrec.expire_date$
+			daysToExpire = workrec.days_to_expire
+			lic_count = 1
+			lusers = 0
+		else
+			rem ' just count it
+			lic_count = lic_count + 1
+		fi
+	fi	
+	
+	lusers = lusers + workrec.users
+wend
+rem ' catch the last item
+msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">" + curDate$(1,4) + "-" + curDate$(5,2) + "-" + curDate$(7,2) + "</td><td align=" + chr(34) + "left" + chr(34) +  ">" + str(daysToExpire:"###0") + "</td><td align=" + chr(34) + "left" + chr(34) +  ">" + str(lic_count) + "</td><td align=" + chr(34) + "left" + chr(34) +  ">" + str(lusers) + "</td><td></td></tr>"
+msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td></td></tr>"
+msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Perpetual Licenses:</td><td align=" + chr(34) + "left" + chr(34) +  "></td><td align=" + chr(34) + "left" + chr(34) + ">" + str(pcount) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(pusers) + "</td><td></td></tr>"
+msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Annual Licenses:</td><td align=" + chr(34) + "left" + chr(34) +  "></td><td align=" + chr(34) + "left" + chr(34) + ">" + str(acount) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(ausers) + "</td><td></td></tr>"
+msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Total Licenses:</td><td align=" + chr(34) + "left" + chr(34) +  "></td><td align=" + chr(34) + "left" + chr(34) + ">" + str(count) + "</td><td align=" + chr(34) + "left" + chr(34) + ">" + str(ausers + pusers) + "</td><td></td></tr>"
+msgTxt$ = msgTxt$ + "<tr><td align=" + chr(34) + "left" + chr(34) + ">Timestamp:</td><td align=" + chr(34) + "left" + chr(34) +  ">" + date(0:"%Y%Mz%Dz %Hz%mz%sz") + "</td><td align=" + chr(34) + "left" + chr(34) + "></td><td align=" + chr(34) + "left" + chr(34) + "></td><td></td></tr>"
+
+
+rem ' write number for reporting on the deactivate serial number report
+stash = unt
+stash_name$ = "/mnt/data/basisaon/aon/tmp/countStash.dat"
+erase stash_name$, err=*next
+string stash_name$
+open(stash)stash_name$
+write(stash)str(pcount:"######0") + str(pusers:"######0")
+write(stash)str(acount:"######0") + str(ausers:"######0")
+close(stash)
+
+summaryMail:
+msgtxt$ = msgtxt$ + "</table>"
+
+from$ = "customer-service@basis.cloud"
+rem ' to$ = "sales@basis.cloud, customer-service@basis.cloud, support@basis.cloud"
+to$ = "sales@basis.cloud, support@basis.cloud"
+rem ' cc$ = "kurt.e.williams@comcast.net, mschned@basis.cloud, nspence@basis.cloud"
+cc$ = "misdev@basis.cloud, mschned@basis.cloud"
+bcc$ = ""
+subject$ = "Perpetual Licenses Issued and Notices Sent Summary"
+
+rem ' print "to: " + to$
+rem ' print "cc: " + cc$
+rem ' print "bcc: " + bcc$
+rem ' print "subject: " + subject$
+rem ' escape
+rem ' to$ = "kurt.e.williams@comcast.net"
+rem ' cc$ = ""
+rem ' bcc$ = ""
+rem ' input *
+
+rem ' msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+call "sendEmailHtml.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+wait 4
+
+call "perpetualLicNoticeFollowup.src", workfile$, followupfile$
+
+rem ' run "hostidGroupsWithSecondaryRegistrationNotice.src"
+
+release
+
+change_of_serial_numbers:
+	rem ' we have a change of serial numbers
+	rem ' only perpetual or annual expire dates
+	
+	if sn_license.perpetual$ = "Y" or sn_license.annual$ = "Y" then
+		rem ' we have a perpetual or annual record
+		
+		rem ' has the serial number gone inactive
+		curSN$ = curSN$ + fill(20), curSN$ = curSN$(1,20)
+		read record(snm01, key = curSN$)snm01$
+
+		if snm01.active_flag$ = "Y" then
+		
+			rem ' do not include serial numbers that are in the dormant table SN_DORMANT_SN
+			dormant = 0
+			read record(sn_dormant_sn, key = curSN$, dom=*next)sn_dormant_sn$; dormant = 1
+			
+			if dormant = 0 then
+		
+				rem ' do not include serial numbers that are secondary in a host id group
+
+				productseq$="ODBDS5VP5PR5BAS"
+				currentHighRank = 0, currentHighSN$ = ""
+				snfound = 0
+				read record (sn_host_multi_sn, key = curSN$, knum = 0, dom = *next)sn_host_multi_sn$; snfound = 1
+
+				if snfound then
+					rem ' this serial number is in a hostid group
+					thishostid$ = sn_host_multi_sn.hostid$
+					rem ' position key pointer
+					read record(sn_host_multi_sn, knum = 1, key = thishostid$, err = *next)sn_host_multi_sn$
+
+					sn_count = 0
+					while 1
+						dim sn_host_multi_sn$:fattr(sn_host_multi_sn$)
+						read record(sn_host_multi_sn, end = *break)sn_host_multi_sn$
+						if thishostid$ <> sn_host_multi_sn.hostid$ then break
+
+						rem ' is it active
+						read record(snm01alt, key = sn_host_multi_sn.serial_nbr$, dom=*continue)snm01alt$
+						if snm01alt.active_flag$ = "N" then continue
+						if cvs(snm01alt.contract$,3) <> "" then
+						    read record(smc01, key = snm01alt.contract$)smc01$
+						    rent_or_kit = pos(smc01.contr_type$(1,2) = "RN,DV")
+						    if snm01alt.license_type$ = "EXP" and smc01.contr_type$ = "SM1" then rent_or_kit=1
+						    today$ = date(0:"%Y%Mz%Dz")
+						    rem ' is it expired?
+						    if rent_or_kit and smc01.expire_on_dt$ < today$ then continue
+						fi
+
+						rem ' is it primary
+						rank = pos(snm01alt.product$ = productseq$)
+						if rank > currentHighRank then
+							currentHighRank = rank
+							currentHighSN$ = snm01alt.serial_nbr$
+						fi
+
+						sn_count = sn_count + 1
+					wend
+
+					if sn_count = 1 or curSN$ = currentHighSN$ then
+						rem ' we have the primary sn in the hostid group
+						include = 1
+					else
+						rem ' we have a secondary sn in the hostid group
+						include = 0
+					fi
+				else
+					rem ' not in a host id group
+					include = 1
+				fi
+
+				if include then
+
+					expire_dt$ = FNNormalizeDate$(sn_license.expire$)
+
+					if expire_dt$ <> "" then			
+
+						workrec.expire_date$ = expire_dt$
+						workrec.serial_nbr$ = curSN$
+						workrec.product$ = snm01.product$
+						workrec.license_type$ = snm01.license_type$
+						workrec.firm_id$ = sn_license.firm_id$
+						workrec.customer_nbr$ = sn_license.customer_nbr$
+						if sn_license.perpetual$ = "Y" then
+							workrec.perpet_or_ann$ = "P"
+						else
+							workrec.perpet_or_ann$ = "A"
+						fi
+						workrec.reg_date$ = sn_license.date$
+						workrec.reg_time$ = sn_license.time$
+						workrec.hostid$ = sn_license.hostid$
+						workrec.users = sn_license.users + sn_license.users2
+						workrec.days_to_expire = FNDaysBetweenNowAndThen(sn_license.expire$)
+						write record(workfile)workrec$
+					fi
+				fi
+			fi
+		fi
+	fi
+return
+
+DEF FNNormalizeDate$(nd_in_date$)
+	nd_new_date$ = ""
+	nd_date$ = nd_in_date$
+	
+	rem ' for single digit days the expire field will not have a leading 0
+	if len(cvs(nd_date$,3)) = 10 then nd_date$ = "0" + cvs(nd_date$,3)
+	
+	if len(cvs(nd_date$,3)) = 11 then
+		rem ' date in the form of dd-mmm-yyyy
+		dbnat_mnth_lst$ = "janfebmaraprmayjunjulaugsepoctnovdec"
+		dbnat_month$ = nd_date$(4,3)
+		dbnat_month = pos(dbnat_month$ = dbnat_mnth_lst$)
+		if dbnat_month <> 0 then
+			dbnat_month = int(dbnat_month / 3) + 1
+			dbnat_day = 0
+			dbnat_day = num(nd_date$(1,2), err=*next)
+			if dbnat_day <> 0 then
+				dbnat_year = 0
+				dbnat_year = num(nd_date$(8,4), err=*next)
+				if dbnat_year <> 0 then
+					nd_new_date$ = date(jul(dbnat_year, dbnat_month, dbnat_day):"%Y%Mz%Dz")
+				fi
+			fi
+		fi
+	fi
+return nd_new_date$
+
+DEF FNDaysBetweenNowAndThen(dbnat_in_date$)
+	dbnat_days = 0
+	dbnat_date$ = dbnat_in_date$
+	
+	rem ' single digit years will not have a leading 0
+	if len(cvs(dbnat_date$,3)) = 10 then dbnat_date$ = "0" + cvs(dbnat_date$,3)
+	
+	if len(dbnat_date$) <> 11 then
+		dbnat_days = 0
+	else		
+		rem ' date in the form of dd-mmm-yyyy
+		dbnat_mnth_lst$ = "janfebmaraprmayjunjulaugsepoctnovdec"
+		dbnat_month$ = dbnat_date$(4,3)
+		dbnat_month = pos(dbnat_month$ = dbnat_mnth_lst$)
+		if dbnat_month = 0 then
+			dbnat_days = 0
+		else
+			dbnat_month = int(dbnat_month / 3) + 1
+			dbnat_day = 0
+			dbnat_day = num(dbnat_date$(1,2), err=*next)
+			if dbnat_day = 0 then
+				dbnat_days = 0
+			else
+				dbnat_year = 0
+				dbnat_year = num(dbnat_date$(8,4), err=*next)
+				if dbnat_year = 0 then
+					dbnat_days = 0
+				else
+					dbnat_days = jul(dbnat_year, dbnat_month, dbnat_day) - jul(0,0,0)
+				fi
+			fi
+		fi
+	fi
+RETURN dbnat_days			
+
+lookup_enduser_data:
+	rem ' get end user name if present
+	endusername$="", enduseremail$=""
+	read record(snmel, key = workrec.serial_nbr$, dom=done_enduser)snmel$
+	read record(snmeu, key = snmel.end_user_nbr$, dom=done_enduser)snmeu$
+	endusername$=cvs(snmeu.company_name$,3)
+	enduseremail$=cvs(snmeu.email_address$,3)
+	done_enduser:
+return
+
+lookup_email_addresses:
+
+	ap_contact$ = ""
+	sam_contact$ = ""
+	main_contact$ = ""
+	perpet_contact$ = ""
+	backup_address$ = stbl("+SALES")+", mscully@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	recipient$ = ""
+
+	rem ' look up customer name
+	custnbr$  = snm01.firm_id$ + snm01.customer_nbr$
+	read record(arm01, key=custnbr$)arm01$
+	custname$ = cvs(arm01.cust_name$,3)
+	
+	rem ' check to see if we will exclude BASIS email address
+	sn_excl_basis$ = "        "
+	read record(sn_excl_basis, key = custnbr$, dom=*next)sn_excl_basis$
+	if cvs(sn_excl_basis$,3) = "" then
+	  exclPerpetEmail = 0
+	else
+	  exclPerpetEmail = 1
+	fi
+
+	key$ = snm01.firm_id$ + snm01.customer_nbr$
+	
+	rem ' find the main contact (not sure this is the best way)
+	read(tmm05, key = key$, dom=*next)
+	while 1
+		readrecord(tmm05, end =*break)tmm05$
+		if pos(key$ = tmm05$) <> 1 then break
+		main_contact$ = cvs(tmm05.email$,3)
+		break
+	wend
+
+	rem ' lookup addresses in the TMM Contact table
+	read(tmm03, key = key$,dom = *next)
+	while 1
+		read record(tmm03, end = *break)tmm03$
+		if pos(key$ = tmm03$) <> 1 then break
+		if tmm03.sam_contact$ = "Y" then sam_contact$ = cvs(tmm03.e_mail$,3)
+		if tmm03.primary_contact$ = "Y" and cvs(main_contact$,3) = "" then main_contact$ = cvs(tmm03.e_mail$,3)
+		if tmm03.ap_contact$ = "Y" then ap_contact$ = cvs(tmm03.e_mail$,3)
+		if tmm03.perpet_notice$ = "Y" then 
+			if perpet_contact$ = "" then 
+				perpet_contact$ = cvs(tmm03.e_mail$,3)
+			else
+				perpet_contact$ = perpet_contact$ + "," + cvs(tmm03.e_mail$,3)
+			fi
+		fi
+	wend
+
+	rem ' lookup up email address from the log extract table
+	date$="00000000"
+
+	read(logextract, key = cvs(workrec.serial_nbr$(1,12),3), dom = *next)
+	while 1
+		readrecord(logextract, end =*break)logextract$
+    		if pos(logextract.serialnum$=workrec.serial_nbr$) = 0 then break
+		if date$<logextract.date$ and cvs(logextract.email$,3) <> "" then
+			date$=logextract.date$
+      			em$=cvs(logextract.email$,3)
+			if em$ <> "" and pos("@"=em$) then recipient$ = em$ 
+		fi
+  	wend
+	
+	if date$ <> "00000000" and recipient$ <> "" then
+		rem ' not sure this is needed, since all these will be perpetual expiration dates 
+		rem ' which means the last registration would have been 60 or less days ago
+		jul_dt = jul(num(date$(1,4)), num(date$(5,2)), num(date$(7,2)))
+		today = jul(0, 0, 0)
+		rem 'if last reg. email is older than 2 years (730 days ago), don't use it
+		if today - jul_dt > 730 then recipient$=""
+	fi
+	
+	rem ' set the from email address
+	from$="customer-service@basis.cloud"
+	
+	rem ' set the to email address
+	rem ' convert any ; to ,
+	addr$ = main_contact$ + "," + sam_contact$ + "," + recipient$ + ","
+	if enduseremail$ <> "" then addr$ = addr$ + enduseremail$ + ","
+	if perpet_contact$ <> "" then addr$ = addr$ + perpet_contact$ + ","
+	while 1
+		p = pos(";" = addr$)
+		if p = 0 then break
+		addr$(p,1) = ","
+	wend
+	addr$=cvs(addr$,43)
+	
+	rem ' clean up the to email address
+	eaddr$=""
+	while 1
+		p = pos("," = addr$)
+		if p=0 then break
+		if p > 1 then t1$ = cvs(addr$(1,p - 1), 3) else t1$ = ""
+		addr$ = addr$(p + 1)
+		if pos(t1$ = addr$) = 0 and pos("@" = t1$) then eaddr$ =eaddr$ + "," + t1$
+	wend
+	l=len(eaddr$)
+	rem ' trim a trailing comma
+	if l and eaddr$(l,1)="," then eaddr$(l,1)=" "
+	rem ' trim a leading comma
+	if l and eaddr$(1,1)="," then eaddr$(1,1)=" "
+	eaddr$ = cvs(eaddr$, 3)
+	
+	rem ' hard code for Resurgence IT
+	rem ' if custnbr$ = "01004559" then
+	rem '	if eaddr$ = "" then
+	rem '		eaddr$ = "lisa.lomas@resurgenceit.com, Ernie.salazar@resurgenceit.com"
+	rem '	else
+	rem '		eaddr$ = eaddr$ + ",lisa.lomas@resurgenceit.com, Ernie.salazar@resurgenceit.com"
+	rem '	fi
+	rem ' fi
+	
+	if eaddr$="" then eaddr$ = backup_address$
+	to$ = eaddr$
+	
+	rem ' get the language
+	readrecord(tmm01, key = key$ + "000000", dom = *next)tmm01$
+	lang$=cvs(tmm01.lang_code$,7)
+	read record(country, key = tmm01.country_code$, dom = *next)country$
+	if lang$ = "" then lang$ = cvs(country.lang_code$,7)
+	if lang$ = "" then lang$="EN"
+	rem ' first pass at this program everything will be done in English
+
+	rem ' set the cc address
+	msg_trailer$ = ""
+	if snm01.firm_id$ = "01" then 
+		if cvs(tmm01.slsperson$, 3) <> "" then
+			msg_trailer$ = "Rep: " + cvs(tmm01.slsperson$, 3)
+		fi
+		rem ' exclude info@basis.cloud from the cc$ if it was used as the to address
+		rem ' if pos(backup_address$ = to$) = 0 then cc$ = backup_address$ + ", "
+		rem ' cc$ = cc$ + "customer-service@basis.cloud, support@basis.cloud"
+		cc$ = "perpetual-notices@basis.cloud"
+		if exclPerpetEmail then cc$ = ""
+	fi
+
+	if snm01.firm_id$ = "02" then
+		cc$="eu.sales@basis.cloud, "
+		rem ' exclude info@basis.cloud from the cc$ if it was used as the to address
+		rem ' if pos(backup_address$ = to$) = 0 then cc$ = cc$ + backup_address$ + ", "
+		rem ' cc$ = cc$ + "customer-service@basis.cloud, support@basis.cloud"
+		cc$ = cc$ + "support@basis.cloud"
+		if exclPerpetEmail then cc$ = ""
+	fi
+	
+	rem ' if msgCode = 3 or msgCode = 4 then
+	rem '	bcc$ = "kw5121151@gmail.com"
+	rem '	if exclPerpetEmail then bcc$ = "kw5121151@gmail.com"
+	rem ' else
+	rem '	bcc$ = "kw5121151@gmail.com"
+	rem ' fi
+	
+return
+
+fill_in_message:
+
+	rem ' what message
+	msgtxt$ = notice$[msgCode]
+	
+	rem ' replace <custnbr> with the firm_id + customer_nbr
+	while 1
+		p = pos("<custnbr>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + custnbr$ + msgtxt$(p + 9)
+	wend
+	
+	rem ' replace <custname> with the firm_id + customer_nbr
+	while 1
+		p = pos("<custname>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + custname$ + msgtxt$(p + 10)
+	wend
+	
+	rem ' replace <sn> with the serial number
+	while 1
+		p = pos("<sn>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + cvs(workrec.serial_nbr$, 3) + msgtxt$(p + 4)
+	wend
+
+	rem ' replace <users> with the actual users
+	while 1
+		p = pos("<users>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + str(snm01.users) + msgtxt$( p + 7)
+	wend
+	
+	rem ' replace <enduser> with the actual data if any
+	while 1
+		p = pos("<enduser>" = msgtxt$)
+		if p = 0 then break
+		if cvs(endusername$, 3) <> "" then
+			msgtxt$ = msgtxt$(1, p - 2) + ", " + cvs(endusername$, 3) + msgtxt$(p + 9)
+		else
+	  		msgtxt$ = msgtxt$(1, p - 2) + msgtxt$(p + 9)
+		fi
+	wend
+	
+	rem ' replace <expirationdate> with the actual data
+	expDateRepl = jul(num(workrec.expire_date$(1,4)), num(workrec.expire_date$(5,2)), num(workrec.expire_date$(7,2)))
+	expDateRepl$ =  date(expDateRepl:"%D-%Ml-%Y")
+	while 1
+		p = pos("<expirationdate>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + expDateRepl$ + msgtxt$( p + 16)
+	wend
+
+	rem ' does the license have an Evalulation license in it's past
+	pasteval = 0, evalexpire$ = ""
+	gosub doesSNHavePastEval
+	if pasteval then
+		addtext$ = "*** An evaluation license that expired on <expire date> may be the cause of the auto registration failure. To resolve, check the BLM directory for a license file with BBX000001 as part of the filename and rename this file to have a different suffix from .lic. ***"
+		p = pos("<expire date>" = addtext$)
+		if p <> 0 then addtext$ = addtext$(1, p-1) + evalexpire$ + addtext$(p + 13)
+		p = pos("<addEvalText>" = msgtxt$)
+		if p <> 0 then msgtxt$ = msgtxt$(1, p - 1) + $0A$ + addtext$ + $0A$ + msgtxt$(p + 13)
+	else
+		rem ' no eval
+		p = pos("<addEvalText>"=msgtxt$)
+		if p <> 0 then msgtxt$ = msgtxt$(1, p - 1) + msgtxt$(p + 13)
+	fi
+	
+	rem ' add the message trailer if there
+	if cvs(msg_trailer$, 3) <> "" then
+		msgtxt$ = msgtxt$ + msg_trailer$
+	fi
+	
+	rem ' extract out the Subject
+	p = pos("SUBJECT:" = cvs(msgtxt$, 4))
+	msgtxt$ = msgtxt$(p), p1 = pos($0a$ = msgtxt$)
+	subject$ = cvs(msgtxt$(1, p1 - 2), 3), msgtxt$ = msgtxt$(p1 + 1)
+	rem ' remove the text "Subject:"
+	p = pos(" " = subject$)
+	subject$ = subject$(p + 1)
+	if pastEval then subject$ = "** " + subject$
+	
+	rem ' trim any CR and LF from the front of the message
+	while 1
+		if pos($0D$ = msgtxt$) = 1 or pos($0A$ = msgtxt$) = 1 then
+			msgtxt$ = msgtxt$(2)
+		else
+			break
+		fi
+	wend
+
+return
+
+send_email:
+	
+	rem ' for debugging
+	rem ' print "to: " + to$
+	rem ' print "enduseremail: " + enduseremail$
+	rem ' print "cc: " + cc$
+	rem ' print "bcc: " + bcc$
+	rem ' print "subject: " + subject$
+	rem ' escape
+	
+	rem ' for debugging
+	rem ' to$ = "kurt.e.williams@comcast.net"
+	rem ' cc$ = ""
+	rem ' bcc$ = ""
+	rem ' print "send individual email "
+	rem ' input *
+	
+	rem ' from$, to$, cc$, bcc$, subject$, msgtxt$ should have already been set
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	wait 4
+	
+return
+
+doesSNHavePastEval:
+	
+	pasteval = 0, evalexpire$ = ""
+	
+	rem ' don't do this for BAS serial numbers
+	if workrec.product$ = "BAS" then return
+		
+	targetHID$ = cvs(workrec.hostid$,3)
+	
+	rem ' read LicRequests DB
+	mostrecentexpire$ = ""
+	read record(hostinfo, key = targetHID$, knum = 1, dom = *next)hostinfo$
+	
+	while 1
+		read record(hostinfo,end=*break)hostinfo$
+		if pos(targetHID$ = hostinfo.hostid$) = 0 then break
+		read record(requests, key = hostinfo.reqid$, dom=*continue)requests$
+		if cvs(requests.serialnum$,3) <> "BBX000001" then continue
+		
+		pasteval = 1
+		thisdate = requests.reqtime
+		gosub convertToDate
+		
+		if theExpireDate$ > mostrecentexpire$ then mostrecentexpire$ = theExpireDate$
+	wend
+		
+	rem ' read HistLicRequests DB
+	read record(hhostinfo, key = targetHID$, knum = 1, dom = *next)hostinfo$
+	
+	while 1
+		read record(hhostinfo,end=*break)hhostinfo$
+		if pos(targetHID$ = hhostinfo.hostid$) = 0 then break
+		read record(hrequests, key = hhostinfo.reqid$, dom=*continue)hrequests$
+		if cvs(hrequests.serialnum$,3) <> "BBX000001" then continue
+		
+		pasteval = 1
+		thisdate = hrequests.reqtime
+		gosub convertToDate
+		
+		if theExpireDate$ > mostrecentexpire$ then mostrecentexpire$ = theExpireDate$
+	wend
+
+	if pasteval then
+		evalexpire$ = mostrecentexpire$(6,2) + "-" + mostrecentexpire$(9,2) + "-" + mostrecentexpire$(1,4)
+	fi
+	
+return
+
+convertToDate:
+
+	rem ' find the expiration date
+
+	toExpireDate = 60*60*24*30; rem ' 2592000 seconds in 30 days
+	milliseconds$ = str((thisdate + toExpireDate) * 1000); rem ' * 1000 is to convert seconds to milliseconds
+	milliseconds! = milliseconds$
+	unixSeconds! = new java.lang.Long(milliseconds!)
+	theExpireDate! = new java.util.Date(unixSeconds!)
+	sdf! = new java.text.SimpleDateFormat("yyyy-MM-dd"); rem ' the format of your date
+	sdf!.setTimeZone(java.util.TimeZone.getTimeZone("GMT-6")); rem ' give a timezone reference for formating
+	theExpireDate$ = sdf!.format(theExpireDate!)
+
+return
+
+
+write_sn_license:
+	extract record(sn_license, key = workrec.serial_nbr$(1,12) + workrec.reg_date$ + workrec.reg_time$)sn_license$
+	if workrec.perpet_or_ann$ = "P" then
+		sn_license.notice$ = str(msgCode)
+		sn_license$ = field(sn_license$)
+	else
+		rem ' annual license
+		sn_license.noticeA$ = str(msgCode)
+		sn_license$ = field(sn_license$)
+	fi	
+	write record(sn_license)sn_license$
+return
+
+errmsg:
+	from$ = "customer-service@basis.cloud"
+	to$ = "misdev@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	subject$ = "Perpetual license notice error"	
+	msgtxt$ = "Error " + str(err) + " in " + str(tcb(5)) + " in " + pgm(-1) + $0a$ + errmes(-1)
+	msgtxt$ = msgtxt$ + $0a$ + $0a$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	release
+end

@@ -1,0 +1,150 @@
+0010 REM "CSM - Product ID Maintenance (Description)"
+0020 REM "Program CSM.AB"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * 4/27/99 * WA# 204 * BASIS"
+0040 REM 
+0070 SETERR 9000
+0080 SETESC 9000
+0090 PRECISION P[1]
+0200 REM " --- IOLIST's"
+0210 CSM01A: IOLIST A0$(1),A1$(1),A2$(1),A3$(1),A[ALL]
+0500 REM " --- Initializations"
+0700 REM " --- Background"
+0710 PRINT 'SB',@(8,8),"Sell online?:",@(2,9),"Contract Required?:",@(1,10),"Contr Duration Days:",@(5,11),"SAM Level Req'd:",
+0720 PRINT @(2,12),"License Property 1:",@(2,13),"License Property 2:",@(2,14),"License Property 3:",@(2,15),"License Property 4:",'SF',
+1300 REM " --- Display record"
+1310 GOSUB 5000
+1320 LET HOLD5$="",HOLD6$=""
+1390 ON O0 GOTO 4000,4000,4000,2000
+2000 REM " --- Description"
+2020 LET V0$="S",V1$="CE",V2$=A1$,V3$="",V0=30,V1=22,V2=4
+2030 LET V4$="Enter the Description"
+2040 GOSUB 7000
+2080 LET A1$(1)=V$
+2090 GOTO 3900
+2100 REM " --- License Property"
+2110 prop=0;goto 2200
+2120 prop=1;goto 2200
+2130 prop=2;goto 2200
+2140 prop=3;goto 2200
+2190 GOTO 3900
+2200 REM " --- License Property detail"
+2210 if pos("BASIS"=a1$)=0 then goto 3900
+2220 LET V0$="S",V1$="CE^",V2$=A2$(7+prop*2,2),V3$="",V0=2,V1=22,V2=12+prop
+2225 LET props$="(EF,ER,SF,SR)"
+2230 LET V4$="Property=Last 2 char of BBj Prod "+props$
+2240 GOSUB 7000;if v$="  " then proddesc$="";goto 2280
+2250 FIND (csm01_DEV,KEY=N0$+"B"+v$,DOM=2200)*,proddesc$
+2260 if pos(v$=props$)=0 then goto 2200
+2280 LET A2$(7+prop*2,2)=V$
+2285 PRINT @(V1,V2),A2$(7+prop*2,2)," ",proddesc$
+2290 GOTO 3900
+2300 REM " --- SAM Level Required for Trade
+2310 if pos("BASIS"=a1$)=0 then goto 3900
+2320 LET V0$=" ",V1$="CE^",V2$=A2$(4,1),V3$="",V0=1,V1=22,V2=11
+2330 LET V4$="SAM level required to trade up to this product (1 or 2)"
+2340 GOSUB 7000; if pos(v$="12")=0 then goto 2300
+2350 LET A2$(4,1)=V$
+2380 PRINT @(V0,V1),A2$(4,1)
+2390 GOTO 3900
+2400 REM " --- Sell online"
+2405 LET HOLD5$=A2$(5,1)
+2420 LET V0$="YN",V1$="CE^",V2$=A2$(5,1),V3$="",V0=1,V1=22,V2=8
+2430 LET V4$="OK to sell this on the e_commerce web site? (Y/N)"
+2440 GOSUB 7000; IF POS(V$=V0$)=0 THEN GOTO 2400
+2450 LET A2$(5,1)=V$
+2490 GOTO 3900
+2500 REM " --- Contract flag (Available/Required/NA)"
+2505 let hold6$=a2$(6,1)
+2510 IF pos(A2$(6,1)="CSB ") THEN a2$(6,1)="N"
+2520 LET V0$="ARN",V1$="CE^",V2$=A2$(6,1),V3$="",V0=1,V1=22,V2=9
+2530 LET V4$="Is a contract Required, Available, None of these? (R/A/N)"
+2540 GOSUB 7000; IF POS(V$=V0$)=0 THEN GOTO 2500
+2550 LET A2$(6,1)=V$
+2590 GOTO 3900
+2600 rem " --- Contract Duration Days
+2605 if a2$(6,1)="N" then a[1]=0; goto 3900
+2610 LET V0$="N",V1$="C",V2$=STR(a[1]),V3$="###0",V4$="Enter the Contract Duration Days",V0=4,V1=22,V2=10
+2620 gosub 7000
+2630 a[1]=v
+2640 goto 3900
+3900 REM " --- Next field"
+3905 IF V3=4 THEN GOTO 3990
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 ON I0 GOTO 2000,2400,2500,2600,2300,2110,2120,2130,2140,3990
+3990 LET I0=0
+4000 REM " --- Correct?"
+4010 GOSUB 5000
+4020 LET V4$="Is The Above Information Correct (Y/N/DELETE)?"
+4030 LET V0$="S",V1$="KC^",V2$="",V3$="",V0=6,V1=FNV(V4$),V2=22
+4040 GOSUB 7000
+4070 ON V3 GOTO 4080,4000,4000,4000,4900
+4080 IF V$="DELETE" THEN GOTO 4500
+4090 ON POS(V$="YN") GOTO 4000,4100,2000
+4100 REM " --- Write"
+4110 IF HOLD6$<>"" AND A2$(6,1)<>HOLD6$ THEN CALL "BIV.01",A0$,A2$(6,1),1,57
+4120 IF HOLD5$<>"" AND A2$(5,1)<>HOLD5$ THEN CALL "BIV.01",A0$,A2$(5,1),1,56
+4150 WRITE (CSM01_DEV,KEY=A0$)IOL=CSM01A
+4190 GOTO 4900
+4500 REM " --- Delete"
+4510 DIM CHAN[5]
+4520 LET CHAN[1]=SYS01_DEV,CHAN[3]=CSM12_DEV,CHAN[4]=CSM13_DEV
+4530 LET CHAN[2]=CSM01_DEV
+4540 REM LET CHAN[5]=CSM14_DEV
+4550 DIM PARAMS$[5]
+4560 LET PARAMS$[0]=N0$,PARAMS$[1]=A0$(3,3),PARAMS$[2]="A"
+4570 LET PARAMS$[3]="Y",PARAMS$[4]="Y",PARAMS$[5]="N"
+4580 CALL "CSC.DA",CHAN[ALL],PARAMS$[ALL],STATUS
+4590 GOTO 4900
+4900 REM " --- Run menu overlay"
+4990 RUN "CSM.AA"
+5000 REM " --- Display"
+5010 PRINT @(22,4),A1$
+5015 PRINT @(22,8),A2$(5,1),@(22,9),A2$(6,1)
+5020 PRINT @(22,10),a[1]:"###0",@(22,11),a2$(4,1)
+5030 PRINT @(22,12),A2$(7,2),@(22,13),A2$(9,2)
+5040 PRINT @(22,14),A2$(11,2),@(22,15),A2$(13,2)
+5090 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8050 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END

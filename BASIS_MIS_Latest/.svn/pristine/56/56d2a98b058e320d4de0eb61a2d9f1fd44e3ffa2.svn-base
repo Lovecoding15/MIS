@@ -1,0 +1,198 @@
+// Get header info and print commercial invoice  <aonintr_15>
+
+enter prev_cust_num$,first_invoice$,last_invoice$,address_block$[all],
+	signer$,title$,media_acc,device_name$;
+
+display/header/skip=11 export_date$/col=20 first_last_inv$/col=70;
+display/header/skip=1 address_block$[0]/col=70;
+i=1;
+repeat/until i=7 or cvs(address_block$[i],3)=$$
+	{
+	display/header address_block$[1]/col=70;
+	display/header address_block$[2]/col=70;
+	display/header address_block$[3]/col=70;
+	display/header address_block$[4]/col=70;
+	display/header address_block$[5]/col=70;
+	display/header address_block$[6]/col=70;
+	i=i+1;
+	}
+
+display/header/skip=4/before "Consignee"/col=80;
+display/header/skip=1 address_block$[i-1]/col=20;
+display/header $$;
+display/header $$;
+display/header $$;
+display/header $$;
+display/header $$;
+
+
+display/footer export_date$/col=100;
+display/footer $$;
+display/footer cvs(signer$,3)/col=55 title$/col=80;
+display/footer $$;
+display/footer $$;
+display/footer $$;
+display/footer $$;
+
+create temporary table com_line_item /nocreate
+	counter char(4)/index
+	product_class char(2)/index
+	line_type char(1)
+	item_num char(15)
+	desc char(50)
+	comment char(30)
+	qty num(5)
+	unit_price num(7)
+	extension num(9);
+
+set display/compress device_name$;
+
+export_date$=date(0);
+if first_invoice$<>last_invoice$ then
+	first_last_inv$=first_invoice$+"-"+last_invoice$;
+else
+	first_last_inv$=first_invoice$;
+
+packages=1;
+pkg_weight$=$$;
+
+// Calculate "Software Value"
+net=0;
+freigt=0;  // Misspell freight to avoid DD conflict
+
+for each com_line_item
+	{
+	if cvs(com_line_item.item_num,3)="FREIGHT" then
+		freigt=com_line_item.extension;
+	else
+		net=net+com_line_item.extension;
+	}
+
+software_value=net-media_acc;
+grand_total=net+freigt;
+print_freight_sw$="Y";
+
+prompt for/form="intr_15"
+	print_freight_sw=print_freight_sw$
+	export_date=export_date$
+	first_last_inv=first_last_inv$
+	country=address_block$[i-1]
+	packages=packages
+	pkg_weight=pkg_weight$
+	media_acc=media_acc
+	software_value=software_value
+	net=net
+	freight=freigt
+	grand_total=grand_total;
+
+page_counter=0;
+repeat/until page_counter=6
+{
+// Read line items temporary file to print line items on form
+first_line=1;
+line_counter=0;
+for each com_line_item where cvs(item_num,3)<>"FREIGHT"
+	{
+	if line_counter>20 then
+		{
+		display/newpage;
+		line_counter=0;
+		}
+	if first_line then
+		{
+		gosub display_first_line;
+		first_line=0;
+		}
+	else
+		gosub display_line;
+	line_counter=line_counter+1;
+	}
+
+// Print totals after line items
+if freigt>0 and print_freight_sw$="Y" then total_lines=8; else total_lines=5;
+if line_counter + total_lines > 20 then
+	display/newpage;
+else
+	display $$;
+
+// Use different format on totals for READY (number 0003611)
+if prev_cust_num$<>"01003611" then
+	{
+	display "Software Value:     "/col=38  str(software_value:"###,###.00");
+	display "Media Value:        "/col=38  str(media_acc:"###,###.00");
+	display "------------"/col=58;
+	display "Total:              "/col=38
+		str(software_value + media_acc:"###,###.00");
+
+	if freigt>0 and print_freight_sw$="Y" then
+		{
+		display "Freight:            "/col=38  str(freigt:"###,###.00");
+		display "------------"/col=58;
+		display "Total value of shipment: "/col=33
+			str(software_value + media_acc + freigt:"###,###.00");
+		}
+	}
+else
+	{
+	display "Software Value:     "/col=38  str(software_value:"###,###.00")/col=100
+											str(software_value:"###,###.00")/col=115;
+	display "Media Value:        "/col=38  str(media_acc:"###,###.00")/col=100
+											str(media_acc:"###,###.00")/col=115;
+//	display "------------"/col=58;
+	display "Total:              "/col=38
+		str(software_value + media_acc:"###,###.00")/col=100
+		str(software_value + media_acc:"###,###.00")/col=115;
+
+	if freigt>0 and print_freight_sw$="Y" then
+		{
+		display "Freight:            "/col=38  str(freigt:"###,###.00")/col=100
+												str(freigt:"###,###.00")/col=115;
+//		display "------------"/col=58;
+		display "Total value of shipment: "/col=33
+			str(software_value + media_acc + freigt:"###,###.00")/col=100
+			str(software_value + media_acc + freigt:"###,###.00")/col=115;
+		}
+	}
+
+page_counter=page_counter+1;
+display/newpage;
+
+}	// End of loop for 5 copies
+
+subroutine display_first_line
+{
+gosub calculate_unit_price;
+
+display/notitle str(packages:"#0")/col=27
+	com_line_item.desc/col=38
+	pkg_weight$/col=80
+	str(com_line_item.qty:"####0")/col=91
+	str(item_unit_price:"##,###.00")/col=101
+	str(com_line_item.extension:"##,###.00")/col=117;
+}
+
+subroutine display_line
+{
+if com_line_item.qty>0
+	{
+	gosub calculate_unit_price;
+	display/notitle/skip=1 com_line_item.desc/col=38
+		str(com_line_item.qty:"####0")/col=91
+		str(item_unit_price:"##,###.00")/col=101
+		str(com_line_item.extension:"##,###.00")/col=117;
+// Add extra to line counter to account for /skip in last display
+	line_counter=line_counter+1;
+	}
+else if com_line_item.item_num<> "FREIGHT"
+	display/notitle com_line_item.desc/col=38;
+}
+
+subroutine calculate_unit_price
+{
+if com_line_item.qty>0 then
+	item_unit_price=com_line_item.extension/com_line_item.qty;
+else
+	item_unit_price=0;
+}
+//
+

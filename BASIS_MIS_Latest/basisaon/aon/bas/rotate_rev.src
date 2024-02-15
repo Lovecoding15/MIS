@@ -1,0 +1,94 @@
+rem 'run using crontab on 1/1/yy and 3/31/yy
+
+today$=date(0:"%Y%Mz%Dz")
+if today$(5,4)="0101" then
+  gosub prep
+  subj$="NXT"
+  while firm$<"03"
+    read record (csm04,key=firm$+rev$,dom=*next)csm04$
+    if pos(firm$+rev$=csm04$)<>1 then gosub rev_setup
+    csm04.product_rev$=rev$ 
+    csm04.description$=desc$ 
+    csm04$=field(csm04$)
+    write record (csm04,key=firm$+rev$)csm04$
+    read record (csm04,key=firm$+"NXT",dom=*next)csm04$
+    if pos(firm$+"NXT"=csm04$)<>1 then gosub rev_setup
+    csm04.product_rev$="NXT"
+    csm04.description$=rev$ 
+    csm04.available1$(1,8)=today$(1,4)+"0401"
+    csm04$=field(csm04$)
+    write record (csm04,key=firm$+"NXT")csm04$
+
+    
+    rem ' update the SoftwareAssetManagement feature line and all other BASIS feature lines
+    theKey$=firm$ + "000000"
+    read(arm40,key=theKey$,dom=*next)
+    while 1
+	    read record(arm40,end=*break)arm40$
+	    if pos(theKey$=arm40$)<>1 then break
+    	    arm40.feature_rev$ = feature_rev$
+    	    arm40$ = field(arm40$)
+    	    write record(arm40,key=theKey$)arm40$
+    wend
+    firm$=str(num(firm$)+1:"00") 
+    
+  wend
+  gosub send_mail
+fi
+
+if today$(5,4)="0401" then
+  gosub prep
+  subj$="CUR"
+  while firm$<"03"
+    read record (csm04,key=firm$+"CUR",dom=*next)csm04$
+    if pos(firm$+"CUR"=csm04$)<>1 then gosub rev_setup
+    csm04.product_rev$="CUR"
+    csm04.description$=rev$ 
+    csm04$=field(csm04$)
+    write record (csm04,key=firm$+"CUR")csm04$
+    firm$=str(num(firm$)+1:"00") 
+  wend
+  gosub send_mail
+fi
+
+release
+
+rev_setup:
+  csm04.firm_id$=firm$
+  f$=FATTR(csm04$,"available1"),flen=DEC(f$(10,2))
+  csm04.available1$=fill(flen)
+  csm04.key_or_licen$="L"
+  f$=FATTR(csm04$,"dealer_str"),flen=DEC(f$(10,2))
+  csm04.dealer_str$=fill(flen)
+  csm04.upgrade_perc=0
+  csm04.dealer_num_2=0
+return
+
+prep:
+  call "ec_open::csm04"
+  call "ec_open::arm40"
+  firm$="01"
+  rev$=str(num(today$(3,2)))
+  feature_rev$=rev$ + ".0"
+  rev$=pad(rev$,3,"X")
+  desc$=rev$
+  p=pos("X"=rev$)
+  if p then desc$=rev$(1,p-1)+"."+cvs(rev$(p),8)
+return
+
+send_mail:
+
+	from$ = "customer-service@basis.cloud"
+	to$ = "customer-service@basis.cloud, kurt.e.williams@comcast.net"
+	cc$ = "mis@basis.cloud"
+	bcc$ = ""
+	
+	subject$ = subj$ + " revision changed " + today$
+	
+	msg$ = msg$ + $0a$ + "REV " + rev$ + " " + desc$
+	msg$ = msg$ + $0a$ + $0a$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msg$, ""
+
+return
+	

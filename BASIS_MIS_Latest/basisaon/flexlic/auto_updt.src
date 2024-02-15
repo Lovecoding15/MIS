@@ -1,0 +1,479 @@
+SETERR errmsg
+REM ' Program name: auto_updt.bbj
+REM ' Allow nc update from key to flex license if key is entered and
+REM '    key rev is 2.0x - can only go to 2.xx in flex
+REM ' Allow nc update if both are licensed and same major rev
+REM '    (i.e., 3.01 to 3.12) - returns same authorization #
+REM ' Allow chargeable update at no charge if current SAM
+SETERR invoked_pgm
+LET called_pgm=0
+ENTER sn$,key$,email$,prod_rev$,authnum$; LET called_pgm=1
+GOTO end_input
+invoked_pgm: 
+LET argnum=1
+getargv: 
+LET arg$=ARGV(argnum,ERR=end_input)
+SWITCH argnum
+CASE 1; LET sn$=arg$; BREAK
+CASE 2; LET key$=arg$; BREAK
+CASE 3; LET email$=arg$; BREAK
+CASE 4; LET prod_rev$=arg$; BREAK
+CASE DEFAULT; BREAK
+SWEND
+LET argnum=argnum+1
+GOTO getargv
+end_input: 
+SETERR errmsg
+rem TRACELOG$="/usr/local/ec/auto_updt_trace.log",DEBUG=UNT
+rem OPEN (DEBUG)TRACELOG$
+rem SETTRACE (DEBUG)
+datadir$=stbl("DATA_SERVER")+stbl("AON")+"ADATA/"
+LET arguments$=sn$+" "+key$+" "+email$+" "+prod_rev$
+LET p=POS(":"=sn$); IF p THEN LET sn$=sn$(p+1)
+LET p=POS(":"=key$); IF p THEN LET key$=key$(p+1)
+LET p=POS(":"=email$); IF p THEN LET email$=email$(p+1)
+LET email$=CVS(email$,3)
+LET p=POS(":"=prod_rev$); IF p THEN LET prod_rev$=prod_rev$(p+1)
+LET prod_rev$=CVS(prod_rev$,7)
+LET sn$=CVS(sn$,7)+FILL(20),sn$=sn$(1,20),authnum$="",key$=CVS(key$,11)
+
+REM 'NO OSH serialnumbers!
+IF sn$(1,3)="OSH" THEN LET msg$="Open Systems serial numbers cannot be processed here."; GOTO errmsg
+
+LET ecpath$="/usr/local/ec/"
+prefix datadir$+" "+ecpath$+" /basisaon/aon/bas/ "+pfx;rem 'for templates.pgm called by ec_open
+print(debug)pfx
+LET files$="SNM01*SNM02*SNT01*CSM01*CSM02*CSM03*CSM04*CSM13*SMC01*SNM04*SERIALNUMBERS*SNT03*IVM01*",p=POS("*"=files$)
+WHILE p
+LET f$=files$(1,p-1),files$=files$(p+1),p=POS("*"=files$)
+CALL ecpath$+"ec_open::"+f$
+WEND
+LET m$="00",chan$=STR(snm01:m$)+STR(snm02:m$)+STR(snt01:m$)+STR(csm01:m$)+STR(csm02:m$)+STR(csm03:m$)+STR(csm04:m$)+STR(csm13:m$)+STR(smc01:m$)+STR(snm04:m$)+STR(SERIALNUMBERS:m$)+STR(snt03:m$)+STR(ivm01:m$)
+
+LET msg$="Serial number not found"
+EXTRACT RECORD (snm01,KEY=sn$,ERR=*NEXT)snm01$; LET msg$=""
+IF snm01.active_flag$="N" THEN LET msg$="Inactive serial number"
+IF msg$<>"" THEN GOTO errmsg
+LET firm$=snm01.firm_id$
+
+GOSUB sam_info
+rem 'Check to see if the request is for an update to P5 rev 4 or 5 -
+rem ' convert to BBj current rev if it is
+if pos(prod_rev$="P4,P5,P6") then
+  READ RECORD (csm04,KEY=firm$+"CUR",DOM=*NEXT)CSM04$
+  temp$=cvs(csm04.description$,3)
+  if len(temp$) then temp$=temp$(1,1)
+  if pos(temp$="23456789") then prod_rev$="B"+temp$
+fi
+
+  LET key_to_license=(LEN(key$)=13),keyrev$=""
+IF sam_active$="Y" THEN LET key_to_license=0
+IF key_to_license THEN LET keyrev$="2." ELSE IF LEN(prod_rev$)>1 THEN LET keyrev$=prod_rev$(2,1)
+
+LET msg$="Port not found."
+READ RECORD (csm03,KEY=firm$+snm01.os_level$,DOM=*NEXT)CSM03$; LET msg$=""
+LET port$=CSM03.port_id$
+LET bbj_in=pos(port$(1,1)="26"),bbj_out=(POS("B"=prod_rev$)=1)
+LET trd=(bbj_in<bbj_out)
+IF bbj_in AND bbj_out=0 THEN LET msg$="Can't change BBj to PRO/5."; GOTO errmsg
+
+IF trd THEN 
+IF sam_active$<>"Y" THEN LET msg$="Serial number doesn't have active SAM."
+REM 'no trade in for data servers
+IF port$(1,2)="12" AND msg$="" THEN LET msg$="Data servers can't be exchanged for BBj."
+ FI 
+IF msg$<>"" THEN GOTO errmsg
+
+LET keymatch=0
+IF key_to_license=0 THEN LET msg$="Authorization number not found."
+DIM snt01tmp$:FATTR(snt01$)
+READ (snt01,KEY=sn$,ERR=read_snt01)
+read_snt01: 
+LET k$=KEY(snt01,END=snt01end)
+IF POS(sn$=k$)<>1 THEN GOTO snt01end
+READ RECORD (snt01,KEY=k$)snt01$
+LET snt01tmp$=FIELD(snt01$)
+IF CVS(snt01.auth_code$,3)="" OR snt01.action$="D" THEN GOTO read_snt01
+LET authnum$=CVS(snt01.auth_code$,3),a_len=LEN(authnum$)
+IF a_len=13 THEN LET keymatch=(key$=authnum$)
+IF key_to_license=0 AND key$=authnum$ THEN LET msg$=""
+GOTO read_snt01
+snt01end: 
+IF key_to_license AND keymatch=0 THEN LET msg$="Activation key not found."
+IF snt01tmp.serial_nbr$<>sn$ THEN LET msg$="No transactions found for this serial number."
+IF msg$<>"" THEN GOTO errmsg
+
+LET item$=snm01.product$+snm01.platform$+snm01.os_level$+snm01.product_rev$+snm01.license_type$
+LET hold_item$=item$,chg_to_bas=0
+
+if trd then LET lprop$="SF"
+
+if bbj_in then
+  READ RECORD (csm01,KEY=firm$+"BAS",DOM=*NEXT)csm01$
+  temp$=csm01.lic_property1$+csm01.lic_property2$+csm01.lic_property3$+csm01.lic_property4$
+  if pos(item$(2,2)=temp$,2) then lprop$=item$(2,2), chg_to_bas=1
+fi
+
+  IF trd or chg_to_bas THEN 
+  LET item$(1,3)="BAS",odbc_rw$="W"
+  IF pos(item$(13,3)="ROO,RDO") then obdc_rw$="R", item$(13,3)="STD"
+  IF item$(13,3)="RTM" or port$(1,2)="14" THEN LET lprop$="SR", item$(13,3)="STD"
+  LET os$=""
+  READ (csm13,KEY=firm$+"B"+item$(4,3),DOM=*NEXT)
+  bbj_os: 
+  READ RECORD (csm13,END=bbj_os_end)csm13$
+  IF csm13$(1,6)<>firm$+"B"+item$(4,3) THEN GOTO bbj_os_end
+  READ RECORD (csm03,KEY=firm$+csm13.cm_id_2$,DOM=bbj_os)csm03$
+  IF CSM03.port_id$(1,1)<>"2" THEN GOTO bbj_os
+  LET os$=CSM03.os_level$,port$=CSM03.port_id$
+  bbj_os_end: 
+  IF os$="" THEN LET msg$="No BBj port available."; GOTO errmsg
+  LET item$(7,3)=os$
+  LET item$(4,3)="ALL"
+ FI 
+
+GOSUB revision
+
+IF current_rev$="" THEN LET msg$="Can't find a revison "+keyrev$+" for this port."
+IF flexrev<>1 AND msg$="" THEN LET msg$="New rev isn't a license rev."
+
+LET new$="  ",old$="  "
+READ RECORD (csm04,KEY=firm$+current_rev$,DOM=*NEXT)csm04$; LET new$=CVS(csm04.description$,3)
+READ RECORD (csm04,KEY=firm$+snm01.product_rev$,DOM=*NEXT)csm04$; LET old$=CVS(csm04.description$,3)
+
+IF key_to_license AND POS(keyrev$=old$)<>1 AND msg$="" THEN LET msg$="Rev is "+old$+", only "+keyrev$+"0x can be exchanged."
+
+LET pn=POS("."=new$),po=POS("."=old$),ncupdt=0
+IF pn AND po THEN LET ncupdt=(new$(1,pn)=old$(1,po))
+
+IF msg$="" AND ncupdt=0 AND sam_active$<>"Y" THEN LET msg$="Serial number doesn't have active SAM."
+
+IF a_len<>10 AND key_to_license=0 AND sam_active$<>"Y" THEN LET msg$="Activation key required for exchange."
+IF msg$<>"" THEN GOTO errmsg
+
+REM 'Is this already at new rev? If so, return last authnum.
+IF trd=0 AND current_rev$=snm01.product_rev$ THEN GOTO EXIT
+
+LET today=JUL(0,0,0)
+
+LET d$=CHR(ASC(DATE(today:"%Yp"))+32)+CHR(ASC(DATE(today:"%Mp"))+32)+CHR(ASC(DATE(today:"%Dp"))+32)
+
+rem 'No default to fixed license - if fixed now, change to float, change authnum
+LET float$="F"
+if len(authnum$)=10 then authnum$(10,1)="1"
+rem IF POS(snm01.product$(1,2)="VPOD",2) AND snt01tmp.fixed_float$<>"F" AND snm01.users<2 THEN LET float$="X"
+
+LET item$(10,3)=current_rev$
+IF trd=0 THEN GOTO deact0
+READ RECORD (csm01,KEY=firm$+item$(1,3),DOM=*NEXT)csm01$
+LET pfx$=csm01.serial_pfx$
+GOSUB new_sn
+LET new_sn$=pfx$+nn$+FILL(20-LEN(nn$)-LEN(pfx$))
+READ (snm01,KEY=new_sn$,DOM=*NEXT); LET new_sn$=""
+IF CVS(new_sn$,3)="" THEN LET msg$="Couldn't get a new Serial number."; GOTO errmsg
+IF sam_type=2 THEN 
+LET pfx$="CTR"
+GOSUB new_sn
+IF nn$="" THEN LET msg$="No SAM information."; GOTO errmsg
+LET smc01.contract$=nn$,smc01.contr_type$="SM1"
+LET smc01$=FIELD(smc01$)
+WRITE RECORD (smc01)smc01$
+ FI 
+LET deact=1
+LET snm01.active_flag$="N",support=snm01.avail_support,snm01.avail_support=0
+GOSUB write_sn_files
+LET snm01.active_flag$="Y",snm01.serial_nbr$=new_sn$
+LET old_sn$=sn$,sn$=new_sn$,ivm_item$=item$+FILL(5)
+ivmok=0
+FIND RECORD (ivm01,KEY=firm$+ivm_item$,ERR=*next)ivm01$;ivmok=1
+if ivmok=0 then
+ ivm_item$(10,3)="CUR"
+ if ivm_item$(13,3)<>"STD" and ivm_item$(1,3)="BAS" then ivm_item$(13,3)="EXP"
+ FIND RECORD (ivm01,KEY=firm$+ivm_item$,ERR=*next)ivm01$;ivmok=1
+fi
+LET snm01.serial_desc$=ivm01.item_desc$,snm01.product$=item$(1,3)
+LET snm01.platform$=item$(4,3),snm01.os_level$=item$(7,3)
+LET snm01.license_type$=item$(13,3),snm01.media_type$="N/A"
+LET snm01.orig_sale_date$=d$,snm01.port_id$=port$
+if sam_type then LET snm01.sam_active$=sam_active$
+LET snm01.avail_expire$=FILL(8)
+LET snm01.comment$=FILL(60),snm01.dist_reset=0,snm01.avail_support=support
+LET snm01.contract$=smc01.contract$
+
+deact0: 
+LET deact=0
+LET snm01.product_rev$=current_rev$
+GOSUB write_sn_files
+IF POS("@"=email$) THEN GOSUB email_license
+
+GOTO EXIT
+
+errmsg: 
+IF msg$="" THEN LET msg$=STR(ERR)+" in "+STR(TCB(5))
+
+exit: 
+rem endtrace
+SETERR exit2
+WHILE LEN(chan$)>1
+LET f$=chan$(1,2),chan$=chan$(3)
+CLOSE (NUM(f$),ERR=*NEXT)
+WEND
+
+exit2: 
+LET logfile$=STBL("AON")+"ADATA/auto_update.log"
+LET temp$=authnum$
+IF msg$<>"" THEN 
+  temp$=msg$
+  authnum$=""
+fi
+LET log$=$22$+arguments$+"  =>  "+temp$+" "+DATE(0:"%Mz/%Dz/%Y")+$22$
+LET a=SCALL("echo "+log$+" >> "+logfile$)
+IF called_pgm THEN EXIT
+PRINT "SN: ",CVS(sn$,2)
+PRINT "AUTH: ",authnum$
+PRINT "ERROR: ",msg$
+RELEASE
+
+write_sn_files: 
+LET snt01.serial_nbr$=sn$
+LET snt01.trans_date$=d$
+LET snt01.sn_det_seq$="00001"
+IF (deact OR trd=0) AND d$=snt01tmp.trans_date$ THEN LET snt01.sn_det_seq$=STR(NUM(snt01tmp.sn_det_seq$)+1:"00000")
+LET snt01.customer_nbr$=snm01.customer_nbr$
+LET snt01.ar_inv_nbr$="0000000"
+LET snt01.sequence_nbr$="000"
+LET snt01.type_of_sale$="UNC"
+IF trd THEN LET snt01.type_of_sale$="TRD"
+LET snt01.product_rev$=current_rev$
+REM 'For new auth#, 1st 5 is day number of year followed by 2 digit year
+IF trd or CVS(authnum$,3)="" or key_to_license THEN 
+  LET temp$="0000"+CVS(sn$,2),temp=LEN(temp$)
+  LET temp$=temp$(temp-3,4),y=ASC(d$(1,1))-32
+  LET d=today-JUL(y+1900,1,1)
+  LET authnum$=STR(d+1:"000")+STR(y-100:"00")+temp$+STR(float$="F")
+FI 
+LET snt01.auth_code$=authnum$
+LET snt01.server_nbr$=snt01tmp.server_nbr$
+LET snt01.firm_id$=firm$
+LET snt01.action$="M"
+IF trd AND deact=0 THEN LET snt01.action$="A"
+LET snt01.fixed_float$=float$
+LET snt01.contract$=snm01.contract$
+if sam_type then LET snt01.sam_active$=sam_active$
+LET snt01.item$=item$
+LET temp$=FATTR(snt01$,"dealer_str"),temp=DEC(temp$(10,2))
+LET snt01.dealer_str$=FILL(temp)
+LET snt01.users=snm01.users
+LET snt01.ext_price=0
+LET snt01.license_cnt=0
+LET snt01.dealer_num_1=0
+LET snt01.dealer_num_2=0
+LET snt01.dealer_num_3=0
+IF deact THEN LET snt01.users=0,snt01.product_rev$="   ",snt01.auth_code$=FILL(15),snt01.server_nbr$=FILL(20),snt01.sam_active$="N",snt01.action$="D",snt01.item$=hold_item$
+LET snt01$=FIELD(snt01$)
+WRITE RECORD (snt01,KEY=snt01$(1,28))snt01$
+
+LET snm01$=FIELD(snm01$)
+WRITE RECORD (snm01,KEY=snm01$(1,20))snm01$
+
+if (trd or chg_to_bas) and deact=0 then
+  snm02.serial_nbr$=snm01.serial_nbr$
+  snm02.lic_property1$=lprop$
+  snm02.odbc_rw$=odbc_rw$
+  snm02.users1=snm01.users
+  LET snm02$=FIELD(snm02$)
+  WRITE RECORD (snm02,KEY=snm02$(1,20))snm02$
+fi
+
+IF deact THEN 
+  LET snt03.serial_nbr_1$=new_sn$
+  LET snt03.serial_nbr_2$=sn$,snt03.action_date$=d$
+  LET snt03.ar_inv_nbr$=snt01.ar_inv_nbr$,snt03.action$="D"
+  DIM st3$:FATTR(snt03$)
+  GOSUB write_snt03
+  LET snt03.serial_nbr_1$=sn$
+  LET snt03.serial_nbr_2$=new_sn$,snt03.action$="A"
+  GOSUB write_snt03
+  RETURN
+FI 
+
+LET seq=1,com$="Auto update "+old$+" to "+new$+" "
+IF trd THEN LET com$="Auto trade "+CVS(old_sn$,2)+"->"+CVS(sn$,2)+" "
+LET com$=com$+DATE(0:"%Mz/%Dz/%Y")
+REM IF sam_active$="Y" THEN LET com$=com$+" "+smc01.contr_type$+" "+snm01.contract$
+IF LEN(com$)>48 THEN LET com$=com$(1,48)
+READ (snm04,KEY=sn$,DOM=*NEXT)
+WHILE seq<100
+READ RECORD (snm04,END=*break)snm04$
+IF snm04.serial_nbr$=sn$ THEN LET seq=NUM(snm04.comments_seq$)+1; CONTINUE
+LET snm04.serial_nbr$=sn$
+LET snm04.comments_seq$=STR(seq:"00"),seq=100
+LET snm04.cmt_line$=com$
+LET snm04$=FIELD(snm04$)
+WRITE RECORD (snm04,KEY=snm04$(1,22))snm04$
+WEND
+RETURN
+
+write_snt03: 
+LET snt03.sn_activ_seq$="00000"
+READ (snt03,KEY=snt03.serial_nbr_1$,DOM=find_snt03)
+find_snt03: 
+READ RECORD (snt03,END=check_seq)st3$
+IF snt03.serial_nbr_1$<>st3.serial_nbr_1$ THEN GOTO check_seq
+REM Avoid multiple links between the same 2 SN's - might be possible due to updates, deletes, reupdates
+IF snt03.serial_nbr_2$=st3.serial_nbr_2$ THEN REMOVE (snt03,KEY=st3$(1,25),ERR=find_snt03)
+GOTO find_snt03
+check_seq: 
+LET snt03.sn_activ_seq$=STR(NUM(snt03.sn_activ_seq$)+1:"00000")
+LET snt03.dealer_str$=FILL(20),snt03$=FIELD(snt03$)
+WRITE RECORD (snt03,KEY=snt03$(1,25),DOM=check_seq)snt03$
+RETURN
+
+revision: 
+LET revlist$="",current_rev$=""
+READ (csm13,KEY=firm$+"C"+item$(7,3),DOM=revision_loop)
+revision_loop: 
+READ RECORD (csm13,END=revision_endloop)csm13$
+IF csm13.firm_id$<>firm$ OR csm13.cm_file_type$<>"C" OR csm13.cm_id_1$<>item$(7,3) THEN GOTO revision_endloop
+READ RECORD (csm04,KEY=firm$+csm13.cm_id_2$,DOM=revision_loop)csm04$
+IF keyrev$<>"" AND POS(keyrev$=CVS(csm04.description$,3))<>1 THEN GOTO revision_loop
+IF pos("CUR"=csm04.product_rev$) then READ RECORD (csm04,KEY=firm$+cvs(csm04.description$,3),DOM=revision_loop)csm04$
+LET revlist$=revlist$+csm04.key_or_licen$+csm04.description$+csm04.product_rev$
+GOTO revision_loop
+revision_endloop: 
+LET i=24,temp=LEN(revlist$)
+IF temp<i THEN RETURN
+LET revlist$=SSORT(revlist$,i)
+LET current_rev$=revlist$(temp-2,3)
+LET flexrev=(revlist$(temp-i+1,1)="L")
+RETURN
+
+sam_info: 
+LET sam_type=0,contract_type$="",days_expired=0,sam_active$=""
+FIND RECORD (smc01,KEY=snm01.contract$,DOM=no_sam_contract)smc01$
+LET contract_type$=smc01.contr_type$
+LET days_expired=NUM(fnxdays$(smc01.annual_dt$))
+LET sam_active$=snm01.sam_active$
+IF smc01.sam_active$="N" OR days_expired THEN LET sam_active$="N"
+IF sam_active$<>"N" AND POS("SM"=contract_type$) THEN LET sam_type=NUM(contract_type$(3,1)),sam_active$="Y"
+IF sam_active$<>"N" AND POS("DV"=contract_type$) THEN sam_active$="Y"
+no_sam_contract: 
+RETURN
+
+DEF fnxdays$(xdt$)
+LET xdays=0
+LET xy=NUM(xdt$(1,4),ERR=xdays_end)
+LET xm=NUM(xdt$(5,2),ERR=xdays_end)
+LET xd=NUM(xdt$(7,2),ERR=xdays_end)
+LET xdays=MAX(0,JUL(0,0,0)-JUL(xy,xm,xd,ERR=xdays_end))
+xdays_end: 
+RETURN STR(xdays)
+
+email_license: 
+LET TODAY$=DATE(0:"%Mz/%Dz/%Y")
+LET users=snm01.USERS,float$=snt01.FIXED_FLOAT$
+LET item$=snm01.PRODUCT$+snm01.PLATFORM$+snm01.OS_LEVEL$+snm01.PRODUCT_REV$+snm01.LICENSE_TYPE$
+IF POS(float$="FX")=0 THEN IF users<2 AND POS(item$(1,2)="VPOD",2) THEN LET float$="X"
+READ RECORD (csm04,KEY=firm$+item$(10,3))CSM04$
+LET RV$=CVS(csm04.description$,3),p=POS(" "=RV$); IF p=0 THEN LET p=LEN(RV$)
+LET PROD_TYPE$=item$(13,3),REV_LEVEL$=CVS(RV$(1,p),2)
+LET PORT_REV$=port$+"."+RV$,p=POS("."=RV$); IF p THEN LET PORT_REV$=PORT_REV$(1,6)+RV$(1,p-1)+RV$(p+1)
+READ (csm01,KEY=firm$+item$(1,3))*,PRDDESC$
+READ (csm02,KEY=firm$+item$(4,3))*,PLTDESC$
+LET PRINT_DESC$=CVS(PRDDESC$,2)
+IF csm04.Key_or_licen$="L" THEN LET OSLINE$=CVS(REV_DESC$,2)+" Port ID "+PORT_REV$+"  "+CVS(PLTDESC$,2) ELSE LET OSLINE$=CVS(PLTDESC$,2),item$=CVS(item$,2)+"  "+port$
+IF LEN(PRINT_DESC$)>30 THEN LET PRINT_DESC$=PRINT_DESC$(1,30); IF LEN(CVS(PRDDESC$,2))>20 THEN LET PRINT_DESC$=CVS(PRDDESC$,2)
+IF LEN(OSLINE$)>48 THEN LET OSLINE$=OSLINE$(1,48)
+LET LICTEXT$=""
+IF csm04.Key_or_licen$<>"L" THEN GOTO NOT_FLEX
+LET TMPSN$=CVS(sn$,2)
+LET temp_license$=STBL("AON")+"bas/temp_license.pgm"
+CALL temp_license$,TMPSN$,lictext$
+NOT_FLEX: 
+
+LET LICTEXT$=LICTEXT$+",,"+snm01.CUSTOMER_NBR$
+cp1: LET COMMA_POS=POS(","=PRINT_DESC$)
+IF COMMA_POS THEN LET PRINT_DESC$(COMMA_POS,1)=" "; GOTO cp1
+cp2: LET COMMA_POS=POS(","=OSLINE$)
+IF COMMA_POS THEN LET OSLINE$(COMMA_POS,1)=" "; GOTO cp2
+LET OUTREC$=CVS(snm01.SERIAL_NBR$,2)+","+CVS(snt01.AUTH_CODE$,2)+","+STR(users)+",n/a,"+TODAY$+","+CVS(item$,2)+","+CVS(PRINT_DESC$,35)+","+CVS(REV_LEVEL$,2)+","+CVS(OSLINE$,35)+LICTEXT$
+
+LET KEY_TMP$="number:c(10*=44),auth_key:c(13*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),po:c(5*=44),cust:c(6)"
+LET LIC_TMP$="number:c(10*=44),auth_key:c(10*=44),users:c(3*=44),order_no:c(7*=44),order_date:c(10*=44),part_num:c(22*=44),desc1:c(30*=44),rev_lvl:c(10*=44),system:c(48*=44),flex_feature:c(7*=44),flex_key:c(12*=44),flex_rev_lvl:c(10*=44),flex_host_id:c(10*=44),flex_expiry_date:c(11*=44),flex_checksum:c(2*=44),flex_users:c(10*=44),flex_number:c(10*=44),platform:c(1*=44),po:c(5*=44),cust:c(6)"
+LET k$="",C1=POS(","=OUTREC$)
+IF C1 THEN LET C2=POS(","=OUTREC$(C1+1)); IF C2 THEN LET k$=OUTREC$(C1+1,C2-1)
+LET K_SIZE=LEN(CVS(k$,3)); REM Keys are 13 characters, authorization numbers are 10
+IF K_SIZE=10 THEN DIM REC$:LIC_TMP$; LET FLEX=1 ELSE DIM REC$:KEY_TMP$; LET FLEX=0
+LET REC$=OUTREC$
+rem GOSUB SETUP_FILE
+LET PAGEBREAK$=$0A$+"--==========_BASIS"+$0A$+"Content-Disposition: attachment"+$0A$+"Content-Transfer-Encoding: 7bit"+$0A$+"Content-Type: text/html;"+$0A$+" charset="+$22$+"us-ascii"+$22$+"; name="+$22$+CVS(REC.NUMBER$,2)+".htm"+$22$+$0A$+$0A$
+rem GOSUB BUILD_HTML
+rem GOSUB SEND_FILE
+call "BAL.01",sn$,authnum$,email$,"","",license$
+RETURN
+
+SETUP_FILE: 
+LET OUTFILE$=STBL("TEMP")+CVS(sn$,3)+"email.txt"
+ERASE OUTFILE$,ERR=OPEN_OUTFILE
+OPEN_OUTFILE: STRING OUTFILE$
+LET OUTFILE=UNT; OPEN (OUTFILE)OUTFILE$
+LET s$=CVS(sn$,3)+" License registration"
+LET HEADER$="Mime-Version: 1.0"+$0A$+"Content-Type: multipart/mixed;"+$0A$+" boundary="+$22$+"==========_BASIS"+$22$+$0A$
+LET HEADER$=HEADER$+"To: "+email$+$0A$+"From: BASIS Customer Service <customer-service@basis.cloud>"+$0A$+"Reply-To: customer-service@basis.cloud"+$0A$+"Cc: customer-service@basis.cloud"+$0A$+"Subject: "+s$+$0A$+"--==========_BASIS"+$0A$+"Content-Type: text/plain;"+$0A$+" charset="+$22$+"us-ascii"+$22$+$0A$+"Content-Transfer-Encoding: 7bit"+$0A$+$0A$
+gosub msg_text
+LET HEADER$=HEADER$+msg_text$
+WRITE RECORD (OUTFILE)HEADER$
+RETURN
+
+SEND_FILE: 
+IF OUTFILE THEN CLOSE (OUTFILE)
+rem ' send mail is no longer used
+rem ' LET a=SCALL("/usr/lib/send mail -t < "+OUTFILE$)
+
+	rem ' email$ is the to address
+	from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+	cc$ = "customer-service@basis.cloud"
+	bcc$ = "kw5121151@gmail.com"; rem ' for monitoring
+	subj$ = s$
+	if pos("auto_updt" = msg_text$) = 0 then msg_text$ = msg_text$ + $0A$ + $0A$ + "auto_updt"
+		
+	htmlfile$ = stbl("TEMP") + CVS(REC.NUMBER$,2)+".htm"
+	erase htmlfile$, err=*next
+	string htmlfile$
+	htmlfile = unt
+	open(htmlfile)htmlfile$
+	write record (htmlfile)savehtml$
+	close(htmlfile)
+	call "sendEmail.src", from$, email$, cc$, bcc$, subj$, msg_text$, htmlfile$
+	erase htmlfile$,err=*next
+
+ERASE OUTFILE$,ERR=SEND_FILE_END
+SEND_FILE_END: RETURN
+
+BUILD_HTML: 
+LET TOLINE$="",SUBJLINE$="",html$="",choice$="E"
+LET format_license$=STBL("AON")+"bas/BLK.30"
+CALL format_license$,firm$,toline$,subjline$,choice$,rec$,flex,html$
+savehtml$ = html$
+LET html$=PAGEBREAK$+html$; WRITE RECORD (OUTFILE)html$
+RETURN
+
+new_sn: 
+LET nn$="",tries=0
+EXTRACT RECORD (SERIALNUMBERS,KEY=pfx$,ERR=new_sn_end)serialnumbers$
+LET nn$=STR(serialnumbers.serial_cntr:"000000")
+LET serialnumbers.serial_cntr=serialnumbers.serial_cntr+1
+WRITE RECORD (SERIALNUMBERS,KEY=pfx$,ERR=new_sn_end)serialnumbers$
+LET tries=5
+new_sn_end: 
+IF tries<5 THEN LET tries=tries+1; RETRY
+RETURN
+
+msg_text:
+msg_chan=unt
+txtfile$=STBL("AON")+"ADATA/BLK16.txt"
+open(msg_chan)txtfile$
+f1$=fin(msg_chan),s=dec(f1$(1,4))
+readrecord(msg_chan,siz=s)msg_text$
+close(msg_chan)
+return

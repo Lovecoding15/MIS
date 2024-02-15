@@ -1,0 +1,385 @@
+rem ' <flexlicEmailNoticeSNLmitedDeactivated.src>
+
+seterr errmsg 
+
+enter type, sn$, hostid$, othHostid$
+
+rem ' type = 1 host id limited violation
+rem ' type = 2 deactivated sn registation attempt
+if type <> 1 and type <> 2 then goto pgm_exit
+
+call "ec_open::SNM01"
+call "ec_open::SN_LIMIT_EMAILS"
+call "ec_open::ARM01"
+call "ec_open::TMM05"
+call "ec_open::TMM03"
+call "ec_open::TMM01"
+call "ec_open::LOGEXTRACT"
+call "ec_open::SNMEL"
+call "ec_open::SNMEU"
+call "ec_open::COUNTRY"
+
+rem ' limit reject emails to one a day
+if type = 1 then
+	pad$ = fill(60," ")
+	
+	keysn$ = sn$ + pad$
+	keysn$ = keysn$(1,20)
+	
+	keyhostid$ = othHostid$ + pad$
+	keyhostid$ = keyhostid$(1,60)
+	
+	keydate$ = date(0:"%Y%Mz%Dz")
+	
+	found = 0
+	read record(sn_limit_emails, key = keysn$ + keyhostid$ + keydate$, dom=*next)sn_limit_emails$; found = 1
+	rem ' if email already sent today then exit
+	if found then goto pgm_exit
+	
+	rem ' log it and continue
+	sn_limit_emails.serial_nbr$ = keysn$
+	sn_limit_emails.hostid$ = keyhostid$
+	sn_limit_emails.email_sent$ = keydate$
+	
+	write record(sn_limit_emails)sn_limit_emails$
+
+fi
+
+rem ' read the email text 
+txt_chan=unt
+open(txt_chan)"licenseRegIssues.txt"
+sz=0
+file_text$=""
+f$=fin(txt_chan),sz=dec(f$(1,4))
+if sz then readrecord(txt_chan,siz=sz)file_text$
+close(txt_chan,err=*next)
+
+rem ' break up the email text
+p=pos(str(type) + "EN:" = file_text$)
+file_text$ = file_text$(p + 4)
+p = pos("{" = file_text$)
+file_text$ = file_text$(p + 1)
+p = pos("}" = file_text$)
+notice$ = file_text$(1, p - 1)
+
+thissn$ = cvs(sn$,3)
+thissn$ = thissn$ + fill(20)
+thissn$ = thissn$(1,20)
+
+read record (snm01, key = thissn$)snm01$
+users = snm01.users
+
+gosub lookup_email_addresses
+
+gosub fill_in_message
+
+gosub send_email
+
+goto pgm_exit
+
+rem ' ---------------------------------------------------------------------------------
+rem ' build the from$, to$, cc$, and bcc$
+rem ' ---------------------------------------------------------------------------------
+lookup_email_addresses:
+
+	ap_contact$ = ""
+	sam_contact$ = ""
+	main_contact$ = ""
+	backup_address$ = "sales@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	recipient$ = ""
+	
+	rem ' get end user name if present
+	while 1
+		endusername$="", enduseremail$=""
+		read record(snmel, key = thissn$, dom=*break)snmel$
+		read record(snmeu, key = snmel.end_user_nbr$, dom=*break)snmeu$
+		endusername$=cvs(snmeu.company_name$,3)
+		enduseremail$=cvs(snmeu.email_address$,3)
+		break
+	wend
+
+	rem ' look up customer name
+	custnbr$  = snm01.firm_id$ + snm01.customer_nbr$
+	read record(arm01, key=custnbr$)arm01$
+	custname$ = cvs(arm01.cust_name$,3)
+
+	key$ = snm01.firm_id$ + snm01.customer_nbr$
+	
+	rem ' find the main contact (not sure this is the best way)
+	read(tmm05, key = key$, dom=*next)
+	while 1
+		readrecord(tmm05, end =*break)tmm05$
+		if pos(key$ = tmm05$) <> 1 then break
+		main_contact$ = cvs(tmm05.email$,3)
+		break
+	wend
+
+	rem ' lookup addresses in the TMM Contact table
+	read(tmm03, key = key$,dom = *next)
+	while 1
+		read record(tmm03, end = *break)tmm03$
+		if pos(key$ = tmm03$) <> 1 then break
+		if tmm03.sam_contact$ = "Y" then sam_contact$ = cvs(tmm03.e_mail$,3)
+		if tmm03.primary_contact$ = "Y" and cvs(main_contact$,3) = "" then main_contact$ = cvs(tmm03.e_mail$,3)
+		if tmm03.ap_contact$ = "Y" then ap_contact$ = cvs(tmm03.e_mail$,3)
+	wend
+
+	rem ' lookup up email address from the log extract table
+	date$="00000000"
+
+	rem ' also look for a hostname in the most recent entry for the othHoatid$ and a hostname for the most recent entry for the allowed hostid
+	hostname$ = ""
+	prihostname$ = ""
+	read(logextract, key = cvs(thissn$,3), dom = *next)
+	while 1
+		readrecord(logextract, end =*break)logextract$
+    		if pos(logextract.serialnum$ = thissn$) = 0 then break
+		
+		if date$<logextract.date$ and cvs(logextract.email$,3) <> "" then
+			date$=logextract.date$
+      			em$=cvs(logextract.email$,3)
+			if em$ <> "" and pos("@"=em$) then recipient$ = em$ 
+		fi
+		
+		if cvs(logextract.hostid$,3) = cvs(othHostid$,3) then 
+			hostname$ = cvs(logextract.hostname$,3)
+		else 
+			if cvs(logextract.hostid$,3) = cvs(hostid$,3) then
+				prihostname$ = cvs(logextract.hostname$,3)
+			fi
+		fi
+		
+  	wend
+	
+	if date$ <> "00000000" and recipient$ <> "" then
+		rem ' not sure this is needed, since all these will be perpetual expiration dates 
+		rem ' which means the last registration would have been 60 or less days ago
+		jul_dt = jul(num(date$(1,4)), num(date$(5,2)), num(date$(7,2)))
+		today = jul(0, 0, 0)
+		rem 'if last reg. email is older than 2 years (730 days ago), don't use it
+		if today - jul_dt > 730 then recipient$=""
+	fi
+	
+	rem ' set the from email address
+	from$="customer-service@basis.cloud"
+	
+	rem ' set the to email address
+	rem ' convert any ; to ,
+	addr$ = main_contact$ + "," + sam_contact$ + "," + recipient$ + ","
+	if enduseremail$ <> "" then addr$ = addr$ + enduseremail$ + ","
+	while 1
+		p = pos(";" = addr$)
+		if p = 0 then break
+		addr$(p,1) = ","
+	wend
+	addr$=cvs(addr$,43)
+	
+	rem ' clean up the to email address
+	eaddr$=""
+	while 1
+		p = pos("," = addr$)
+		if p=0 then break
+		if p > 1 then t1$ = cvs(addr$(1,p - 1), 3) else t1$ = ""
+		addr$ = addr$(p + 1)
+		if pos(t1$ = addr$) = 0 and pos("@" = t1$) then eaddr$ =eaddr$ + "," + t1$
+	wend
+	l=len(eaddr$)
+	rem ' trim a trailing comma
+	if l and eaddr$(l,1)="," then eaddr$(l,1)=" "
+	rem ' trim a leading comma
+	if l and eaddr$(1,1)="," then eaddr$(1,1)=" "
+	eaddr$ = cvs(eaddr$, 3)
+	if eaddr$="" then eaddr$ = backup_address$
+	to$ = eaddr$
+	
+	rem ' get the language
+	readrecord(tmm01, key = key$ + "000000", dom = *next)tmm01$
+	lang$=cvs(tmm01.lang_code$,7)
+	read record(country, key = tmm01.country_code$, dom = *next)country$
+	if lang$ = "" then lang$ = cvs(country.lang_code$,7)
+	if lang$ = "" then lang$="EN"
+	rem ' first pass at this program everything will be done in English
+
+	rem ' set the cc address
+	msg_trailer$ = ""
+	if snm01.firm_id$ = "01" then 
+		if cvs(tmm01.slsperson$, 3) <> "" then
+			msg_trailer$ = "Rep: " + cvs(tmm01.slsperson$, 3)
+		fi
+		rem ' exclude sales@basis.cloud from the cc$ if it was used as the to address
+		if pos(backup_address$ = to$) = 0 then cc$ = backup_address$ + ", "
+		cc$ = cc$ + "customer-service@basis.cloud, support@basis.cloud"
+	fi
+
+	if snm01.firm_id$ = "02" then
+		cc$="eu.support@basis.cloud, "
+		rem ' exclude sales@basis.cloud from the cc$ if it was used as the to address
+		if pos(backup_address$ = to$) = 0 then cc$ = cc$ + backup_address$ + ", "
+		cc$ = cc$ + "customer-service@basis.cloud, support@basis.cloud"
+	fi
+	
+	bcc$ = ""
+
+return
+
+rem ' ---------------------------------------------------------------------------------
+rem ' replace varialble values in the email boiler plate
+rem ' ---------------------------------------------------------------------------------
+
+fill_in_message:
+
+	rem ' what message
+	msgtxt$ = notice$
+	
+	rem ' replace <custnbr> with the firm_id + customer_nbr
+	while 1
+		p = pos("<custnbr>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + custnbr$ + msgtxt$(p + 9)
+	wend
+	
+	rem ' replace <custname> with the firm_id + customer_nbr
+	while 1
+		p = pos("<custname>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + custname$ + msgtxt$(p + 10)
+	wend
+	
+	rem ' replace <sn> with the serial number
+	while 1
+		p = pos("<sn>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + cvs(thissn$, 3) + msgtxt$(p + 4)
+	wend
+
+	rem ' replace <hostid> with the hostid$
+	while 1
+		p = pos("<hostid>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + cvs(hostid$, 3) + msgtxt$(p + 8)
+	wend
+
+	rem ' replace <oth_hostid> with the othHostid$
+	while 1
+		p = pos("<oth_hostid>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + cvs(othHostid$, 3) + msgtxt$(p + 12)
+	wend
+
+	rem ' replace <hostname> with the hostname from logextract if available
+	while 1
+		p = pos("<hostname>" = msgtxt$)
+		if p = 0 then break
+		if cvs(hostname$,3) = "" then
+			msgtxt$ = msgtxt$(1, p - 1) + msgtxt$(p + 10)
+		else
+			msgtxt$ = msgtxt$(1, p - 1) + ", Hostname: " + cvs(hostname$, 3) + msgtxt$(p + 10)
+		fi
+	wend
+	
+	rem ' replace <prihostname> with the primary hostname from logextract if available
+	while 1
+		p = pos("<prihostname>" = msgtxt$)
+		if p = 0 then break
+		if cvs(prihostname$,3) = "" then
+			msgtxt$ = msgtxt$(1, p - 1) + msgtxt$(p + 13)
+		else
+			msgtxt$ = msgtxt$(1, p - 1) + ", Hostname: " + cvs(prihostname$, 3) + msgtxt$(p + 13)
+		fi
+	wend
+		
+	rem ' replace <users> with the actual users
+	while 1
+		p = pos("<users>" = msgtxt$)
+		if p = 0 then break
+		msgtxt$ = msgtxt$(1, p - 1) + str(users) + msgtxt$( p + 7)
+	wend
+	
+	rem ' replace <enduser> with the actual data if any
+	while 1
+		p = pos("<enduser>" = msgtxt$)
+		if p = 0 then break
+		if cvs(endusername$, 3) <> "" then
+			msgtxt$ = msgtxt$(1, p - 2) + ", " + cvs(endusername$, 3) + msgtxt$(p + 9)
+		else
+	  		msgtxt$ = msgtxt$(1, p - 2) + msgtxt$(p + 9)
+		fi
+	wend
+	
+	rem ' replace <expirationdate> with the actual data
+	rem ' expDateRepl = jul(num(workrec.expire_date$(1,4)), num(workrec.expire_date$(5,2)), num(workrec.expire_date$(7,2)))
+	rem ' expDateRepl$ =  date(expDateRepl:"%D-%Ml-%Y")
+	rem ' while 1
+	rem ' 	p = pos("<expirationdate>" = msgtxt$)
+	rem ' 	if p = 0 then break
+	rem ' 	msgtxt$ = msgtxt$(1, p - 1) + expDateRepl$ + msgtxt$( p + 16)
+	rem ' wend
+
+	rem ' add the message trailer if there
+	if cvs(msg_trailer$, 3) <> "" then
+		msgtxt$ = msgtxt$ + msg_trailer$
+	fi
+	
+	rem ' extract out the Subject
+	p = pos("SUBJECT:" = cvs(msgtxt$, 4))
+	msgtxt$ = msgtxt$(p), p1 = pos($0a$ = msgtxt$)
+	subject$ = cvs(msgtxt$(1, p1 - 2), 3), msgtxt$ = msgtxt$(p1 + 1)
+	rem ' remove the text "Subject:"
+	p = pos(" " = subject$)
+	subject$ = subject$(p + 1)
+	rem ' trim any CR and LF from the front of the message
+	while 1
+		if pos($0D$ = msgtxt$) = 1 or pos($0A$ = msgtxt$) = 1 then
+			msgtxt$ = msgtxt$(2)
+		else
+			break
+		fi
+	wend
+
+return
+
+send_email:
+	
+	rem ' for debugging
+	rem ' print "to: " + to$
+	rem ' print "enduseremail: " + enduseremail$
+	rem ' print "cc: " + cc$
+	rem ' print "bcc: " + bcc$
+	rem ' print "subject: " + subject$
+	rem ' escape
+	
+	rem ' for debugging
+	rem ' to$ = "jaya@basis.cloud"
+	rem ' cc$ = ""
+	rem ' bcc$ = ""
+	rem ' print "send email "
+	rem ' input *
+	
+	rem ' from$, to$, cc$, bcc$, subject$, msgtxt$ should have already been set
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, ""
+	wait 2
+	
+return
+
+
+errmsg:
+	msg$="(Err "+str(err)+" "+errmes(-1)+" at "+str(tcb(5))+" "+pgm(-2)+" "+cvs(sn$,3)+")"
+	throw msg$, 455
+	exit
+
+pgm_exit:
+	rem ' escape
+	close(snm01, err=*next)
+	close(sn_limit_emails, err=*next)
+	close(arm01, err=*next)
+	close(tmm05, err=*next)
+	close(tmm03, err=*next)
+	close(tmm01, err=*next)
+	close(logextract, err=*next)
+	close(snmel, err=*next)
+	close(snmeu, err=*next)
+	close(country, err=*next)
+	exit
+end

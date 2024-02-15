@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADS_MESSAGES</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<MSG_ID>APM_CONF_EXIT       </MSG_ID>
+		<MSG_TITLE>Exit Payment Selection</MSG_TITLE>
+		<MSG_TYPE>4</MSG_TYPE>
+		<MSG_ICON>32</MSG_ICON>
+		<MSG_DEFAULT_BUT>256</MSG_DEFAULT_BUT>
+		<MSG_CODES>Y;N</MSG_CODES>
+		<ASC_COMP_ID>01007514</ASC_COMP_ID>
+		<ASC_PROD_ID>APM</ASC_PROD_ID>
+		<MSG_TEXT>Do you want to exit Payment Selection and abandon all your approvals?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </MSG_TEXT>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>APM_MARK_APPVD      </MSG_ID>
+		<MSG_TITLE>Mark Invoice as Approved</MSG_TITLE>
+		<MSG_TYPE>4</MSG_TYPE>
+		<MSG_ICON>32</MSG_ICON>
+		<MSG_DEFAULT_BUT>256</MSG_DEFAULT_BUT>
+		<MSG_CODES>Y;N</MSG_CODES>
+		<ASC_COMP_ID>01007514</ASC_COMP_ID>
+		<ASC_PROD_ID>APM</ASC_PROD_ID>
+		<MSG_TEXT>%1 Would you like to approve this invoice for payment?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </MSG_TEXT>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>APM_MARK_REVWD      </MSG_ID>
+		<MSG_TITLE>Mark Reviewed</MSG_TITLE>
+		<MSG_TYPE>4</MSG_TYPE>
+		<MSG_ICON>32</MSG_ICON>
+		<MSG_DEFAULT_BUT>256</MSG_DEFAULT_BUT>
+		<MSG_CODES>Y;N</MSG_CODES>
+		<ASC_COMP_ID>01007514</ASC_COMP_ID>
+		<ASC_PROD_ID>APM</ASC_PROD_ID>
+		<MSG_TEXT>%1 Would you like to mark this invoice as reviewed and ready for further approvals?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             </MSG_TEXT>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>APM_NO_SIGNR        </MSG_ID>
+		<MSG_TITLE>AddonSoftware</MSG_TITLE>
+		<MSG_TYPE>0</MSG_TYPE>
+		<MSG_ICON>16</MSG_ICON>
+		<MSG_DEFAULT_BUT>000</MSG_DEFAULT_BUT>
+		<ASC_COMP_ID>01007514</ASC_COMP_ID>
+		<ASC_PROD_ID>APM</ASC_PROD_ID>
+		<MSG_TEXT>A check signer must have a signature file.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </MSG_TEXT>
+	</barista_record>
+	<barista_record>
+		<MSG_ID>APM_SEND_NOTICE     </MSG_ID>
+		<MSG_TITLE>Send Notice</MSG_TITLE>
+		<MSG_TYPE>4</MSG_TYPE>
+		<MSG_ICON>32</MSG_ICON>
+		<MSG_DEFAULT_BUT>256</MSG_DEFAULT_BUT>
+		<MSG_CODES>Y;N</MSG_CODES>
+		<ASC_COMP_ID>01007514</ASC_COMP_ID>
+		<ASC_PROD_ID>APM</ASC_PROD_ID>
+		<MSG_TEXT>%1 Would you like to send the notice email to the approvers?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </MSG_TEXT>
+	</barista_record>
+</barista_admin_records>

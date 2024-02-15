@@ -1,0 +1,67 @@
+0010 REM "SYC - Window Clear"
+0020 REM "Program SYC.WK"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0045 REM "MODE$: Action code (input)"
+0050 REM "       Null  = Drop all windows and reset colors"
+0055 REM "       CLEAR = Drop all windows and reset to black & white"
+0060 REM 
+0080 SETERR 9000
+0085 SETESC 9000
+0090 ENTER MODE$
+0500 REM " --- Initializations"
+0510 DIM X$(80),x1$(80)
+0550 LET BG$='BLACK',FG$='WHITE',p0=0
+0700 REM " --- Background"
+0705 IF MODE$="CLEAR" THEN GOTO 0790
+0710 LET X$(1)=STBL("!COLOR",ERR=0790),px$=pfx,p0=pos("BACK"=px$)
+0715 LET X1$(1)=STBL("!ORIGCOLOR",ERR=*next),x$=x1$
+0720 if cvs(x1$,3)="" then x1$=x$
+0725 if p0 then 
+0730 x1$=stbl("!ORIGCOLOR",x1$)
+0735 x$(1,10)='WHITE',x$(11,10)='RED',x$(21,10)='BLACK',x$(31,10)='WHITE'
+0740 x$(41,10)='BLACK',x$(51,10)='WHITE'
+0745 x1$=stbl("!COLOR",x$)
+0750 else
+0755 x1$=stbl("!COLOR",x1$)
+0760 x1$=stbl("!CLEAR","!ORIGCOLOR",err=*next)
+0765 fi
+0780 LET BG$=FNP$(X$(1,10)),FG$=FNP$(X$(11,10))
+0790 PRINT (0,ERR=0740)'BACKGR',BG$,FG$,'DEFAULT','CS',
+1000 REM " --- Retrieve name(s) of any existing windows and drop'em"
+1010 LET WIN$=""
+1020 PRINT 'CI'+'EE'+'WINDOW'("LIST"),
+1030 READ RECORD(0,SIZ=1)SIZ$
+1040 READ RECORD(0,SIZ=ASC(SIZ$))WIN$
+1050 FOR X=1 TO LEN(WIN$)
+1060 PRINT (0,ERR=1070)'DROP'(ASC(WIN$(X,1))),
+1070 NEXT X
+1080 PRINT 'BE','CS','WRAP'("ON"),
+4000 REM " --- Exit
+4010 GOTO 9900
+8000 REM " --- Functions"
+8120 DEF FNP$(Q$)=CVS(Q$,2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 REM " --- Return to caller"
+9950 EXIT 
+9999 END

@@ -1,0 +1,13 @@
+0010 REM "ADC - Bridge To Roll Back Call"
+0020 REM "PROGRAM: ADC.RB"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.1a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0060 SETERR 9900
+0090 ENTER LLIST$[ALL],MORE$[ALL],PAGES,PAGE,MAXROW,MAXL,MAXM
+1020 CALL "SYC.RB",LLIST$[ALL],MORE$[ALL],PAGES,PAGE,MAXROW,MAXL,MAXM
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

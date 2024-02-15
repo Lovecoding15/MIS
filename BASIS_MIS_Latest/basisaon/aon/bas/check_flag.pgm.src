@@ -1,0 +1,19 @@
+REM <check_flag.pgm>
+
+seterr pgm_end
+
+aon$=stbl("AON")
+adata$=stbl("DATA_SERVER")+aon$+"ADATA/"
+
+flags_chan=unt
+open (flags_chan)adata$+"flags.dat"
+call aon$+"bas/templates.pgm::flags"
+
+k$="02      "
+
+readrecord(flags_chan,key=k$)flags$
+close(flags_chan)
+print flags.flag1$
+
+pgm_end:
+release

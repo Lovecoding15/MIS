@@ -1,0 +1,209 @@
+0010 REM "CSC - Item Price Calculation - BASIS"
+0020 REM "Program CSC.PC"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.2 - 01Jan96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "13Nov96 WGH: Check for valid contract price stop date (2130)"
+0032 REM "04Feb98 WGH: Increase PRECISION of Margn Over Cost method (2420-2440)"
+0033 REM "MAS * DCF * WA# 205"
+0040 REM 
+0045 REM "CHANNELS[n] : [1] = IVM-01"
+0046 REM "            : [2] = IVM-02"
+0047 REM "            : [6] = IVM-06"
+0053 REM "            : [10] = IVM-10"
+0054 REM "N0$         : Current Firm"
+0055 REM "WHS$        : Warehouse ID"
+0056 REM "ITEM$       : Inventory Item Number"
+0057 REM "LISTCD$     : List Price Code"
+0058 REM "CUST$       : Customer Number"
+0059 REM "DATE$       : Date Ordered"
+0060 REM "PRICCD$     : Pricing Code"
+0061 REM "ORDQTY      : Quantity Ordered"
+0062 REM "TYPE_PRICE$ : Type Of Pricing (Returned)"
+0063 REM "              C = Mark-Up From Cost"
+0064 REM "              L = Mark-Down List Price"
+0065 REM "              M = Margin Over Cost"
+0066 REM "              N = None"
+0067 REM "              P = Prior Price Code"
+0068 REM "              X = Contract"
+0069 REM "PRICE       : Price (Returned)"
+0070 REM "DISC        : Discount (Returned)"
+0071 REM "STATUS      : 0=No Error (Returned)"
+0072 REM "WX1$        : shadow file 2nd string (input); rem wa# 205
+0073 REM "WX[0]       : shadow file numerics (input); rem WA# 205
+0074 REM "SALECD$     : Sales discount code
+0075 REM "NEWDISC     : Customer discount on line - BASIS WA# 205"
+0076 REM "SAMFACTOR   : Prorated days for SAM Contract - will always be 365
+0077 REM "              for non-SM1 sale type and non prorated SAM Contracts
+0078 REM " ** BASIS modified for SAMFACTOR
+0079 REM 
+0080 SETERR enter_err
+0082 SETESC 9000
+0083 feature$=""
+0085 ENTER CHANNELS[ALL],N0$,whs$,item$,LISTCD$,CUST$,DATE$,PRICCD$,ORDQTY,TYPE_PRICE$,PRICE,DISC,NEWDISC,STATUS,WX1$,WX[ALL],SALECD$,LISTPRICE,SAMFACTOR,sn$,feature$
+0090 goto 100
+0094 enter_err: if err<>36 then goto 9000 
+0100 REM " --- Open Files"
+0105 SETERR 9000
+0110 LET IVM01_DEV=CHANNELS[1],IVM02_DEV=CHANNELS[2],IVM06_DEV=CHANNELS[6],IVM10_DEV=CHANNELS[10]
+0120 LET FILES=7
+0130 DIM FILES$[FILES],OPTIONS$[FILES],XCHANNELS[FILES]
+0135 LET FILES$[1]="ARM-10",FILES$[2]="ARM-02"
+0140 LET FILES$[3]="SNM-01",FILES$[4]="SMC-01",files$[5]="CSM-04"
+0150 LET FILES$[6]="SNM-02",files$[7]="SNT-04"
+0170 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],XCHANNELS[ALL],BATCH,STATUS
+0175 IF STATUS>0 THEN GOTO 9900
+0180 LET ARM10_DEV=XCHANNELS[1],ARM02_DEV=XCHANNELS[2],snm01_dev=xchannels[3],smc01_dev=xchannels[4],csm04_dev=xchannels[5],snm02_dev=xchannels[6],snt04_dev=xchannels[7]
+0200 REM " --- Iolists"
+0210 IVM01A: IOLIST *,*,D2$(1)
+0220 IVM02A: IOLIST *,L1$(1),*,L[ALL]
+0230 IVM06A: IOLIST *,CONDATA$(1),CONBRK[ALL],CONPRC[ALL]
+0240 IVM10E: IOLIST TABL$(1),TABLBRK[ALL],TABLDISC[ALL]
+0260 CSM10A: IOLIST PT0$,PT1$,PT[ALL]
+0270 ARM10I: IOLIST *,Y0
+0280 call "templates.pgm::ARM02"
+0290 call "templates.pgm::SNM01"
+0300 call "templates.pgm::SNM02"
+0310 call "templates.pgm::CSM04"
+0320 call "templates.pgm::SMC01"
+0330 call "templates.pgm::SNT04"
+0350 lictype$=item$(13,3),slstype$=wx1$(4,3),oldrev$="",upg$="UPD,UG4,TRD"
+0370 readrecord(snm01_dev,key=sn$,dom=*next)snm01$;oldrev$=snm01.product_rev$
+0380 read record(csm04_dev,key=n0$+item$(10,3),dom=*next)csm04$
+0385 if csm04.key_or_licen$="K" then upg$=upg$+",PLX"
+0390 dim csm04$:fattr(csm04$);read record(csm04_dev,key=n0$+oldrev$,dom=*next)csm04$
+0400 rem 'check for user price level on add users & SAM on add users
+0410 u1=0,ad=pos(slstype$(1,2)="AD,SM"),on_sam=0,samtype$=""
+0415 if ad then lictype$=snm01.license_type$;rem 'Set lictype for ADD,SAM trans since it's not in those items
+0420 if snm01.sam_active$<>"Y" or cvs(snm01.contract$,3)="" then goto 500
+0430 rem 'If SM trans and contracts in are73 and snm01 don't match, it's not SAM for an add
+0450 readrecord(smc01_dev,key=snm01.contract$,dom=*next)smc01$
+0460 if smc01.sam_active$<>"Y" or smc01.annual_dt$<DATE(0:"%Yl%Mz%Dz") then goto 500
+0480 on_sam=1,u1=snm01.users,samtype$=smc01.contr_type$
+0500 REM " --- Initialize Data"
+0510 LET TYPE_PRICE$="N",PRICE=0,DISC=0,STATUS=0,USER_LEVEL=WX[2]
+0520 LET DIGITS=TCB(14); REM "Get current precision
+0530 DIM PT[29]
+0540 if samfactor=30 or samfactor=90 or samfactor=180 then year=360 else year=365
+0600 REM " --- Customer Pricing Level"
+0610 readrecord (ARM02_DEV,KEY=N0$+CUST$+"  ",DOM=*next)ARM02$;c7=arm02.pricing_level
+0620 IF C7 THEN LET USER_LEVEL=C7,hold_u1=u1,u1=0
+0700 rem 'If adduser w/SAM, can't get price level if no SN or user price level, so return 0
+0705 wx1$(8,1)="T";rem 'indicates total new users were entered for an add
+0710 if cvs(feature$,3)="" and ad=1 and cvs(snm01.serial_nbr$,3)="" and c7=0 then price=0;goto 1000
+0720 use_price_pgm:
+0730 gosub 12500
+0740 readrecord(snm02_dev,key=snm01.serial_nbr$,dom=*next)snm02$
+0750 dim cur_users[1],new_users[1],cur_prop$[1],new_prop$[1]
+0760 cur_users[0]=snm02.users1,cur_users[1]=snm02.users2
+0770 new_users[0]=wx[2],new_users[1]=wx[3]
+0780 cur_prop$[0]=snm02.lic_property1$,cur_prop$[1]=snm02.lic_property2$
+0790 new_prop$[0]=wx1$(10,2),new_prop$[1]=wx1$(12,2)
+0800 if wx1$(10,4)=fill(4) then new_prop$[0]=item$(1,3)
+0810 if cvs(cur_prop$[0],3)="" and slstype$<>"TRD" then cur_prop$[0]=snm01.product$,cur_users[0]=snm01.users
+0815 if slstype$="TRD" then cur_users[0]=new_users[0],cur_users[1]=new_users[1]
+0820 if pos("S"=slstype$)=1 then samtype$=slstype$
+0830 gosub check_feature
+
+0850 rem ' mod to handle special price table for Marriott (002786) and Tanager (008450)
+0851 if cust$ = "002786" or cust$ = "008450" then
+0852	passfirm$ = n0$ + cust$
+0853 else
+0854	passfirm$ = n0$
+0855 fi
+0860 rem ' call "price.pgm",n0$,slstype$,lictype$,cur_users[all],new_users[all],cur_prop$[all],new_prop$[all],oldrev$,samtype$,on_sam,newdisc,c7,price,samprice
+0862 call "price.pgm",passfirm$,slstype$,lictype$,cur_users[all],new_users[all],cur_prop$[all],new_prop$[all],oldrev$,samtype$,on_sam,newdisc,c7,price,samprice
+
+0870 if price<=0 and samprice<=0 then goto 1000; rem - activate this statement when using price.pgm for all price calcs, not just "BAS" items
+0880 if pos("S"=slstype$)=1 then price=samprice*samfactor else price=price*samfactor
+0890 if slstype$="RIF" and pos(arm02.cust_type$(1,1)="A") then price=price*(1-percent)
+0900 goto 4000
+1000 REM " --- Get Item Class"
+1010 DIM D2$(62)
+1020 READ (IVM01_DEV,KEY=N0$+ITEM$,DOM=2200)IOL=IVM01A
+1200 REM " --- Get Item's Warehouse Cost & Prices"
+1210 DIM L1$(64),L[20]
+1220 READ (IVM02_DEV,KEY=N0$+WHS$+ITEM$,DOM=4000)IOL=IVM02A
+1230 if price=0 and l[9] then dsc_flag$="N",price=l[9]*samfactor,listprice=price
+1290 GOTO 2200; REM WA# 205
+2200 REM " --- Use Pricing Table"
+2205 IF ORDQTY=0 THEN GOTO 2285
+2210 DIM TABL$(31),TABLBRK[9],TABLDISC[9]
+2220 FIND (IVM10_DEV,KEY=N0$+"E"+D2$(21,3)+PRICCD$,DOM=2285)IOL=IVM10E
+2230 IF (TABLBRK[0]=0 AND TABLDISC[0]=0) OR ABS(ORDQTY)<TABLBRK[0] THEN LET PRICE=L[9]; GOTO 2285
+2250 FOR X=0 TO 9
+2255 IF TABLBRK[X]>0 AND ABS(ORDQTY)>=TABLBRK[X] THEN LET PERC=TABLDISC[X]
+2260 NEXT X
+2280 LET TYPE_PRICE$=TABL$(31,1)
+2285 LET TYPE_PRICE$="L"; REM WA# 205
+2290 goto 2500
+2500 REM " --- Mark-Down List Price"
+2502 IF DSC_FLAG$="N" THEN GOTO 4000; REM " - Not discountable
+2505 GOSUB 12500; REM Sales Discount on line - WA# 205
+2510 PRECISION DIGITS+3
+2520 LET PERCENT=PERC/100
+2530 PRECISION DIGITS
+2540 LET PRICE=PRICE-PRICE*PERCENT
+2560 LET DISC=PERC
+2590 GOTO 4000
+4000 REM " --- All Done"
+4030 price=price/year,listprice=listprice/year
+4040 IF PRICE=0 THEN LET TYPE_PRICE$="N"
+4050 goto 9900
+8000 REM " --- Functions"
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9800
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN
+9800 REM " --- Return STATUS = ERR"
+9810 LET STATUS=ERR
+9820 IF STATUS=0 THEN LET STATUS=999
+9830 LET TYPE_PRICE$="N",PRICE=0,DISC=0
+9900 REM " --- Return to Caller"
+9910 FOR I=1 TO FILES
+9920 CLOSE (XCHANNELS[I],ERR=*next)
+9930 NEXT I
+9950 EXIT
+9999 END
+10000 check_feature:
+10010 if wx1$(10,4)<>fill(4) or cvs(feature$,3)="" then goto end_check_feature
+10015 cur_users[0]=0,cur_users[1]=0,cur_prop$[0]=item$(1,3)
+10020 read(snt04_dev,key=snm01.serial_nbr$,dom=*next)
+10025 while 1
+10030   readrecord(snt04_dev,end=*break)snt04$
+10035   if snt04.serial_nbr$<>snm01.serial_nbr$ then break
+10040   if item$(1,3)<>snt04.prod_code$ then continue
+10050   cur_users[0]=max(cur_users[0],snt04.users)
+10080 wend
+10090 if smc01.contract$<>wx1$(31,6) then readrecord(smc01_dev,key=wx1$(31,6),dom=end_check_feature)smc01$
+10100 if smc01.annual_dt$<DATE(0:"%Yl%Mz%Dz") then goto end_check_feature
+10110 JUL_x=JUL(NUM(SMC01.ANNUAL_DT$(1,4)),NUM(SMC01.ANNUAL_DT$(5,2)),NUM(SMC01.ANNUAL_DT$(7,2)))
+10120 if pos(slstype$="RN1,SM1") then samfactor=max(1,jul_x-jul(0,0,0)-1)
+10180 end_check_feature:
+10190 return
+12500 REM " --- Get Sales Discount"
+12520 LET Y0=0
+12530 FIND (ARM10_DEV,KEY=N0$+"I"+SALECD$,DOM=12531)IOL=ARM10I
+12540 LET NEWDISC=Y0,Y0=0
+12610 PRECISION DIGITS+3
+12620 LET PERCENT=NEWDISC/100
+12630 PRECISION DIGITS
+12640 LET PRICE=PRICE-PRICE*PERCENT
+12690 RETURN

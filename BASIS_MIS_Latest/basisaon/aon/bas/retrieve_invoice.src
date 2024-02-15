@@ -1,0 +1,97 @@
+seterr enter_err
+enter firm$,invoice$,email$,status
+
+enter_err:
+
+seterr errmsg
+msg$=""
+pdf$=""
+ver$=""
+rem 'status: 0=success 1=failure
+status=1
+basedir$="/mnt/data/archives/"+firm$+"/invoices/"
+archive$=basedir$+invoice$(1,1)+"/"+invoice$(2,2)+"/"+invoice$(4,2)
+chdir archive$
+
+tmpfile$=invoice$+".pdf"
+gosub get_file
+if txt$="" then goto pgm_exit
+if !reprint then
+	invoicefile$ = archive$ + "/" + tmpfile$
+else
+	invoicefile$ = archive$ + "/" + ytmpfile$
+fi
+
+tmpfile$=invoice$+"_ver.pdf"
+gosub get_file
+if txt$ <> "" verfile$ = archive$ + "/" + tmpfile$ else verfile$ = ""
+
+from$="customer-service@basis.cloud"
+subject$="Invoice "+invoice$
+
+send_email:
+filelist$ = invoicefile$
+if verfile$ <> "" then filelist$ = filelist$ + "|" + verfile$
+call "sendEmail.src", from$, email$, "", "", subject$, "Invoice attached.", filelist$
+status=0
+
+pgm_exit:
+exit
+
+get_file:
+ichan=unt
+sz=-1
+txt$=""
+seq$="000"
+seq_ext$ = "_R"
+reprint = 0
+while 1
+	open(ichan,err=*break)tmpfile$
+	f$=fin(ichan),sz=dec(f$(1,4))
+	if sz then readrecord(ichan,siz=sz)txt$
+
+	if pos("ver" = tmpfile$) <> 0 then break
+
+	rem ' got an original see if we have a reprint
+	while 1
+		xtmpfile$ = tmpfile$(1,7) + seq_ext$ + seq$ + tmpfile$(8,4)
+		close(ichan,err=*next)
+		open(ichan,err=*break)xtmpfile$
+		f$=fin(ichan),sz=dec(f$(1,4))
+		if sz then readrecord(ichan,siz=sz)txt$
+		reprint = 1
+		ytmpfile$ = xtmpfile$
+		seq$ = str(num(seq$) + 1:"000")
+	wend
+	break
+wend
+end_get_file:
+close(ichan,err=*next)
+return
+
+encode:
+rem ' no longer used
+erase tmpfile$,err=*next
+string tmpfile$
+newchan=unt
+open(newchan)tmpfile$
+print(newchan)txt$
+close(newchan)
+call "PDF.01","",tmpfile$,"X"
+gosub get_file
+erase tmpfile$,err=*next
+return
+
+errmsg:
+if err=12 then goto pgm_exit
+
+to$ = "customer-service@basis.cloud"
+from$ = "mis@basis.cloud"
+subject$ = "Invoice retrieval error"
+
+msg$ = "error " + str(err) + " in " + str(tcb(5)) + " of " + pgm(-2) + $0a$ + msg$ + $0a$ + "Firm: " + firm$ + $0a$ + "Invoice: " + invoice$
+
+call "sendEmail.src", from$, to$, "", "", subject$, msg$, ""
+goto pgm_exit
+
+

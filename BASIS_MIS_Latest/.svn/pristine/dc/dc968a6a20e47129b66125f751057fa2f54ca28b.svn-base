@@ -1,0 +1,34 @@
+
+This is the one that I used:
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META content="0;url=http://localhost:8888/apps/HistoricalInvoiceList?sourcekey=&lt;&lt;contact2->usourcekey&gt;&gt;" http-equiv=Refresh ?>
+<META name=GENERATOR content="MSHTML 11.00.9600.17728"></HEAD>
+<BODY leftMargin=1 rightMargin=1 topMargin=1>
+<DIV>
+<DIV>Loading...</DIV></DIV></BODY></HTML>
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<STYLE type=text/css> P, UL, OL, DL, DIR, MENU, PRE { margin: 0 auto;}</STYLE>
+<META name=GENERATOR content="MSHTML 11.00.9600.17728"></HEAD>
+<BODY leftMargin=1 rightMargin=1 topMargin=1><FONT size=2 face="Segoe UI">
+<A HREF="http://localhost:8888/apps/HistoricalInvoiceList?sourcekey=&lt;&lt;contact2->usourcekey&gt;&gt;">Click to review historical invoices.</A>
+<DIV></DIV></FONT></BODY></HTML>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>Page Redirection</TITLE>
+<META content=yes http-equiv=MSThemeCompatible>
+<META name=GENERATOR content="MSHTML 11.00.9600.17728"></HEAD>
+<BODY leftMargin=1 rightMargin=1 topMargin=1>
+<DIV>
+<META content=1;url=http://localhost:8888/apps/HistoricalInvoiceList?sourcekey=01000100 http-equiv=refresh>
+<SCRIPT type=text/javascript>
+    window.location.href = http://localhost:8888/apps/HistoricalInvoiceList?sourcekey=01000100
+</SCRIPT>
+&lt;&lt;&amp;phone&gt;&gt;<!-- Note: don't tell people to `click` the link, just tell them that it is a link. -->If you are not redirected automatically, follow the <A href="http://localhost:8888/apps/HistoricalInvoiceList?sourcekey=01000100">link to example</A> </DIV></BODY></HTML>
+
+

@@ -1,0 +1,325 @@
+seterr error_trap
+setesc escape_trap 
+
+enter firm$,custnum$,email$, report_date$, accrual, wide
+
+rem ' report_date$ format - YYYYMMDD 
+
+rem ' if accrual is true then we do not send a report we simply accumulate the Qualified Rebate for use in accruing the liability throughout the year
+rem ' if wide then we use the large group of customer types for selection
+
+tot_qual_rebete = 0
+
+call "ec_open::ART03"
+call "ec_open::ART13"
+call "ec_open::snm01"
+call "ec_open::arm02"
+call "ec_open::smc01"
+call "ec_open::arm01"
+call "ec_open::arm10F"
+
+rem ' check_dt$=date(0:"%Y%Mz%Dz")
+
+rem ' to get a report for a calendar year, replace check_dt$ with desired year end date
+rem ' check_dt$="20111231"
+
+rem ' to get a report for a period less than a year use the month end date will do first of the year through the check_dt$
+rem ' check_dt$ = "20120331"
+
+check_dt$ = report_date$
+
+yr=num(check_dt$(1,4))
+last_year_end_dt$=str(yr-1:"0000")+"1231"
+cur_year_end_dt$=str(yr:"0000")+"1231"
+this_yr$=chr(132+yr-2000)
+last_yr$=chr(132+(yr-1)-2000)
+m$="#####0"
+m1$="#####0.00"
+dl$=","
+
+if firm$="01" then
+	rem ' these percentages were for firm 01 BAS
+	pct_sam=60,pct_rnw=80,rebate_pct=5
+	if yr>2008 then 
+		pct_sam=70
+	endif
+else
+	rem ' these percentages were for firm 02 BSG
+	pct_sam=70,pct_rnw=80,rebate_pct=5
+endif
+
+close(cf,err=*next)
+TMP$=stbl("TEMP")
+unique$=date(0:"%mz%sz")
+nameYear$ = date(0:"%Y")
+if nameYear$ = report_date$(1,4) then
+    option$ = "OptionT"
+else
+    if str(num(nameYear$)-1) = report_date$(1,4) then
+        option$ = "OptionY"
+    else
+        option$ = "OptionP"
+    fi
+fi
+cfile$=tmp$+"SAM_Rebate"+unique$+option$+".csv"
+erase cfile$,err=*next
+string cfile$
+cf=unt
+open(cf)cfile$
+
+rem ' added this selection string for a report for Laurence G 9/24/2009 kew
+rem ' selectCust$="|SP|SPM|SD|SDM|RS|RSI|PB|PS|PG|PP|PBI|PSI|PGI|PPI|MS|MG|MP|MSI|MGI|MPI|APA|APP|API|"
+rem ' changed to this list per Laurence 3/1/2013 kew
+rem ' US: AAI, ADI, AEI, APA, APE, API, APP, AMS, MSI, MG, MGI, MP, MPI, PB, PBI, PS, PSI, PG, PGI, PP, PPI
+
+
+rem ' special all inclusve list for Laurence 5/15/2015 kew - for special runs
+if wide then
+	selectCust$="|AAI|ADI|AEI|APA|APE|API|APP|AMS|MS|MSI|MG|MGI|MP|MPI|PB|PBI|PS|PSI|PG|PGI|PP|PPI|SP|SPM|SD|SDM|RS|RSI|"
+else
+	rem ' standard list used for normal reports and accurals
+	selectCust$="|AAI|ADI|AEI|APA|APE|API|APP|AMS|MSI|MG|MGI|MP|MPI|PB|PBI|PS|PSI|PG|PGI|PP|PPI|RS|"
+endif
+
+rem ' changed the BSG list per Laurence 3/1/2013 kew
+rem ' BSG: PB, PS, PG, PP, F, G, RS
+if firm$="02" then selectCust$ = "PB|PS|PG|PP|F|G|RS|"
+
+if wide = 10 then selectCust$ = "All Customer Types"
+
+rem ' write file header
+print (cf)",,Cust Types: " + selectCust$
+print (cf)",," + option$(1,6) + " " + option$(7,1) + " Prior year ending date: " + last_year_end_dt$(1,4) + "-" + last_year_end_dt$(5,2) + "-" + last_year_end_dt$(7,2) + " YTD ending date: " + cur_year_end_dt$(1,4) + "-" + cur_year_end_dt$(5,2) + "-" + cur_year_end_dt$(7,2)
+print (cf)",,,,,SAM,Total,On,%On,YTD,YTD,,YTD,Prior Year,Non-qualified,Qualified,Remaining SAM"
+print (cf)"SlsPsn,Cust#,Name,CustType,Discount,Discount,Users,SAM,SAM,Renewed,Expired,%Renewed,Sales,Sales,Rebate,Rebate,to Renew,New SAM"
+
+if firm$="01" then
+	rem ' BAS 
+	preferredCust$="|MS|MG|MP|MSI|MGI|MPI|"
+else
+	rem ' BSG
+	preferredCust$="|PP|"
+endif
+
+read(arm02,key=firm$+custnum$,dom=*next)
+while 1
+  readrecord(arm02,end=*break)arm02$
+  if firm$<>arm02.firm_id$ then break
+  if custnum$<>"" then 
+   if arm02.customer_nbr$<>custnum$ then break
+  else
+   rem ' the following statement is the one that is normally here
+   rem ' if pos(arm02.cust_type$(1,1)="AMP")=0 then continue
+   rem ' added this selection string for a report for Laurence G 9/24/2009 kew
+   if selectCust$ <> "All Customer Types" then
+        if pos(cvs(arm02.cust_type$,3)=selectCust$) = 0 then continue
+   fi
+  fi
+
+  rem ' for accruals include on the perferredCust$
+  rem ' no longer limiting the accrual to the preferred customer type list 3/1/2013
+  rem ' if accrual and pos(cvs(arm02.cust_type$,3)=preferredCust$) = 0 then continue
+  
+  rem ' set rebate_pct
+  if pos(cvs(arm02.cust_type$,3)=preferredCust$) then
+	rebate_pct=10
+  else
+  	rebate_pct=5
+  endif
+  
+  cust$=arm02.customer_nbr$
+  if firm$="02" and pos("PP"=arm02.cust_type$) then rebate_pct=9
+  gosub get_sam_count
+  gosub check_invoices
+  readrecord(arm01,key=firm$+cust$)arm01$
+  readrecord(arm10F,key=firm$ + "F" + arm02.slspsn_code$)arm10F$
+  slspsn_name$ = arm10F.slspsn_name$
+  
+  line$=slspsn_name$+dl$+cust$+dl$+fncomma$(arm01.cust_name$)+dl$
+  line$=line$+arm02.cust_type$+dl$+arm02.disc_code$+dl$+arm02.disc_code_a$+dl$
+  line$=line$+str(tot_users)+dl$+str(current_sam)+dl$
+  
+  if tot_users then pct=current_sam/tot_users*100 else pct=0
+  if pct>=pct_sam then ok=1 else ok=0 
+  line$=line$+cvs(str(pct:m1$),3)+dl$+str(renewed)+dl$+str(ytd_expired)+dl$
+
+  x=ytd_expired+renewed
+  if x then pct=renewed/x*100 else pct=0
+  if pct<pct_rnw and ytd_expired then ok=0
+  line$=line$+cvs(str(pct:m1$),3)+dl$+cvs(str(ytd_sales:m1$),3)
+  line$=line$+dl$+cvs(str(pytd_sales:m1$),3)
+  
+  line$=line$+dl$+cvs(str(rebate_pct/100*ytd_sales*(ok=0):m1$),3)
+  line$=line$+dl$+cvs(str(rebate_pct/100*ytd_sales*ok:m1$),3)
+  tot_qual_rebete = tot_qual_rebete + rebate_pct/100*ytd_sales*ok
+  
+  line$=line$+dl$+str(renew_this_yr)+dl$+str(new_sam)
+  print(cf)line$
+wend
+
+if !accrual then
+
+	from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+	subject$ = "SAM Rebate Report"
+	
+	to$ = CVS(email$,3)
+
+	bcc$ = ""
+	cc$ = ""
+
+	rem ' the file name is in cfile$
+	file$ = cfile$
+	
+	msgtxt$ = "The SAM Rebate Report is attached."
+	msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+	
+else
+	rem ' send the accrual email
+	from$="BASIS Customer Service <customer-service@basis.cloud>"
+	subject$="Sales Rebate Accrual"
+
+	bcc$ = ""
+	file$ = ""
+	
+	rem ' for firm id = 01 
+	to$="oper@basis.cloud"
+	cc$=""
+	firm_name$ = "BAS"
+
+	if firm$ = "02" then
+		to$="oper@basis.cloud, swald@basis.cloud, kpeterl@basis.cloud"
+		cc$=""
+		firm_name$ = "BSG"
+	endif	
+	
+	msgtxt$ = "The accumulated YTD qualifying sales rebate for " + firm_name$ + " through " + report_date$ + " is " + str(tot_qual_rebete:"######0.00")
+	msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+	
+endif
+
+end_pgm:
+erase cfile$,err=*next
+exit
+
+escape_trap:
+	rem ' block escape
+	return
+
+error_trap:
+	error_message$ = "An Error " + str(err) + " occurred in sam_rebate_rpt.pgm at line number " + str(tcb(5)) + ". The error message is: " + errmes(-1)
+
+	from$ = "BASIS Customer Service <customer-service@basis.cloud>"
+	subject$ = "Error in Sales Rebate Accrual"
+	to$ = "misdev@basis.cloud, kpeterl@basis.cloud"
+	
+	cc$ = ""
+	bcc$ = ""
+	file$ = ""
+	
+	msgtxt$ = error_message$
+	msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+	
+	goto end_pgm
+	
+get_sam_count:
+tot_users=0
+current_sam=0
+epxired_sam=0
+ytd_expired=0
+renewed=0
+renew_this_yr=0
+new_sam=0
+
+read(snm01,key=firm$+cust$,knum=1,dom=*next)
+while 2
+  read record(snm01,end=*break)snm01$
+  if snm01.firm_id$<>firm$ or snm01.customer_nbr$<>cust$ then break
+  if snm01.active_flag$<>"Y" then continue
+  if pos(snm01.product$(1,1)="TCK") then continue; rem 'Taos,CLib,old Kits
+  if pos(snm01.license_type$(1,1)="DKN") then continue; rem 'Demo,Kit,NFR
+  if pos(snm01.license_type$="R60") then continue
+  if snm01.orig_sale_date$(1,1)>this_yr$ then continue
+  u=snm01.users
+  if snm01.product$="DS5" then u=u/2
+  tot_users=tot_users+u
+  contract$=cvs(snm01.contract$,3)
+  if contract$="" then continue
+  readrecord(smc01,key=contract$,dom=*continue)smc01$
+  if pos(smc01.contr_type$="SM1RN1")=0 then continue
+  if smc01.sam_active$="N" or snm01.sam_active$="N" or smc01.expire_on_dt$<=check_dt$ then na=1 else na=0
+  if na then 
+    expired_sam=expired_sam+u
+    if smc01.expire_on_dt$>last_year_end_dt$ then ytd_expired=ytd_expired+u
+  else
+    current_sam=current_sam+u
+    if smc01.annual_dt$>check_dt$ and smc01.annual_dt$<=cur_year_end_dt$ then  
+      renew_this_yr=renew_this_yr+u
+      continue
+    fi
+    if smc01.contr_start$>last_year_end_dt$ then 
+      new_sam=new_sam+u
+      continue
+    fi
+    rem if smc01.annual_dt$>cur_year_end_dt$ then continue
+    rem j1=fnjul(smc01.contr_start$)
+    rem j2=fnjul(smc01.annual_dt$)
+    rem if j2-j1>729 then renewed=renewed+u
+    rem 'annual is 2 years or more past start date so it's been renewed
+    renewed=renewed+u
+  fi
+wend
+
+return
+
+def fnjul(xx$)=jul(num(xx$(1,4)),num(xx$(5,2)),num(xx$(7,2)))
+def fncomma$(xx$)
+ cpos=pos(","=xx$)
+ while cpos
+   xx$(cpos,1)=" "
+   cpos=pos(","=xx$)
+ wend
+ return cvs(xx$,35)
+fnend
+  
+check_invoices:
+ytd_sales=0
+pytd_sales=0
+k$=firm$+"  "+cust$
+
+read(art03,key=k$,dom=*next)
+while 1
+  readrecord(art03,end=*break)art03$
+  if pos(k$=art03$)<>1 then break
+  if pos(last_yr$ = art03.invoice_date$) <> 1 and pos(this_yr$ = art03.invoice_date$) <> 1 then continue
+  
+  if pos(last_yr$ = art03.invoice_date$) = 1 then last_yr = 1 else last_yr = 0
+  
+  k13$=art03$(1,17)
+  read(art13,key=k13$,dom=*next)
+  while 2
+    readrecord(art13,end=*break)art13$
+    if pos(k13$=art13$)<>1 then break
+    if pos(art13.line_code$="DSV1gjnos")=0 then continue
+    if pos("CONF"=art13.item_number$)=1 and art13.line_code$="S" then continue
+    if pos("AON-RESELLERFEE"=art13.item_number$)=1 then continue
+    if pos("AON-SERVFEE"=art13.item_number$)=1 then continue
+    if pos("PPMFEEANNUAL"=art13.item_number$)=1 then continue
+    if pos("PPMFEEMONTH"=art13.item_number$)=1 then continue
+    if pos("PROFSERV"=art13.item_number$)=1  then continue
+    if pos("REINSFEE"=art13.item_number$)=1 then continue
+    
+    if last_yr then
+	    pytd_sales = pytd_sales + art13.ext_price    
+    else
+	    ytd_sales = ytd_sales + art13.ext_price
+    fi
+  wend
+wend
+
+return

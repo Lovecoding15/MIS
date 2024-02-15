@@ -1,0 +1,303 @@
+begin
+
+seterr err_trap
+
+rem ' run only on Friday
+day$ = date(0:"%Ds")
+if day$ <> "Fri" then run "buildSN_Stats01.src"
+
+rem '  copy the sn_stats.dat to the sn_stats_archive
+
+use java.text.SimpleDateFormat
+use java.util.Date
+use java.util.Locale
+
+declare java.util.Date fileDate!
+declare java.text.SimpleDateFormat format!
+declare BBjString dateString!
+
+sn_stats% = unt
+open(sn_stats%)"sn_stats.dat"
+fileDate! = new java.util.Date(BBjAPI().getFileSystem().getFileInfo(sn_stats%).getLastModified())
+rem ' format! = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", java.util.Locale.ENGLISH)
+format! = new SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.ENGLISH)
+dateString! = format!.format(fileDate!)
+
+cmd$ = "cp /mnt/data/basisaon/aon/ADATA/sn_stats.dat /mnt/data/basisaon/aon/ADATA/sn_stats_archive/sn_stats." + dateString! + ".dat"
+a = scall(cmd$)
+cmd$ = "chmod 444 /mnt/data/basisaon/aon/ADATA/sn_stats_archive/sn_stats." + dateString! + ".dat"
+a = scall(cmd$)
+close(sn_stats%)
+
+INITFILE "sn_stats.dat"
+call "ec_open::SN_STATS"
+rem ' sn_stats = unt
+rem ' open(sn_stats)"sn_stats.dat"
+rem ' dim sn_stats$:"FIRM_ID:C(2),CUST_TYPE:C(3),CUSTOMER_NBR:C(6),SERIAL_NBR:C(20),REG_TYPE:C(1),SF_USERS:C(5),EF_USERS:C(5),CONT_TYPE:C(1),CONT_INFORCE:C(1),EXPIRE_DATE:C(8),PERPET_HEALTHY:C(1),VIRTUAL_STATUS:C(1),LAST_REG_DATE:C(8)"
+
+call "ec_open::SNM01"
+call "ec_open::SNM02"
+call "ec_open::SMC01"
+call "ec_open::ARM02"
+call "ec_open::SN_LICENSE"
+
+while 1
+	read record(snm01, end = *break)snm01$
+	rem ' only active serial numbers
+	if snm01.active_flag$ <> "Y" then continue
+	rem ' exclude TAOS
+	if snm01.product$ = "TAO" then continue
+	
+	rem ' exclude CLIB, TVS
+	if snm01.serial_nbr$(1,3) = "CLB" then continue
+	if snm01.serial_nbr$(1,3) = "TVS" then continue
+
+	rem ' included serial number prefixes
+	rem ' BBJ BBX BOD DVK EDU OSH PRO
+	
+	dim sn_stats$:fattr(sn_stats$)
+	
+	sn_stats.firm_id$ = snm01.firm_id$
+	
+	rem ' get cust type
+	found = 0
+	read record(arm02, key = snm01.firm_id$ + snm01.customer_nbr$ + "  ", dom = *next)arm02$; found = 1
+	if found then sn_stats.cust_type$ = arm02.cust_type$
+	
+	sn_stats.customer_nbr$ = snm01.customer_nbr$
+	sn_stats.serial_nbr$ = snm01.serial_nbr$
+	
+	rem ' get contract info and status
+	rem ' Contract Type (S)AM, (R)NT, (D)VK, (N)one
+	rem ' In Force (1/0)
+	rem ' contrac Expire Date
+	if cvs(snm01.contract$, 3) = "" then
+		sn_stats.cont_type$ = "N"
+	else
+		found = 0
+		read record(smc01, key = snm01.contract$, dom = *next)smc01$; found = 1
+		if !found then
+			sn_stats.cont_type$ = "N"
+			sn_stats.cont_inforce$ = "0"
+			sn_stats.expire_date$ = ""
+		else
+			if smc01.contr_type$(1,2) = "SM" then
+				sn_stats.cont_type$ = "S"
+				sn_stats.expire_date$ = smc01.expire_on_dt$
+				if smc01.expire_on_dt$ > date(0:"%Y%Mz%Dz") and smc01.sam_active$ <> "N" and snm01.sam_active$ <> "N" then
+					sn_stats.cont_inforce$ = "1"
+				else
+					sn_stats.cont_inforce$ = "0"
+				fi
+			else
+				if smc01.contr_type$(1,2) = "RN" then
+					sn_stats.cont_type$ = "R"
+					sn_stats.expire_date$ = smc01.expire_on_dt$
+					if smc01.expire_on_dt$ > date(0:"%Y%Mz%Dz") and smc01.sam_active$ <> "N" and snm01.sam_active$ <> "N" then
+						sn_stats.cont_inforce$ = "1"
+					else
+						sn_stats.cont_inforce$ = "0"
+					fi
+				else
+					if smc01.contr_type$(1,2) = "DV" then
+						sn_stats.cont_type$ = "D"
+						sn_stats.expire_date$ = smc01.expire_on_dt$
+						if smc01.expire_on_dt$ > date(0:"%Y%Mz%Dz") and smc01.sam_active$ <> "N" or snm01.sam_active$ <> "N" then
+							sn_stats.cont_inforce$ = "1"
+						else
+							sn_stats.cont_inforce$ = "0"
+						fi
+					else
+						sn_stats.cont_type$ = "N"
+					fi
+				fi
+			fi
+		fi
+				
+	fi
+	
+	rem ' find the user counts
+	found = 0
+	read record(snm02, key = snm01.serial_nbr$, dom = *next)snm02$; found = 1
+	if !found then
+		sn_stats.sf_users$ = str(snm01.users$)
+		sn_stats.ef_users$ = ""
+	else
+		if snm02.lic_property1$ = "SF" then
+			sn_stats.sf_users$ = str(snm02.users1$)
+		else
+			if snm02.lic_property2$ = "SF" then
+				sn_stats.sf_users$ = str(snm02.users2$)
+			fi
+		fi
+		if snm02.lic_property1$ = "EF" then
+			sn_stats.ef_users$ = str(snm02.users1$)
+		else
+			if snm02.lic_property2$ = "EF" then
+				sn_stats.ef_users$ = str(snm02.users2$)
+			fi
+		fi
+	fi
+	
+	rem ' find reg type Perpetual P, Annual A, Virtual V, or Other O
+
+	rem ' get the last two sn registrations for SN_LICENSE
+
+	dim sn_license_last$:fattr(sn_license$)
+	got_last = 0
+
+	dim sn_license_nextlast$:fattr(sn_license$)
+	got_nextlast = 0
+	
+	tomorrow$ = date(jul(0,0,0) + 1:"%Y%Mz%Dz") 
+	
+	read record(sn_license, key = snm01.serial_nbr$(1,12) + tomorrow$ + "235959", dom = * next)sn_license$
+	let k$ = keyp(sn_license, end = *next)
+	while pos(snm01.serial_nbr$(1, 12) = k$) = 1
+		read record(sn_license, key = k$, dir = -1)sn_license_last$; got_last = 1
+		k$ = key(sn_license, end = *next)
+		if pos(snm01.serial_nbr$(1,12) = k$) = 1 then
+			read record(sn_license, key = k$, dir = -1)sn_license_nextlast$; got_nextlast = 1
+		fi
+		break
+	wend
+	
+	rem ' finish virtual
+	rem ' Virtual Live, Sleeping, Dead
+	rem '	L SAM Inforce - renewing regularly
+	rem '	S SAM inforce - not renewing
+	rem '	D SAM Expired - not renewing
+
+	if snm01.media_type$ = "VIR" then
+		sn_stats.reg_type$ = "V"
+		if got_last then 
+			sn_stats.last_reg_date$ = sn_license_last.date$
+			if num(sn_stats.cont_inforce$) then
+				rem ' last reg more than 7 days old
+				if date(jul(0,0,0) - 7:"%Y%Mz%Dz") > sn_license_last.date$ then
+					sn_stats.virtual_status$ = "S"
+				else
+					sn_stats.virtual_status$ = "L"
+				fi
+			else
+				sn_stats.virtual_status$ = "D"
+			fi
+		else
+			rem ' no sn_license records
+			if num(sn_stats.cont_inforce$) then
+				sn_stats.virtual_status$ = "S"
+			else
+				sn_stats.virtual_status$ = "D"
+			fi
+		fi
+	else
+		if !got_last then
+			rem ' no sn_license record this is an Other license with no last reg date
+			sn_stats.reg_type$ = "O"
+		else
+			if cvs(sn_license_last.perpetual$, 3) = "" and cvs(sn_license_last.annual$, 3) = "" then
+				rem ' not perpetual or annual so it is Other with a last reg date
+				sn_stats.reg_type$ = "O"
+				sn_stats.last_reg_date$ = sn_license_last.date$
+			else
+				if sn_license_last.annual$ = "Y" then
+					rem ' we have an annual license
+					sn_stats.reg_type$ = "A"
+					sn_stats.last_reg_date$ = sn_license_last.date$
+					rem ' annual license health indicator
+					
+					if cvs(sn_license_last.noticea$, 3) <> "" then
+						rem ' received notices
+						gosub convert_expire_date
+						if expDate$ < date(0:"%Y%Mz%Dz") then
+							sn_stats.perpet_healthy$ = "5" ; rem ' dead 					
+						else
+							sn_stats.perpet_healthy$ = sn_license_last.noticea$
+						fi
+					else
+						sn_stats.perpet_healthy$ = "0" ; rem ' healthy
+					fi
+				else
+					if sn_license_last.perpetual$ = "Y" then
+						rem ' we have an perpetual license
+						sn_stats.reg_type$ = "P"
+						sn_stats.last_reg_date$ = sn_license_last.date$
+						rem ' perpetual license health indicator
+
+						if cvs(sn_license_last.notice$, 3) <> "" then
+							rem ' received notices
+							gosub convert_expire_date
+							if expDate$ < date(0:"%Y%Mz%Dz") then
+								sn_stats.perpet_healthy$ = "5" ; rem ' dead 					
+							else
+								sn_stats.perpet_healthy$ = sn_license_last.notice$
+							fi
+						else
+							if !got_nextlast then
+								sn_stats.perpet_healthy$ = "0" ; rem ' healthy
+							else
+								if cvs(sn_license_nextlast.notice$, 3) = "" then
+									sn_stats.perpet_healthy$ = "0" ; rem ' healthy
+								else
+									rem ' received notices
+									sn_stats.perpet_healthy$ = sn_license_nextlast.notice$
+								fi
+							fi
+						fi
+					else
+						escape
+					fi
+				fi
+			fi	
+		fi		
+	fi
+
+	write record(sn_stats, key = sn_stats.firm_id$ + sn_stats.cust_type$ + sn_stats.customer_nbr$ + sn_stats.serial_nbr$)sn_stats$
+	count = count + 1
+	
+	rem ' if mod(count, 1000) = 0 then print count,
+wend
+
+rem ' send success email
+subj$ = "sn_stats.dat rebuilt"
+to$ = "kurt.e.williams@comcast.net"
+from$ = "customer-service@basis.cloud"
+cc$ = ""
+bcc$ = ""
+msg$ = "sn_stats.dat successfully archived and rebuilt, " + str(count) + " records"
+call "sendEmail.src", from$,to$,cc$, bcc$, subj$, msg$, ""
+
+rem ' release
+run "buildSN_Stats01.src"
+
+convert_expire_date:
+	expDate$ = sn_license_last.expire$
+	dpos = pos("-" = expDate$)
+	day$ = expDate$(1, dpos - 1)
+	expDate$ = expDate$(dpos + 1)
+	dpos = pos("-" = expDate$)
+	month$ = expDate$(1, dpos - 1)
+	year$ = expDate$(dpos + 1)
+	months$ = "janfebmaraprmayjunjulaugsepoctnovdec"
+	mpos = pos(month$ = months$)
+	month$ = str(int(mpos/3) + 1)
+	expDate$ = date(jul(num(year$), num(month$), num(day$)):"%Y%Mz%Dz%")
+return
+
+err_trap:
+	rem ' send error email
+	seterr release_pgm
+	subj$ = "sn_stats.dat rebuild error"
+	to$ = "kurt.e.williams@comcast.net"
+	from$ = "customer-service@basis.cloud"
+	cc$ = ""
+	bcc$ = ""
+	msg$ = "sn_stats.dat rebuild Error " +str(err) + " " + errmes(-1) + " in " + str(tcb(5)) + " of " + pgm(-2)
+	call "sendEmail.src", from$,to$,cc$, bcc$, subj$, msg$, ""
+
+	run "buildSN_Stats01.src"
+	
+release_pgm:
+release
+
+end

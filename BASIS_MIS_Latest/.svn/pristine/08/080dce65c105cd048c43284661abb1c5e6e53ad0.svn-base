@@ -1,0 +1,17 @@
+# Sample ResourceBundle properties file
+
+DE.windowTitle=Lizenzablauf verl\u00E4ngern
+
+DE.staticText01=Ablaufdaten
+
+DE.expiring=Ablaufdatum
+
+DE.rollTo=Verl\u00E4ngern bis
+
+DE.rollDates=Ablaufdaten verl\u00E4ngern
+
+DE.done=Verlassen
+
+DE.messageboxTitle=Daten aktualisiert
+
+DE.messageText=Seriennummern wurden auf das neue Ablaufdatum gesetzt.

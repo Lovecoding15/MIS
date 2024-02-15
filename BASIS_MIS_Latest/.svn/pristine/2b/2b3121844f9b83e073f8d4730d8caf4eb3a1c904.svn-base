@@ -1,0 +1,94 @@
+rem if info(3,2)="thines" then escape
+
+if o9=9 then goto back_from_print_prog
+o9$="invhist_print.bbj",o9=9
+seterr auto_email
+let called_pgm=0
+enter art03key$,prtr_dev,misc$; let called_pgm=1
+seterr errmsg
+goto verify_input
+auto_email:
+seterr errmsg
+let argfile$=argv(1)
+let tmpchn=unt; open (tmpchn,err=errmsg)argfile$
+let art03key$="",printer$=""
+while 1
+  read (tmpchn,end=*break)tmprec$
+  if art03key$="" then let art03key$=tmprec$;continue
+  if printer$="" then let printer$=tmprec$;continue
+wend
+close (tmpchn)
+verify_input:
+msg$="Invalid key"
+if len(art03key$)<>20 then goto errmsg
+msg$="Invalid firm id"
+n0$=art03key$(1,2)
+if pos(n0$="0102")=0 then goto errmsg
+
+files$="ARM-01,ARM-02,ARM-03,ARM-10,CSM-03,IVM-01,TMM-01,SMC-01,ART-03,ART-83,ART-73,ART-13,ART-33,SYS-01,",nfiles=pos(","=files$,1,0)
+dim files[nfiles]
+temp$=files$,count=1
+while pos(","=temp$)
+  p=pos(","=temp$),tempfile$=temp$(1,p-1),temp$=temp$(p+1)
+  let tempchan=unt
+  open (tempchan)tempfile$
+  files[count]=tempchan,count=count+1
+wend
+let arm01_dev=files[1],arm02_dev=files[2],arm03_dev=files[3],arm10_dev=files[4]
+let csm03_dev=files[5],ivm01_dev=files[6],tmm01_dev=files[7],smc01_dev=files[8]
+let are03_dev=files[9],are83_dev=files[10],are73_dev=files[11]
+let are13_dev=files[12],are33_dev=files[13],sys01_dev=files[14]
+ARS01A: IOLIST P0$,P1$,P2$,P3$,P4$,M0$,M1$,M2$,M3$
+IVS01A: IOLIST X$,X$,I2$,I3$,X$,X$,M1$,M2$,M3$,M4$
+FIND (SYS01_DEV,KEY=N0$+"AR00",DOM=9800)IOL=ARS01A
+FIND (SYS01_DEV,KEY=N0$+"IV00",DOM=9800)IOL=IVS01A
+DIM P[2],I[6]
+FOR X=0 TO 6
+LET I[X]=NUM(I2$(X*2+1,2))
+NEXT X
+LET P[0]=NUM(P2$(1,2)),P[1]=NUM(P2$(3,2)),P[2]=NUM(P3$(4,1))
+LET M0=LEN(M0$),M2=LEN(M2$),M3=LEN(M3$),M4=LEN(M4$)
+LET P5$="",P6$=""
+DIM A0$(117),A[10]
+READ (ARE03_DEV,KEY=art03key$,DOM=pgm_exit)A0$(1)
+if n0$="01" then
+  run "OPR.CA";rem 'Run standard invoice print program
+else
+  run "BSG.02"
+fi
+back_from_print_prog:
+if n0$="01" then goto pgm_exit
+tempfile$=misc$
+misc$=lang$
+cvtxt=unt
+open(cvtxt,err=pgm_exit)tempfile$
+f$=fin(cvtxt),sz=dec(f$(1,4)),txt$=" "
+if sz then readrecord(cvtxt,siz=sz)txt$
+t1$=chr(132)+chr(148)+chr(129)+chr(142)+chr(153)+chr(154)+chr(225)+chr(238)+chr(133)+chr(160)+chr(131)+chr(138)+chr(130)+chr(136)+chr(141)+chr(161)+chr(140)+chr(149)+chr(162)+chr(147)+chr(151)+chr(163)+chr(150)+chr(135)
+t2$=chr(228)+chr(246)+chr(252)+chr(196)+chr(214)+chr(220)+chr(223)+chr(128)+chr(224)+chr(225)+chr(226)+chr(232)+chr(233)+chr(234)+chr(236)+chr(237)+chr(238)+chr(242)+chr(243)+chr(244)+chr(249)+chr(250)+chr(251)+chr(231)
+for xx=1 to len(txt$)
+p=pos(txt$(xx,1)=t1$)
+if p then txt$(xx,1)=t2$(p,1)
+next xx
+close(cvtxt)
+open(cvtxt)tempfile$
+writerecord(cvtxt)txt$
+close(cvtxt)
+goto pgm_exit
+
+errmsg:
+if msg$="" then let msg$="Err "+str(err)+" in "+str(tcb(5))+" "+pgm(-2)
+erase argfile$,err=writemsg
+writemsg:
+string argfile$
+let ef=unt; open (ef)errfile$
+write (ef)msg$
+close (ef)
+
+pgm_exit:
+let x=0
+while x<nfiles
+x=x+1
+close (files[x],err=*next)
+wend
+if called_pgm then exit else release

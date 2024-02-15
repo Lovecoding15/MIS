@@ -1,0 +1,272 @@
+rem Need GolbalEsign.jar in BBjServices CLASSPATH
+
+rem Use Statments 
+use com.globalesign.soap.GlobalEsignSoapExtService_Impl
+use com.globalesign.soap.GlobalEsignSoapExt
+use com.globalesign.soap.GeSigVer
+use java.lang.Throwable
+
+rem Declares
+declare GlobalEsign globalEsign!
+declare BBjString   inputPDFFileName$
+declare BBjString   signedPDFFileName$
+declare BBjString   verReportPDFFileName$
+declare BBjNumber   rc
+declare BBjNumber   debug
+declare BBjString   timestamp$
+
+debug=0
+rem Change to directory containing pdfs
+chdir "/basisaon/holding/"
+
+rem Create an instance of the GlobalEsign
+globalEsign! = new GlobalEsign()
+rem If being run get the pdf to sign, the file name to save the signed pdf file, and the file name
+rem to save the verfication report file in from the args
+if (argc > 3)
+    rem Get the verification report PDF file name
+    verReportPDFFileName$ = argv(3)
+endif 
+if (argc > 2)
+    rem Get the input and signed PDF file names
+    inputPDFFileName$ = argv(1)
+    signedPDFFileName$ = argv(2)
+else 
+    rem Use defaults
+    inputPDFFileName$ = "Test.pdf"
+    signedPDFFileName$ = "TestSigned.pdf"
+    verReportPDFFileName$ = "TestVerReport.pdf"
+endif
+rem Sign the PDF document
+rc = globalEsign!.signPDFDocument(inputPDFFileName$,signedPDFFileName$,verReportPDFFileName$)
+
+rem ' if (debug and rc <> GlobalEsign.getSUCCESS())
+if (rc <> GlobalEsign.getSUCCESS())    
+
+    timestamp$ = date(0,"%Y%Mz%Dz%Hz%mz%sz")
+    erase "/basisaon/holding/globalEsignErr." + timestamp$,err=*next
+    string "/basisaon/holding/globalEsignErr." + timestamp$
+    tmp=unt
+    open(tmp,err=close_tmp)"/basisaon/holding/globalEsignErr." + timestamp$
+
+    print(tmp)"RC = " + str(rc)
+    print(tmp)"Error = " + str(globalEsign!.getError())
+    print(tmp)"ErrorMsg = " + globalEsign!.getErrorMsg()
+    close_tmp:
+    close(tmp,err=*next)
+
+    rem ' print "Error = ",globalEsign!.getError()
+    rem ' print "ErrorMsg = ",globalEsign!.getErrorMsg()
+    rem ' end
+endif
+release rc
+
+
+rem Declaration of class GlobalEsign
+class public GlobalEsign
+
+rem Fields
+    field private GlobalEsignSoapExtService_Impl EsignServiceImpl!
+    field private GlobalEsignSoapExt EsignService!
+    
+    field private BBjNumber Error
+    field private BBjString ErrorMsg$
+
+    field private BBjString InputPDFFileName$
+    field private BBjString SignedPDFFileName$
+    field private BBjString VerReportPDFFileName$
+
+    field public static BBjNumber SUCCESS=0
+    field public static BBjNumber SERVICE_CREATE_ERROR=301
+    field public static BBjNumber SERVICE_RUNTIME_ERROR=302
+    field public static BBjNumber INPUT_PDF_ERROR=303
+    field public static BBjNumber SIGNED_PDF_ERROR=304
+    field public static BBjNumber VER_REPORT_PDF_ERROR=305
+
+    field public static BBjString SERVICE_CREATE_ERROR_MSG$="GlobalESign Service Creation Error. Make sure the GlobalEsign.jar is in BBjServices CLASSPATH"
+    field public static BBjString SERVICE_RUNTIME_ERROR_MSG$="GlobalESign Service Runtime Error"
+    field public static BBjString INPUT_PDF_ERROR_MSG$="Input PDF Error"
+    field public static BBjString SIGNED_PDF_ERROR_MSG$="Signed PDF Error"
+    field public static BBjString VER_REPORT_PDF_ERROR_MSG$="Verification Report PDF Error"
+    field public static BBjString UNKOWN_MSG$="Unkown Error"
+
+    field public static BBjNumber MAX_PDF_SIZE=1024000
+
+
+rem Default Constructor
+    method public GlobalEsign()
+        rem Create the service consumer
+        seterr GlobalEsignReturn
+        #EsignServiceImpl! = new GlobalEsignSoapExtService_Impl()
+        if (#EsignServiceImpl! <> null())
+            #EsignService!=#EsignServiceImpl!.getGlobalEsignSoapExt()
+        endif
+    GlobalEsignReturn:
+    methodend
+
+rem Signs the passed PDF file and saves the signed version to the specifed file with default values
+    method public BBjNumber signPDFDocument(BBjString p_inputPDFFileName$, BBjString p_signedPDFFileName$)
+        methodret #signPDFDocument(p_inputPDFFileName$, p_signedPDFFileName$,"")
+    methodend
+
+
+rem Signs the passed PDF file and saves the signed version to the specifed file with default values 
+rem and a verification report is generated if the passed p_verReportPDFFileName is not an emtpy string
+    method public BBjNumber signPDFDocument(BBjString p_inputPDFFileName$, BBjString p_signedPDFFileName$, BBjString p_verReportPDFFileName$)
+        declare BBjString user$
+        declare BBjString password$
+        declare BBjString signingName$
+        declare BBjNumber insertSigningTime
+        declare BBjString signingLocation$
+        declare BBjString signingReason$
+
+        user$ = "basis-europe.eSign"
+        password$ = "w2Q;8-Dn"
+        signingName$ = "BASIS Europe Distribution GmbH"
+        insertSigningTime = BBjAPI().TRUE
+        signingLocation$ = "D-66128 Saarbruecken"
+        signingReason$ = "elektronische Rechnung"
+
+        methodret #signPDFDocument(p_inputPDFFileName$,p_signedPDFFileName$,p_verReportPDFFileName$,user$,password$,signingName$,insertSigningTime,signingLocation$,signingReason$)
+    methodend
+
+rem Signs the passed PDF file and saves the signed version to the specifed file with the values specified 
+rem and a verification report is generated if the passed p_verReportPDFFileName is not an emtpy string
+    method public BBjNumber signPDFDocument(BBjString p_inputPDFFileName$, BBjString p_signedPDFFileName$, BBjString p_verReportPDFFileName$, BBjString p_user$, BBjString p_password$, BBjString p_signingName$, BBjNumber p_insertSigningTime, BBjString p_signingLocation$, BBjString p_signingReason$)
+        declare BBjNumber inputPDFChan
+        declare BBjNumber signedPDFChan
+        declare BBjString inputPDFFileContents$
+        declare BBjString signedPDFFileContents$
+        declare BBjString verReportPDFFileContents$
+        declare GeSigVer  geSigVer!
+        
+        rem Save file names
+        #InputPDFFileName$=p_inputPDFFileName$
+        #SignedPDFFileName$=p_signedPDFFileName$
+        #VerReportPDFFileName$=p_verReportPDFFileName$
+
+        rem Create the service consumer
+        seterr GlobalEsignServiceError
+        rem Make sure the service has been created
+        if (#EsignService! = null())
+            methodret #returnCode(#SERVICE_CREATE_ERROR)
+        endif
+
+        rem Read in the PDF File that is to be signed
+        seterr InputPDFError
+        inputPDFChan=unt
+        open(inputPDFChan,isz=-1) #InputPDFFileName$
+        readRecord(inputPDFChan,siz=-#MAX_PDF_SIZE) inputPDFFileContents$
+        close(inputPDFChan)
+
+        rem Sign the PDF Document
+        seterr ServiceRunTimeError
+        if (p_verReportPDFFileName$ = "")
+            signedPDFFileContents$ = #EsignService!.createPdfSignature(p_user$, p_password$, inputPDFFileContents$, p_signingName$, p_insertSigningTime, p_signingLocation$, p_signingReason$)
+        else
+            geSigVer! = #EsignService!.createPdfSignatureWithVerificationReport(p_user$, p_password$, inputPDFFileContents$, p_signingName$, p_insertSigningTime, p_signingLocation$, p_signingReason$,p_signedPDFFileName$)
+            signedPDFFileContents$ = geSigVer!.getSignature()
+            verReportPDFFileContents$ = geSigVer!.getVerificationReport()
+        endif
+        if (signedPDFFileContents$ = "" or (p_verReportPDFFileName$ <> "" and verReportPDFFileContents$ =""))
+            methodret #returnCode(#SERVICE_RUNTIME_ERROR)
+        endif
+
+        rem Write out the signed PDF file to the passed in file name
+        seterr SignedPDFError
+        erase #SignedPDFFileName$,err=*next
+        string #SignedPDFFileName$
+        signedPDFChan=unt
+        open (signedPDFChan) #SignedPDFFileName$
+        write record (signedPDFChan) signedPDFFileContents$
+        close (signedPDFChan)
+
+        rem If verification PDF file name was specifed write out the verfied PDF file 
+        if (#VerReportPDFFileName$ <> "")
+            seterr VerReportPDFError
+            erase #VerReportPDFFileName$,err=*next
+            string #VerReportPDFFileName$
+            verReportPDFChan=unt
+            open (verReportPDFChan) #VerReportPDFFileName$
+            write record (verReportPDFChan) verReportPDFFileContents$
+            close (verReportPDFChan)
+        endif
+
+        rem Return Success
+        methodret #returnCode(#SUCCESS)
+
+    GlobalEsignServiceError:
+        rem Return verfication report PDF error
+        methodret #returnCode(#SERVICE_CREATE_ERROR)
+
+    InputPDFError:
+        rem Return input PDF error
+        methodret #returnCode(#INPUT_PDF_ERROR)
+
+    ServiceRunTimeError:
+        rem Return service runtime error
+        methodret #returnCode(#SERVICE_RUNTIME_ERROR)
+
+    SignedPDFError:
+        rem Return signed PDF error
+        methodret #returnCode(#SIGNED_PDF_ERROR)
+
+    VerReportPDFError:
+        rem Return verfication report PDF error
+        methodret #returnCode(#VER_REPORT_PDF_ERROR)
+
+    methodend
+
+rem Saves the error code and message and returns the return code 
+    method private BBjNumber returnCode(BBjNumber p_returnCode)
+        declare Throwable lastException!
+        #Error = p_returnCode
+        switch (#Error)
+            case #SUCCESS
+                #ErrorMsg$ = ""
+                break
+            case #SERVICE_CREATE_ERROR
+                #ErrorMsg$ = #SERVICE_CREATE_ERROR_MSG$
+                break
+            case #SERVICE_RUNTIME_ERROR
+                #ErrorMsg$ = #SERVICE_RUNTIME_ERROR_MSG$
+                break
+            case #INPUT_PDF_ERROR
+                #ErrorMsg$ = #INPUT_PDF_ERROR_MSG$ + ", File = " + #InputPDFFileName$ 
+                break
+            case #SIGNED_PDF_ERROR
+                #ErrorMsg$ = #SIGNED_PDF_ERROR_MSG$ + ", File = " + #SignedPDFFileName$
+                break
+            case #VER_REPORT_PDF_ERROR
+                #ErrorMsg$ = #VER_REPORT_PDF_ERROR_MSG$ + ", File = " + #VerReportPDFFileName$
+                break
+            case default
+                #ErrorMsg$=#UNKOWN_MSG$
+        swend
+        
+        if (#Error <> #SUCCESS)
+            rem Add the BBj error code to the message
+            #ErrorMsg$ = #ErrorMsg$ + ", Err = " + str(err) + ", Errmes = " + errmes(-1)
+            rem If there is a last exception, add it to the message
+            lastException! = BBjAPI().getLastException()
+            if (lastException! <> null())
+                #ErrorMsg$ = #ErrorMsg$ + ", Last Exception = " + lastException!.toString()
+            endif
+        endif
+
+        methodret p_returnCode
+    methodend
+
+
+rem Returns the error number
+    method public BBjNumber getError()
+        methodret #Error
+    methodend
+
+rem Returns the error message
+    method public BBjString getErrorMsg()
+        methodret #ErrorMsg$
+    methodend
+
+classend
+

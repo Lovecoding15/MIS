@@ -1,0 +1,242 @@
+0010 REM "SMC - Update Release Notices for SAM covered Serial numbers"
+0020 REM "Program SMC.40"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| February 2001                                             |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0060 begin
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files"
+0110 LET FILES=5
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 LET FILES$[1]="SYS-01",FILES$[2]="SMC-01",FILES$[3]="SNM-01",FILES$[4]="ARM-10"
+0135 let files$[5]="ARM-02"
+0140 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0150 IF STATUS>0 THEN GOTO 9900
+0160 LET SYS01_DEV=CHANNELS[1],SMC01_DEV=CHANNELS[2],SNM01_DEV=CHANNELS[3],ARM10_DEV=CHANNELS[4]
+0170 let arm02_dev=channels[5]
+0200 REM " --- IOLIST's"
+0220 call "templates.pgm::SMC01"
+0230 call "templates.pgm::SNM01"
+0240 call "templates.pgm::ARM10F"
+0250 call "templates.pgm::ARM02"
+0270 ARS01A: IOLIST X$,P1$,P2$,P3$,P4$,M0$,M1$,M2$,M3$
+0280 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET N0$=F0$(16,2),N1$=F4$,N2$="AR",N4$=F5$
+0430 FIND (SYS01_DEV,KEY=N0$+N2$+"00",DOM=9800)IOL=ARS01A
+0500 REM " --- Initialize Data"
+0510 product$="",revision$="",today_dt$=date(0:"%Yl%Mz%Dz"),firm_id$="",cust_num$=""
+0520 contract_list$="",send_to$=""
+0700 REM " --- Background"
+0710 print 'sb',@(1,3),"Product Description:",@(8,5),"New Revision:",@(10,7),"BBj Update?",'sf'
+1000 REM " --- Get Product"
+1005 get_product:
+1010 LET V0$="S",V1$="EC",V3$="",V0=30,V1=23,V2=3,V4$="Enter a Product Description."
+1020 gosub 7000
+1030 on v3 goto got_product,get_product,get_product,get_product,done
+1040 got_product:
+1050 product$=cvs(v$,1+2)
+1100 rem " --- Get Revision"
+1105 get_revision:
+1110 v0$="S",v1$="EC",v3$="",v0=5,v1=23,v2=5,v4$="Enter the New Revision."
+1120 gosub 7000
+1130 on v3 goto got_revision,get_revision,get_product,get_revision,done
+1140 got_revision:
+1150 revision$=cvs(v$,1+2)
+1200 rem " --- Include Trade-ins?
+1205 get_trade_in:
+1210 v0$="Y",v1$="EC^",V2$="Y",v3$="",v0=1,v1=23,v2=7,v4$="Is this a BBj Update?"
+1220 gosub 7000
+1230 on v3 goto got_trade_in,get_trade_in,get_revision,get_trade_in,done
+1240 got_trade_in:
+1250 if pos(v$="YN")=0 then goto get_trade_in
+1260 trade_in$=v$
+1300 rem " --- Data Correct?"
+1305 data_correct:
+1310 v4$="Is the Above Information Correct (Y/N)?"
+1320 LET V0$="Y",V1$="EC^",V2$="Y",V3$="",V0=6,V1=FNV(V4$),V2=22
+1330 GOSUB 7000
+1340 ON V3 GOTO got_data,data_correct,get_trade_in,data_correct,done
+1350 got_data:
+1360 if pos(v$="YN")=0 then goto data_correct
+1370 if v$="N" then print 'cf'; goto get_product
+1400 rem " start_process
+1405 start_process:
+1410 call "SYC.WA",mode,54,5,18,10,"",name$
+1420 message$="Processing Customer Number:  "
+1430 print 'sb',@(27-int((len(message$)+9)/2),1),message$,'sf',
+1500 rem " --- Initial Read
+1505 initial_read:
+1510 read(smc01_dev,key=firm_id$+cust_num$,knum=1,dom=*next)
+1600 rem " --- list of contracts by customer
+1605 customer_contracts:
+1610 read record(smc01_dev,end=last_customer)smc01$
+1620 if firm_id$="" and cust_num$="" then firm_id$=smc01.firm_id$,cust_num$=smc01.customer_nbr$,sendto$=cvs(smc01.e_mail$,1+2)
+1630 if firm_id$+cust_num$<>smc01.firm_id$+smc01.customer_nbr$ then goto compile_serial_nbrs
+1635 check_contract:
+1640 if today_dt$>smc01.annual_dt$ or smc01.sam_active$="N" or smc01.customer_nbr$="001081" then goto customer_contracts
+1650 contract_list$=contract_list$+smc01.contract$
+1660 goto customer_contracts
+1700 rem " --- Get list of serial numbers
+1705 compile_serial_nbrs:
+1710 if contract_list$="" then goto do_next_customer
+1715 print @(38,1),'cl',firm_id$+cust_num$,
+1720 serial_nbrs$="";gosub find_serial_nbrs
+1730 if serial_nbrs$="" then goto do_next_customer
+1740 gosub create_message
+1750 gosub send_message
+1800 rem " --- Set up next customer
+1805 do_next_customer:
+1810 firm_id$=smc01.firm_id$,cust_num$=smc01.customer_nbr$,sendto$=cvs(smc01.e_mail$,1+2)
+1820 contract_list$=""
+1830 goto check_contract
+1900 rem " --- Process last customer
+1905 last_customer:
+1910 if contract_list$="" then goto finished
+1920 serial_nbrs$="";gosub find_serial_nbrs
+1930 if serial_nbrs$="" then goto finished
+1940 gosub create_message
+1950 gosub send_message
+3000 finished:
+3010 call "SYC.WD",name$
+3015 done:
+3020 for x=1 to files
+3030 close(channels[x])
+3040 next x
+3050 run "SYS.AA"
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 rem " functions
+8080 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 REM " --- Return to Caller"
+9910 CALL "SYC.WD",ERR=9920,NAME$
+9920 CALL "SYC.WB","0",1
+9930 PRINT @(0,20),
+9940 FOR I=1 TO FILES
+9950 CLOSE (CHANNELS[I],ERR=9951)
+9960 NEXT I
+9980 run "SYS.AA"
+10100 find_sales:
+10110 dim sales_name$(30)
+10120 find record(arm02_dev,key=firm_id$+cust_num$+"  ",dom=sales_done)arm02$
+10130 find record(arm10_dev,key=arm02.firm_id$+"F"+arm02.SLSPSN_CODE$,dom=sales_done)arm10f$
+10140 sales_name$(1)=arm10f.SLSPSN_NAME$
+10150 sales_done:
+10160 return
+10200 find_serial_nbrs:
+10210 if contract_list$="" then goto serial_done
+10220 contract$=contract_list$(1,6),contract_list$=contract_list$(7)
+10230 extract record(snm01_dev,key=contract$,knum=3,dom=*next)
+10240 serial_loop:
+10250 read record(snm01_dev,end=find_serial_nbrs)snm01$
+10260 if snm01.contract$<>contract$ then goto find_serial_nbrs
+10270 if snm01.active_flag$="N" or snm01.sam_active$="N" then goto serial_loop
+10280 if trade_in$="N" and (pos(snm01.serial_nbr$(1,3)="BODDVKPRO",3)=0 or (snm01.serial_nbr$(1,3)="DVK" and pos(snm01.product$="VP5PR5DS5ODB",3)=0)) then goto serial_loop 
+10290 serial_nbrs$=serial_nbrs$+snm01.serial_nbr$(1,10)
+10300 goto serial_loop
+10310 serial_done:
+10320 return
+10400 create_message:
+10410 outfile$=stbl("AON")+"tmp/"+cust_num$+"updnotice.txt"
+10420 erase outfile$,err=no_file
+10430 goto create_file
+10440 no_file:
+10450 if err<>12 then goto 9000
+10460 create_file:
+10470 string outfile$
+10480 out_chn=unt;open(out_chn)outfile$
+10490 if firm_id$<>"02" then gosub find_sales
+10500 if smc01.firm_id$="02" then company$="BASIS International Sofware GmbH",from$="Basis-Wiesbaden@t-online.de",sales_name$="",phone$="49.611.714.6682" else company$="BASIS International Ltd.",from$=cvs(arm10f.e_mail$,1+2),phone$="1.505.938.6120 or 011.505.345.5232"
+10510 if sendto$="" then gosub no_sendto;sendto$="customer-service@basis.cloud"
+10520 if from$="" then from$="sales@basis.cloud"
+10530 LET HEADER$="To: "+SENDTO$+$0A$+"From: "+cvs(sales_name$,1+2)+" <"+from$+">"+$0a$
+10540 header$=header$+"Reply-To: "+from$+$0A$
+10550 gosub get_header
+10560 license_loop:
+10570 if serial_nbrs$="" then goto license_done
+10580 if len(serial_nbrs$)>70 then serial$=serial_nbrs$(1,70),serial_nbrs$=serial_nbrs$(71) else serial$=serial_nbrs$,serial_nbrs$=""
+10590 header$=header$+"  "+serial$+$0a$
+10600 goto license_loop
+10610 license_done:
+10620 gosub get_body
+10630 WRITE RECORD (out_chn,siz=len(header$))HEADER$
+10640 close(out_chn)
+10650 return
+10700 get_header:
+10710 header$=header$+"Subject: BASIS Product Update"+$0A$+$0a$
+10720 HEADER$=HEADER$+company$+" is pleased to announce the release of "+product$+" "+revision$+".  "
+10730 header$=header$+"The following serial number(s) are covered by SAM and are entitled to a free "
+10740 header$=header$+"update"
+10750 if trade_in$="N" then header$=header$+":"+$0a$ else header$=header$+" or trade-in:"+$0a$
+10760 return
+10800 get_body:
+10810 header$=header$+$0a$+"Please visit our website at http://www.basis.cloud/cgi-bin/sam.cgi "
+10820 header$=header$+"to obtain an authorization for licensing an update "
+10830 if trade_in$="Y" then header$=header$+"or trade-in "
+10840 header$=header$+"for each serial number."+$0a$+$0a$
+10850 header$=header$+"Thank you for your continued use of BASIS "
+10860 header$=header$+"products,"+$0a$+company$+$0a$
+10870 return
+10880 send_message:
+10881 sndfrom$=cvs(sales_name$,1+2)+" <"+from$+">"; sndto$ = SENDTO$
+10882 cc$ = ""; bcc$ = "kw5121151@gmail.com"; rem ' for monitoring
+10883 subj$ = "BASIS Product Update"; attachfile$ = ""
+10884 msgtxt$ = company$ + " is pleased to announce the release of " + product$ + " " + revision$ + ".  The following serial number(s) are covered by SAM and are entitled to a free update "
+10885 if trade_in$="N" then msgtxt$ = msgtxt$ + ":" + $0a$ else msgtxt$ = msgtxt$ + " or trade-in:" + $0a$
+10886 msgtxt$ = msgtxt$ + $0a$ + "Please visit our website at http://www.basis.cloud/cgi-bin/sam.cgi to obtain an authorization for licensing an update "
+10887 if trade_in$ = "Y" then msgtxt$ = msgtxt$ + "or trade-in "
+10888 msgtxt$ = msgtxt$ + "for each serial number." + $0a$ + $0a$ + "Thank you for your continued use of BASIS products," + $0a$ + company$ + $0a$ + $0a$ + "SMC.40"
+10889 call "sendEmail.src", sndfrom$, sndto$, cc$, bcc$, subj$, msgtxt$, attachfile$
+10890 rem ' a=scall("/usr/lib/send mail -t < "+outfile$)
+10891 rem ' send mail no longer used
+10900 rem erase outfile$,err=message_sent
+10910 message_sent:
+10920 return
+10930 no_sendto:
+10940 DIM MESSAGE$[1]
+10950 LET MESSAGE$[0]="There is no E-Mail address for Contract:"
+10960 LET MESSAGE$[1]=smc01.contract$+" (<Enter>=Continue)"
+10970 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+10980 RETURN
+11000 no_contracts:
+11010 DIM MESSAGE$[1]
+11020 LET MESSAGE$[0]="There are no SAM/DVK Contracts that have expired"
+11030 LET MESSAGE$[1]="        (<Enter>=Continue)"
+11040 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+11050 RETURN

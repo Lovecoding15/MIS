@@ -1,0 +1,397 @@
+0010 REM "ARR - Customer Statements (Moore Form #2090A.O.)"
+0020 REM "Program ARR.CB"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * WA# 206
+0040 REM 
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files
+0110 rem ' opens to support Customers with Canadian Pricing
+0120 CALL "ec_open::ARM02_CANADA"
+0130 call "ec_open::ART03_CANADA"
+0140 call "templates.pgm::CANADIAN_EXCH"
+0150 prtr=unt
+0160 if email=0 then
+0170   CALL "SYC.GA",prtr,1,"","",STATUS
+0175   IF STATUS THEN GOTO 9900
+0180 fi
+0200 REM " --- IOLists
+0210 call "templates.pgm::arm01"
+0220 call "templates.pgm::arm02"
+0230 call "templates.pgm::art01"
+0240 call "templates.pgm::art11"
+0270 call "templates.pgm::art03"
+0280 call "templates.pgm::art83"
+0290 call "templates.pgm::tmm01"
+0300 call "templates.pgm::tmm03"
+0310 call "templates.pgm::tmm05"
+0320 dim arw07$:"sn:c(20),date:c(3),cust:c(6),invoice:c(7),avail:c(1)"
+0500 REM " --- Initializations
+0510 LET L=0,L9=36,HEADINGS=0
+0520 DIM HEADINGS$[HEADINGS]
+0530 LET SPACING=2; REM "SPACING=1 for single-line spacing, SPACING=2 for double-line
+0540 LET AGE=NUM(AGE$,ERR=550)
+0550 let lf$=$0a$,ff$=$0c$,qt$=chr(34),sep$=qt$+";"+qt$
+0560 x$=fnb4$(stmt$),m=num(x$(1,2)),d=num(x$(4,2)),y=num(x$(7))
+0570 stmt_dt$=date(jul(y,m,d):"%Dz %Ms %Y"),sub_dt$=date(jul(y,m,d):"%Ms%Y")
+0600 REM " --- Determine 30-Day Aging Period Dates"
+0610 LET APD$=""
+0620 FOR X=-5 TO 0
+0630 LET X$=""
+0640 CALL "SYC.CA",STMT$,X$,X*30
+0650 IF X$="N" THEN EXITTO 9900
+0660 LET APD$=X$+APD$
+0670 NEXT X
+0700 REM " --- Test Pattern?
+0710 goto 900
+0720 LET V4$="Do You Wish To Print A Test Pattern"
+0740 CALL "SYC.YN",0,V4$,4,V$,V3
+0760 ON V3 GOTO 780,700,700,700,9900
+0780 ON POS(V$="YN") GOTO 700,800,900
+0800 REM " --- Print Test Pattern
+0810 DIM B0$(6,"9"),B1$(245,"X"),C1$(40,"X"),A0$(50,"X"),X$(20,"X"),X1$(20,"X"),T1$(P[0],"X")
+0820 LET A[0]=9999.99,A0$(24,3)=$646464$,AMNT=A[0],B1$(103,9)="999999999"
+0830 GOSUB 6500
+0840 GOSUB 5000
+0850 LET T1$=""
+0860 FOR X=1 TO 5
+0870 GOSUB 5200
+0880 NEXT X
+0890 GOSUB 5400
+0895 GOTO 700
+0900 REM " --- Background
+0920 IF SEQ$="N" THEN LET X=M0
+0940 IF SEQ$="A" THEN LET X=10
+0950 pass=print_detail
+0960 CALL "SYC.NB","Processing",X,COLUMN
+1000 REM " --- Trip Read
+1010 if pass>1 then seq$="S"
+1020 IF SEQ$="N" THEN READ (ART01_DEV,KEY=N0$+"  "+CUST$,DOM=1030)
+1030 IF SEQ$="A" THEN READ (ARM04_DEV,KEY=N0$+"A"+CUST$,DOM=1040)
+1040 IF SEQ$="S" THEN READ (ARW07_DEV,KEY="",DOM=*next)
+1100 REM " --- Alphabetic Sequence
+1105 IF SEQ$<>"A" THEN GOTO 1130
+1110 LET R9$=KEY(ARM04_DEV,END=4000)
+1115 READ (ARM04_DEV)
+1120 IF R9$(1,3)<>N0$+"A" THEN GOTO 4000
+1125 READ (ART01_DEV,KEY=N0$+"  "+R9$(14,6),DOM=1130)
+1130 REM " --- Next ART-01 AR Open Invoice Header
+1135 IF SEQ$<>"A" THEN GOTO 1155
+1140 LET K$=KEY(ART01_DEV,END=1100)
+1145 IF K$(1,10)<>N0$+"  "+R9$(14,6) THEN GOTO 1100
+1150 GOTO 1170
+1155 LET K$=KEY(ART01_DEV,END=4000)
+1160 IF K$(1,2)<>N0$ THEN GOTO 4000
+1165 if seq$="S" then readrecord(arw07_dev,end=4000)arw07$;k$=n0$+"  "+arw07.cust$+arw07.invoice$+"00"
+1168 IF OPT$="S" AND K$(5,6)<>CUST$ THEN GOTO 4000
+1170 REM " --- Read ART-01 AR Open Invoice Header
+1180 READ record(ART01_DEV,key=k$)art01$
+1185 IF pos(SEQ$="NS") THEN LET X$=art01.customer_nbr$
+1190 IF SEQ$="A" THEN LET X$=R9$(4,10)
+1195 PRINT @(COLUMN,11),X$,
+1200 REM " --- Breaks
+1220 IF K$(5,6)=T1$ THEN GOTO 2000
+1240 GOSUB 6000
+1260 IF T8$<>"N" THEN GOTO 2000
+1280 READ (ART01_DEV,KEY=K$(1,10)+$FF$,DOM=1100)
+1300 GOTO 1100
+2000 REM " --- Determine Inv Amt
+2010 LET AMNT=0,chk_dt$=art01.invoice_date$,prt_dt$=chk_dt$
+2015 if art01.customer_nbr$="007808" then chk_dt$=art01.due_date$
+2020 IF chk_dt$>STMT$ THEN GOTO 1130
+2040 READ (ART11_DEV,KEY=Art01$(1,17),DOM=*next)
+2100 REM " --- Read ART-11 AR Open Invoice Detail
+2120 LET K11$=KEY(ART11_DEV,END=2200)
+2140 IF K11$(1,17)<>Art01$(1,17) THEN GOTO 2200
+2150 READ record(ART11_DEV)ART11$
+2170 IF art11.trans_date$<=STMT$ THEN LET AMNT=AMNT+art11.TRANS_AMT+art11.ADJ_DISC_AMT
+2190 GOTO 2100
+2200 REM " --- Zero
+2220 IF Art01.invoice_amt+AMNT=0 THEN GOTO 1130
+2230 if pass=1 then gosub print_detail;goto 1130
+2500 REM " --- Print
+2520 GOSUB 5200
+2900 GOTO 1130
+4000 REM " --- Totals
+4020 LET T9$="E"
+4030 if pass=1 then let pass=2;goto 1000
+4040 GOSUB 6000
+4100 GOTO 9900
+5000 REM " --- Heading
+5010 LET L=0,P=P+1
+5020 rem CALL "SYC.HA",prtr,HEADINGS$[ALL],HEADINGS,PAGE,30,WHEN$,CLOCK$,STATUS
+5025 rem IF STATUS>0 THEN EXITTO 9900
+5040 PRINT (prtr)lf$,@(50),"S T A T E M E N T",lf$,lf$,lf$
+5049 rem 'print n0$ (firm) after cust# - picked up by UnForm 
+5050 PRINT (prtr)@(46),"Statement Date:",@(64),fnb4$(stmt$),lf$,lf$,@(56),"Page:",@(64),P:"##",lf$,lf$,@(45),"Customer Number:",@(62),n0$+art01.customer_nbr$,lf$,lf$
+5060 PRINT (prtr)@(7),ADDRESS$(1,30),lf$,@(7),ADDRESS$(31,30),lf$,@(7),ADDRESS$(61,30),lf$,@(7),ADDRESS$(91,30),lf$,@(7),ADDRESS$(121,30),lf$,@(7),ADDRESS$(151,30),lf$,@(7),ADDRESS$(181,30),
+5080 h1$="Purchase",h2$="Order";if print_detail then h1$="Serial",h2$="Number"
+5085 PRINT (prtr)lf$,@(17),"Invoice",@(27),h1$,@(41),"Invoice",@(52),"Payments"
+5090 PRINT (prtr)@(7),"Date",@(17),"Number",@(27),h2$,@(43),"Total",@(52),"Received",@(65),"Balance",lf$
+5190 RETURN 
+5200 REM " --- Detail
+5210 IF L>=L9 THEN GOSUB 5600
+5220 rem LET X$=Art01.ar_inv_type$; IF X$="S" THEN LET X$="I" else IF X$="F" THEN LET X$="FC"
+5230 dim art03$:fattr(art03$)
+5240 readrecord(art03_dev,key=art01$(1,19)+"0",dom=*next)art03$
+5245 if seq$="S" then art03.ar_po_number$=arw07.sn$
+5247 if canadian_customer then gosub convert_amounts
+5250 PRINT (prtr)@(4),FNB4$(prt_dt$),@(17),art01.ar_inv_nbr$,@(27),art03.ar_po_number$,@(39),fneu(Art01.invoice_amt):M1$,@(51),fneu(AMNT):M1$,@(63),fneu(Art01.invoice_amt+AMNT):M1$
+5260 xl$=xl$+qt$+FNB4$(prt_dt$)+sep$+art01.ar_inv_nbr$+sep$+cvs(art03.ar_po_number$,3)+sep$+cvs(str(fneu(Art01.invoice_amt):M1$),3)+sep$+cvs(str(fneu(AMNT):M1$),3)+sep$+cvs(str(fneu(Art01.invoice_amt+AMNT):M1$),3)+qt$+lf$
+5270 LET L=L+1
+5280 IF SPACING=2 THEN PRINT (prtr)lf$,; LET L=L+1
+5390 RETURN 
+5400 REM " --- Total
+5410 WHILE L<L9
+5420 PRINT (prtr)lf$,
+5430 LET L=L+1
+5440 WEND
+5450 PRINT (prtr)@(7),MSG$,lf$
+5452 rem ' totals for canadian customer calculated already
+5455 if canadian_customer = 0 then
+5457    due=arm02.AGING_FUTURE+arm02.aging_cur+arm02.aging_30+arm02.aging_60+arm02.aging_90+arm02.aging_120
+5460    PRINT (prtr)@(44),"Total Balance Due:",@(63),fneu(due):M1$,eurosign$,lf$
+5470    PRINT (prtr)@(8),fneu(arm02.AGING_FUTURE+arm02.aging_cur):M1$,fneu(arm02.aging_30):M1$,fneu(arm02.aging_60):M1$,fneu(arm02.aging_90+arm02.aging_120):M1$
+5480    PRINT (prtr)@(M1),"Current",@(2*M1),"30-Days",@(3*M1),"60-Days",@(4*M1),"90-Days"
+5485    print (prtr)ff$,
+5490 else
+5500    PRINT (prtr)@(44),"Total Bal Due CAD:",@(63),due_ca:M1$,lf$
+5510    if due_us <> 0 PRINT (prtr)@(44),"Total Bal Due USD:",@(63),due_us:M1$,lf$
+5520	print (prtr)ff$,
+5530 fi
+5540 RETURN 
+5600 REM " --- Continue
+5610 WHILE L<L9+2
+5620 PRINT (prtr)lf$,
+5630 LET L=L+1
+5640 WEND
+5650 PRINT (prtr)@(49),"(Continued)",ff$,
+5680 GOSUB 5000
+5690 RETURN 
+6000 REM " --- Customer Break
+6010 IF T1$="" THEN GOTO next_customer
+6020 GOSUB 5400
+6030 if email then gosub email_files
+6040 next_customer: 
+6050 if email then close(prtr,err=*next)
+6060 if email then erase textfile$,err=*next
+6070 if email then erase pdf$,err=*next
+6080 IF T9$<>"" THEN RETURN 
+6090 LET T1$=Art01.customer_nbr$,T8$="",P=0,F9=0,arm01.cust_name$="Not On File"
+6100 FIND record(ARM01_DEV,KEY=N0$+art01.customer_nbr$,DOM=*next)arm01$
+6110 FIND record(ARM02_DEV,KEY=N0$+art01.customer_nbr$+"  ",DOM=*next)arm02$
+6112 rem ' is this a Canadian Customer
+6114 canadian_customer = 0
+6116 read record(ARM02_CANADA, key = N0$ + art01.customer_nbr$, dom=*next)ARM02_CANADA$; canadian_customer = 1, due_ca=0, due_us=0
+6120 gosub euro_or_dollar
+6125 IF OPT$="S" and CUST$="007808" then arm02.statements$="Y"
+6130 IF arm02.statements$<>"Y" THEN GOTO 6280
+6140 IF TERR$<>"" AND TERR$<>arm02.territory$ THEN GOTO 6280
+6150 xl$=qt$+"Date"+sep$+"Invoice Number"+sep$+"Serial Number"+sep$+"Invoice Total"+sep$+"Payments Received"+sep$+"Balance"+qt$+lf$
+6160 GOSUB 6500
+6170 GOTO 6200
+6180 GOSUB 5000
+6190 RETURN 
+6200 REM " --- Determine Aging
+6210 GOSUB 6600
+6220 LET A_BAL=arm02.aging_120; if age<4 then a_bal=a_bal+arm02.aging_90
+6230 if age<3 then a_bal=a_bal+arm02.aging_60
+6240 if age<2 then a_bal=a_bal+arm02.aging_30
+6250 if age<1 then a_bal=a_bal+arm02.aging_cur
+6270 IF a_bal<>0 and A_BAL>=M_BAL THEN GOTO 6180
+6280 LET T8$="N",T1$=""
+6290 RETURN 
+6500 REM " --- Format address block
+6580 GOSUB 10000; REM WA# 206
+6590 RETURN 
+6600 REM " --- Pre-Age For Selection
+6605 DIM Ax$:fattr(art01$),c[10]
+6610 READ (ART01_DEV,KEY=Art01$(1,10),DOM=*next)
+6620 REM " --- Invoice Records
+6630 LET KX$=KEY(ART01_DEV,END=6880)
+6640 IF POS(Art01$(1,10)=KX$)<>1 THEN GOTO 6880
+6650 READ record(ART01_DEV)ax$
+6660 LET chk_dt$=ax.invoice_date$
+6670 if ax.customer_nbr$="007808" then chk_dt$=ax.due_date$
+6675 IF chk_dt$>STMT$ THEN GOTO 6620
+6680 LET BAL=AX.invoice_amt
+6690 READ (ART11_DEV,KEY=AX$(1,17),DOM=*next)
+6700 REM " --- Payment/Adjustment Records
+6710 LET KX11$=KEY(ART11_DEV,END=6800)
+6720 IF POS(AX$(1,17)=KX11$)<>1 THEN GOTO 6800
+6730 READ record(ART11_DEV)ART11$
+6740 IF art11.trans_date$<=STMT$ THEN LET BAL=BAL+art11.TRANS_AMT+art11.ADJ_DISC_AMT
+6790 GOTO 6700
+6800 REM " --- Age
+6810 IF DATE$="I" THEN LET X3$=ax.invoice_date$ ELSE LET X3$=AX.due_date$
+6820 LET X0=POS(X3$>APD$,3)
+6830 IF X0=0 THEN LET X0=5 ELSE LET X0=INT(X0/3)
+6840 LET C[X0]=C[X0]+BAL
+6850 GOTO 6620
+6880 REM " --- Reset ART-01
+6882 READ record(ART01_DEV,KEY=K$)ART01$
+6884 arm02.AGING_FUTURE=c[0],arm02.aging_cur=c[1],arm02.aging_30=c[2]
+6886 arm02.aging_60=c[3],arm02.aging_90=c[4],arm02.aging_120=c[5]
+6890 RETURN 
+8000 REM " --- Functions
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8300 DEF FNEU(Q1)
+8310 IF PRICING$="E" THEN LET Q1=Q1/EURORATE
+8320 RETURN Q1
+8330 fnend
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,lf$
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,lf$
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END
+10000 REM " --- Get address from Telemaster"
+10010 tmmkey$=art01.firm_id$+art01.customer_nbr$+fill(6,"0")
+10015 dim tmm01$:fattr(tmm01$)
+10020 READ record(TMM01_DEV,KNUM=0,KEY=tmmkey$,DOM=*next)tmm01$
+10030 LET B$=TMM01$(142,60)+TMM01$(389,60)+TMM01.city$+" "+TMM01.state$+"  "+TMM01.country_code$+FILL(28," ")+TMM01.zip_code$
+10040 CALL "SYC.AX",B$,30,6,9,30
+10050 LET address$=arm01.cust_name$+B$
+10060 if email=0 then return
+10070 dim email$[4],tmm05$:fattr(tmm05$)
+10080 email$[4]="customer-service@basis.cloud",sendto$=""
+10090 find record(tmm05_dev,key=tmmkey$,dom=*next)tmm05$
+10100 email$[1]=cvs(tmm05.email$,3)
+10110 read(tmm03_dev,key=tmmkey$,dom=*next)
+10120 while 1
+10130  read record(tmm03_dev,end=*break)tmm03$
+10140  if pos(tmmkey$=tmm03$)<>1 then break
+10150  addr$=cvs(tmm03.e_mail$,3)
+10160  if addr$="" then continue
+10170  if tmm03.ap_contact$="Y" then email$[0]=addr$;break
+10180  if cvs(tmm03.contact_name$,7)=cvs(tmm01.cont_name$,7) then
+10190    email$[2]=addr$
+10200  else
+10210    if email$[3]="" then email$[3]=addr$
+10220  fi
+10230 wend
+10240 i=0
+10250 while sendto$=""
+10260   sendto$=email$[i]
+10270   i=i+1
+10280 wend
+10282 rem ' invoices for 1081 still go to ap contact, statments and past due notice go to jodyf@osas.com
+10283 if art01.firm_id$ = "01" and art01.customer_nbr$ = "001081" then sendto$ = "jodyf@osas.com"
+10290 close(prtr,err=*next)
+10300 textfile$=stbl("TEMP")+"STMT"+tmmkey$(3,6)+".txt"
+10310 erase texfile$,err=*next
+10320 open(prtr,mode="FILE="+textfile$)"PX"
+10390 RETURN
+10500 print_detail:
+10510 sn$=""
+10520 arw07.cust$=art01.customer_nbr$
+10530 arw07.invoice$=art01.ar_inv_nbr$
+10540 arw07.date$=art01.invoice_date$
+10550 read(art83_dev,key=art01$(1,17),dom=*next)
+10560 while 1
+10570 readrecord(art83_dev,end=*break)art83$
+10580 if pos(art01$(1,17)=art83$)<>1 then break
+10590 if art83.action$="D" then continue
+10600 arw07.sn$=art83.serial_nbr$,arw07$=field(arw07$),sn$=arw07.sn$
+10610 writerecord(arw07_dev,key=arw07$)arw07$
+10620 wend
+10630 if sn$="" then arw07.sn$=sn$,arw07$=field(arw07$); writerecord(arw07_dev,key=arw07$)arw07$
+10690 return
+11000 EURO_OR_DOLLAR:
+11010 LET EUROSIGN$="",EURORATE=1,PRICING$="D"
+11015 if n0$="02" then goto eord_end
+11030 p1=POS(arm02.INVOICE_PRCD$="DE")
+11040 if p1=2 then LET EUROSIGN$=CHR(238),pricing$="E"
+11050 EORD_END:
+11060 RETURN
+12000 email_files:
+12010 close(prtr,err=*next)
+12020 pdf$=textfile$(1,len(textfile$)-3)+"pdf"
+12030 call "PDF.01",textfile$,pdf$
+12040 tries=0,pdf=unt
+12050 while tries<3
+12060   open(pdf,err=*next)pdf$;break
+12070   tries=tries+1; wait 1
+12080 wend
+12090 s=0,f$=fin(pdf,err=*next),s=dec(f$(1,4))
+12100 close(pdf,err=*next)
+12110 ms$="Attached is your statement for the period ending "+stmt_dt$+" in Adobe Portable Document Format (PDF) and text versions.  Using PDF files requires the Adobe Acrobat Reader, available free at www.adobe.com.  If you print the text file, use a 10 point or smaller fixed width font such as Courier or System for correct page alignment."
+12120 CALL "mailcall.bbj",1,mailcall$,""
+12130 LET mailcall.from$="BASIS Customer Service <customer-service@basis.cloud>"
+12135 mailcall.cc$="customer-service@basis.cloud"
+12140 LET mailcall.subject$=sub_dt$+" Statement "+tmm01.customer_nbr$
+12150 LET mailcall.attach$=pdf$+","+textfile$
+12160 LET mailcall.to$=CVS(sendto$,3)
+12170 LET mailcall.msgtxt$=ms$
+12180 if s=0 then 
+12190   mailcall.to$="customer-service@basis.cloud"
+12200   mailcall.cc$=""
+12210   mailcall.msgtxt$="PDF file error. Statement not sent for this customer."
+12220   mailcall.attach$=textfile$
+12230 fi
+12240 if cust$="007808" then
+12248   xlfile=unt,xlfile$=textfile$
+12252   erase xlfile$,err=*next
+12256   string(xlfile$)
+12262   open(xlfile)xlfile$
+12266   print (xlfile)xl$
+12274   close(xlfile,err=*next)
+12278 fi
+12280 CALL "mailcall.bbj",0,mailcall$,""
+12285 wait 30
+12290 return
+14500 REM Date with 4 digit year
+14505 DEF FNA4$(Q$,Q2$)=STR(((ASC(Q$)-32)+1900)*POS(" "<>Q2$(2,1)):"0000")
+14510 DEF FNB4$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA4$(Q1$(1),Q1$)
+15000 rem ' convert invoice amount to Canadian Dollars for Canadain customers
+15005 convert_amounts:
+15010 canadian_invoice = 0; currency$=""
+15020 rem ' depends on the read of art03 and art01 done prior to the gosub here
+15022 rem ' ON ACCOUNT invoices will never make it to ART03 must be read differently
+15023 if pos("OA" = art01.ar_inv_nbr$) = 1 then
+15024  	read record(art03_canada, key = art01.firm_id$ + art01.customer_nbr$ + art01.invoice_date$ + art01.ar_inv_nbr$, knum=1, dom=*next)art03_canada$; canadian_invoice = 1  	
+15025 else
+15030   read record(art03_canada, key = art03.firm_id$ + art03.customer_nbr$ + art03.invoice_date$ + art03.order_number$, knum=0, dom=*next)art03_canada$; canadian_invoice = 1
+15032 fi
+15040 rem ' if not canadian then sum and return
+15050 if canadian_invoice = 0 then due_us = due_us + art01.invoice_amt + AMNT; return
+15060 rem ' we have a canadian invoice convert it and sum it
+15070 currency$ = "CAD"
+15080 rem ' set up exchange rate record
+15090 canadian_exch.ratedate$ = art03_canada.ratedate$
+15100 canadian_exch.sequence_nbr$ = art03_canada.sequence_nbr$
+15110 canadian_exch.to_us_doll = art03_canada.to_us_doll
+15120 canadian_exch.to_cana_doll = art03_canada.to_cana_doll
+15130 rem ' convert the invoice amout
+15140 amountin = art01.invoice_amt; amountout = 0
+15150 call "canDollConversion", canadian_exch$, 0, amountin, amountout
+15160 art01.invoice_amt = amountout
+15170 rem ' convert the adjustment amnt		
+15180 amountin = AMNT; amountout = 0
+15190 call "canDollConversion", canadian_exch$, 0, amountin, amountout
+15200 AMNT = amountout
+15210 due_ca = due_ca + art01.invoice_amt + AMNT
+15220 return
+
+
+
+

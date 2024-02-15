@@ -1,0 +1,81 @@
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+
+class public SQLProperties
+
+	rem ' the supporting properties file
+	field private Properties props!
+
+	rem ' the connect string for the database 	
+	field private BBjString dbconnect!
+	
+	method public SQLProperties()
+	
+		rem ' locate ec_sql.properties file
+		rem ' there will be a prefix entry pointing the directory where it is located
+		sqlprops=unt
+		open(sqlprops)"ec_sql.properties"
+		sqlprops$=fid(sqlprops)
+		sqlprops$=sqlprops$(9)
+		close(sqlprops)
+
+		rem ' load the properties object with the properties
+		file!= new java.io.File(sqlprops$)
+		fis!=new java.io.FileInputStream(file!)
+		bis!=new java.io.BufferedInputStream(fis!)
+		#props!=new Properties()
+		#props!.load(bis!)
+
+		rem ' build the db connect string
+		sqlBuilder!= new StringBuffer(#props!.getProperty("sqlURL.urlprefix") + #props!.getProperty("sqlURL.server")+":")
+		sqlBuilder!.append(#props!.getProperty("sqlURL.port")+"?database=")
+		sqlBuilder!.append(#props!.getProperty("sqlURL.database")+"&user="+#props!.getProperty("sqlURL.user")+"&password=")
+		sqlBuilder!.append(#props!.getProperty("sqlURL.password"))
+		#dbconnect! = cast(BBjString, sqlBuilder!.toString())
+
+	methodend
+	
+	method public BBjString getDBConnect()
+		methodret #dbconnect!
+	methodend
+	
+	method public BBjString getDBConnectForDatabase(BBjString newName!)
+		stdDBName$ = #props!.getProperty("sqlURL.database")
+		oldDBConnect$ = #dbconnect!
+		ppos = pos(stdDBName$ = oldDBconnect$)
+		newDBConnect$ = oldDBconnect$(1, ppos - 1) + newName! + oldDBConnect$(ppos + len(stdDBName$))
+		methodret newDBConnect$
+	methodend
+		
+
+	method public BBjString getProperty(BBjString property!)
+		methodret #props!.getProperty(property!)
+	methodend
+	
+	method public BBjString getPassword()
+		rawPword$ = #props!.getProperty("sqlURL.password")
+		rem ' strip ssl =
+		p = pos("&" = rawPword$)
+		if p <> 0 then
+			rawPword$ = rawPword$(1,p-1)
+		fi
+		methodret rawPword$
+	methodend
+	
+classend	
+
+rem ' test
+
+testProps! = new SQLProperties()
+print testProps!.getDBConnect()
+print testProps!.getProperty("sqlURL.database")
+print testProps!.getDBConnectForDatabase("AddonDB")
+if testProps!.getProperty("badPropertyValue") = null() then
+	print "badProperyValue = null"
+else
+	print "badPropertyValue = " + testProps!.getProperty("badPropertyValue")
+fi	
+	

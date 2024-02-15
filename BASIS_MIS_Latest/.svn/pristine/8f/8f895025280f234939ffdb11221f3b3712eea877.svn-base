@@ -1,0 +1,289 @@
+rem package FUT.test
+
+use ::FutOlddomBC.bbj::FutOlddomBC
+
+rem -- Other USE statements for related business classes
+
+use com.basiscomponents.db.ResultSet
+use com.basiscomponents.db.DataRow
+
+
+rem /**
+rem  * FutOlddomBCTest.bbjt::FutOlddomBCTest<br>
+rem  * Barista Business Component Test Class for FutOlddomBC<br>
+rem  * A business component is a named collection of business elements, including other business components, if applicable.<br>
+rem  * It is the glue between the data source(s) used to get and store the elements and the application interface.
+rem  * <p>
+rem  * @author The Barista Team
+rem  * @version 1.0
+rem  */
+class public FutOlddomBCTest
+
+    field private FutOlddomBC bc!
+
+    rem @BeforeClass
+    method public void setUp()
+        user$ = "admin", pwd$ = "admin123"
+        x$ = stbl("+USER_ID", user$)
+        ::sys/prog/bao_utilities.bbj::BarUtils.setAdminObject(user$, pwd$)
+
+        #bc! = new FutOlddomBC()
+    methodend
+
+    rem @Test
+    method public void AttributesRecordTest()
+        declare DataRow attrs!
+        declare BBjVector names!
+
+        attrs! = #bc!.getAttributesRecord()
+        names! = new BBjVector(attrs!.getFieldNames())
+
+        if #bc!.getScopeFieldList("D").size() >= 1 and #bc!.getScopeFieldList("D").getItem(0) <> "*" then
+            Assert.Equals(names!.size(), #bc!.getScopeFieldList("D").size() + #bc!.getScopeFieldList("L").size())
+        endif
+
+        Assert.Equals(names!.contains("CUSTOMER_NBR"), BBjAPI().TRUE)
+        Assert.Equals(names!.contains("SEQUENCE_NBR"), BBjAPI().TRUE)
+
+        rem Standard BC attributes
+        rem Assert.Equals(attrs!.getFieldAttribute("<COL_NAME>", "EDITABLE"), "<0..2>"); rem 0=read_only, 1=modifiable, 2=primary key column
+        rem Assert.Equals(attrs!.getFieldAttribute("<COL_NAME>", "LABEL"), "<label>")
+        rem Assert.Equals(attrs!.getFieldAttribute("<COL_NAME>", "MASK"), "<mask>")
+    methodend
+
+    rem @Test
+    method public void FilterTest()
+        declare ResultSet rs!
+        declare DataRow filter!
+
+        #bc!.setScope("D")
+
+        filter! = new DataRow()
+        filter!.setFieldValue("CUSTOMER_NBR", "XXXXXX")
+        filter!.setFieldValue("SEQUENCE_NBR", "XXX")
+        #bc!.setFilter(filter!)
+        rs! = #bc!.retrieve()
+        Assert.Equals(rs!.size(), 0)
+
+        rem filter!.setFieldValue("CUSTOMER_NBR", "<value>")
+        rem filter!.setFieldValue("SEQUENCE_NBR", "<value>")
+        rem #bc!.setFilter(filter!)
+        rem rs! = #bc!.retrieve()
+        rem Assert.Equals(rs!.size(), 1)
+    methodend
+
+    rem @Test
+    method public void FieldSelectionTest()
+        declare ResultSet rs!
+        declare BBjVector fields!
+
+        fields! = new BBjVector()
+        rem fields!.addItem("<COL_NAME>")
+        rem fields!.addItem("<COL_NAME>")
+
+        #bc!.setFilter(null())
+        #bc!.setScope("B")
+        #bc!.setFieldSelection(fields!)
+        rs! = #bc!.retrieve()
+
+        Assert.Equals(rs!.getColumnCount(), #bc!.getScopeFieldList("B").size() + fields!.size())
+    methodend
+
+    rem @Test
+    method public void ScopeTest()
+        declare ResultSet rs!
+        declare BBjVector v!
+
+        #bc!.setScope(""); rem should be same as "D"
+        #bc!.setFilter(null())
+        #bc!.setFieldSelection(BBjAPI().makeVector())
+
+        rs! = #bc!.retrieve()
+        Assert.NotEquals(rs!.getColumnCount(), 0)
+        v! = #bc!.getScopeFieldList("D")
+        if v! <> null() and v!.size() and (v!.size() > 1 or v!.get(0) <> "*") then
+            Assert.Equals(rs!.getColumnCount(), v!.size())
+        endif
+
+        #bc!.setScope("B")
+        rs! = #bc!.retrieve()
+        v! = #bc!.getScopeFieldList("B")
+        Assert.Equals(rs!.getColumnCount(), v!.size())
+
+        #bc!.setScope("D")
+        rs! = #bc!.retrieve()
+        v! = #bc!.getScopeFieldList("D")
+        if v! <> null() and v!.size() and (v!.size() > 1 or v!.get(0) <> "*") then
+            Assert.Equals(rs!.getColumnCount(), v!.size())
+        endif
+    methodend
+
+    rem @Test
+    method public void BlockRetrieveTest()
+        declare ResultSet rs!
+        declare ResultSet rs2!
+        declare DataRow dr!
+        declare DataRow dr2!
+
+        #bc!.setFilter(null())
+        #bc!.setFieldSelection(BBjAPI().makeVector())
+        #bc!.setScope("B")
+
+        rs! = #bc!.retrieve(1, 10)
+        recs = rs!.size()
+
+        if recs >= 10 then
+            rs! = #bc!.retrieve(1, 10)
+            Assert.Equals(rs!.size(), 10)
+        endif
+        if recs >= 30 then
+            rs2! = #bc!.retrieve(11, 30)
+            Assert.Equals(rs2!.size(), 20)
+        endif
+
+        if rs! <> null() and rs!.size() then
+            dr! = cast(DataRow, rs!.get(0))
+        endif
+        if rs2! <> null() and rs2!.size() then
+            dr2! = cast(DataRow, rs2!.get(0))
+        endif
+        rem Assert.NotEquals(dr!, dr2!)
+    methodend
+
+    rem @Test
+    method public void ValidateWriteTest()
+        declare ResultSet err_rs!
+        declare DataRow dr!
+
+        err_rs! = #bc!.validateWrite(null())
+        Assert.Equals(err_rs!.size(), 1)
+        Assert.Equals(cast(DataRow, err_rs!.get(0)).getFieldAsString("MESSAGE"), "Missing data")
+
+        rem dr! = new DataRow()
+        rem err_rs! = #bc!.validateWrite(dr!)
+        rem Assert.Equals(err_rs!.size(), 2)
+        rem Assert.Equals(cast(DataRow, err_rs!.get(0)).getFieldAsString("MESSAGE"), "Value is required for MYFIELD")
+        rem Assert.Equals(cast(DataRow, err_rs!.get(1)).getFieldAsString("MESSAGE"), "Value is required for MYFIELD")
+
+        rem dr!.setFieldValue("CUSTOMER_NBR", "XXXXXXX"); rem value forced to be too large
+        rem dr!.setFieldValue("SEQUENCE_NBR", "XXXX"); rem value forced to be too large
+        rem dr!.setFieldValue("<COL_NAME>", "<value>")
+        rem dr!.setFieldValue("<COL_NAME>", <value>)
+        rem err_rs! = #bc!.validateWrite(dr!)
+        rem Assert.Equals(err_rs!.size(), 2)
+        rem Assert.Equals(cast(DataRow, err_rs!.get(0)).getFieldAsString("MESSAGE"), "Value is too long")
+    methodend
+
+    rem @Test
+    method public void WriteTest()
+        declare DataRow dr!
+        declare DataRow filter!
+        declare ResultSet rs!
+
+        Assert.Expect(#bc!.write(null()), 256)
+
+        dr! = new DataRow()
+        dr!.setFieldValue("CUSTOMER_NBR", "XXXXXX")
+        dr!.setFieldValue("SEQUENCE_NBR", "XXX")
+        rem dr!.setFieldValue("<COL_NAME>", "<value>")
+        rem dr!.setFieldValue("<COL_NAME>", <value>)
+        #bc!.write(dr!)
+
+        filter! = new DataRow()
+        filter!.setFieldValue("CUSTOMER_NBR", "XXXXXX")
+        filter!.setFieldValue("SEQUENCE_NBR", "XXX")
+        #bc!.setFilter(filter!)
+        #bc!.setScope("")
+        #bc!.setFieldSelection(new BBjVector())
+        rs! = #bc!.retrieve()
+        Assert.Equals(rs!.size(), 1)
+
+        dr! = rs!.get(0)
+        Assert.Equals(dr!.getFieldAsString("CUSTOMER_NBR"), "XXXXXX")
+        Assert.Equals(dr!.getFieldAsString("SEQUENCE_NBR"), "XXX")
+        rem Assert.Equals(dr!.getFieldAsString("<COL_NAME>").trim(), "<value>")
+        rem Assert.Equals(dr!.getFieldAsNumber("<COL_NAME>"), <value>)
+
+        rem Remove the newly created record
+        #bc!.remove(dr!)
+
+        dr! = #bc!.getNewObjectTemplate(null()); rem creates new working data row
+        dr!.setFieldValue("CUSTOMER_NBR", "XXXXXX")
+        dr!.setFieldValue("SEQUENCE_NBR", "XXX")
+        rem dr!.setFieldValue("<COL_NAME>", "<value>")
+        rem dr!.setFieldValue("<COL_NAME>", <value>)
+        #bc!.write(dr!)
+
+        filter! = new DataRow()
+        filter!.setFieldValue("CUSTOMER_NBR", "XXXXXX")
+        filter!.setFieldValue("SEQUENCE_NBR", "XXX")
+        rem filter!.setFieldValue("<COL_NAME>", "<value>")
+        rem filter!.setFieldValue("<COL_NAME>", <value>)
+        #bc!.setFilter(filter!)
+        #bc!.setScope("")
+        #bc!.setFieldSelection(new BBjVector())
+        rs! = #bc!.retrieve()
+        Assert.Equals(rs!.size(), 1)
+
+        dr! = rs!.get(0)
+        #bc!.setDataRow(dr!)
+        Assert.Equals(dr!.getFieldAsString("CUSTOMER_NBR").trim(), "XXXXXX")
+        Assert.Equals(dr!.getFieldAsString("SEQUENCE_NBR").trim(), "XXX")
+        rem Assert.Equals(dr!.getFieldAsString("<COL_NAME>"().trim(), "<value>")
+        rem Assert.Equals(dr!.getFieldAsNumber("<COL_NAME>"(), <value>)
+
+        rem Remove the newly created record
+        #bc!.remove(dr!)
+    methodend
+
+    rem @Test
+    method public void ValidateRemoveTest()
+        declare ResultSet err_rs!
+        declare DataRow dr!
+
+        err_rs! = #bc!.validateRemove(null())
+        Assert.Equals(err_rs!.size(), 1)
+        Assert.Equals(cast(DataRow, err_rs!.get(0)).getFieldAsString("MESSAGE"), "Missing data")
+
+        dr! = new DataRow()
+        err_rs! = #bc!.validateRemove(dr!)
+        rem Assert.Equals(err_rs!.size(), 1)
+        rem Assert.Equals(cast(DataRow, err_rs!.get(0)).getFieldAsString("MESSAGE"), "Unable to remove data")
+    methodend
+
+    rem @Test
+    method public void RemoveTest()
+        declare DataRow dr!
+        declare ResultSet rs!
+
+        Assert.Expect(#bc!.remove(null()), 256)
+
+        dr! = new DataRow()
+        Assert.Expect(#bc!.remove(dr!), 256)
+
+        rem Add a new record
+        dr!.setFieldValue("CUSTOMER_NBR", "XXXXXX")
+        dr!.setFieldValue("SEQUENCE_NBR", "XXX")
+        rem dr!.setFieldValue("<COL_NAME>", "<value>")
+        rem dr!.setFieldValue("<COL_NAME>", <value>)
+        #bc!.write(dr!)
+
+        rem Remove it
+        #bc!.remove(dr!)
+
+        rem Check if really removed
+        dr! = new DataRow()
+        dr!.setFieldValue("CUSTOMER_NBR", "XXXXXX")
+        dr!.setFieldValue("SEQUENCE_NBR", "XXX")
+        rem dr!.setFieldValue("<COL_NAME>", "<value>")
+        rem dr!.setFieldValue("<COL_NAME>", <value>)
+        #bc!.setFilter(dr!)
+        rs! = #bc!.retrieve()
+        Assert.Equals(rs!.size(), 0)
+    methodend
+
+    rem @AfterClass
+    method public void tearDown()
+    methodend
+
+classend

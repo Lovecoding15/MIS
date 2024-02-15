@@ -1,0 +1,57 @@
+sdate$="010150";
+edate$=date(0:"%Mz%Dz%Yz");
+prompt for/drop/prompt="STARTING DATE FOR REPORT: "/len=6/black sdate$;
+prompt for/drop/prompt="  ENDING DATE FOR REPORT: "/len=6/black edate$;
+sd$=sdate$(5,2)+sdate$(1,2)+sdate$(3,2);
+ed$=edate$(5,2)+edate$(1,2)+edate$(3,2);
+
+create temporary table addon
+	snum char(9)/index
+	trans num(2) ;
+
+dl$=$09$;
+//dl$=" ";
+fpath$="/home/thines/";
+txtfil$=fpath$+"addon.txt";
+set display/rows=1/cols=400/trim txtfil$;
+
+ctr=0;
+for each oem_trans where oemid="ADD"
+group by sser
+{
+if first_of(sser) then tcount=0; 
+else tcount=tcount+1;
+addon.snum=oem_trans.oemid+oem_trans.sser;
+addon.trans=tcount;
+insert/update addon;
+}
+
+for each addon 
+{ 
+//display "";
+//display/notitle addon.snum str(trans:"#0") tdate;
+ctr=addon.trans;
+find/next oem_trans using addon.snum;
+nxt_oem:
+tdate$=oem_trans.tdate(7,2)+oem_trans.tdate(1,2)+oem_trans.tdate(4,2);
+if tdate$ between sd$ and ed$ then
+	{
+if ctr or oem_trans.active_flag<>"Y" then oem_trans.actkey=fill(13);
+display/notitle oem_trans.oemid+oem_trans.sser+dl$+
+	str(oem_trans.atrans:"#0")+dl$+
+	license_type+dl$+
+	tdate+dl$+
+	active_flag+dl$+
+	deactivate_date+dl$+
+	cvs(item_num,2)+dl$+
+	cvs(revlevel,2)+dl$+
+	str(curcnt:"##0")+dl$+
+	actkey+dl$+
+	end_user;
+//	comment;
+	}
+if ctr then 
+	{ctr=ctr-1;find/next oem_trans;goto nxt_oem;}
+}
+
+//

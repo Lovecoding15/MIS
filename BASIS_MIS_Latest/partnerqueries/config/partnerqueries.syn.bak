@@ -1,0 +1,47 @@
+// Barista Application Framework - Application Synchronization File
+
+// Proprietary Information. BASIS International Ltd. All rights reserved.
+
+ACOMP=01007514;BASIS International, Ltd.
+
+SYS=PARTNERQUERIES;Partner Queries^Copyright (C) 2008 BASIS International, Ltd.^
+
+DIR=/mnt/data/aon_prod/v1110/partnerqueries/
+
+MENU=partnerqueries
+
+APROD=PQY;Partner Queries;;;;;
+
+STBL=SET PARTNERQUERIES=/mnt/data/aon_prod/v1110/partnerqueries/data/
+
+STBL=SET PARTNERQUERIES_PROG=/mnt/data/aon_prod/v1110/partnerqueries/prog/
+
+STBL=SET +DEFAULT_ASC_COMP_ID=01007514
+
+STBL=SET PQY_CONNECT=jdbc:basis:localhost:2001?DATABASE=AddOnData&USER=admin&PWD=Titp4BBj&ssl=true
+
+STBL=SET PQY_PROGRAMS=/mnt/data/aon_prod/v1110/partnerqueries/prog/
+
+STBL=SET PQY_SERVER_DATA=/mnt/data/basisaon/aon/ADATA/
+
+STBL=SET PQY_SERVER_EC=/mnt/data/basisaon/ec/
+
+STBL=SET PQY_SERVER_BAS=/mnt/data/basisaon/aon/bas/
+
+STBL=SET PQY_SERVER_FLEX=/u/docfiles/flexlic/
+
+STBL=SET PQY_TESTING_DOCS=/u/docfiles/sales/
+
+STBL=SET PQY_PROD_DOCS=/u/docfiles/sales/
+
+STBL=SET PQY_PROD_SERVER=
+
+PREFIX=/mnt/data/aon_prod/v1110/partnerqueries/data/
+
+PREFIX=/mnt/data/aon_prod/v1110/partnerqueries/prog/
+
+CFG=PARTNERQUERIES=/mnt/data/aon_prod/v1110/partnerqueries/data/
+
+LANG=ENU
+
+

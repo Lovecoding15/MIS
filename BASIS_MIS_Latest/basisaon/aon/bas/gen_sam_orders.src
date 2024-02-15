@@ -1,0 +1,754 @@
+REM "Program gen_sam_orders.bbj"
+BEGIN 
+SETERR pgm_err
+
+goto checkBypass
+
+rem Bypass until the switch over is complete
+
+rem ' must run on bbjserver.basis.cloud only
+use java.net.InetAddress
+declare java.net.InetAddress ip! 
+declare java.net.InetAddress host!
+
+ip! = InetAddress.getLocalHost()
+thisIpAddr$ = ip!.getHostAddress()
+thisHostName$ = ip!.getHostName()
+
+host! = InetAddress.getByName("bbjserver.basis.cloud")
+bbjServerIpAddr$ = host!.getHostAddress()
+bbjServerHostName$ = host!.getHostName()
+
+if thisIpAddr$ <> bbjServerIpAddr$ then
+	msg$ = "gen_sam_orders.src attempted to run on " + thisHostName$ + " (" + thisIpAddr$ + "). This program is limited to " + bbjServerHostName$ + " (" + bbjServerIpAddr$ + "). Run terminated."
+	subject$ = "Wrong Server"
+	call "sendEmail.src","customer-service@basis.cloud", "misdev@basis.cloud","", "", subject$, msg$, ""
+	release
+fi
+
+checkBypass:
+
+call "ec_open::ARM01"
+call "ec_open::SMC01"
+call "ec_open::SNM01"
+call "ec_open::SNM02"
+call "ec_open::ARM01"
+call "ec_open::ARM02"
+call "ec_open::ARM10B"
+call "ec_open::ARM10E"
+call "ec_open::ARM10F"
+call "ec_open::ARM10I"
+call "ec_open::ARE03"
+call "ec_open::ARE04"
+call "ec_open::ARE07"
+call "ec_open::ARE13"
+call "ec_open::ARE43"
+call "ec_open::ARE73"
+call "ec_open::ARE83"
+call "ec_open::ARS10N"
+call "ec_open::SNT03"
+call "ec_open::IVS01"
+call "ec_open::IVM01"
+call "ec_open::CSM04"
+
+call "ec_open::ARM02_CANADA"
+call "ec_open::CANADIAN_EXCH"
+call "ec_open::ART03_CANADA"
+rem ' get the current exchange rate
+exchKey$ = keyl(canadian_exch)
+read record(canadian_exch,key=exchKey$)canadian_exch$
+
+use ::BasisPricingEngine.src::PriceElement
+use ::SerialNumber.src::SerialNumber
+use ::TransactionBuilder.src::TransactionBuilder
+
+declare TransactionBuilder tb!
+declare SerialNumber sn!
+
+rem ' get a TransactionBuilder - not Canadian
+tb! = new TransactionBuilder(0)
+
+sys01=unt
+open(sys01)"SYS-01"
+ivm02=unt
+open(ivm02)"IVM-02"
+ivm06=unt
+open(ivm06)"IVM-06"
+ivm10=unt
+open(ivm10)"IVM-10"
+dim channels[10]
+channels[1]=IVM01
+channels[2]=ivm02
+channels[6]=ivm06
+channels[7]=arm02
+channels[10]=ivm10
+dim snm01a$:fattr(snm01$)
+exclude$="001022008450001031001081007808004033002786003017007514020004020005020012020448020490"
+         
+rem ' *****************************************************
+rem ' set the dates
+rem ' *****************************************************
+today=jul(0,0,0)
+
+rem ' changed the lead times to be based on terms code of the customer 2015/12
+rem ' TERMS_CODE	New Timing
+rem ' 03 Net 15		invoice at 16 days
+rem ' 05 Net 30		invoice at 31 days
+rem ' 06 Net 15 EOM	use same timing as current, invoice at 50 days
+rem ' 06 Net 15 EOM	will now only be invoiced once a month on the first business day
+rem '			of the month for all contracts expiring in the next month
+rem '			example on 8/1 all contracts belonging to Net 15 EOM customers will
+rem ' 			be invoice for all their contract expiring in Sept
+
+rem ' is this the first business day of the month, the first day of the month is either 1, 2, or 3
+firstBusinessDay = 0
+DofM$ = date(0:"%D")
+if num(DofM$) <= 3 then
+	DofW$ = date(0:"%Ds")
+	if num(DofM$) = 3 and DofW$ = "Mon" then
+		firstBusinessDay = 1
+	else
+		if num(DofM$) = 2 and DofW$ = "Mon" then
+			firstBusinessDay = 1
+		else
+			if num(DofM$) = 1 and pos(DofW$="Mon|Tue|Wed|Thu|Fri|") <> 0 then
+				firstBusinessDay = 1
+			fi
+		fi
+	fi
+fi
+
+days03 = 16
+days05 = 31
+
+rem ' days06 = 50   no longer valid
+rem ' 06 terms contracts only invoice on the first business day of the month
+rem ' so day06 needs to be the last day of the next month
+day06y = num(date(today:"%Y"))
+day06m = num(date(today:"%M"))
+day06d = 1
+day06m = day06m + 2
+if day06m > 12 then
+	day06m = day06m - 12
+	day06y = day06y + 1
+fi
+end_dt06$ = date(jul(day06y,day06m,day06d):"%Yl%Mz%Dz")
+
+day$=date(today:"%Ds")
+rem ' moved the catch up to Monday from the get ahead on Fri
+rem ' if cvs(day$,7)="FRI" then days03 = 18, days05 = 33, days06 = 52
+start_dt$=date(today:"%Yl%Mz%Dz")
+end_dt03$=date(today + days03:"%Yl%Mz%Dz")
+end_dt05$=date(today + days05:"%Yl%Mz%Dz")
+rem ' end_dt06$=date(today + days06:"%Yl%Mz%Dz")
+
+exceeded03 = 0
+exceeded05 = 0
+exceeded06 = 0
+
+rem ' *****************************************************
+rem ' dates set 
+rem ' *****************************************************
+
+csvfile$=stbl("TEMP")+"auto_sam_renew.csv"
+erase csvfile$,err=*next
+string csvfile$
+
+serial_file$=stbl("TEMP")+"auto_sam_serial."+date(0:"%Y%M%D")
+erase serial_file$,err=*next
+create_file:
+mkeyed serial_file$,[0:1:23],0,23
+serial_tmp=unt
+open(serial_tmp)serial_file$
+dim serial_tmp$:"line_nbr:c(3),serial_nbr:c(20)"
+line_file$=stbl("TEMP")+"auto_sam_line."+date(0:"%Y%M%D")
+erase line_file$,err=*next
+mkeyed line_file$,[0:1:3],[0:4:23:"U"],0,33
+line_tmp=unt
+open(line_tmp)line_file$
+dim line_tmp$:"line_nbr:c(3),prod_id:c(3),users:c(5),users1:c(5),lic_prop:c(2),lic_prop1:c(2),contract:c(6),quantity:n(7)"
+
+order_list$=""
+extract record(smc01,key=start_dt$,knum=2,dom=*next)
+while 1
+
+  if exceeded03 and exceeded05 and exceeded06 then break
+  
+  read record(smc01,end=*break)smc01$
+  smc01$=field(smc01$)
+  
+  rem ' include or exclude
+
+  rem ' check terms code
+  read record (arm02,key=smc01.firm_id$+smc01.customer_nbr$+"  ")arm02$
+  terms$=arm02.terms_code$
+  active_renew$=arm02.active_renew$
+  if pos(terms$="030506",2)=0 then terms$="03"
+  if terms$ = "03" and smc01.annual_dt$ > end_dt03$ then exceeded03 = 1; continue
+  if terms$ = "05" and smc01.annual_dt$ > end_dt05$ then exceeded05 = 1; continue
+  if terms$ = "06" and smc01.annual_dt$ >= end_dt06$ then exceeded06 = 1 ; continue
+
+  if pos(smc01.customer_nbr$=exclude$,6) then continue
+  
+  if smc01.sam_active$="N" then continue
+  rem ' today 2016-11-01 there are only three contract types SM1, RN1, DV1
+  rem ' this line would include them all
+  if smc01.contr_type$ <> "SM1" and smc01.contr_type$ <> "RN1" and smc01.contr_type$ <> "DV1" then continue
+  if smc01.renew_flag$="N" then continue
+  if smc01.invoiced_flag$<>"Y" then continue
+    
+  rem ' for the conversion to auto invoice for RN1 and DV1 exclude contract expiring before a specific date
+  if smc01.contr_type$ = "RN1" or smc01.contr_type$ = "DV1" then
+	  if terms$ = "03" and smc01.annual_dt$ < "20161123" then continue
+	  if terms$ = "05" and smc01.annual_dt$ < "20161208" then continue
+	  if smc01.annual_dt$ < "20161227" then continue
+	  rem ' initial cut off for BSG starting auto invoice process
+	  if smc01.firm_id$ = "02" and smc01.annual_dt$ < "20170516" then continue
+  fi
+ 
+  rem ' all of these PMPM contracts are long expired
+  if pos("PMPM"=cvs(smc01.comment$,4)) then continue
+  
+  rem ' only do Net 15 EOM on the firstBusinessDay 
+  if terms$ = "06" and !firstBusinessDay then continue
+  
+  firm$ = smc01.firm_id$
+  read record (csm04,key=firm$+"CUR")csm04$
+  cur_rev$=cvs(csm04.description$,3)
+  read record (SYS01,key=firm$+"IV00")ivs01$
+  read record (arm10e,key=firm$+"ES")arm10e$
+  
+  line_num=0
+  gosub find_serial
+  if line_num=0 then continue
+  gosub find_customer
+  gosub get_order_number
+  gosub do_order
+  smc01.invoiced_flag$="I"
+  writerecord(smc01)smc01$
+  order_list$=order_list$+smc01.customer_nbr$+are03.order_number$+smc01.contract$+are03.ar_po_number$+$0a$
+wend
+
+rem ' debugging
+rem ' to$="kurt.e.williams@comcast.net"
+
+to$="customer-service@basis.cloud"
+from$="customer-service@basis.cloud"
+cc$="misdev@basis.cloud"
+subj$="SAM renewal orders generated "+date(0)
+if order_list$="" then 
+  msg$="No SAM orders today"
+  gosub notify
+  goto pgm_exit
+fi
+
+dl$=","
+csv=unt
+open(csv)csvfile$
+print(csv)"Cust#"+dl$+"Name"+dl$+"Terms"+dl$+"Order"+dl$+"Contract"+dl$+"Expires"+dl$+"PO"+dl$+"Comment"
+order_list$=ssort(order_list$,30)
+while pos($0a$=order_list$)
+  cust$=order_list$(1,6)
+  order$=order_list$(7,7)
+  contract$=order_list$(14,6)
+  purch$=order_list$(20,10)
+  order_list$=order_list$(31)
+  read record(smc01,key=contract$,knum=0,dom=*continue)smc01$
+  
+  rem ' if smc01.contr_type$ = "SM1" then
+  rem '    purch$ = "SAM Renew"
+  rem ' else
+  rem '    if smc01.contr_type$ = "RN1" then
+  rem '       purch$ = "RNT Renew" 
+  rem '    else
+  rem '       purch$ = "DVK Renew"
+  rem '    endif
+  rem ' endif
+  
+  dim cust_name$(30)
+  cust_name$(1)="Not On File"
+  find record(ARM01,KEY=smc01.firm_id$+smc01.customer_nbr$,DOM=*next)arm01$
+  if pos(smc01.firm_id$+smc01.customer_nbr$=arm01$)=1 then cust_name$(1)=arm01.cust_name$
+  comma=pos(","=cust_name$)
+  while comma
+    cust_name$(comma,1)=" "
+    comma=pos(","=cust_name$)
+  wend
+  read record (arm02,key=smc01.firm_id$+smc01.customer_nbr$+"  ",DOM=*next)arm02$
+  print(csv)cust$+dl$+cvs(cust_name$,3)+dl$+arm02.terms_code$+dl$+order$+dl$+contract$+dl$+smc01.expire_on_dt$+dl$+purch$+dl$+cvs(smc01.comment$,3)
+wend
+close(csv)
+
+rem ' from$, to$, cc$ and subject$ already set above
+bcc$ = ""
+rem ' the file name is in cfile$
+file$ = csvfile$
+
+msgtxt$ = "The Generated SAM orders file is attached."
+msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+
+call "sendEmail.src", from$, to$, cc$, bcc$, subj$, msgtxt$, file$
+
+goto pgm_exit
+
+find_customer:
+find record(ARM01,KEY=smc01.firm_id$+smc01.customer_nbr$,DOM=*next)arm01$
+read record (arm02,key=smc01.firm_id$+smc01.customer_nbr$+"  ")arm02$
+read record (arm10i,key=smc01.firm_id$+"I"+arm02.disc_code$)arm10i$
+if pos(arm02.cust_type$(1,1)="AMP") and smc01.firm_id$<>"01" then
+  k$=smc01.firm_id$+"I"+str(arm10i.disc_percent+5:"00")
+  read record (arm10i,key=k$,dom=*next)arm10i$
+fi
+if pos(arm02.cust_type$(1,1)="AMP") and smc01.firm_id$="01" then
+  read record (arm10i,key=smc01.firm_id$+"I"+arm02.disc_code_a$,dom=*next)arm10i$
+fi
+terms$=arm02.terms_code$
+if pos(terms$="030506",2)=0 then terms$="03"
+precision 6
+read record (arm10b,key=smc01.firm_id$+"B"+arm02.tax_code$)arm10b$
+read record (arm10f,key=smc01.firm_id$+"F"+arm02.slspsn_code$)arm10f$
+precision 2
+
+rem ' canadian pricing customer?
+canadian_table = 0
+read record(arm02_canada,key=smc01.firm_id$+smc01.customer_nbr$,dom=*next)arm02_canada$; canadian_table = 1
+internetworx = 0
+rem ' internetworx is now on the genearal price table, leaving internetworx at false will ensure that
+rem ' the internetworx price table is not used
+rem ' if smc01.customer_nbr$ = "001014" then internetworx = 1
+
+RETURN 
+
+def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+def fnconvertDate$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+def fnexpandDate$(Q1$)="20" + fnconvertDate$(Q1$(1),Q1$) + fnconvertDate$(Q1$(2),Q1$)+fnconvertDate$(Q1$(3),Q1$)
+
+find_serial:
+read(snm01,key=smc01.contract$,knum=3,dom=*next)
+while 2
+  read record(snm01,end=*break)snm01$
+  if snm01.contract$<>smc01.contract$ then break
+  if snm01.active_flag$="N" or snm01.sam_active$="N" then continue
+  
+  call "renew_sam.bbj",snm01.serial_nbr$,status
+  if status=20 then continue
+  
+  if snm01.product$="VP5" then snm01.product$="PR5"
+  lic_prop$="  ",lic_prop1$="  ",users=snm01.users,users1=0
+  dim snm02$:fattr(snm02$)
+  find record(snm02,key=snm01.serial_nbr$,dom=*next)snm02$
+  if cvs(snm02.lic_property1$,3)<>"" then lic_prop$=snm02.lic_property1$,users=snm02.users1
+  if cvs(snm02.lic_property2$,3)<>"" then lic_prop1$=snm02.lic_property2$,users1=snm02.users2
+  line_key$=snm01.product$+str(users:"00000")+str(users1:"00000")+lic_prop$+lic_prop1$+snm01.contract$
+  found_rec=0
+  find record(line_tmp,key=line_key$,knum=1,dom=*next)line_tmp$;found_rec=1
+  if found_rec=0 then
+    line_num=line_num+5
+    line_tmp.line_nbr$=str(line_num:"000")
+    line_tmp.quantity=0
+    line_tmp.prod_id$=snm01.product$
+    line_tmp.users$=str(users:"00000")
+    line_tmp.users1$=str(users1:"00000")
+    line_tmp.lic_prop$=lic_prop$
+    line_tmp.lic_prop1$=lic_prop1$
+    line_tmp.contract$=snm01.contract$
+  fi
+  line_tmp.quantity=line_tmp.quantity+1
+  serial_tmp.line_nbr$=line_tmp.line_nbr$
+  serial_tmp.serial_nbr$=snm01.serial_nbr$
+  serial_tmp$=field(serial_tmp$)
+  line_tmp$=field(line_tmp$)
+  write record(line_tmp)line_tmp$
+  write record(serial_tmp)serial_tmp$
+wend
+return
+
+get_order_number:
+extract record (ars10n,key=firm$+"N",tim=5,err=ars10n_locked)ars10n$
+order_number = ars10n.nxt_ord_nbr
+ars10n.nxt_ord_nbr = ars10n.nxt_ord_nbr + 1
+ars10n$ = field(ars10n$)
+write record (ars10n,key=smc01.firm_id$+"N")ars10n$
+order_num$ = str(order_number:"0000000")
+return
+ars10n_locked:
+if err=0 then 
+  wait 1 
+  retry 
+else 
+  goto pgm_err
+fi
+return
+
+do_order:
+taxable=0,tax=0,subtotal=0,total=0
+are03.firm_id$ = smc01.firm_id$
+are03.ar_type$ = "  "
+are03.customer_nbr$ = smc01.customer_nbr$
+are03.order_number$ = order_num$
+are03.sequence_000$ = "000"
+are03.invoice_type$ = "S"
+are03.ord_inv_flag$ = "O"
+are03.backord_flag$ = " "
+are03.invoice_date$ = fndate$(jul(0,0,0))
+are03.ar_ship_date$ = fndate$(jul(0,0,0)+1)
+are03.ar_ship_via$ = fill(10)
+are03.ar_inv_nbr$ = fill(7)
+
+rem ' set the PO Number
+rem ' ARM02   ACTIVE RENEW      BLANK or N
+rem ' then if
+rem ' SMC01   RENEW FLAG        N             Do NOT Generate Order
+rem ' SMC01   RENEW FLAG        BLANK or Y    Generate Order with SAM RENEW PO
+rem ' SMC01   RENEW FLAG        A             Generate Order with SAM ROLL PO
+rem ' 
+rem ' ARM02   ACTIVE RENEW      Y 
+rem ' then if
+rem ' SMC01   RENEW FLAG        N               Do NOT Generate Order
+rem ' SMC01   RENEW FLAG        BLANK or Y      Generate Order with SAM ROLL PO
+rem ' SMC01   RENEW FLAG        A               Generate Order with SAM ROLL PO
+
+rem ' set the contract type in the po number
+if smc01.contr_type$ = "SM1" then 
+	buildPO$ = "SAM"
+else
+	if smc01.contr_type$ = "RN1" then
+		buildPO$ = "RNT"
+	else
+		buildPO$ = "DVK"
+	fi
+fi
+
+rem ' Note: contracts with renew_flag$ set to N have already been excluded
+rem ' set the RENEW or ROLL in the PO Number
+if active_renew$ = "Y"
+    rem ' all get the ROLL PO
+    are03.ar_po_number$ = buildPO$ + " Roll"
+else
+    rem ' active_renew either N or blank
+    if smc01.renew_flag$ = " " or smc01.renew_flag$ = "Y" then
+        are03.ar_po_number$ = buildPO$ + " Renew"
+    else
+        rem ' smc01.renew flag$ = "A" (active renew at the contract level)
+        are03.ar_po_number$ = buildPO$ + " Roll"
+    fi
+fi
+
+are03.slspsn_code$ = arm02.slspsn_code$
+are03.terms_code$ = terms$
+are03.rel_to_ship$ = "Y"
+are03.reserved_str_2$=fill(9)
+are03.disc_code$ = arm10i.disc_code$
+are03.dist_code$ = arm02.dist_code$
+are03.ord_prt_flag$ = "N"
+are03.ord_lock$ = "Y"; rem ' lock until all related records are updated
+are03.message_code$ = arm02.message_code$
+are03.territory$ = arm02.territory$
+are03.list_prc_cde$ = "  "
+are03.date_ordered$ = are03.invoice_date$
+are03.tax_code$ = arm02.tax_code$
+are03.pricing_code$ = arm02.pricing_code$
+are03.ar_job_nbr$ = fill(10)
+are03.ord_taken_by$ = "+ON"
+are03.cash_sale$ = "N"
+are03.reprint_flag$ = " "
+are03.ord_cred_flg$ = " "
+are03.shipto_nbr$ = fill(6)
+are03.tax_amount = tax
+are03.freight_amt = 0
+are03.discount_amt = 0
+are03.comm_percent = 0
+are03.taxable_amt = taxable
+are03.comm_amt = 0
+are03.total_sales = total
+are03.total_cost = 0
+are03_key$=are03.firm_id$+are03.ar_type$+are03.customer_nbr$+are03.order_number$+are03.sequence_000$
+are03$ = field(are03$)
+write record (are03,key=are03_key$)are03$
+
+are04.firm_id$ = are03.firm_id$
+are04.ord_inv_flag$ = are03.ord_inv_flag$
+are04.ar_type$ = are03.ar_type$
+are04.customer_nbr$ = are03.customer_nbr$
+are04.order_number$ = are03.order_number$
+are04_key$=are04.firm_id$+are04.ord_inv_flag$+are04.ar_type$+are04.customer_nbr$+are04.order_number$
+are04$ = field(are04$)
+write record (are04,key=are04_key$)are04$
+
+are43.firm_id$ = are03.firm_id$
+are43.ar_type$ = are03.ar_type$
+are43.customer_nbr$ = are03.customer_nbr$
+are43.order_number$ = are03.order_number$
+are43_key$=are43.firm_id$+are43.ar_type$+are43.order_number$+are43.customer_nbr$
+are43$ = field(are43$)
+write record (are43,key=are43_key$)are43$
+
+rem ' Now loop through the detail lines from the line temporary file
+extract record(line_tmp,key="",knum=0,dom=*next)
+while 1
+  kl$=key(line_tmp,end=*break)
+  read record(line_tmp,key=kl$)line_tmp$
+  dim iv_item$(20),wx1$(40),wx[5]
+  iv_item$(1)=line_tmp.prod_id$+"SAM1"
+  wx1$(4,3)=smc01.contr_type$
+  wx[2]=num(line_tmp.users$)
+  wx[3]=num(line_tmp.users1$)
+  wx1$(10,2)=line_tmp.lic_prop$
+  wx1$(12,2)=line_tmp.lic_prop1$
+  ORDQTY=line_tmp.quantity
+  disc=arm10i.disc_percent
+  SALECD$=str(disc:"00")
+  samfactor=365
+  
+  rem ' no longer used - now using the Price Engine
+  rem ' CALL "CSC.PC",channels[ALL],smc01.firm_id$,ivs01.warehouse_id$,iv_item$,are03.list_prc_cde$,smc01.customer_nbr$,are03.date_ordered$,are03.pricing_code$,ORDQTY,TYPEFLAG$,PRICE,DISC,NEWDISC,STATUS,WX1$,WX[ALL],SALECD$,LISTPRICE,SAMFACTOR
+
+  tb!.setCanadian(0)
+  if canadian_table then
+	tb!.setCanadian(canadian_table)
+  else
+	if internetworx then
+	    rem ' internetworx is always false
+		tb!.setInternetworx(internetworx)
+	fi
+  fi
+
+  rem ' get serial number
+  read record(serial_tmp,key=line_tmp.line_nbr$,dom=*next)serial_tmp$
+  read record(serial_tmp)serial_tmp$
+  rem ' assume there is only one serial nbr per line
+  sn! = new SerialNumber(cvs(serial_tmp.serial_nbr$, 3))
+  
+  rem ' used to begin sending out SAM Renewal notices prior to a price increase
+  rem ' useAlternate = 0
+  rem ' if sn!.getFirmId() = "02" and sn!.getSAMExpirationDate() > "20211231" then useAlternate = 1
+  rem ' tb!.setAltPriceTable(useAlternate)                                        
+    
+  if smc01.contr_type$ = "SM1" then
+     priceElements! = tb!.calcAnnualSam(sn!)
+  else
+     if smc01.contr_type$ = "RN1" then
+        priceElements! = tb!.calcAnnualRental(sn!)
+     else
+        if smc01.contr_type$ = "DV1" then
+           priceElements! = tb!.calcAnnualKitRenew(sn!)
+        fi
+     fi
+  fi
+  price = tb!.sumDiscountedPrice(priceElements!)
+  
+  rem ' adjust the discount for BSG + 5% discount if need be
+  if pos(arm02.cust_type$(1,1)="AMP") and smc01.firm_id$<>"01" then
+	listprice = tb!.sumListPrice(priceElements!)
+	if disc > 0 then
+		price = listprice * (1 - (disc/100))
+	fi
+  fi
+  listprice = 0; rem ' not used
+    
+	rem ' if canadian table then convert canadian dollars to us dollars for storage
+	if canadian_table then
+		rem ' price first
+		amountin = price, amountout = 0
+		call "canDollConversion", canadian_exch$, 1, amountin, amountout
+		price = amountout
+		rem ' listprice next
+		amountin = listprice, amountout = 0
+		call "canDollConversion", canadian_exch$, 1, amountin, amountout
+		listprice = amountout
+	endif
+
+  subtotal=subtotal+(price*line_tmp.quantity)
+  
+  rem ' SM1 iv_item$ set above, do RN1 and DV1 here
+  if smc01.contr_type$ = "RN1" or smc01.contr_type$ = "DV1" then
+     iv_item$(1) = sn!.getProduct() + sn!.getPlatform() + sn!.getOSLevel() + sn!.getProductRev() + sn!.getLicenseType()
+  endif
+  
+  find record (ivm01,key=smc01.firm_id$+iv_item$,dom=*next)ivm01$;goto set_line_detail
+  if len(cvs(iv_item$,1+2))<15 or iv_item$(1,3)<>"BAS" then goto set_line_detail
+  dim hold_item$(20)
+  hold_item$(1)=iv_item$,iv_item$(10,3)="CUR",iv_item$(13,3)="EXP"
+  find record (ivm01,key=smc01.firm_id$+iv_item$)ivm01$
+  iv_item$(1)=hold_item$
+  set_line_detail:
+  are13.firm_id$ = are03.firm_id$
+  are13.ar_type$ = are03.ar_type$
+  are13.customer_nbr$ = are03.customer_nbr$
+  are13.order_number$ = are03.order_number$
+  are13.line_number$ = line_tmp.line_nbr$
+  are13.line_code$ = "S"
+  are13.man_price$ = "N"
+  are13.product_type$ = ivm01.product_type$
+  are13.pull_assmble$ = "P"
+  are13.warehouse_id$ = ivs01.warehouse_id$
+  are13.item_number$ = iv_item$
+  are13.order_memo$ = fill(40)
+  are13.est_shp_date$ = are03.ar_ship_date$
+  are13.commit_flag$ = "Y"
+  are13.pick_flag$ = " "
+  are13.reserved_str_2$=fill(19)
+  are13.unit_cost = 0
+  are13.unit_price = price
+  are13.qty_ordered = line_tmp.quantity
+  are13.qty_backord = 0
+  are13.qty_shipped = line_tmp.quantity
+  are13.std_list_prc = listprice
+  are13.ext_price = price*line_tmp.quantity
+  are13.taxable_amt = 0
+  if arm10e.taxable_flag$="Y" and ivm01.taxable_flag$="Y" then are13.taxable_amt=are13.ext_price
+  are13.disc_percent = disc
+  are13.comm_percent = 0
+  are13.comm_amt = 0
+  are13.spl_comm_pct = 0
+  are13.disc_cust = newdisc
+  are13_key$=are13.firm_id$+are13.ar_type$+are13.customer_nbr$+are13.order_number$+are13.line_number$
+  are13$ = field(are13$)
+  write record (are13,key=are13_key$)are13$
+
+  are07.firm_id$ = are13.firm_id$
+  are07.warehouse_id$ = are13.warehouse_id$
+  are07.item_number$ = are13.item_number$
+  are07.ar_type$ = are13.ar_type$
+  are07.order_number$ = are13.order_number$
+  are07.line_number$ = are13.line_number$
+  are07.customer_nbr$ = are13.customer_nbr$
+  are07_key$=are07.firm_id$+are07.warehouse_id$+are07.item_number$+are07.ar_type$+are07.order_number$+are07.line_number$+are07.customer_nbr$
+  are07$ = field(are07$)
+  write record (are07,key=are07_key$)are07$
+  are73.firm_id$ = are13.firm_id$
+  are73.ar_type$ = are13.ar_type$
+  are73.customer_nbr$ = are13.customer_nbr$
+  are73.order_number$ = are13.order_number$
+  are73.line_number$ = are13.line_number$
+  are73.media_type$ = "N/A"
+  
+  if smc01.contr_type$ = "SM1" then
+     are73.type_of_sale$ = wx1$(4,3)
+  else
+     are73.type_of_sale$ = "RNW"
+  endif
+  
+  are73.fixed_float$="F"
+  are73.lic_property1$ = line_tmp.lic_prop$
+  are73.lic_property2$ = line_tmp.lic_prop1$
+  
+  if smc01.contr_type$ = "SM1" then
+     are73.exp_type$ = wx1$(16,3)
+  else
+     if smc01.contr_type$ = "RN1" then
+     	are73.exp_type$ = "RN1"
+     else
+     	if smc01.contr_type$ = "DV1" and sn!.getLicenseType() = "NFR" then
+     	   are73.exp_type$ = "NFR"
+     	else
+     	   are73.exp_type$ = "KIT"
+     	endif
+     endif
+  endif
+  
+  are73.dealer_str$=fill(4)
+  are73.contract$=line_tmp.contract$
+  are73.media_qty = 0
+  are73.users = num(line_tmp.users$)
+  are73.users2 = num(line_tmp.users1$)
+  are73_key$=are73.firm_id$+are73.ar_type$+are73.customer_nbr$+are73.order_number$+are73.line_number$
+  are73$ = field(are73$)
+  write record (are73,key=are73_key$)are73$
+  rem " loop thru serial nbrs temporary file
+  license_seq$ = str(license_seq:"001"); rem ' always 001
+  sequence_nbr = 0; rem ' increment for each serial number
+  extract record(serial_tmp,key=line_tmp.line_nbr$,dom=*next)
+  while 2
+     ks$=key(serial_tmp,end=*break)
+     read record(serial_tmp,key=ks$)serial_tmp$
+     if serial_tmp.line_nbr$<>line_tmp.line_nbr$ then continue
+     gosub write_are83
+     remove(serial_tmp,key=ks$)
+  wend
+  remove(line_tmp,key=kl$)
+wend
+
+if canadian_table then
+	rem 'write the exchange rate record for this order
+	dim art03_canada$:fattr(art03_canada$)
+	art03_canada.firm_id$ = are03.firm_id$
+	art03_canada.customer_nbr$ = are03.customer_nbr$
+	art03_canada.invoice_date$ = are03.invoice_date$
+	art03_canada.order_number$ = are03.order_number$
+	art03_canada.ar_inv_nbr$ = fill(7)
+	art03_canada.ratedate$ = canadian_exch.ratedate$
+	art03_canada.sequence_nbr$ = canadian_exch.sequence_nbr$
+	art03_canada.to_us_doll = canadian_exch.to_us_doll
+	art03_canada.to_cana_doll = canadian_exch.to_cana_doll
+	art03_canadaKey$ = art03_canada.firm_id$ + art03_canada.customer_nbr$ + art03_canada.invoice_date$ + art03_canada.order_number$
+	write record(art03_canada,key=art03_canadaKey$)art03_canada$
+endif
+
+taxable = subtotal
+precision 6
+tax=taxable*arm10b.tax_rate/100
+precision 2
+total = subtotal + tax
+are03.tax_amount = tax
+are03.taxable_amt = taxable
+are03.total_sales = total
+are03.ord_lock$ = "N"; rem ' unlock the order header
+are03$ = field(are03$)
+write record (are03,key=are03_key$)are03$
+return
+
+write_are83:
+sequence_nbr = sequence_nbr + 1
+sequence_nbr$ = str(sequence_nbr:"000")
+are83.action$ = "M"
+are83.auth_code$ = ""
+are83.license_cnt = 0
+are83.firm_id$ = are13.firm_id$
+are83.ar_type$ = are13.ar_type$
+are83.customer_nbr$ = are13.customer_nbr$
+are83.order_number$ = are13.order_number$
+are83.line_number$ = are13.line_number$
+are83.license_seq$ = license_seq$
+are83.sequence_nbr$ = sequence_nbr$
+are83.snhist_flag$ = "N"
+are83.contract$ = line_tmp.contract$
+are83.sam_active$ = "Y"
+are83.dealer_str$=fill(1)
+are83.serial_nbr$ = serial_tmp.serial_nbr$
+are83_key$ = are83.firm_id$+are83.ar_type$+are83.customer_nbr$+are83.order_number$+are83.line_number$+are83.license_seq$+are83.sequence_nbr$
+are83$ = field(are83$)
+write record (are83,key=are83_key$)are83$
+return
+
+pgm_err:
+rem ' debugging
+rem ' to$="kurt.e.williams@comcast.net"
+to$="misdev@basis.cloud"
+from$="customer-service@basis.cloud"
+cc$=""
+subj$="Program error"
+msg$="Error "+str(err)+" in "+str(tcb(5))+" of "+pgm(-2)+" "+errmes(-1)
+gosub notify
+goto pgm_exit
+
+notify:
+	rem ' from$, to$, cc$ and subject set else where
+	bcc$ = ""
+	file$ = ""
+	
+	msgtxt$ = msg$
+	msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+
+	call "sendEmail.src", from$, to$, cc$, bcc$, subj$, msgtxt$, file$
+
+return
+
+pgm_exit:
+close(serial_tmp,err=*next)
+close(line_tmp,err=*next)
+erase csvfile$,err=*next
+erase serial_file$,err=*next
+erase line_file$,err=*next
+run "sam_credit_select.bbj",err=*next
+release

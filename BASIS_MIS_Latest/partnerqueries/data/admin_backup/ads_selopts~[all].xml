@@ -1,0 +1,523 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADS_SELOPTS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADQ_FAXEMAIL_INF</DD_TABLE_ALIAS>
+		<SELECTION_ID>PLEWISEMAIL     </SELECTION_ID>
+		<SELECTION_DESC>from, reply to, to     setup            </SELECTION_DESC>
+		<USER_ID>PLEWIS          </USER_ID>
+		<PRIVATE>N</PRIVATE>
+		<SELECTION_OPTS>E^3^5^A^^^^^^plews@basis.com^plewis@basis.com^plewis@basis.com^^^^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADX_COPYAON     </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>/mnt/data/aon_prod/v1110^U^0^0^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADX_COPYMODS    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>/mnt/data/previous/apps/examples/config/examples.syn^/mnt/data/aon_prod/v1110/examples^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADX_SEND_EMAIL  </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>PLEWIS          </USER_ID>
+		<SELECTION_OPTS>^^plewis@basis.com^^^Sep 2011 P&L^/mnt/data/aon_prod/documents/0001011813.pdf^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADX_UPDATESYN   </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>/mnt/data/aon_prod/v1110/aon/config/addon.syn^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^/mnt/data/aon_prod/v1110/aon/data/^1^/mnt/data/previous/apps/aon/config/addon.syn^                                                                                                                                                                                                                                                                                                                                                                                                                                           </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADX_UPGRADEWIZ  </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>AON_V1803^AddonSoftware Version 18.03^/mnt/data/aon_prod/v18/v1803^/mnt/data/aon_prod/v17/v1710^/mnt/data/aon_prod/v17/v1710^/mnt/data/aon_prod/v17/v1710/barista/admin_backup^0^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APM_APP_LIST    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>N^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_AGINGREPORT </DD_TABLE_ALIAS>
+		<SELECTION_ID>INVOICE DATE    </SELECTION_ID>
+		<SELECTION_DESC>Age by invoice date                     </SELECTION_DESC>
+		<USER_ID>KIMP            </USER_ID>
+		<PRIVATE>N</PRIVATE>
+		<SELECTION_OPTS>20091202^I^^V^D^P^^^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_CHECKREPORT </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KPETERL         </USER_ID>
+		<SELECTION_OPTS>20170601^20170630^^^^^A^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_LABELS      </DD_TABLE_ALIAS>
+		<SELECTION_ID>TEST            </SELECTION_ID>
+		<USER_ID>KIMP            </USER_ID>
+		<PRIVATE>N</PRIVATE>
+		<SELECTION_OPTS>01^A^1^^^^^^^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_NAMEADDRESS </DD_TABLE_ALIAS>
+		<SELECTION_ID>EXPORT          </SELECTION_ID>
+		<SELECTION_DESC>Export Format                           </SELECTION_DESC>
+		<USER_ID>BARISTA         </USER_ID>
+		<SELECTION_OPTS>01^^^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_NAMEADDRESS </DD_TABLE_ALIAS>
+		<SELECTION_ID>PRINT           </SELECTION_ID>
+		<SELECTION_DESC>Print Selected Vendors                  </SELECTION_DESC>
+		<USER_ID>BARISTA         </USER_ID>
+		<SELECTION_OPTS>01^000100^000200^N^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_RECEIPTS    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>NSPENCE         </USER_ID>
+		<SELECTION_OPTS>002502^D^^20181003^20191003^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ARR_DRLLDOWN    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KKING           </USER_ID>
+		<SELECTION_OPTS>08^2015^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ARR_LABELS      </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>01^N^00000001^^^^^^^^^^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ARR_NAMEADDRESS </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>BARISTA         </USER_ID>
+		<SELECTION_OPTS>01^C^^^^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ARR_NAMELIST    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>01^M^^^^^^^^^^^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>DDR_TABLES      </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>APM_VENDMAST    ^APM_VENDMAST    ^^^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_13PERIOD    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>05^2018^^N^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_ACCTLIST    </DD_TABLE_ALIAS>
+		<SELECTION_ID>TEST            </SELECTION_ID>
+		<SELECTION_DESC>gl                                      </SELECTION_DESC>
+		<USER_ID>KIMP            </USER_ID>
+		<PRIVATE>Y</PRIVATE>
+		<SELECTION_OPTS>1005000000^1510000000^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_RECURRING   </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>BARISTA         </USER_ID>
+		<SELECTION_OPTS>01^N^^10^2009^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLX_FIXGLM32    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>POR_CALENDAR    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>PLEWIS          </USER_ID>
+		<SELECTION_OPTS>04/01/2012^07/01/2013^04^2012^04^2013^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>POR_OPENPO      </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>PEGGYL          </USER_ID>
+		<SELECTION_OPTS>V^^^^^^^O^20090901^20091102^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>POR_OPENREQSN   </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>JKARASZ         </USER_ID>
+		<SELECTION_OPTS>V^^^^^^^O^^^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>PQY_INACTIVE_PAR</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>JKARASZ         </USER_ID>
+		<SELECTION_OPTS>20161114^RS^PB,PS,PG^50^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ARR_AGINGREPORT </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>01^20200922^I^D^C^N^^^^^^^Y^Y^Y^^Y^^30^20200923^20200824^20200922^20200725^20200823^20200625^20200724^20200526^20200624^20200525^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_PURCHASES   </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>JKARASZ         </USER_ID>
+		<SELECTION_OPTS>01^12^2020^V^A^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>XTR_BARISTA_LIC </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>kw5121151@gmail.com^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLM_SUMMACTIVITY</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>01^1005000000^A^Y^N^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_RECURRING   </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>GPARRA          </USER_ID>
+		<SELECTION_OPTS>11^2021^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_SUMMARY     </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>^^^N^Y^2A^0A^4A^  ^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_COMMENTS    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>01^^^P^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APX_EXPORT1099  </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KPETERL         </USER_ID>
+		<SELECTION_OPTS>01^.01^/tmp^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SELECTION_OPTS>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </SELECTION_OPTS>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SELECTION_OPTS>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </SELECTION_OPTS>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADQ_FAXEMAIL_INF</DD_TABLE_ALIAS>
+		<SELECTION_ID>NAMEADD         </SELECTION_ID>
+		<SELECTION_DESC>Name and Address List                   </SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<PRIVATE>N</PRIVATE>
+		<SELECTION_OPTS>E^3^5^A^^^^^^BASIS     ^customer-service@basis.cloud^customer-service@basis.cloud^kw5121151@gmail.com^kw5121151@gmail.com^^Name & Address^Here it is[$0a$]^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADQ_FAXEMAIL_INF</DD_TABLE_ALIAS>
+		<SELECTION_ID>BASISEMAIL      </SELECTION_ID>
+		<SELECTION_DESC>Setup for the BASIS email account       </SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<PRIVATE>N</PRIVATE>
+		<SELECTION_OPTS>E^3^5^P^^^^^^BASIS     ^customer-service@basis.cloud^customer-service@basis.cloud^jkarasz@basis.cloud, nspence@basis.cloud^kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud^^Invoices Awaiting Approval^There are Accounts Payable invoices awaiting your approval. See attachment for details.^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADQ_FAXEMAIL_INF</DD_TABLE_ALIAS>
+		<SELECTION_ID>BASISEMAIL2     </SELECTION_ID>
+		<SELECTION_DESC>BASIS Email Account - from nspence      </SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<PRIVATE>N</PRIVATE>
+		<SELECTION_OPTS>E^3^5^P^^^^^^BASIS     ^nspence@basis.cloud^customer-service@basis.cloud^, kimp@basis.cloud^nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud^^Invoices Approval Status^Approver NSPENCE has exited the Payment Selection Form. See attachment for details.^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADQ_FAXEMAIL_INF</DD_TABLE_ALIAS>
+		<SELECTION_ID>BASISEMAIL3     </SELECTION_ID>
+		<SELECTION_DESC>Another setup                           </SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<PRIVATE>N</PRIVATE>
+		<SELECTION_OPTS>E^3^5^P^^^^^^BASIS     ^nspence@basis.cloud^customer-service@basis.cloud^kimp@basis.cloud^nspence@basis.cloud, gparra@basis.cloud, jkarasz@basis.cloud, lchurch@basis.cloud^^Invoices Approval Status^Approver NSPENCE has exited the Payment Selection Form. See attachment for details.^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLM_COPYFIN     </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>NSPENCE         </USER_ID>
+		<SELECTION_OPTS>01^91^01^90^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ARR_CASHRECEIPTS</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>01^D^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_LABELS      </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>01^N^00000001^^^^^^^^P^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_VENDINV     </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>NSPENCE         </USER_ID>
+		<SELECTION_OPTS>001080^AP^^B^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_TRIALBALANCE</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KPETERL         </USER_ID>
+		<SELECTION_OPTS>12^2021^N^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_AGINGREPORT </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>AP^20230814^D^^V^D^P^^N^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_CASHREQUIRE </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>AP^01^20230814^D^V^D^P^^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_DETAIL      </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>01^^^^P^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_NAMEADDRESS </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>01^^^P^^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_LEDGERS     </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SELECTION_OPTS>01^^^^P^^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ARR_DETAIL      </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>01^^^^N^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADX_MVUPGRDFILES</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>/mnt/data/aon_prod/v23/app_data/^AON_V2305^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADX_UPDATEXML   </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>/mnt/data/aon_prod/v23/v2305/aon/data/sync^1^/mnt/data/aon_prod/v21/v2100/aon/data/sync^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_ACCTLIST    </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>GPARRA          </USER_ID>
+		<SELECTION_OPTS>^^^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_FINANCIALS  </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>ADMIN           </USER_ID>
+		<SELECTION_OPTS>09^2023^^N^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_TRANSHISTORY</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KPETERL         </USER_ID>
+		<SELECTION_OPTS>01^D^^^7^2023^12^2023^^4015000000^4015000000^^A^^Y^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_DISBURSEMNTS</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KPETERL         </USER_ID>
+		<SELECTION_OPTS>01^11^2023^C^A^^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_BALANCE     </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>KPETERL         </USER_ID>
+		<SELECTION_OPTS>10^2023^Y^Y^N^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APE_INVDATE     </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>GPARRA          </USER_ID>
+		<SELECTION_OPTS>N^20240118^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_INVOICEENTRY</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>GPARRA          </USER_ID>
+		<SELECTION_OPTS>^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APE_PAYSELECT   </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>GPARRA          </USER_ID>
+		<SELECTION_OPTS>01^20240118^^C^^^^0^^0^^^9734.99^0^9734.99^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>APR_CHECKS      </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>GPARRA          </USER_ID>
+		<SELECTION_OPTS>01^20240118^0000000001^0030611^N^AP^^V^C^A^VCA^Y^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>ADQ_FAXEMAIL_INF</DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>JAYA            </USER_ID>
+		<SELECTION_OPTS>E^3^5^A^^^^^^^kimp@basis.cloud^^jkarasz@basis.cloud, nspence@basis.cloud^kimp@basis.cloud, gparra@basis.cloud, lchurch@basis.cloud^^Invoices Awaiting Approval^There are Accounts Payable invoices awaiting your approval. See attachment for details.^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_DAILYDETAIL </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>GPARRA          </USER_ID>
+		<SELECTION_OPTS>^^^^A^^^^^^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<DD_TABLE_ALIAS>GLR_PROFITLOSS  </DD_TABLE_ALIAS>
+		<SELECTION_ID>!LAST_PROCESS   </SELECTION_ID>
+		<SELECTION_DESC>Last Selection Options Processed</SELECTION_DESC>
+		<USER_ID>GPARRA          </USER_ID>
+		<SELECTION_OPTS>1^2024^Y^Y^N^                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               </SELECTION_OPTS>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

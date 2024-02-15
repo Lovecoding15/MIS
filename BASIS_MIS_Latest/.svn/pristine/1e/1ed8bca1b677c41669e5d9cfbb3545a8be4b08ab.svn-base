@@ -1,0 +1,189 @@
+0010 REM "SMC - SAM Contract Renewal Report"
+0020 REM "Program SMC.20"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| BASIS Program - Developed using ADD-ON Interface          |"
+0026 REM "|                                                           |"
+0028 REM "| February 2001                                             |"
+0030 REM "+-----------------------------------------------------------+"
+0040 REM 
+0050 BEGIN 
+0085 SETESC 9000
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files"
+0110 LET FILES=4
+0120 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0130 LET FILES$[1]="SYS-01",FILES$[2]="ARM-01",FILES$[3]="SMC-01",FILES$[4]="SNM-01"
+0140 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0150 IF STATUS>0 THEN GOTO 9900
+0160 LET SYS01_DEV=CHANNELS[1],ARM01_DEV=CHANNELS[2],SMC01_DEV=CHANNELS[3],SNM01_DEV=CHANNELS[4]
+0200 REM " --- IOLIST's"
+0210 call "templates.pgm::ARM01"
+0220 call "templates.pgm::SMC01"
+0230 call "templates.pgm::SNM01"
+0260 ARS01A: IOLIST X$,P1$,P2$,P3$,P4$,M0$,M1$,M2$,M3$
+0270 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET N0$=F0$(16,2),N1$=F4$,N2$="AR",N4$=F5$
+0430 FIND (SYS01_DEV,KEY=N0$+N2$+"00",DOM=9800)IOL=ARS01A
+0500 REM " --- Initialize Data"
+0510 LET L9=58,L=L9+1,HEADINGS=3,WIDTH=80,PAGE=0,start_dt$=fndate$(jul(0,0,0))
+0520 DIM HEADINGS$[HEADINGS]
+0530 LET HEADINGS$[0]=N1$,HEADINGS$[1]="SAM Renewal Report",CLOCK$="",WHEN$=F0$(7,3)
+0600 REM " --- Background"
+0610 CALL "SYC.WC",1,0,80,0,0,6,0
+0620 PRINT 'SB',@(31,3),"Start Date:",@(30,5),"Within Days:",'sf'
+0630 print @(45,3),fnb$(start_dt$)
+0700 REM " --- Start Date"
+0710 LET V0$="D",V1$="",V2$=start_dt$,v3$="",V0=3,V1=45,V2=3,i0=0
+0720 LET V4$="Enter the starting date for scanning"
+0730 GOSUB 7000
+0740 ON V3 GOTO 0750,0700,0700,0700,0850
+0750 LET start_dt$=v$
+0800 REM " --- Number of Days"
+0810 LET V0$="M",V1$="C",V2$=str(DAYS),V3$="000",V4$="Enter the number of days from starting date until renewal",V0=3,V1=45,V2=5
+0820 GOSUB 7000
+0830 ON V3 GOTO 0835,0800,0700,0800,0850
+0835 if v<0 THEN GOTO 0800
+0840 LET days=v
+0845 LET HEADINGS$[2]="Contracts to be Renewed in the Next "+str(days)+" Days Starting from "+fnb$(start_dt$)
+0850 REM " --- Correct?"
+0860 LET V0$="Y",V1$="C^",V2$="Y",V3$="",V4$="Is The Above Information Correct (Y/N)?",V0=1,V1=FNV(V4$),V2=22
+0870 GOSUB 7000
+0875 IF V3=4 THEN GOTO 9900
+0880 ON POS(V$="YN") GOTO 0850,0890,0800
+0890 PRINT @(30,7),"SAM Renewal Report"
+1000 REM " --- Initial Read"
+1010 first=0,start_dt$=fnb$(start_dt$),mm=num(start_dt$(1,2)),dd=num(start_dt$(4,2)),yy=num(start_dt$(7,2))+2000
+1015 start_jul=jul(yy,mm,dd),start_dt$=date(start_jul:"%Yl%Mz%Dz"),end_jul=start_jul+days
+1020 end_dt$=date(end_jul:"%Yl%Mz%Dz")
+1030 extract record(smc01_dev,key=start_dt$,knum=2,dom=contract_loop)
+1100 contract_loop:
+1105 REM " --- Main Read"
+1110 read record(smc01_dev,end=report_finish)smc01$
+1120 smc01$=field(smc01$)
+1130 if smc01.annual_dt$>end_dt$ then goto report_finish
+1135 if pos(smc01.customer_nbr$="008450001081001031007808004033002786003017",6) or smc01.firm_id$<>n0$ then goto contract_loop
+1140 if pos(smc01.contr_type$(1,2)="SM",2)=0 or smc01.sam_active$="N" then goto contract_loop
+1145 if smc01.renew_flag$="N" then goto contract_loop
+1147 if smc01.invoiced_flag$ = "I" then goto contract_loop
+1150 if first then goto continue_rpt
+1160 CALL "BPS.01",3,PRTR$,STATUS; IF STATUS THEN GOTO 9900
+1170 CALL "SYC.GA",7,1,"",PRTR$,STATUS
+1180 IF STATUS THEN GOTO 9900
+1190 first=1
+1500 continue_rpt:
+1520 gosub find_customer
+1525 gosub find_serial
+1526 if serial_msg$<>"" then goto contract_loop
+1530 IF L>L9 THEN GOSUB do_headings
+1540 PRINT (7)@(5),smc01.contract$,@(15),arm01.firm_id$,"-",arm01.customer_nbr$,@(27),cust_name$,@(61),smc01.annual_dt$(5,2),"/",smc01.annual_dt$(7,2),"/",smc01.annual_dt$(1,4)
+1550 LET L=L+1
+1560 if cvs(smc01.comment$,1+2)<>"" then print(7)@(10),"Comment: ",cvs(smc01.comment$,1+2);l=l+1
+1570 if serial_msg$<>"" then print(7)@(10),serial_msg$;l=l+1
+1590 GOTO contract_loop
+2000 report_finish:
+2010 if first=0 then gosub no_contracts
+2020 run "SYS.AA"
+5000 do_headings:
+5005 REM " --- Heading"
+5010 CALL "SYC.HA",7,HEADINGS$[ALL],HEADINGS,PAGE,WIDTH,WHEN$,CLOCK$,STATUS
+5015 IF STATUS>0 THEN EXITTO 9900
+5020 LET L=HEADINGS+1
+5040 PRINT (7)""
+5050 PRINT (7)@(5),"Contract",@(15),"Customer",@(27),"Name",@(61),"Annual Date",'lf'
+5080 LET L=L+4
+5090 RETURN 
+6000 find_customer:
+6005 REM " --- Find Customer"
+6010 dim cust_name$(30)
+6020 find record(ARM01_DEV,KEY=smc01.firm_id$+smc01.customer_nbr$,DOM=customer_nof)arm01$
+6040 IF cvs(arm01.cust_name$,1+2)="" THEN goto customer_nof
+6050 LET cust_name$(1)=arm01.cust_name$
+6060 GOTO customer_done
+6065 customer_nof:
+6070 LET cust_name$(1)="Not On File"
+6080 customer_done:
+6090 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8070 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+8145 REM " --- FNYY21_YY$ Un-Convert 21st Century 2-Char Year to 2-Char Year"
+8150 DEF FNYY21_YY$(Q1$)
+8155 LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+8160 RETURN Q1$
+8165 FNEND
+8170 REM " --- FNYY_YEAR Convert 2-Char Year to 21st Century Numeric Year"
+8175 DEF FNYY_YEAR(Q1$)
+8180 LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+8185 RETURN Q
+8190 FNEND
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+8245 LET Q=1,Q0=0
+8250 WHILE LEN(Q2$(Q))
+8255 IF POS(Q2$(Q,1)="-()") THEN LET Q0=Q0+1 ELSE LET Q2$(Q,1)="X"
+8260 LET Q=Q+1
+8265 WEND
+8270 IF LEN(Q1$)>LEN(Q2$)-Q0 THEN LET Q1$=Q1$(1,LEN(Q2$)-Q0)
+8280 RETURN STR(Q1$:Q2$)
+8290 FNEND
+8500 def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 RUN "SYS.AA"
+9999 END
+10000 find_serial:
+10100 serial_cnt=0,serial_msg$=""
+10110 read(snm01_dev,key=smc01.contract$,knum=3,dom=*next)
+10120 serial_loop:
+10130 read record(snm01_dev,end=serial_done)snm01$
+10135 if snm01.contract$<>smc01.contract$ then goto serial_done
+10140 if snm01.active_flag$="N" or snm01.sam_active$="N" then goto serial_loop
+10150 serial_cnt=serial_cnt+1
+10160 goto serial_loop
+10170 serial_done:
+10180 if serial_cnt=0 then serial_msg$="There are no serial numbers or no active ones on this contract."
+10190 return
+11700 no_contracts:
+11710 DIM MESSAGE$[1]
+11720 LET MESSAGE$[0]="There are no SAM Contracts that are due for Renewal"
+11730 LET MESSAGE$[1]="within this time frame (<Enter>=Continue)"
+11740 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+11750 RETURN

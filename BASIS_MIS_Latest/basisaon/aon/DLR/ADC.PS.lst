@@ -1,0 +1,20 @@
+0010 REM "ADC - Bridge - ADD+ON Printer Selection"
+0020 REM "Program: ADC.PS"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0090 SETERR 9900
+0100 ENTER D_STATUS,OPTION$[ALL]
+1010 SETERR 1100
+1020 LET X$=OPTION$[3]
+1030 SETERR 9900
+1060 GOTO 1200
+1100 REM "--- Error referencing array"
+1110 SETERR 9900
+1120 DIM OPTION$[3]
+2020 CALL "SRC.PS",D_STATUS,OPTION$[ALL]
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

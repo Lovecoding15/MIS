@@ -1,0 +1,147 @@
+REM /**
+REM  * hostidXref.src
+REM  * @author kurt williams
+REM  *
+REM  */
+
+begin
+
+seterr pgm_err
+setesc pgm_err
+
+rem ' excuted from the command line
+
+rem ' argv(1) filename with full path of the file that contains the other arguments
+
+rem ' input arguments'
+rem ' line one is the hostid type: "token", "hash", or "full"
+rem ' line two is a hostid in the form that matches the type specified on line one 
+rem ' if line one is "full" then a line three in the input file is valid
+rem ' line three will be "Y" or "N" 
+rem ' "Y" means make a new entry in the hostidXref if the full hosdid passed in is not in the hostidXref table
+rem ' any other value on line three is the same as a "N" which means if the full hostid is not in the hostidXref return an "ERROR: NOT FOUND"
+rem ' will be returned on line one of the return file and if found the normal return values will be in the return file
+
+rem ' return file
+rem ' the return file will have the same name as the input file but with a "_return" append to the end of the filename and before the file suffix
+rem ' example  (input filename) /full_path/XXXXXXXXX.txt (return filename) /full_path/XXXXXXXXX_return.txt
+rem ' line one will be one of the following:
+rem '          ERROR: followed by the error text
+rem '          TOKEN: follwoed by the hostid token string
+rem ' line two will be:
+rem '          HASH: followed by the hostid hash string
+rem ' line three will be :
+rem '          FULL: followed by the full hostid string
+
+use ::HostId.src::HostId
+use ::HostId.src::HostIdConstants
+declare HostId hostIdLookup!
+declare HostIdConstants hostIdType!
+
+rem ' input file
+argFile$ = argv(1)
+argFile = unt
+open(argFile)argFile$
+
+rem ' return file
+p = pos("." = argFile$)
+returnFile$ = argfile$(1,p-1) + "_return" + argFile$(p)
+erase returnFile$, err=*next
+string returnFile$
+returnFile = unt
+open(returnFile)returnFile$
+
+while 1
+    
+    read (argfile)line$
+    if cvs(line$,7) <> "TOKEN" and cvs(line$,7) <> "HASH" and cvs(line$,7) <> "FULL" then
+      msg$ = "ERROR: INVALID TYPE"
+      exitto pgm_specific_err
+    else
+        type$ = cvs(line$,7)
+    fi
+    
+    while 1
+        read (argfile)line$
+        if len(line$) <> 0 then break
+    wend
+    inHostid$ = line$
+    
+    add = 0
+    if type$ = "FULL" then
+        rem ' get line hree
+        while 1
+            read (argfile, end = *break)line$
+            if len(line$) <> 0 then break
+        wend
+        if cvs(line$,7) = "Y" then
+            add = 1
+        else
+            add = 0
+        fi
+    fi
+        
+    tokenHostid$ = ""
+    hashHostid$ = ""
+    fullHostid$ = ""
+        
+    hostIdType! = new HostIdConstants()
+    
+    if type$ = "TOKEN" then
+        hostIdLookup! = new HostId(hostIdType!.TOKEN(), inHostid$)
+        if hostIdLookup!.exists() then
+            tokenHostid$ = hostIdLookup!.getHostidToken()
+            hashHostid$ = hostIdLookup!.getHostidHash()
+            fullHostid$ = hostIdLookup!.getHostidFull()
+        fi
+    else
+        if type$ = "HASH" then
+            hostIdLookup! = new HostId(hostIdType!.HASH(), inHostid$)
+            if hostIdLookup!.exists() then
+                tokenHostid$ = hostIdLookup!.getHostidToken()
+                hashHostid$ = hostIdLookup!.getHostidHash()
+                fullHostid$ = hostIdLookup!.getHostidFull()
+            fi
+        else
+            if type$ = "FULL" then
+            hostIdLookup! = new HostId(hostIdType!.FULL(), inHostid$)
+            if hostIdLookup!.exists() then
+                tokenHostid$ = hostIdLookup!.getHostidToken()
+                hashHostid$ = hostIdLookup!.getHostidHash()
+                fullHostid$ = hostIdLookup!.getHostidFull()
+            else
+                if add then
+                    success = hostIdLookup!.createNewHostidXrefEntry(inHostid$)
+                    if success then
+                        tokenHostid$ = hostIdLookup!.getHostidToken()
+                        hashHostid$ = hostIdLookup!.getHostidHash()
+                        fullHostid$ = hostIdLookup!.getHostidFull()
+                    else 
+                        msg$ = "ERROR: " + hostIdLookup!.getMessage()
+                        exitto pgm_specific_err
+                    fi
+                else
+                    msg$ = "ERROR: HOSTID DOES NOT EXIST NOT ADDED"
+                    exitto pgm_specific_err
+                fi
+            fi
+        fi
+    fi
+    break
+wend
+
+write (returnfile)"TOKEN: " + tokenHostid$
+write (returnfile)"HASH: " + hashHostid$
+write (returnfile)"FULL: " + fullHostid$
+close (argfile,err = *next)
+close (returnfile,err = *next)
+
+release 0
+
+pgm_specific_err:
+    write(returnFile)msg$
+    release -1024
+
+pgm_err:
+    release err * (-1)
+    

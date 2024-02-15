@@ -1,0 +1,213 @@
+EN:
+{
+Thank you for your order. If you are not the individual in your organization responsible for processing invoice(s), please forward this e-mail to them and contact BASIS with the new Accounts Payable contact information. 
+
+Attached to this e-mail is your invoice(s) in two formats; plain text and Adobe Portable Document Format (PDF).
+
+==> .PDF
+
+Open and print the PDF invoices(s) with the Adobe Acrobat Reader, available for download free at www.adobe.com. 
+
+For utmost security, the .PDF version includes an authentic BASIS electronic signature. If the signature appears unverified, follow the instructions in http://www.basis.cloud/company/invoice_verification.pdf.
+
+==> .TXT
+
+Open the text version of the invoice. To print correctly, the font must be a 10 point or smaller fixed-width style such as Courier or System. Change the font, if necessary, and print the file.
+
+Kind regards,
+
+
+BASIS International Ltd.
+Customer Service
+customer-service@basis.cloud
+ 1.505.938.6121 (US)
++1.505.338.4188 (International)
+}
+
+DE:
+{
+Subject: Ihre Rechnung Nr. <invoice>
+
+In der Anlage finden Sie Ihre mit elektronisch qualifizierter Unterschrift versehene Rechnung und die dazugehörige Signaturdatei. Sollte ein/e Kollege/in in Ihrem Unternehmen für diese Rechnung zuständig sein, so leiten Sie diese bitte weiter und treten mit uns unter eu.sales@basis.cloud in Kontakt, damit wir die e-Mail Adresse für Ihr Unternehmen aktualisieren. Bitte geben Sie uns eine e-Mail Adresse an, die unabhängig von Ihrer Abwesenheit jeden Tag eingesehen wird. 
+Nach den Regeln der GDPdU (Grundsätze zum Datenzugriff und zur Prüfbarkeit digitaler Unterlagen) sind Sie verpflichtet, diese Rechnung elektronisch aufzubewahren und die Unterschrift zu prüfen. 
+
+1. Zu diesem Zweck speichern sie BEIDE von uns in der Anlage erhaltenen Dateien auf Ihrem System. Auch das Ergebnis der nun folgenden  Prüfung muss gemeinsam mit der Rechnung und der Signaturdatei aufbewahrt werden.
+2. Bitte senden Sie die erhaltene Email zur Überprüfung der signierten Unterschrift an verify@dynevonet.de
+3. Sie erhalten umgehend eine weitere Email mit Ihrem Verifikationsbericht zugestellt
+4. Bitte speichern Sie diesen elektronischen Report gemeinsam mit der Rechnung. ACHTUNG: Wir empfehlen Ihnen, den Dateinamen des Verifikationsberichts bei der Speicherung analog zu Ihrer Rechnungsnummer anzugeben.
+
+Für Rückfragen stehen wir Ihnen gerne unter eu.sales@basis.cloud zur Verfügung.
+}
+
+FR:
+{
+Subject: No. de Facture <invoice>
+
+Vous trouverez ci-joint votre facture en format PDF, en format texte. Si vous ne pouviez pas l'ouvrir, vous avez besoin de la visionneuse Adobe Acrobat Reader que vous pouvez obtenir gratuitement sur le site www.adobe.com. Si vous imprimez en texte, veuillez utiliser, l'écriture de grosseur 10 (ou plus petit), afin de pouvoir imprimer la facture correctement. Si cette facture ne vous était pas destinée, nous vous prions de la transmettre à la personne adressée. Informez-nous de la nouvelle adresse email à laquelle nous devrons envoyer la facture à l'avenir.
+---------------------------------------------------------------------------------------
+Ce message est confidentiel et seulement destiné à la personne indiquée. Si vous ne deviez pas être le destinataire prévu de cet E-Mail voir son remplaçant, veuillez observer que chaque forme d'information, de publication, de copie ou de transmission du contenu de cet e-Mail est inacceptable. Nous vous prierons donc dans ce cas de vous mettre en relation avec l'expéditeur de l'email. En outre, nous attirons votre attention que des e-mails peuvent se perdre, être modifiés ou être dénaturés. Les e-mails traditionnels ne sont pas protégés contre l'accés d'une tierce personne, c'est pourquoi la confidentialité ne peut être garantie. Par l'envoi d'emails, malgré le programme de protection anti-virus que nous employons, nous ne pouvons pas non plus vous garantir que votre systéme ne sera pas affecté par un virus; nour ne portons aucune responsabilité pour tout dommage éventuel.
+---------------------------------------------------------------------------------------
+}
+#SAM invoice for firm 01
+SM_EN:
+{
+Subject: SAM renewal invoice  
+
+Your annual SAM (Software Asset Management) renewal invoice is attached. 
+
+To continue your SAM coverage, simply pay the attached invoice by the due date or pay online through b-commerce® at www.poweredbybbj.com.
+
+The BASIS SAM Plan software maintenance provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + discounts on BASIS training
+  + redundant license for fail safe solutions
+
+If you have any questions, please contact BASIS Sales at sales@basis.cloud or by phone at 1.505.938.6120 (U.S.) or +1.505.338.4188 (International).
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
+1.505.938.6121
+}
+
+#SAM invoice, English for firm 02
+SM_EN2:
+{
+Subject: SAM renewal invoice No. <invoice>
+
+Dear BASIS Customer,
+
+Attached is the annual SAM (Software Asset Management) renewal invoice number <invoice> that contains a qualified electronic signature. 
+
+Continue your SAM coverage
+==========================
+Simply pay the attached invoice before the due date according to your agreed terms. 
+
+BASIS SAM provides
+  + free product upgrades
+  + free technical support (some limitations apply)
+  + free license resets
+  + no reinstatement fees (12% of the cost of a new license)
+  + discounts for additional users
+  + redundant license for fail safe solutions
+
+View the invoice
+================
+BASIS generated this digitally signed invoice in PDF format. Reading and/or printing this PDF document requires ‘Adobe Reader’ version 7 or higher, available for free download at http://www.adobe.com/products/acrobat/readstep2.html.
+
+Verify the digital signature
+============================
+To verify the signature of this invoice, please read http://www.basis-europe.eu/billing.
+
+Call for assistance
+===================
+Do you have questions regarding your invoice? The BASIS Europe team is available by phone, Monday to Friday from 9:00 to 17:00 CET, at +49 (0)681 968140.
+
+Read our security instructions
+==============================
+Do you want to be able to distinguish fraudulent e-mail from our invoices? Please read our security instructions at http://www.basis-europe.eu/billing.
+
+Thank you for your confidence in BASIS products and services. We look forward to working with you in the future.
+
+Sincerely yours,
+
+BASIS Europe Distribution GmbH
+
+
+BASIS Europe Distribution GmbH, Nell-Breuning-Allee 6, 66115 Saarbrücken Registry Saarbrücken HRB 16820 – Executive Director: Nico Spence
+Phone: +49 (0)681 96814-0, Fax: +49 (0)681 96814-33, Email:
+eu.sales@basis.cloud
+}
+
+SM_NL:
+{
+Subject: jaarlijkse SAM-faktuur  
+
+Uw jaarlijkse SAM (Software Asset Management) faktuur is bijgesloten. 
+
+Om uw SAM-overeenkomst te verlengen betaalt u de bijgesloten faktuur voor de vervaldatum.
+
+BASIS SAM Plan - software-onderhoudsovereenkomst - voorziet in het volgende:
+
+  + gratis produkt upgrades
+  + gratis technisch support voor BASIS producten
+  + gratis licentie resets
+  + geen heraktiveringskosten (normaal 12% van de licentieprijs)
+  + korting op extra gebruikers
+  + korting op BASIS trainingen
+  + redundant licentie voor fail safe solutions
+
+Voor meer informatie kunt u kontakt opnemen met BASIS Europe:
+
+E-mail 	eu.sales@basis.cloud
+Telefoon	+31(0)20-8908133 ( Nederland )
++49(0)681-968140 ( Europa ) 
+
+
+BASIS Europe
+}
+
+SM_FR:
+{
+Subject: Facture de renouvellement SAM  
+
+Vous trouverez ci-jointe la facture de renouvellement de votre contrat annuel SAM (« Software Asset Management »).
+
+Pour continuer à profiter de votre couverture SAM, il vous suffit de payer la facture jointe par virement avant la date indiquée, ou sur le site b-commerce® www.poweredbybbj.com.
+
+Le plan de maintenance BASIS SAM vous offre
++ mise à jour gratuite des produits
++ maintenance technique gratuite (sauf quelques exceptions)
++ réinitialisation gratuite des licences
++ absence de frais de réinstallation (à hauteur de 12% du prix d’une nouvelle licence)
++ remises pour utilisateurs supplémentaires
++ remises sur le prix des formations BASIS
++ license redondante pour vos solutions high availability
+
+
+
+
+Pour plus d’informations, n’hésitez pas à contacter le Service des Ventes BASIS par email (eu.sales@basis.cloud) ou par téléphone : +33 (0)1 70 61 03 74 
+
+Merci beaucoup
+
+Cordialement
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++33 (0)1 70 61 03 74
+}
+
+SM_DE:
+{
+Subject: Rechnung für Ihre SAM-Verlängerung  
+
+Im Anhang finden Sie die Rechnung für die Verlängerung Ihres SAM-Wartungsvertrags.
+
+
+Um Ihren SAM-Wartungsvertrag zu verlängern, brauchen Sie nur die angehängte Rechnung vor dem Fälligkeitstermin zu überweisen.
+
+Ihr SAM Wartungsvertrag bietet Ihnen
+  + kostenlose Upgrades
+  + kostenlosen technischen Support (unter bestimmten Voraussetzungen)
+  + Kostenlose Lizenz-Resets
+  + Keine SAM-Reaktivierungsgebühren (12% der Kosten einer neuen Lizenz)
+  + Rabatte für zusätzliche Nutzer
+  + Rabatte für BASIS Trainings
+  + Redundante Lizenzen für Ausfallsichere Lösungen
+
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren BASIS Vertrieb.
+ Per E-Mail: eu.sales@basis.cloud. Per Telefon: +49 681 96814-0
+
+
+Herzliche Grüße
+
+BASIS Europe Distribution GmbH
+eu.sales@basis.cloud
++49 (0) 681 96814-0
+}

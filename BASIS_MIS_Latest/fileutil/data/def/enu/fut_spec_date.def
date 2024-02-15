@@ -1,0 +1,26 @@
+Table Definition Module
+FUT_SPEC_DATE - Fixed SAM Expiration Date
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SPEC_DATE^/mnt/data/aon_prod/apps/fileutil/;^BSHO;^^^Fixed SAM Expiration Date^Fixed SAM Expiration Date^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_SPEC_DATE^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+CUSTOMER_NBR^FUT_SPEC_DATE^002^C^^3002^dis_customer_nbr^0^^^2^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^^^^0^^^^N^
+YYYY^FUT_SPEC_DATE^003^C^^3003^ine_yyyy^0^^^3^^N^^^^^FUT_YYYY^YYYY^YYYY^YYYY^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^0^^^^^^^^N^
+MMDD^FUT_SPEC_DATE^004^C^^3004^ine_mmdd^0^^^4^^N^^^^^FUT_MMDD^MMDD^MMDD^MMDD^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^0^^^^^^^^N^
+DATE_ACTIVE^FUT_SPEC_DATE^005^C^^3005^ine_date_active^0^^^5^^N^^^^^FUT_DATE_ACTIVE^DATE_ACTIVE^DATE_ACTIVE^DATE_ACTIVE^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+AVAILABLE^FUT_SPEC_DATE^006^C^^3006^ine_available^0^^^6^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^12^^^^^^^^^^^0^^^^^^^^N^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SPEC_DATE^PRIMARY^FUT_SPEC_DATE.FIRM_ID                   FUT_SPEC_DATE.CUSTOMER_NBR              ^FUT_SPEC_DATE.FIRM_ID$+FUT_SPEC_DATE.CUSTOMER_NBR$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.CUSTOMER_NBR$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.CUSTOMER_NBR$               
+{KeyDefsEnd}
+{GridCols}
+001FUT_SPEC_DATE.FIRM_ID                   ;002FUT_SPEC_DATE.CUSTOMER_NBR              ;003FUT_SPEC_DATE.YYYY                      ;004FUT_SPEC_DATE.MMDD                      ;005FUT_SPEC_DATE.DATE_ACTIVE               ;006FUT_SPEC_DATE.AVAILABLE                 ;
+{GridColsEnd}

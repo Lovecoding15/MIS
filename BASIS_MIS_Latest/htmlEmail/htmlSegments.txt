@@ -1,0 +1,250 @@
+#Standard Header Segment
+HS_SG_EN:
+{{Subject: Header Segment English HS_SG_EN
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<!--BEGIN SEGMENT -- HS_SG_EN --->
+<tr>
+	<td id="basisHeader" align="center" style="width: 100%; padding: 5px; line-height: 0px; background-color: #dce6ef; ">
+		<img src="https://poweredbybbj.com:8443/images/basisLogoTransparent.png" alt="BASIS International" height="52" style="background-color: #dce6ef; ">
+	</td>
+</tr>
+<!--END SEGMENT -- HS_SG_EN --->
+
+<p><br />
+To include this segment in an email add the following line to that email at the location where you want the segment to be.<br />
+<br />
+&lt;!--HS_SG_EN --&gt;</p>
+</body>
+</html>
+}}
+
+#SAM Benefits Segment English
+BF_SG_EN:
+{{Subject: SAM Benefits List Segment English BF_SG_EN
+<html>
+<head>
+	<title></title>
+</head>
+<body><!--BEGIN SEGMENT -- BF_SG_EN --->
+<ul>
+	<li>free product upgrades</li>
+	<li>free technical support (some limitations apply)</li>
+	<li>free license resets</li>
+	<li>no reinstatement fees (12% of the cost of a new license)</li>
+	<li>discounts for additional users</li>
+	<li>discounts on BASIS training</li>
+	<li>redundant license for fail safe solutions</li>
+	<li>support for licensing on Virtual Machines</li>
+	<li>data replication to local or remote servers</li>
+	<li>data change auditing</li>
+	<li>SOX compliant tamper-proof console command logging</li>
+	<li>access to the BBjHtmlView and BBjHtmlEdit controls</li>
+	<li>JavaScript interoperability with BBjHtmlView control</li>
+	<li>BBj Metrics</li>
+	<li>&quot;Google-like&quot; searching with SQL FULLTEXT indices</li>
+	<li>Asynchronous Triggers</li>
+	<li>Dashboard Utility</li>
+	<li>Widget Wizard</li>
+	<li>BBJasper Utility</li>
+</ul>
+<!--END SEGMENT -- BF_SG_EN --->
+
+<p><br />
+To include this segment in an email add the following line to that email at the location where you want the segment to be.<br />
+<br />
+&lt;!--INCLUDE BF_SG_EN --&gt;</p>
+</body>
+</html>
+}}
+
+
+
+
+
+
+BF_SG_DE:
+{{Subject: SAM Benefits List Segment German BF_SG_DE
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<!--BEGIN SEGMENT -- BF_SG_DE --->
+<ul>
+	<li>Kostenlose Upgrades</li>
+	<li>Kostenloser technischer Support (mit Einschr&auml;nkungen)</li>
+	<li>Keine SAM-Reaktivierungsgeb&uuml;hren (12% der Kosten einer neuen Lizenz)</li>
+	<li>Rabatte f&uuml;r zus&auml;tzliche User</li>
+	<li>Rabatte f&uuml;r BASIS-Fortbildungen</li>
+	<li>Redundante Lizenzen f&uuml;r Ausfallsichere L&ouml;sungen</li>
+	<li>Nutzung der BBjHTMLView und BBjHtmlEdit Controls</li>
+	<li>JavaScipt-Nutzung im BBjHTMLView Control</li>
+	<li>BBjMetrics</li>
+	<li>Volltext-Suche per SQL FULLTEXT-Funktionalit&auml;t</li>
+	<li>Asynchrone Trigger</li>
+	<li>Dashboard-Utility und Widget Wizard</li>
+	<li>BBJasper Utility</li>
+</ul>
+<!--END SEGMENT -- BF_SG_DE --->
+
+<p><br />
+To include this segment in an email add the following line to that email at the location where you want the segment to be.<br />
+<br />
+&lt;!--INCLUDE BF_SG_DE --&gt;</p>
+
+<p>&nbsp;</p>
+</body>
+</html>
+}}
+
+
+
+SS_SG_EN:
+{{Subject: Standard Signature English SS_SG_EN
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<!--BEGIN SEGMENT -- SS_SG_EN --->
+<table border="0" cellpadding="0" cellspacing="0" >
+	<tr><td height="15"></td></tr>
+	<tr>
+		<td>Thank you,</td>
+	</tr>
+	<tr><td height="10"></td></tr>
+	<tr>
+		<td style="display: block; margin-left: 5px;" ><i><b>BASIS Customer Service Department</b></i></td>
+	</tr>
+	<tr>
+		<td style="display: block; margin-left: 5px;" >Email: <a href="mailto:customer-service@basis.com" style="color: #e64d00;" target="_blank" title="Email BASIS Customer Service">customer-service@basis.com</a></td>
+	</tr>
+	<tr>
+		<td style="display: block; margin-left: 5px;" >Phone: <a href="tel:1-505-938-6121" style="color: #e64d00;">1.505.938.6121</a></td>
+	</tr>
+</table>
+<!--END SEGMENT -- SS_SG_EN --->
+
+<p><br />
+To include this segment in another email add the following line to that email at the location you want the segment to be.<br />
+<br />
+&lt;!--INCLUDE SS_SG_EN --&gt;</p>
+
+<p>&nbsp;</p>
+</body>
+</html>
+}}
+
+
+SS_SG_DE:
+{{Subject: Standard Signature German SS_SG_DE
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<!--BEGIN SEGMENT -- SS_SG_DE --->
+<table border="0" cellpadding="0" cellspacing="0" >
+	<tr><td height="15"></td></tr>
+	<tr>
+		<td>Vielen Dank!</td>
+	</tr>
+	<tr><td height="10"></td></tr>
+	<tr>
+		<td style="display: block; margin-left: 5px;" ><i><b>BASIS Customer Service Department</b></i></td>
+	</tr>
+	<tr>
+		<td style="display: block; margin-left: 5px;" >Mail: <a href="mailto:eu.sales@basis.com style="color: #e64d00;" target="_blank">eu.sales@basis.com</a></td>
+	</tr>
+	<tr>
+		<td style="display: block; margin-left: 5px;" >Tel: <a href="tel:+49 (0) 681 96814-0" style="color: #e64d00;">+49 (0) 681 96814-0</a></td>
+	</tr>
+</table>
+<!--END SEGMENT -- SS_SG_DE --->
+
+<p><br />
+To include this segment in another email add the following line to that email at the location you want the segment to be.<br />
+<br />
+&lt;!--INCLUDE SS_SG_DE --&gt;</p>
+</body>
+</html>
+}}
+
+FS_SG_EN:
+{{Subject: Footer Segment English FS_SG_EN
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<!--BEGIN SEGMENT -- FS_SG_EN --->
+<table border="0" cellpadding="5" cellspacing="0" width="100%">
+	<tbody>
+		<!-- <tr>
+			<td>
+				<div style="text-align: center;"><span class="faintText2" style="font-size: 60%; color: #6b6b6b;">THIS EMAIL WAS SENT FROM:</span><br />
+					<span class="faintText1" style="font-size: 75%; color: #383838;">BASIS International Ltd. | 5901 Jefferson St. NE | Albuquerque, NM 87109</span>
+				</div>
+			</td>
+		</tr> -->
+		<tr><td height="15"></td></tr>
+		<tr>
+			<td>
+				<table class="socialContainer" cellpadding="2" border="0" align="center" style="border: 1px solid #cfd9e2; background: #f2f2f3; ">
+					<tr><td colspan="7" height="2"></td></tr>
+					<tr>
+						<td></td>
+						<td>
+							<a href="https://www.youtube.com/user/basis" target="_blank" title="Watch Us On YouTube">
+								<img alt="BASIS YouTube" height="32" width="32" src="https://poweredbybbj.com:8443/images/socialMediaYouTube.png" style="border: none; width: 32px; vertical-align: bottom;" />
+							</a>
+						</td>
+						<td>
+							<a href="https://www.facebook.com/pages/BASIS-International-LTD/136855542664" target="_blank" title="Friend Us On Facebook">
+								<img alt="BASIS FaceBook" height="32" width="32" src="https://poweredbybbj.com:8443/images/socialMediaFacebook.png" style="border: none; width: 32px; vertical-align: bottom;" />
+							</a>
+						</td>
+						<td>
+							<a href="https://www.linkedin.com/company/292105" target="_blank" title="Join Us On LinkedIn">
+								<img alt="BASIS LinkedIn" height="32" width="32" src="https://poweredbybbj.com:8443/images/socialMediaLinkedIn.png" style="border: none; width: 32px; vertical-align: bottom;" />
+							</a>
+						</td>
+						<td>
+							<a href="https://twitter.com/BASISIntl" target="_blank" title="Follow Us On Twitter">
+								<img alt="BASIS Twitter" height="32" width="32" src="https://poweredbybbj.com:8443/images/socialMediaTwitter.png" style="border: none; width: 32px; vertical-align: bottom;" />
+							</a>
+						</td>
+						<td>
+							<a href="https://github.com/BasisHub" target="_blank" title="View Our projects On GitHub">
+								<img alt="BASIS GitHub" height="32" width="32" src="https://poweredbybbj.com:8443/images/socialMediaGitHub.png" style="border: none; width: 32px; vertical-align: bottom;" />
+							</a>
+						</td>
+						<td></td>
+					</tr>
+					<tr><td colspan="7" height="2"></td></tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<div style="text-align: center; ">
+					<div class="faintText1" style="font-size: 75%; color: #383838;">Copyright <a href="https://www.basis.com" style="font-size: 100%; color: #e64d00;" target="_blank" title="Visit BASIS On The Web">BASIS International Ltd.</a> All rights reserved.</div>
+					<div class="faintText2" style="font-size: 60%; color: #6b6b6b; margin-top: 3px;">BBj&reg;, Visual PRO/5&reg;, PRO/5&reg;, and BBx&reg; are registered trademarks.</div>
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<!--END SEGMENT -- FS_SG_EN --->
+
+<p><br />
+To include this segment in an email add the following line to that email at the location where you want the segment to be.<br />
+<br />
+&lt;!--FS_SG_EN --&gt;</p>
+</body>
+</html>
+}}

@@ -1,0 +1,421 @@
+0010 rem " Customer's Current Serial Numbers Information
+0020 rem " Program: BSI.01
+0030 rem " modified to be called from EC
+0100 sam_only$="N",expire$="Y",start_dt$="Y",status=0
+0110 enter firm_id$,cust_num$,e_mail$,err=*next;goto skip_begin
+0120 begin
+0130 skip_begin:
+0135 boundary$="--==========_BASIS"
+0140 setesc esc_trap;seterr err_trap
+0150 rem ' defined functions
+0160 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+0170 call "ec_open::SNM01"
+0180 call "ec_open::SNT01"
+0190 call "ec_open::SMC01"
+0200 call "ec_open::CSM04"
+0210 call "ec_open::ARM01"
+0220 call "ec_open::SNM02"
+0230 call "ec_open::TMM05"
+0240 call "ec_open::CSM01"
+0250 call "ec_open::ART03"
+0260 call "ec_open::SNMEL"
+0270 call "ec_open::SNMEU"
+0280 call "ec_open::LOGEXTRACT"
+0290 call "ec_open::SN_LICENSE"
+0300 call "ec_open::SN_HOST"
+0310 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0350 sys01=unt; open(sys01)"SYS-01"
+0390 if tcb(13) then goto build_attachment
+0400 rem " --- Parameters
+0410 find (sys01,key="T"+fid(0),dom=no_param)iol=sys01t
+0420 firm_id$=f0$(16,2)
+0500 print 'sb',@(9,4),"Customer:",@(3,5),"E-mail:",@(9,7),"SAM only?",@(2,8),"Expiration Date?",@(7,9),"Start Date?",'sf'
+1000 customer:
+1010 rem " --- Customer "
+1020 v0$="M",v1$="KCE^",v3$="000000",v4$="Enter the Customer Number <F3>=Lookup, Blank for all",v0=6,v1=20,v2=4
+1030 gosub get_input
+1040 if v3=4 then goto finished
+1050 if v3=3 then call "SYC.LC",v$
+1055 if v$<>"" then
+1060 gosub get_customer
+1070 if v$="" then goto customer
+1075 fi
+1080 cust_num$=v$
+1090 print @(20,4),cust_num$,@(30,4),cust_name$
+1100 goto next_field
+2000 email:
+2010 rem " --- E-Mail"
+2020 v0$="S",v1$="C",v2$=def_email$,v3$="",v1=1,v2=6,v0=78
+2030 v4$="Enter E-mail address for this customer"
+2035 if cust_num$="" then v4$="Enter an E-mail address"
+2040 gosub get_input
+2050 if v$="" then goto email
+2060 e_mail$=v$
+2070 goto next_field
+3000 sam_only:
+3010 rem " --- Only serial numbers with SAM"
+3020 v0$="S",v1$="C^",v2$="N",V3$="",V1=20,V2=7,V0=1
+3025 if cust_num$="" then sam_only$="Y";print @(v1,v2),"Y";goto next_field
+3030 v4$="Does the customer only want information on serial numbers with SAM (Y/N)?"
+3040 gosub get_input
+3050 if pos(v$="YN")=0 then goto sam_only
+3060 sam_only$=v$
+3070 goto next_field
+4000 include_expire:
+4010 rem " --- Include SAM expiration date"
+4020 v0$="S",v1$="C^",v2$="Y",V3$="",V1=20,V2=8,V0=1
+4030 v4$="Include expiration date (Y/N)?"
+4040 gosub get_input
+4050 if pos(v$="YN")=0 then goto include_expire
+4060 expire$=v$
+4070 goto next_field
+4100 include_start:
+4110 rem " --- Include SAM start date"
+4120 v0$="S",v1$="C^",v2$="Y",v3$="",v1=20,v2=9,v0=1
+4130 v4$="Include start date (Y/N)?"
+4140 gosub get_input
+4150 if pos(v$="YN")=0 then goto include_start
+4160 start_dt$=v$
+4170 goto next_field
+5000 next_field:
+5010 rem " --- Next field"
+5020 if v3=4 then goto finished
+5030 if v3=2 then i0=i0-1 else i0=i0+1
+5040 on i0 goto customer,email,sam_only,include_expire,include_start,data_correct
+6000 data_correct:
+6010 v0$="S",v1$="C^",v2$="Y",v3$="",v4$="Is the Above Data Correct (Y/N))?",v0=1,v1=FNV(v4$),v2=22,i0=0
+6020 gosub get_input
+6030 if pos(v$="YN")=0 then goto data_correct
+6040 if v$="N" then goto customer
+7000 build_attachment:
+7005 gosub create_file
+7010 attach$="", hasSerialNumbers = 0
+7020 attach$="Serial Number,Product Description,Revision,Port ID,License Type,Virtual Flag,Annual Flag,Total Users,License Property1,Property1 Users,License Property2,Property2 Users,License/Key,Available Support,Support Expires,SAM/DVK Annual Date"
+7030 if expire$="Y" then attach$=attach$+",SAM/DVK Expiration Date, Renew Flag"
+7035 if start_dt$="Y" then attach$=attach$+",SAM/DVK Start Date"
+7036 if expire$="Y" then attach$=attach$+",License Expires,Host Name,Host ID"
+7037 attach$=attach$+",Orig/Upd Sale Date,Orig/Upd PO,End User" 
+7038 if cust_num$="" then attach$=attach$+",Customer"
+7040 attach$=attach$+$0a$
+7045 header_len=len(attach$)
+7047 if tcb(13) then goto pos_snm01
+7050 call "SYC.WA",mode,42,5,18,10,"",name$
+7060 message$="Scanning Serial Numbers..."
+7070 print 'sb',@(21-int((len(message$)+6)/2),1),message$,'sf',
+7080 pos_snm01:
+
+7083 rem ' special handling for Mindware 001765
+7084 eu_serial_nbr_list$ = ""
+7085 if cust_num$ = "001765" then gosub build_eu_serial_nbr_list
+7086 main_read_done = 0
+
+7090 read(snm01,key=firm_id$+cust_num$,knum=1,dom=snm01_loop)
+
+7100 snm01_loop:
+7110 read record(snm01,end=special_loop)snm01$
+7120 if cust_num$="" and snm01.firm_id$<>firm_id$ then goto special_loop
+7125 if cust_num$<>"" and snm01.firm_id$+snm01.customer_nbr$<>firm_id$+cust_num$ then goto special_loop
+7127 special_loop_entry:
+7130 if snm01.active_flag$<>"Y" then goto snm01_loop
+7135 if snm01.product$ = "TAO" then goto snm01_loop
+7140 if sam_only$="Y" and cvs(snm01.contract$,1+2)="" then goto snm01_loop
+7145 dim snm02$:fattr(snm02$);find record(snm02,key=snm01.serial_nbr$,dom=*next)snm02$
+7150 read record(csm04,key=firm_id$+snm01.product_rev$)csm04$
+7155 read record(csm01,key=firm_id$+snm01.product$)csm01$
+7160 key$="",orig_date$=""
+7170 gosub get_key_auth
+7180 annual_date$="", expire_date$="",start_date$="",support_expires$="",renew_flag$=""
+7185 if orig_date$="" then orig_date$=fnb$(snm01.orig_sale_date$)
+7190 if cvs(snm01.contract$,1+2)<>"" then gosub get_annual
+7195 if sam_only$="Y" and smc01.contr_type$(1,2)<>"SM" then goto snm01_loop
+7197 if cvs(snm01.avail_expire$,1+2)<>"" then support_expires$=snm01.avail_expire$(5,2)+"/"+snm01.avail_expire$(7,2)+"/"+snm01.avail_expire$(1,4)
+7198 if cvs(snm01.media_type$,3) = "VIR" then vir$ = "VIR" else vir$ = ""
+7199 if cvs(snm01.media_type$,3) = "ANN" then annual$ = "ANN" else annual$ = ""
+7200 rec$=cvs(snm01.serial_nbr$,1+2)+","+cvs(csm01.description$,1+2)+","+cvs(csm04.description$,1+2)+","+snm01.port_id$+","+snm01.license_type$+","+vir$+","+annual$+","+str(snm01.users)+","+snm02.lic_property1$+","+str(snm02.users1)+","+snm02.lic_property2$+","+str(snm02.users2)+","+key$+","+str(snm01.avail_support)+","+support_expires$+","+annual_date$
+7210 if expire$="Y" then rec$=rec$+","+expire_date$+","+renew_flag$
+7220 if start_dt$="Y" then rec$=rec$+","+start_date$
+7225 if expire$="Y" then gosub getLicenseData
+7230 ok=0;read record(snmel,key=snm01.serial_nbr$,knum=0,dom=*next)snmel$;ok=1
+7240 dim snmeu$:fattr(snmeu$)
+7250 if ok then readrecord(snmeu,key=snmel.end_user_nbr$,dom=*next)snmeu$
+7260 eu$=cvs(snmeu.company_name$,3)+" "+cvs(snmeu.reference_nbr$,3)
+7261 if cvs(snmeu.eu_cust_nbr$,3) <> "" then eu$ = eu$ + " " + "BASIS Customer #: " + snmeu.eu_cust_nbr$
+7270 rec$=rec$+","+orig_date$+","+art03.ar_po_number$+","+fncomma$(eu$)
+7275 if cust_num$="" then rec$=rec$+","+snm01.customer_nbr$
+7280 attach$=attach$+rec$+$0a$
+7282 if len(attach$)>32000 then
+7283    write record(out_chn,siz=len(attach$))attach$
+7284    attach$ = "", hasSerialNumbers = 1
+7285 endif
+7290 if !main_read_done then goto snm01_loop else return
+7300 send_mail:
+7310 rem 'if header_len=len(attach$) then gosub no_selections; goto finished
+7315 if !hasSerialNumbers and len(attach$)=0 then gosub no_selections; goto finished
+7320 gosub create_message
+7400 finished:
+7402 close(out_chn,err=*next)
+7405 close(art03,err=*next)
+7410 close(snm01,err=*next)
+7415 close(snt01,err=*next)
+7420 close(smc01,err=*next)
+7425 close(csm04,err=*next)
+7427 close(snm02,err=*next)
+7430 close(sys01,err=*next)
+7435 close(arm01,err=*next)
+7440 close(tmm05,err=*next)
+7445 close(csm01,err=*next)
+7446 close(snmel,err=*next)
+7447 close(snmeu,err=*next)
+7448 close(logextract,err=*next)
+7449 close(sn_license,err=*next)
+7450 if tcb(13) then exit
+7480 call "SYC.WD",name$
+7490 run "SYS.AA"
+8000 rem " --- Display Parameter record error"
+8010 no_param:
+8020 line_err$=lst(pgm(TCB(5)))
+8030 call "SYC.YA",line_err$,n2$,ERR
+8040 run "SYS.AA"
+8100 rem " --- AddOn date functions
+8110 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8120 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8130 def fncomma$(xx$)
+8135 cpos=pos(","=xx$)
+8140 while cpos
+8145   xx$(cpos,1)=" "
+8150   cpos=pos(","=xx$)
+8155 wend
+8160 return cvs(xx$,35)
+8190 fnend
+8500 REM " --- Standard Input Routine (15May95)"
+8510 get_input:
+8520 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+8530 if v3=999 then goto input_error
+8540 if v3=127 then goto input_escape
+8550 return 
+8610 REM " --- Escape During Input"
+8620 input_escape:
+8630 CALL "SYC.ES",ERR=input_error,PGM(-2),TCB(8),E$,E2,V3
+8640 if v3<>127 then goto get_input
+8650 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+8700 REM " --- Error During Input"
+8710 input_error:
+8720 escape
+8730 goto get_input
+9000 REM " --- Standard Error Routine (15May95)"
+9010 err_trap:
+9020 IF ERR=127 THEN GOTO esc_trap
+9025 if tcb(13) then gosub send_err_email; status=err; exit
+9030 CALL "SYC.EA",ERR=do_escape,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9040 IF E1=1 THEN GOTO do_retry
+9050 IF E1=3 THEN GOTO do_exit
+9060 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9070 do_escape:
+9080 ESCAPE
+9090 REM " --- Retry"
+9100 do_retry:
+9110 RETRY
+9120 REM " --- Return"
+9130 do_exit:
+9140 SETERR err_trap
+9150 GOTO finished
+9200 REM " --- Standard Escape Routine"
+9210 esc_trap:
+9215 if tcb(13) then return
+9220 CALL "SYC.ES",ERR=do_esc,PGM(-2),TCB(8),E$,E2,V3
+9230 IF V3<>127 THEN GOTO do_return
+9240 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9250 do_esc:
+9260 ESCAPE
+9270 do_return:
+9280 RETURN 
+10000 get_customer:
+10010 cust_name$=""
+10020 read record(arm01,key=firm_id$+v$,dom=no_cust)arm01$
+10030 cust_name$=arm01.cust_name$
+10040 def_email$=""
+10050 readrecord(tmm05,key=firm_id$+arm01.customer_nbr$+"000000",dom=*next)tmm05$; def_email$=tmm05.email$
+10080 goto done_cust
+10090 no_cust:
+10100 v$=""
+10110 done_cust:
+10120 return
+10200 get_key_auth:
+10205 invoice$=""
+10210 read record(snt01,key=snm01.serial_nbr$,dom=*next)snt01$
+10220 while 1
+10230   read record(snt01,end=*break)snt01$
+10240   if snt01.serial_nbr$<>snm01.serial_nbr$ then break
+10250   if cvs(snt01.auth_code$,1+2)<>"" then key$=cvs(snt01.auth_code$,1+2)
+10255   if pos(snt01.type_of_sale$="NEWTRDUPDUG4UNCEXCPLXUG3",3) and orig_date$="" then orig_date$=fnb$(snt01.trans_date$),invoice$=snt01.ar_inv_nbr$
+10260 wend
+10270 dim art03$:fattr(art03$)
+10275 readrecord(art03,key=firm_id$+"  "+cust_num$+invoice$+"000",dom=*next)art03$
+10280 return
+10300 get_annual: dim smc01$:fattr(smc01$)
+10310 read record(smc01,key=snm01.contract$,dom=done_annual)smc01$
+10320 if smc01.sam_active$<>"N" and snm01.sam_active$="N" then smc01.annual_dt$(1,4)=str(num(smc01.annual_dt$(1,4))-1:"0000"),smc01.contr_start$(1,4)=str(num(smc01.contr_start$(1,4))-1:"0000")
+10330 annual_date$=smc01.annual_dt$(5,2)+"/"+smc01.annual_dt$(7,2)+"/"+smc01.annual_dt$(1,4)
+10340 if smc01.contr_type$="DV1" then expire_date$=annual_date$ else expire_date$=smc01.expire_on_dt$(5,2)+"/"+smc01.expire_on_dt$(7,2)+"/"+smc01.expire_on_dt$(1,4)
+10345 start_date$=smc01.contr_start$(5,2)+"/"+smc01.contr_start$(7,2)+"/"+smc01.contr_start$(1,4)
+10347 renew_flag$=cvs(smc01.renew_flag$,3); if renew_flag$="" then renew_flag$="Y"
+10350 done_annual:
+10360 return
+10400 create_message:
+10405 rem ' convert to use sendEmail.bbj 01/14/2013 kew
+10406 rem ' converted to write the file periodically instead of all at the end 03/02/2015 kew
+10410 rem ' outfile$=stbl("TEMP")+cust_num$+"curr_sn.csv"
+10415 rem ' if cust_num$="" then outfile$=stbl("TEMP")+"firm"+firm_id$+"curr_sn.csv"
+10420 rem ' erase outfile$,err=no_file
+10430 rem ' goto create_file
+10440 rem ' no_file:
+10450 rem ' if err<>12 then goto err_trap
+10460 rem ' create_file:
+10470 rem ' string outfile$
+10480 rem ' out_chn=unt;open(out_chn)outfile$
+10482 if len(attach$) > 0 then write record(out_chn,siz=len(attach$))attach$
+10484 outfin$=fin(out_chn); filesize=dec(outfin$(1,4))
+10486 if filesize > 9500000 then gosub jar_file
+10490 to$ = e_mail$
+10500 from$ = "customer-service@basis.cloud"
+10510 subject$ = "Current BASIS Serial Numbers"
+10520 msgtxt$ = "The attached file contains a list of your BASIS Serial numbers with current information."+$0a$+$0a$+"Thank you for your continued use of BASIS  products."+$0a$+$0a$
+10525 if isJarFile msgtxt$ = msgtxt$ + "Due to the size of the serial number file it has been compressed into a ZIP file."+$0A$+$0A$
+10530 msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent using email.bbj" + $0A$
+10540 file$ = outfile$
+10550 cc$ = ""
+10560 bcc$ = ""
+10570 call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+10580 return
+10800 no_selections:
+10805 if tcb(13) then status=1;exitto finished 
+10810 dim message$[1]
+10820 message$[0]="There are no Serial Numbers that meet the selected"
+10830 message$[1]="criteria (<Enter>=Continue)"
+10840 call "SYC.XA",2,message$[all],1,22,-1,v$,v3
+10850 return
+10900 getLicenseData:
+10905 gldSerial$=cvs(snm01.serial_nbr$,3), gldExpire$="", gldHostId$="", gldHostName$=""
+10910 rem ' sn_license data
+10915 read record(sn_license,key=gldSerial$,dom=*next)sn_license$
+10920 while 1
+10925 read record(sn_license,end=*break)sn_license$
+10930 if cvs(sn_license.serial_num$,3)<>gldSerial$ then break
+10935 gldExpire$=sn_license.expire$,gldHostId$=cvs(sn_license.hostid$,3)
+10936 gosub convert_gldExpire
+10940 wend
+10945 if gldHostId$="REDUNDANT" then
+10950   read record(sn_host,key=gldSerial$,dom=*next)sn_host$
+10955   while 1
+10960     read record(sn_host,end=*break)sn_host$
+10965     if cvs(sn_host.serial_nbr$,3)<>gldSerial$ then break
+10970     gldHostId$=cvs(sn_host.hostid1$,3)+";"+cvs(sn_host.hostid2$,3)+";"+cvs(sn_host.hostid3$,3)
+10975     gldHostName$=cvs(sn_host.hostname1$,3)+";"+cvs(sn_host.hostname2$,3)+";"+cvs(sn_host.hostname3$,3)
+10980   wend
+10985 fi
+10990 rem ' logextract data
+10995 if gldHostName$="" then
+11000   read record(logextract, key=gldSerial$,dom=*next)logextract$
+11005   while 1
+11010     read record(logextract,end=*break)logextract$
+11015     if cvs(logextract.serialnum$,3)<>gldSerial$ then break
+11020     if cvs(logextract.hostname$,3) <> "" then gldHostName$=logextract.hostname$
+11025   wend
+11030 fi
+11035 rem ' some redundant hostids are geeting a " in the first character'
+11036 if len(gldHostId$) >= 2 and gldHostId$(1,1) = chr(34) then gldHostId$ = gldHostId$(2) 
+11040 rec$=rec$+","+gldExpire$+","+gldHostName$+","+gldHostId$
+11090 return 
+12000 rem ' send error email
+12005 send_err_email:
+12010 from$="customer-service@basis.cloud"
+12020 to$="misdev@basis.cloud"
+12030 cc$ = ""; bcc$ = ""; file$ = ""
+12040 subject$="Error in b-comm requested current serial number report"
+12050 msgtxt$ = "An error " + str(err) + " occurred on line number " + str(tcb(5)) + " error message: " + errmes(-1) + " in program BSI.01."
+12060 msgtxt$ = msgtxt$ + " Preparing a report for " + firm_id$ + " " +cust_num$ + " " + e_mail$
+12065 if cvs(snm01$,3)<> "" then msgtxt$ = msgtxt$ + " Error on serial number: " + snm01.serial_nbr$
+12070 msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent using sendEmail.src" + $0A$
+12080 call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+12090 return
+13000 convert_gldExpire:
+13010	theDay$="", month$="", year$ = ""
+13020	wrkD$ = gldExpire$
+13030	if cvs(wrkD$,3) <> "" then 
+13040		ppos = pos("-" = wrkD$)
+13050		if ppos <> 0 then
+13060			theDay$ = wrkD$(1,ppos - 1)
+13070			wrkD$ = wrkD$(ppos + 1)
+13080			ppos = pos("-" = wrkD$)
+13090			if ppos <> 0 then
+13100				month$=wrkD$(1,ppos - 1)
+13110				year$ = wrkD$(ppos + 1)
+13120				if month$ <> "" then
+13130					monthlist$ = "janfebmaraprmayjunjulaugsepoctnovdec"
+13140					ppos = pos(month$ = monthlist$)
+13150					if ppos <> 0 then
+13160						month = int(ppos / 3) + 1
+13170						month$ = str(month:"00")
+13180						if cvs(year$,3) <> "" then
+13190							gldExpire$ = month$ + "/" + theDay$ + "/" + year$
+13200						endif
+13210					endif
+13220				endif
+13230			endif
+13240		endif
+13250	endif
+13260 return
+13300 create_file:
+13310 outfile$=stbl("TEMP")+cust_num$+"curr_sn.csv"
+13315 if cust_num$="" then outfile$=stbl("TEMP")+"firm"+firm_id$+"curr_sn.csv"
+13320 erase outfile$,err=no_file
+13330 goto make_file
+13340 no_file:
+13350 if err<>12 then goto err_trap
+13360 make_file:
+13370 string outfile$
+13380 out_chn=unt;open(out_chn)outfile$
+13390 return
+13500 jar_file:
+13510 jarFile$ = outfile$
+13520 jarFile$ = jarFile$(1,len(jarFile$)-3) + "zip"
+13530 cmd$ = "jar cf " + jarFile$ + " " + outfile$
+13540 resp = scall(cmd$)
+13550 outfile$ = jarFile$
+13560 isJarFile = 1
+13570 return
+
+14000 build_eu_serial_nbr_list:
+14010 sql_chan=sqlunt
+14020 sqlopen(sql_chan,mode="UID=basisaon,pwd=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+14030 sql$ = "SELECT t3.SERIAL_NBR FROM SNMEU t1 "
+14040 sql$ = sql$ + "INNER JOIN SNMEL t2 ON t1.END_USER_NBR = t2.END_USER_NBR "
+14050 sql$ = sql$ + "INNER JOIN SNM01 t3 ON t2.SERIAL_NBR = t3.SERIAL_NBR and t1.EU_CUST_NBR = t3.CUSTOMER_NBR "
+14060 sql$ = sql$ + "WHERE t3.ACTIVE_FLAG = 'Y' and t1.CUSTOMER_NBR = '001765' "
+14070 sql$ = sql$ + "ORDER BY t3.SERIAL_NBR "
+14080 sqlprep(sql_chan)sql$
+14090 sqlexec(sql_chan)
+14100 dim read_tpl$:sqltmpl(sql_chan)
+14110 while 1
+14120 	read_tpl$ = sqlfetch(sql_chan,end=*break)
+14130 	this_sn$ = read_tpl.serial_nbr$ + fill(20)
+14140 	this_sn$ = this_sn$(1,20)
+14150 	eu_serial_nbr_list$ = eu_serial_nbr_list$ + this_sn$
+14160 wend
+14170 sqlclose(sql_chan)
+14180 return
+	
+14500 rem ' snm01 loop done
+14510 rem ' only for 001765 Mindware
+14520 special_loop:
+14530 if eu_serial_nbr_list$ = "" goto send_mail
+14540 main_read_done = 1 
+14545 attach$=attach$+$0a$+"End User Serial Numbers on SAM"+$0A$+$0A$
+14550 while len(eu_serial_nbr_list$)
+14560 	this_sn$ = eu_serial_nbr_list$(1,20)
+14570 	eu_serial_nbr_list$ = eu_serial_nbr_list$(21)
+14580 	read record(snm01,key = this_sn$, knum = 0)snm01$
+14590 	gosub special_loop_entry
+14600 wend
+14610 goto send_mail
+14620 end

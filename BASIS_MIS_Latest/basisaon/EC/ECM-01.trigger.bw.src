@@ -1,0 +1,74 @@
+rem ' catch writes to the B-comm masterfile ECM01 before they are 
+rem ' written and encrypt the password
+
+seterr handle_err
+
+rem ' set opts
+SETOPTS $0800C02000002040$
+
+rem ' remove the rem below to trace the operation
+rem ' trace = unt
+if trace then open(trace,mode="O_TRUNC")"/mnt/data/basisaon/aon/trig_trace/trace-ECM-01_bw.log"
+if trace then settrace(trace)
+
+rem '----declares
+Declare BBjTriggerData trigger!
+
+rem '----get the trigger data
+trigger! = BBJAPI().getFileSystem().getTriggerData()
+
+rem '----template for the ECM01 record being caught
+intemp$="FIRM_ID:C(2),CUSTOMER_NBR:C(6),USER_CODE:C(2),E_MAIL:C(80),PASSWORD:C(128),E_MAIL2:C(80),SURVEY_FLAG:C(1),FIRST_NAME:C(20),LAST_NAME:C(30),AVAILABLE:C(28)"
+dim inRec$:intemp$
+dim expectedData$:intemp$
+
+rem '----get the write buffer into the template
+inRec$ = trigger!.getWriteBuffer()
+inRec$ = field(inRec$)
+if trace then print(trace)"Incoming Record: ",inRec$
+
+rem ' encrypt the password
+cryptPass$ = "WethePeopleoftheUnitedStates,inOrdertoform"
+password$ = cvs(inRec.password$,3)
+encryptPass$ = encrypt(password$,cryptPass$,mode="CRYPTALG=AES-256")
+encryptPass$ = hta(encryptPass$)
+if trace then print(trace)"Length of encryptPass$ " + str(len(encryptPass$))
+inRec.password$ = encryptPass$
+inRec$ = field(inRec$)
+if trace then print(trace)"Encrypted Record ",inRec$
+
+rem ' fix the expected Disk Data'
+expectedData$ = trigger!.getExpectedDiskData()
+if trace then print(trace)"Expected Data before", expectedData$
+if cvs(expectedData$,3) <> "" then
+    expPassword$ = cvs(expectedData.password$,3)
+    encryptExpPassword$ = encrypt(expPassword$,cryptPass$,mode="CRYPTALG=AES-256")
+    encryptExpPassword$ = hta(encryptExpPassword$)
+    expectedData.password$ = encryptExpPassword$
+    trigger!.setExpectedDiskData(expectedData$)
+fi
+if trace then print(trace)"Expected Data " + str(expectedData$)
+
+rem ' set the write buffer
+trigger!.setWriteBuffer(inRec$)
+
+if trace then endtrace
+
+end
+
+handle_err:
+    if trace then write (trace)"error: " + str(err) + " line " + str(tcb(5)) + " errmsg " + errmes(-1)
+    throw "An error " + str(err) + " occurred on line " + str(tcb(5)) + " of the trigger ECM-01.trigger.bw.src. errmsg " + errmes(-1), 275
+
+end
+
+
+
+
+
+
+
+
+
+
+

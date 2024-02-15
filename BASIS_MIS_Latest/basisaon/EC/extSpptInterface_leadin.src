@@ -1,0 +1,7 @@
+rem ' lead in program to extSpptInterface.src
+
+begin
+
+run "extSpptInterface.bbj"
+
+end

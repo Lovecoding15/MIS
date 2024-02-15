@@ -1,0 +1,301 @@
+// Select and deactivate/activate SN/s with link/unlink option <aon_misc9>
+
+if pos(info(3,2)="cdinkel  gparra   swaufle  gcorcor  thines   ")=0 then
+{
+pause/message="Restricted to customer service.";
+exit;
+}
+terminal$="T"+term();
+find/noerror sys01t using terminal$;
+if available(sys01t) then
+       {firm$=sys01t.firm_id;
+       device_name$=sys01t.printer_id;}
+if pos(firm$="0102",2)=0 then firm$="01";
+
+loop:
+set display term();
+display/form="MAS_HEAD" firm_name=""
+screen_desc="Activate/Deactivate Serial#'s";
+
+choose/traditional/drop dora from
+	"Deactivate Serial Numbers"
+	"Activate Serial Numbers"
+	"Exit";
+if ctl(2) or dora=2 then exit;
+
+if dora then action$="Activate";
+	else action$="Deactivate";
+display/form="MAS_HEAD" screen_desc=action$+" Serial#'s" firm_name="";
+
+custnum$="";ds_serial$="";
+start_serial$=fill(9);
+end_serial$="ZZZ999999";
+block
+{
+get_info:
+custnum$="";
+prompt for /prompt="Cust# of SN's to be "+action$+"d: "
+	/col=5/row=7/nobox
+	/notitle/len=6/imask="NNNNNN"
+	/help="Enter=cancel"
+	custnum$;
+if ctl(2) or custnum$="" then goto loop;
+custnum$=str(num(custnum$):"000000");
+find/noerror arm01 using firm$+custnum$;
+if available(arm01)=0 then goto get_info;
+
+port_info:
+itemnum$="";
+prompt for /prompt="Port# of SN's to be "+action$+"d: "
+	/col=5/row=9/nobox/notitle/imask="NNNNN"
+	/len=5 /help="Enter=cancel"
+	itemnum$;
+if ctl(2) or len(itemnum$)<>5 then goto loop;
+if pos(itemnum$(1,2)="1014",2)=0 then 
+{pause/message=itemnum$+" is not a valid port";goto port_info;}
+
+get_ds_serial:
+ds_serial$="";
+prompt for /prompt="Data Server Serial Number: "
+	/col=5/row=11/nobox/notitle/len=9/imask="ZZZNNNNNN"
+	/help="Enter=cancel"
+	ds_serial$;
+if ctl(2) or ds_serial$="" then goto loop;
+ds_serial$=ds_serial$+fill(20);ds_serial$=ds_serial$(1,20);
+find/noerror snm01 using ds_serial$;
+if available(snm01)=0 then 
+	{ pause/message=ds_serial$+" not found!";
+	goto get_ds_serial;}
+if snm01.port_id(1,2)<>"12" then 
+	{pause/message=ds_serial$+" not a data server!"; 
+	goto get_ds_serial;}
+
+range_prompt:
+start_serial$="";
+prompt for /col=5/row=13/nobox
+	/len=9 /imask="ZZZNNNNNN" /prompt="First serial number in range: "
+	/notitle /help="Enter=cancel"
+	start_serial$;
+if ctl(2) or start_serial$="" then goto loop;
+end_serial$="";
+prompt for /col=5/row=15/nobox
+	/len=9 /imask="ZZZNNNNNN" /prompt="Last serial number in range:  "
+	/notitle /help="Enter=cancel"
+	end_serial$;
+if ctl(2) or end_serial$="" then goto loop;
+
+if end_serial$<start_serial$ then goto range_prompt;
+start_serial$=start_serial$+fill(20);start_serial$=start_serial$(1,20);
+end_serial$=end_serial$+fill(20);end_serial$=end_serial$(1,20);
+
+choose/yesno /prompt="Is the above correct? "
+	/drop /col=5/row=18
+	yorn;
+if yorn=0 then goto get_info;
+}
+if ctl(2) then goto loop;
+
+create temporary table picklist
+    serial_num char(20)/unique
+    selected   char(1);
+
+serials_selected=0;
+serial_count=0;
+if dora then flag$="N";
+	 else flag$="Y";
+pause/message "Searching";
+for each snm01 where customer_nbr=custnum$ and active_flag=flag$
+and port_id=itemnum$
+and serial_nbr between start_serial$ and end_serial$
+{
+pause/message "Selecting "+serial_nbr;
+picklist.serial_num=snm01.serial_nbr;
+picklist.selected=" ";
+insert picklist;
+serial_count=serial_count+1;
+}
+
+find/first/noerror picklist;
+if available(picklist)=0 then
+{
+pause/message="No serial numbers found for "+custnum$+" port "+itemnum$;
+goto loop;
+}
+
+block
+{
+gosub display_selected_count;
+t$="Active";
+if dora then t$="Inactive";
+choose/record
+	/rewind /upper /ctl(0)=toggle_one /ctl(53)=toggle_all
+	/gosub=build_display
+	/display=display_string$
+	/title="@"+t$+" SN's for "+custnum$+" Port "+itemnum$+"\\"+
+		"Serial # |Rev  |Port |Users|Select"
+	/help="(#F0)=(de)select one  (#F53)=select/deselect all"+
+		  "  (#F2)=done  (#F6)=cancel"
+	/colchar="|" /rows=15 /cols=37 /col=10 /row=3 /secure
+	picklist; 
+
+choose/yesno/prompt=action$+"? " /drop /col=50/row=18
+	yorn;
+if yorn=0 then goto loop;
+ 
+set display term();
+usrinit$=cvs(info(3,2),4);
+usrinit$=usrinit$(1,2);
+if dora then comment$="";
+	else 
+	{
+	comment$="***See "+cvs(ds_serial$,2)+" "+date(0)+" "+usrinit$;
+	prompt for /title="Memo Entry" /len=60 /drop/noprompt 
+		/help="Enter=continue  (#F2)=cancel" comment$;
+	}
+}
+if ctl(2) then goto loop;
+
+mods=0;
+if dora then setflag$="Y";
+	else setflag$="N";
+for each picklist where selected="Y"
+{
+pause/message "Processing "+picklist.serial_num;
+find snm01 using picklist.serial_num;
+//if available(snm01)=0 then continue;
+snm01.active_flag=setflag$;
+comment$=comment$+fill(60);
+snm01.comment=comment$(1,60);
+update snm01;
+mods=mods+1;
+}
+pause/message=str(mods)+" serial numbers modified.";
+
+if dora=0 and cvs(ds_serial$,2)<>"" then 
+{
+choose/yesno
+	/prompt="Unlink these serial numbers from the data server? "
+	/drop yorn;
+if yorn=0 then goto loop;
+
+find/next/noerror snt02 using ds_serial$;
+if available(snt02)=0 or snt02.data_server<>ds_serial$ then
+	{
+	pause/message="No serial numbers linked to "+ds_serial$;
+	goto loop;
+	}
+unlink=0;
+for each picklist where selected="Y"
+	{
+	find/next/noerror snt01 using picklist.serial_num;
+	nxt_snt01_unlink:
+	if available(snt01) and snt01.serial_nbr=picklist.serial_num then
+		{ snt01.server_nbr=fill(20);
+		update snt01;
+		find/next/noerror snt01; goto nxt_snt01_unlink;}
+	find/next/noerror/index=indx2 snt02 using picklist.serial_num;
+	nxt_snt02:
+	if available(snt02) and snt02.serial_nbr=picklist.serial_num then
+		{
+		pause/message "Unlinking "+snt02.serial_nbr;
+		delete snt02;
+		unlink=unlink+1;
+		}
+	}
+pause/message=str(unlink)+" serial numbers unlinked from "+ds_serial$;
+}
+
+if dora and cvs(ds_serial$,2)<>"" then 
+{
+choose/yesno
+	/prompt="Link these serial numbers to the data server? "
+	/drop yorn;
+if yorn=0 then goto loop;
+link=0;
+for each picklist where selected="Y"
+	{
+	find/next/noerror snt01 using picklist.serial_num;
+	nxt_snt01_link:
+	if available(snt01) and snt01.serial_nbr=picklist.serial_num then
+		{ snt01.server_nbr=ds_serial$;
+		update snt01;
+		find/next/noerror snt01; goto nxt_snt01_link;}
+	sq=0;
+	nxt_sq:
+	sq=sq+1;
+	find/noerror snt02 using ds_serial$+str(sq:"00000"); 
+	if available(snt02) then
+		{if snt02.serial_nbr=picklist.serial_num then continue;
+		else goto nxt_sq;}
+	snt02.data_server=ds_serial$;
+	snt02.sn_serv_seq=str(sq:"00000");
+	snt02.serial_nbr=picklist.serial_num;
+	insert snt02;
+	pause/message "Linking "+snt02.serial_nbr;
+	link=link+1;
+	}
+pause/message=str(link)+" serial numbers linked to "+ds_serial$;
+}
+goto loop;
+
+subroutine build_display
+{
+find snm01 using picklist.serial_num;
+display_string$=serial_nbr(1,9)+"|"+product_rev+"|"+port_id+"|"+
+	str(users:"###0")+"|  "+picklist.selected+fill(3);
+}
+
+subroutine toggle_one
+{
+if picklist.selected=" " then
+	{
+	picklist.selected="Y";
+	serials_selected=serials_selected+1;
+	}
+else
+	{
+	picklist.selected=" ";
+	serials_selected=serials_selected-1;
+	}
+update picklist;
+gosub display_selected_count;
+}
+
+subroutine toggle_all
+{
+choose/traditional
+	/row=18 /col=55/secure toggle from
+	"Select all"
+	"Deselect all";
+
+for each picklist
+    {
+    if toggle=0 then
+	{ if picklist.selected<>"Y" then
+            {
+            serials_selected=serials_selected+1;
+            picklist.selected="Y";
+            update picklist;
+            }
+	}
+    else 
+	{ if picklist.selected="Y" then 
+            {                                                           
+            serials_selected=serials_selected-1;                        
+            picklist.selected=" ";                                      
+            update picklist;                                            
+            }                                                           
+	}
+    }                                                                   
+find/first picklist;
+gosub display_selected_count;
+}
+
+subroutine display_selected_count
+{
+display/form="sozdaz1a"/nodrop/row=18/col=55
+	serials_selected=serials_selected
+	valid_serials=serial_count;
+}
+
+//

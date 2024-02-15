@@ -1,0 +1,25 @@
+Table Definition Module
+FUT_SN_SELECT - SN_SELECT
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_SN_SELECT^/mnt/data/aon_prod/apps/fileutil/;^BSHO;^^^SN_SELECT^Serial Number Select^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+SERIAL_NBR^FUT_SN_SELECT^001^C^^3001^ine_serial_nbr^0^^^1^^Y^^^^^FUT_SERIAL_NBR^Serial Number (Basis)^Serial Number (Basis)^Serial Number (Basis)^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^^^^^^^^N^
+NEW_DATE^FUT_SN_SELECT^002^C^^3002^ind_new_date^0^^^2^^N^^^C^^FUT_NEW_DATE^New Date^New Date^New Date^C^1^D^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^^^^^^^^N^
+LICENSE_TYPE^FUT_SN_SELECT^003^C^^3003^ine_license_type^0^^^3^^N^^^^^FUT_LICENSE_TYPE^Configurator License Type ID^Configurator License Type Id^Configurator License Type Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^N^
+SELECTED^FUT_SN_SELECT^004^C^^3004^ine_selected^0^^^4^^N^^^^^FUT_SELECTED^Selected^Selected^Selected^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+AVAILABLE^FUT_SN_SELECT^005^C^^3005^ine_available^0^^^5^^N^^^^^FUT_AVAILABLE^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^32^^^^^^^^^^^0^^^^^^^^N^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_SN_SELECT^PRIMARY^FUT_SN_SELECT.SERIAL_NBR                ^FUT_SN_SELECT.SERIAL_NBR$^RD_REC_DATA.SERIAL_NBR$^RD_REC_DATA.SERIAL_NBR$                 
+{KeyDefsEnd}
+{GridCols}
+001FUT_SN_SELECT.SERIAL_NBR                ;002FUT_SN_SELECT.NEW_DATE                  ;003FUT_SN_SELECT.LICENSE_TYPE              ;004FUT_SN_SELECT.SELECTED                  ;005FUT_SN_SELECT.AVAILABLE                 ;
+{GridColsEnd}

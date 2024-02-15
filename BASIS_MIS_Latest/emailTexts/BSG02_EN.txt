@@ -1,0 +1,4 @@
+This invoice is in accordance of the German tax
+law under the procedure of the VAT reverses charge
+system. (Transfer of the VAT tax debtor on the 
+bill-recipient).

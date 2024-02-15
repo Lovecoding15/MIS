@@ -1,0 +1,465 @@
+rem ' **********************************************************************
+rem ' * deactivate expired serial number
+rem ' * with a licnese type of D60, EXP, KIT, NFR, or RN1 
+rem ' * deactive 45 days after expiration
+rem ' **********************************************************************
+
+begin
+seterr error_trap
+setesc error_trap
+
+rem ' **********************************************************************
+rem ' * set email address
+rem ' **********************************************************************
+
+to$ = "customer-service@basis.cloud"
+cc$ = "misdev@basis.cloud"
+from$ = "customer-service@basis.cloud"
+
+rem ' **********************************************************************
+rem ' * set dates
+rem ' **********************************************************************
+
+today = jul(0,0,0), today$ = date(today:"%Y%Mz%Dz")
+expiredBefore = today - 45; expiredBefore$ = date(expiredBefore:"%Y%Mz%Dz")
+
+rem ' the following are used in evaluating D60 licenses
+ninetyDays = today - 90; ninetyDays$ = date(ninetyDays:"%Y-%Mz-%Dz")
+sixtyFiveDays = today - 65; sixtyFiveDays$ = date(sixtyFiveDays:"%Y%Mz%Dz")
+
+rem ' used to decode the expire date from sn_license
+mlist$="JAN01FEB02MAR03APR04MAY05JUN06JUL07AUG08SEP09OCT10NOV11DEC12"
+
+rem ' **********************************************************************
+rem ' * create, open and prep the work file
+rem ' **********************************************************************
+
+filepath$ = stbl("TEMP")
+listfile$ = filepath$ + "deactivated_serial_nbrs_" + date(0,"%Y%Mz%Dz%Hz%mz%sz") + ".csv"
+erase listfile$, err=*next
+string listfile$
+logfile=unt
+open(logfile)listfile$
+headers$ = "Serial #" + $2C$ + "Lic Type" + $2C$ + "Prod" + $2C$ + "Orig Sale" + $2C$+ "Firm" + $2C$ + "Cust #" + $2C$ + "Customer" + $2C$ + "Contract" + $2C$ + "Contr Type" + $2C$ + "Expired" + $2C$
+
+write (logfile)headers$
+
+logtemp$="SERIAL_NBR:C(20*=44),LICENSE_TYPE:C(3*=44),PRODUCT:C(3*=44),ORIG_SALE_DATE:C(10*=44),FIRM:C(2*=44),CUSTOMER_NBR:C(6*=44),CUST_NAME:C(30*=44),CONTRACT:C(6*=44),CONTR_TYPE:C(3*=44),EXPIRE_ON_DT:C(10*=44)"
+dim logentry$:logtemp$
+
+
+rem ' **********************************************************************
+rem ' * open other files
+rem ' **********************************************************************
+
+call "ec_open::SNM01"; rem ' serial number table
+call "ec_open::SMC01"; rem ' contract table
+call "ec_open::ARM01"; rem ' customer master
+call "ec_open::SNM04"; rem ' serial number comment table
+call "ec_open::SN_LICENSE"; rem ' license data from license generator
+
+rem ' get the perpetual and annual license and user counts
+counts = unt
+opened = 0
+open(counts, err=*next)"/mnt/data/basisaon/aon/tmp/countStash.dat"; opened = 1
+if opened then
+	read(counts)perpet$
+	if len(perpet$) = 14 then
+		pcount = num(perpet$(1,7))
+		pusers = num(perpet$(8,7))
+	fi
+	read(counts)annual$
+	if len(annual$) = 14 then
+		acount = num(annual$(1,7))
+		ausers = num(annual$(8,7))
+	fi
+fi
+                       
+
+rem ' **********************************************************************
+rem ' * main loop on the snm01 file
+rem ' **********************************************************************
+
+while 1
+	read record(snm01,end=*break)snm01$
+	
+	if snm01.active_flag$ = "N" then 
+		inactive = inactive + 1
+		inactiveUsers = inactiveUsers + snm01.users
+		continue
+	fi
+	
+	rem ' get a count of active virtual serail numbers
+	if snm01.media_type$ = "VIR" then
+		virtual = virtual + 1
+		virtualUsers = virtualUsers + snm01.users
+	fi
+		
+	if snm01.active_flag$ = "Y" then 
+		active = active + 1
+		activeUsers = activeUsers + snm01.users
+		if snm01.license_type$ = "EXP" then
+			gosub EXP_expired
+			expCount = expCount + 1
+			expUsers = expUsers + snm01.users
+			continue
+		fi
+		if snm01.license_type$ = "KIT" then
+			gosub KIT_expired
+			kitCount = kitCount + 1
+			kitUsers = kitUsers + snm01.users
+			continue
+		fi
+		if snm01.license_type$ = "NFR" then
+			gosub NFR_expired
+			nfrCount = nfrCount + 1
+			nfrUsers = nfrUsers + snm01.users
+			continue
+		fi
+		if snm01.license_type$ = "RN1" then
+			gosub RN1_expired
+			rn1Count = rn1Count + 1
+			rn1Users = rn1Users + snm01.users
+			continue
+		fi
+		if snm01.license_type$ = "D60" then
+			gosub D60_expired
+			d60Count = d60Count + 1
+			d60Users = d60Users + snm01.users
+			continue
+		fi
+		continue	
+	fi
+
+	blank = blank + 1
+
+wend
+
+rem ' **********************************************************************
+rem ' * email results
+rem ' **********************************************************************
+
+subj$ = "deactivate serial number results"
+
+mask$ = "###,###,##0"
+
+rem ' overall counts
+msg$ = str(inactive + active + blank:mask$) + " total serial numbers with " + str(inactiveUsers + activeUsers:mask$) + " users." + $0A$
+msg$ = msg$ + str(inactive:mask$) + " inactive serial numbers with " + str(inactiveUsers:mask$) + " users." + $0A$
+msg$ = msg$ + str(active:mask$) + " active serial numbers with " + str(activeUsers:mask$) + " users." +  $0A$
+msg$ = msg$ + str(virtual:mask$) + " virtual serial numbers with " + str(virtualUsers:mask$) + " users " + $0A$
+msg$ = msg$ + str(pcount:mask$) + " perpetual serial numbers with " + str(pusers:mask$) + " users " + $0A$
+msg$ = msg$ + str(acount:mask$) + " registered annual serial numbers with " + str(ausers:mask$) + " users " + $0A$
+msg$ = msg$ + str(blank:mask$) + " unclassed serial numbers " + $0A$ + $0A$
+
+rem ' EXP license type counts
+msg$ = msg$ + str(expCount:mask$) + " total EXP type serial numbers with " + str(expUsers:mask$) + " users." + $0A$
+msg$ = msg$ + str(expExpired:mask$) + " expired EXP type serial numbers DEACTIVATED." + $0A$
+msg$ = msg$ + str(expInforce:mask$) + " in force EXP type serial numbers." + $0A$
+msg$ = msg$ + str(expNoContract:mask$) + " no contract EXP type serial numbers." + $0A$ +$0A$
+
+rem ' KIT license type counts
+msg$ = msg$ + str(kitCount:mask$) + " total KIT type serial numbers with " + str(kitUsers:mask$) + " users." + $0A$
+msg$ = msg$ + str(kitExpired:mask$) + " expired KIT type serial numbers DEACTIVATED." + $0A$
+msg$ = msg$ + str(kitInforce:mask$) + " in force KIT type serial numbers." + $0A$
+msg$ = msg$ + str(kitNoContract:mask$) + " no contract KIT type serial numbers." + $0A$ + $0A$
+
+rem ' NFR license type counts
+msg$ = msg$ + str(nfrCount:mask$) + " total NFR type serial numbers with " + str(nfrUsers:mask$) + " users." + $0A$
+msg$ = msg$ + str(nfrExpired:mask$) + " expired NFR type serial numbers DEACTIVATED." + $0A$
+msg$ = msg$ + str(nfrInforce:mask$) + " in force NFR type serial numbers." + $0A$
+msg$ = msg$ + str(nfrNoContract:mask$) + " no contract NFR type serial numbers." + $0A$ + $0A$
+
+rem ' RN1 license type counts
+msg$ = msg$ + str(rn1Count:mask$) + " total RN1 type serial numbers with " + str(rn1Users:mask$) + " users." + $0A$
+msg$ = msg$ + str(rn1Expired:mask$) + " expired RN1 type serial numbers DEACTIVATED." + $0A$
+msg$ = msg$ + str(rn1Inforce:mask$) + " in force RN1 type serial numbers." + $0A$
+msg$ = msg$ + str(rn1NoContract:mask$) + " no contract RN1 type serial numbers." + $0A$ + $0A$
+
+rem ' D60 license type counts
+msg$ = msg$ + str(d60Count:mask$) + " total D60 type serial numbers with " + str(d60Users:mask$) + " users." + $0A$
+msg$ = msg$ + str(d60Expired:mask$) + " expired D60 type serial numbers DEACTIVATED." + $0A$
+msg$ = msg$ + str(d60Inforce:mask$) + " in force D60 type serial numbers." + $0A$
+msg$ = msg$ + str(d60NotRegistered:mask$) + " not registered D60 type serial numbers." + $0A$ + $0A$
+
+rem ' from$, to$, cc$ set at beginning of the program
+bcc$ = ""
+subject$ = subj$
+close(logfile,err=*next)
+file$ = listfile$
+msgtxt$ = msg$
+msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+goto pgm_exit
+
+rem ' **********************************************************************
+rem ' * EXP type license expired check
+rem ' **********************************************************************
+
+EXP_expired:
+
+	if cvs(snm01.contract$,3) <> "" then
+		read record(smc01,key=snm01.contract$)smc01$
+		if smc01.expire_on_dt$ < expiredBefore$ then
+			expExpired = expExpired + 1
+			gosub make_log_entry
+			gosub deactivate_serialNbr
+		else
+			expInforce = expInforce + 1
+		fi
+	else
+		expNoContract = expNoContract + 1
+	fi
+	
+return
+
+rem ' **********************************************************************
+rem ' * KIT type license expired check
+rem ' **********************************************************************
+
+KIT_expired:
+
+	if cvs(snm01.contract$,3) <> "" then
+		read record(smc01,key=snm01.contract$)smc01$
+		if smc01.expire_on_dt$ < expiredBefore$ then
+			kitExpired = kitExpired + 1
+			gosub make_log_entry
+			gosub deactivate_serialNbr
+		else
+			kitInforce = kitInforce + 1
+		fi
+	else
+		kitNoContract = kitNoContract + 1
+	fi
+	
+return
+
+rem ' **********************************************************************
+rem ' * NFR type license expired check
+rem ' **********************************************************************
+
+NFR_expired:
+
+	if cvs(snm01.contract$,3) <> "" then
+		read record(smc01,key=snm01.contract$)smc01$
+		if smc01.expire_on_dt$ < expiredBefore$ then
+			nfrExpired = nfrExpired + 1
+			gosub make_log_entry
+			gosub deactivate_serialNbr
+		else
+			nfrInforce = nfrInforce + 1
+		fi
+	else
+		nfrNoContract = nfrNoContract + 1
+	fi
+	
+return
+
+rem ' **********************************************************************
+rem ' * RN1 type license expired check
+rem ' **********************************************************************
+
+RN1_expired:
+
+	if cvs(snm01.contract$,3) <> "" then
+		read record(smc01,key=snm01.contract$)smc01$
+		if smc01.expire_on_dt$ < expiredBefore$ then
+			rn1Expired = rn1Expired + 1
+			gosub make_log_entry
+			gosub deactivate_serialNbr
+		else
+			rn1Inforce = rn1Inforce + 1
+		fi
+	else
+		rn1NoContract = rn1NoContract + 1
+	fi
+	
+return
+
+rem ' **********************************************************************
+rem ' * D60 type license expired check
+rem ' **********************************************************************
+
+D60_expired:
+
+	rem ' find the first license registration
+	dim sn_license$:fattr(sn_license$)
+	read record(sn_license, key=snm01.serial_nbr$, dom=*next)sn_license$
+	
+	found = 0; straightExpire = 0
+	read record(sn_license,end=*next)sn_license$
+	if cvs(sn_license.serial_num$,3) = cvs(snm01.serial_nbr$,3) then 
+		found = 1
+	fi
+	
+	if found then
+		rem ' license was registered we either use the expire date from sn_license or the date
+		
+		expireDate$ = cvs(sn_license.expire$,7)
+		if len(expireDate$) = 10 then 
+			expireDate$ = "0" + expireDate$
+		fi
+		if len(expireDate$) = 11 then
+			p=pos(expireDate$(4,3)=mlist$)
+			if p then 
+				expireDate$ = expireDate$(8,4) + mlist$(p+3,2) + expireDate$(1,2)
+				straightExpire = 1
+			else
+				expireDate$ = sn_license.date$
+			fi
+		else
+			expireDate$ = sn_license.date$
+		fi
+		
+		if straightExpire then
+			if expireDate$ < today$ then
+				d60Expired = d60Expired + 1
+				registered$ = "Reg"
+				expiredDateForLog$ = expireDate$(1,4) + "-" + expireDate$(5,2) + "-" + expireDate$(7,2)
+				gosub make_log_entry
+				gosub deactivate_serialNbr
+			else
+				d60Inforce = d60Inforce + 1
+			fi
+		else				
+			if expireDate$ < sixtyFiveDays$ then
+				d60Expired = d60Expired + 1
+				registered$ = "Reg"
+				expiredDateForLog = jul(num(sn_license.date$(1,4)), num(sn_license.date$(5,2)), num(sn_license$(7,2))) + 65
+				expiredDateForLog$ = date(expiredDateForLog:"%Y-%Mz-%Dz")
+				gosub make_log_entry
+				gosub deactivate_serialNbr
+			else
+				d60Inforce = d60Inforce + 1
+			fi
+		fi
+	else
+		rem ' license has not been registered
+		orgSale$ = FNunpackDate$(snm01.orig_sale_date$)
+		if orgSale$ < ninetyDays$ then
+			d60Expired = d60Expired + 1
+			registered$ = "NotReg"
+			expiredDateForLog = jul(num(orgSale$(1,4)), num(orgSale$(6,2)), num(orgSale$(9,2))) + 90
+			expiredDateForLog$ = date(expiredDateForLog:"%Y-%Mz-%Dz")
+			gosub make_log_entry
+			gosub deactivate_serialNbr
+		else			
+			d60NotRegistered = d60NotRegistered + 1
+		fi
+	fi
+	
+return
+
+rem ' **********************************************************************
+rem ' * make log file entry
+rem ' **********************************************************************
+
+make_log_entry:
+
+	dim logentry$:logtemp$
+	logentry.serial_nbr$ = cvs(snm01.serial_nbr$,3)
+	logentry.license_type$ = snm01.license_type$
+	logentry.product$ = snm01.product$
+	logentry.orig_sale_date$ = FNunpackDate$(snm01.orig_sale_date$)
+	logentry.firm$ = snm01.firm_id$
+	logentry.customer_nbr$ = snm01.customer_nbr$
+	
+	read record(arm01, key=snm01.firm_id$ + snm01.customer_nbr$)arm01$
+	cust_name$ = cvs(arm01.cust_name$,3)
+	while pos("," = cust_name$)
+		ppos = pos("," = cust_name$)
+		cust_name$ = cust_name$(1,ppos-1) + cust_name$(ppos+1)
+	wend
+	logentry.cust_name$ = cust_name$
+	
+	if snm01.license_type$ <> "D60" then
+		logentry.contract$ = snm01.contract$
+		logentry.contr_type$ = smc01.contr_type$
+		logentry.expire_on_dt$ = smc01.expire_on_dt$(1,4) + "-" + smc01.expire_on_dt$(5,2) + "-" + smc01.expire_on_dt$(7,2)
+	else
+		logentry.contract$ = registered$
+		logentry.contr_type$ = ""
+		logentry.expire_on_dt$ = expiredDateForLog$
+	fi
+	
+	write(logfile)logentry$
+
+return
+
+rem ' **********************************************************************
+rem ' * deactivate a serial number
+rem ' **********************************************************************
+
+deactivate_serialNbr:
+
+	extract record(snm01, key=snm01.serial_nbr$)snm01$
+	
+	snm01.active_flag$ = "N"
+	snm01.avail_support = 0
+	snm01$ = field(snm01$)
+	
+	write record(snm01)snm01$
+	
+	rem ' place comment in snm04
+	
+	let seq = 1
+	
+	com$="Deactivated by automated process "+DATE(0:"%Mz/%Dz/%Y")
+	read (snm04,key=snm01.serial_nbr$,dom=*NEXT)
+	while seq<100
+		read record (snm04,END=*break)snm04$
+		if snm04.serial_nbr$=snm01.serial_nbr$ then 
+		    let seq=num(snm04.comments_seq$)+1
+		    continue
+		fi
+		let snm04.serial_nbr$=snm01.serial_nbr$
+		let snm04.comments_seq$=STR(seq:"00"),seq=100
+		let snm04.cmt_line$=com$
+		let snm04$=field(snm04$)
+		
+		write record (snm04,key=snm04$(1,22))snm04$
+	wend
+
+return
+
+rem ' **********************************************************************
+rem ' * error trap
+rem ' **********************************************************************
+
+error_trap:
+
+	rem ' from$, to$, cc$ set at beginning of the program
+	bcc$ = ""
+	subject$ = "Error in deactivate_sn.src"
+	file$ = ""
+	msgtxt$ = "An error " + str(err) + " occurred in deactivate_sn.src at line number: " + str(tcb(5)) + ". Error message: " + errmes(-1)
+	msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+	goto pgm_exit
+
+
+rem ' **********************************************************************
+rem ' * program exit
+rem ' **********************************************************************
+
+pgm_exit:
+	run "zeroSupport.src"
+	
+rem ' **********************************************************************
+rem ' * user defined functions
+rem ' **********************************************************************
+	
+def FNunpackDate$(Q1$)
+	retDate$ = FNA$(Q1$(1),Q1$) + "-" + FNA$(Q1$(2),Q1$) + "-" + FNA$(Q1$(3),Q1$)
+	if num(retDate$(1,2)) < 20 then
+		retDate$="20"+retDate$
+	else
+		retDate$="19"+retDate$
+	fi
+	return retDate$
+fnend
+
+def FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+
+end

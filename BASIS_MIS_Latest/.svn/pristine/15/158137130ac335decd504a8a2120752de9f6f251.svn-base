@@ -1,0 +1,52 @@
+rem ' run the get SP and SPM customer types with SN Data
+
+rem --- Execute the query
+
+	sql$ = "call GETSPANDSPMCUSTTYPEWITHSNDATA('01')"
+	
+	sql_chan=sqlunt
+	
+	sqlopen(sql_chan,mode="UID=basisaon,pwd=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+	
+	sqlprep(sql_chan)sql$
+	
+	sqlexec(sql_chan)
+	
+	dim read_tpl$:sqltmpl(sql_chan)
+
+rem --- create the output file
+
+outfile$= "/mnt/data/basisaon/aon/tmp/SPandSPMcustTypeswithSNdata.csv"
+erase outfile$,err=*next
+string outfile$
+outfile=unt
+open(outfile)outfile$	
+
+sep$ = chr(34) + "," +chr(34)
+line$ = chr(34) + "Firm" + sep$ + "Customer" + sep$ + "Customer Name" + sep$ + "Salesperson" + sep$ + "License Count" + sep$ + "Total Users" + sep$ + "Largest User Count" + chr(34)
+write(outfile)line$
+
+rem --- run the file
+
+	
+	while 1
+		read_tpl$ = sqlfetch(sql_chan,end=*break)
+		
+		firm$ = read_tpl.FIRM$
+		customer_nbr$ = read_tpl.CUSTOMER_NBR$
+		cust_name$ = read_tpl.CUST_NAME$
+		sls_psn$ = read_tpl.SLS_PERSON$
+		license_cnt$ = read_tpl.LICENSE_CNT$
+		total_users$ = read_tpl.TOTAL_USERS$
+		largestUserCnt$ = read_tpl.LARGEST_USER_CNT$
+
+		line$ = chr(34) + firm$ + sep$ + customer_nbr$ + sep$ + cust_name$ + sep$ + sls_psn$ + sep$ + license_cnt$ + sep$ + total_users$ + sep$ + largestUserCnt$ + chr(34)
+		write(outfile)line$
+		
+	wend
+	
+	print "file is ready ", outfile$
+	input *
+end
+
+

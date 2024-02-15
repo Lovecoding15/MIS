@@ -1,0 +1,126 @@
+1EN:
+{
+Subject: 7-day Emergency License Warning for <sn> with <users> User(s)
+
+You are receiving this notice because your organization has either automatically or manually requested and received a 7-day emergency license for s/n <sn> with <users> user(s)<enduser>. The two most common reasons for a 7-day emergency license request are 1) a host ID has changed on the system or 2) a renewable license has reached its expiration date. 
+
+Please contact BASIS Sales at +1.505.938.6120 or via e-mail at sales@basis.cloud or BASIS Europe Sales at +49 681 968 14 0 or via e-mail at eu.sales@basis.cloud for more information and about how to remedy the situation.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
++1.505.938.6121
+}
+2EN:
+{
+Subject: 7-day Emergency License Warning for <sn> with <users> User(s) - Second Notification
+
+You are receiving this notice because your organization has either automatically or manually requested and received multiple 7-day emergency licenses for s/n <sn> with <users> user(s)<enduser>.
+
+Please contact BASIS Sales at +1.505.938.6120 or via e-mail at sales@basis.cloud or BASIS Europe Sales at +49 681 968 14 0 or via e-mail at eu.sales@basis.cloud for more information and about how to remedy this critical situation.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
++1.505.938.6121
+}
+3EN:
+{
+Subject: 7-day Emergency License Warning for <sn> with <users> User(s) - Third Notification
+
+You are receiving this notice because your organization has either automatically or manually requested and received numerous 7-day emergency licenses for s/n <sn> with <users> user(s)<enduser>.
+
+In order to ensure the continued use of your application, it is imperative that you please contact BASIS Sales at +1.505.938.6120 or via e-mail at sales@basis.cloud or BASIS Europe Sales at +49 681 968 14 0 or via e-mail at eu.sales@basis.cloud for more information and about how to remedy the situation.
+
+BASIS will only provide additional 7-day emergency licenses when the current license is re-registered with a permanent license file or after the expiring license is extended so we recommend you take immediate action.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
++1.505.938.6121
+}
+4EN:
+{
+Subject: 7-day Emergency License Denial Notification for <sn> with <users> User(s)
+
+You are receiving this notice because your organization has either automatically or manually requested and received numerous 7-day emergency licenses for s/n <sn> with <users> user(s)<enduser>.
+
+BASIS is unable to comply with additional 7-day emergency license requests until the current license is re-registered with a permanent license file or after the expiring license is extended.
+
+Take immediate action to remedy the situation by contacting BASIS Sales at +1.505.938.6120 or via e-mail at sales@basis.cloud or BASIS Europe Sales at +49 681 968 14 0 or via e-mail at eu.sales@basis.cloud.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
++1.505.938.6121
+}
+VIR1EN:
+{
+Subject: 7-day Emergency License Warning for <sn> with <users> User(s)
+
+You are receiving this notice because your organization has automatically requested and received a 7-day emergency license for <sn> with <users> user(s)<enduser>. The Software Asset Maintenance (SAM) for this virtual license has expired. Virtual Licensing requires that SAM be active. 
+
+If you have inadvertently forgotten to pay your SAM invoice, and have therefore allowed your SAM to lapse, you can reactivate your SAM by simply paying your outstanding SAM invoice by clicking on the following link: https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>.
+
+If you have credited the SAM invoice by canceling your SAM renewal, please contact BASIS Sales at +1.505.938.6120 or via e-mail at sales@basis.cloud or BASIS Europe Sales at +49 681 968 14 0 or via e-mail at eu.sales@basis.cloud for more information on how to reinstate your SAM coverage.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
++1.505.938.6121
+}
+VIR2EN:
+{
+Subject: 7-day Emergency License Warning for <sn> with <users> User(s) - Second Notification
+
+You are receiving this notice because your organization has automatically requested and received multiple 7-day emergency licenses for <sn> with <users> user(s)<enduser>. The Software Asset Maintenance (SAM) for this virtual license has expired. Virtual Licensing requires that SAM be active. 
+
+If you have inadvertently forgotten to pay your SAM invoice, and have therefore allowed your SAM to lapse, you can reactivate your SAM by simply paying your outstanding SAM invoice by clicking on the following link: https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>.
+
+If you have credited the SAM invoice by canceling your SAM renewal, please contact BASIS Sales at +1.505.938.6120 or via e-mail at sales@basis.cloud or BASIS Europe Sales at +49 681 968 14 0 or via e-mail at eu.sales@basis.cloud for more information on how to reinstate your SAM coverage to remedy this critical situation.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
++1.505.938.6121
+}
+VIR3EN:
+{
+Subject: 7-day Emergency License Warning for <sn> with <users> User(s) - Third Notification
+
+You are receiving this notice because your organization has automatically requested and received numerous 7-day emergency licenses for <sn> with <users> user(s)<enduser>. The Software Asset Maintenance (SAM) for this virtual license has expired. Virtual Licensing requires that SAM be active. 
+
+If you have inadvertently forgotten to pay your SAM invoice, and have therefore allowed your SAM to lapse, you can reactivate your SAM by simply paying your outstanding SAM invoice by clicking on the following link: https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>.
+
+If you have credited the SAM invoice by canceling your SAM renewal, then in order to ensure the continued use of your application, it is imperative that you please contact BASIS Sales at +1.505.938.6120 or via e-mail at sales@basis.cloud or BASIS Europe Sales at +49 681 968 14 0 or via e-mail at eu.sales@basis.cloud for more information on how to reinstate your SAM coverage to remedy this critical situation.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
++1.505.938.6121
+}
+VIR4EN:
+{
+Subject: 7-day Emergency License Denial Notification for <sn> with <users> User(s)
+
+You are receiving this notice because your organization has automatically requested and received numerous 7-day emergency licenses for <sn> with <users> user(s)<enduser>. The Software Asset Maintenance (SAM) for this virtual license has expired. Virtual Licensing requires that SAM be active.
+
+BASIS is unable to comply with additional 7-day emergency license requests.
+
+If you have inadvertently forgotten to pay your SAM invoice, and have therefore allowed your SAM to lapse, you can reactivate your SAM by simply paying your outstanding SAM invoice by clicking on the following link: https://bbjserver.basis.cloud:8443/apps/DIRECT-RENEW?sn=<SNURL>.
+
+If you have credited the SAM invoice by canceling your SAM renewal, please take immediate action by contacting BASIS Sales at +1.505.938.6120 or via e-mail at sales@basis.cloud or BASIS Europe Sales at +49 681 968 14 0 or via e-mail at eu.sales@basis.cloud to reinstate your SAM coverage to remedy this critical situation.
+
+Regards,
+
+BASIS Customer Service Department
+customer-service@basis.cloud
++1.505.938.6121
+}

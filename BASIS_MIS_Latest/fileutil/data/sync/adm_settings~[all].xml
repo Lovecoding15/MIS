@@ -1,0 +1,244 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_SETTINGS</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ADMIN           </SET_USER_ID>
+		<SET_DEVICE>847x721bui_chrome                       </SET_DEVICE>
+		<SET_KEY>SET_LAUNCHTYPE                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20200521184321</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ADMIN           </SET_USER_ID>
+		<SET_DEVICE>847x721bui_chrome                       </SET_DEVICE>
+		<SET_KEY>SET_LAUNCHBUI                           </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20200521184321</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ADMIN           </SET_USER_ID>
+		<SET_DEVICE>847x721bui_chrome                       </SET_DEVICE>
+		<SET_KEY>WIN_[MENU_FAVES]                        </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20200521184321</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ADMIN           </SET_USER_ID>
+		<SET_DEVICE>847x721bui_chrome                       </SET_DEVICE>
+		<SET_KEY>WIN_[PROJ_APP]                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20200521184321</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>GPARRA          </SET_USER_ID>
+		<SET_DEVICE>1449x815                                </SET_DEVICE>
+		<SET_KEY>SETTING_FIXED_DATE                      </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20200522094006</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>GPARRA          </SET_USER_ID>
+		<SET_DEVICE>1449x815                                </SET_DEVICE>
+		<SET_KEY>WIN_[MENU_FAVES]                        </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20200522094006</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>GPARRA          </SET_USER_ID>
+		<SET_DEVICE>1449x815                                </SET_DEVICE>
+		<SET_KEY>WIN_[PROJ_APP]                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20200522094006</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>NSPENCE         </SET_USER_ID>
+		<SET_DEVICE>2370x1774bui_chrome                     </SET_DEVICE>
+		<SET_KEY>WIN_[PROJ_APP]                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20200529104857</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>KWILLIAM        </SET_USER_ID>
+		<SET_DEVICE>1519x706bui_chrome                      </SET_DEVICE>
+		<SET_KEY>SET_LAUNCHTYPE                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20200604125142</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>KWILLIAM        </SET_USER_ID>
+		<SET_DEVICE>1519x706bui_chrome                      </SET_DEVICE>
+		<SET_KEY>SET_LAUNCHBUI                           </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20200604125142</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>KWILLIAM        </SET_USER_ID>
+		<SET_DEVICE>1519x706bui_chrome                      </SET_DEVICE>
+		<SET_KEY>WIN_[MENU_FAVES]                        </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20200604125142</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>KWILLIAM        </SET_USER_ID>
+		<SET_DEVICE>1519x706bui_chrome                      </SET_DEVICE>
+		<SET_KEY>WIN_[PROJ_APP]                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20200604125142</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ADMIN           </SET_USER_ID>
+		<SET_DEVICE>1920x1080                               </SET_DEVICE>
+		<SET_KEY>WIN_[MENU_FAVES]                        </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20201023155355</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ADMIN           </SET_USER_ID>
+		<SET_DEVICE>1920x1080                               </SET_DEVICE>
+		<SET_KEY>WIN_[PROJ_APP]                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20201023155355</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>KWILLIAM        </SET_USER_ID>
+		<SET_DEVICE>1536x864                                </SET_DEVICE>
+		<SET_KEY>WIN_[MENU_FAVES]                        </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20210621173647</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>KWILLIAM        </SET_USER_ID>
+		<SET_DEVICE>1536x864                                </SET_DEVICE>
+		<SET_KEY>WIN_[PROJ_APP]                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20210621173647</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ATIMM           </SET_USER_ID>
+		<SET_DEVICE>974x954bui_chrome                       </SET_DEVICE>
+		<SET_KEY>SET_LAUNCHTYPE                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20210906132951</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ATIMM           </SET_USER_ID>
+		<SET_DEVICE>974x954bui_chrome                       </SET_DEVICE>
+		<SET_KEY>SET_LAUNCHBUI                           </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20210906132951</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ATIMM           </SET_USER_ID>
+		<SET_DEVICE>974x954bui_chrome                       </SET_DEVICE>
+		<SET_KEY>WIN_[MENU_FAVES]                        </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20210906132951</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>ATIMM           </SET_USER_ID>
+		<SET_DEVICE>974x954bui_chrome                       </SET_DEVICE>
+		<SET_KEY>WIN_[PROJ_APP]                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20210906132951</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>GROBLED         </SET_USER_ID>
+		<SET_DEVICE>1920x969bui_chrome                      </SET_DEVICE>
+		<SET_KEY>SET_LAUNCHTYPE                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20211027140455</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>GROBLED         </SET_USER_ID>
+		<SET_DEVICE>1920x969bui_chrome                      </SET_DEVICE>
+		<SET_KEY>SET_LAUNCHBUI                           </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>MSC</SET_CAT>
+		<SET_STAMP>20211027140455</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>GROBLED         </SET_USER_ID>
+		<SET_DEVICE>1920x969bui_chrome                      </SET_DEVICE>
+		<SET_KEY>WIN_[MENU_FAVES]                        </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20211027140455</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<SET_TYPE>USR</SET_TYPE>
+		<SET_USER_ID>GROBLED         </SET_USER_ID>
+		<SET_DEVICE>1920x969bui_chrome                      </SET_DEVICE>
+		<SET_KEY>WIN_[PROJ_APP]                          </SET_KEY>
+		<SET_LANG_ID>ENU</SET_LANG_ID>
+		<SET_CAT>WIN</SET_CAT>
+		<SET_STAMP>20211027140455</SET_STAMP>
+		<USER_MODIFIED>D</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

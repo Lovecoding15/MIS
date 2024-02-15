@@ -1,0 +1,157 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2022-06-27
+Last Build Time=17:48:34
+Precision=99
+Program Name=emerLic
+Remarks=Yes
+Resource File=emerLic.arc
+Show Forms=All
+
+[EOJ]
+gosub closeFiles
+
+[Init]
+gosub openFiles
+gosub getObjects
+
+userId$ = gb__arg$(1,3)
+firm_id$ = gb__arg$(4,2)
+customer_nbr$ = gb__arg$(6,6)
+cust_name$ = cvs(gb__arg$(12,30),3)
+repemail$ = cvs(gb__arg$(42),3)
+
+firmid!.setText(firm_id$)
+custNbr!.setText(customer_nbr$)
+custName!.setText(cust_name$)
+nbrOfUsers!.setText("")
+
+
+[Event Win=101 ID=115 Code=B <PUSH_BUTTON> (W101_C115_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+nbrOfUsers$ = cvs(nbrOfUsers!.getText(),3)
+isANumber = 0; nbrOfUsers = 0
+nbrOfUsers = num(nbrOfUsers$, err = *next); isANumber = 1
+if !isANumber or nbrOfUsers = 0 then 
+   i = msgBox("Number of Users must be a valid number greater than zero.",0,"Number of Users Problem")
+   return
+fi
+ 
+gosub logTheRequest
+
+mailto$="license@basis.cloud"
+rem ' mailto$ = "kurt.e.williams@comcast.net"
+mailfrom$="customer-service@basis.cloud"
+mailcc$=""
+mailbcc$="kw5121151@gmail.com"
+rem ' mailbcc$=""
+mailsubject$="License"
+
+mail$=""
+mail$=mail$+"Email Address: " + repemail$ + $0a$
+mail$=mail$+"Host ID: " + "COMPOSITE=LICEMERGENCY" + $0a$
+mail$=mail$+"Serial Number: " + "BBX010000" + $0a$
+mail$=mail$+"Number of Users: " + str(nbrOfUsers) + $0a$
+mail$=mail$+"License Auth Num: " + "0123456789" + $0a$
+mail$=mail$+"License Delivery: " +  "email" + $0a$
+mail$=mail$+"UseTRL: " + "true" + $0a$
+mail$=mail$+"EmergencyGen: " + "true" + $0a$
+mail$=mail$+"LicRequestTest: " + "true" + $0a$
+
+call "sendEmail.src", mailfrom$, mailto$, mailcc$, mailbcc$, mailsubject$, mail$, ""
+msg$="License request sent to Autoresponder. License will be delivered to you via email."
+
+i = msgbox(msg$,0,"License Request Sent")
+
+[Event Win=101 ID=116 Code=B <PUSH_BUTTON> (W101_C116_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub closeFiles
+goto gb__eoj
+
+
+[Function (closeFiles)]
+rem ' -----------------------------------------------------------------
+rem ' closeFiles
+rem ' -----------------------------------------------------------------
+
+closeFiles:
+
+close(sn_emergency, err = *next)
+
+return
+
+[Function (getObjects)]
+rem ' -----------------------------------------------------------------
+rem ' getObjects
+rem ' -----------------------------------------------------------------
+
+getObjects:
+
+declare BBjAPI bbjapi!
+declare BBjSysGui sysgui!
+
+declare BBjTopLevelWindow emerLic!
+declare BBjEditBox firmid!
+declare BBjEditBox custNbr!
+declare BBjEditBox custName!
+declare BBjEditBox nbrOfUsers!
+
+declare BBjButton requestBtn!
+declare BBjButton exitBtn!
+
+bbjapi! = BBjAPI()
+sysgui! = bbjapi!.getSysGui()
+
+emerLic! = cast(BBjTopLevelWindow, sysgui!.getWindow("emerLic"))
+
+firmid! = cast(BBjEditBox, emerLic!.getControl("firmid"))
+custNbr! = cast(BBjEditBox, emerLic!.getControl("custNbr"))
+custName! = cast(BBjEditBox, emerLic!.getControl("custName"))
+nbrOfUsers! = cast(BBjEditBox, emerLic!.getControl("nbrOfUsers"))
+
+requestBtn! = cast(BBjButton, emerLic!.getControl("requestBtn"))
+exitBtn! = cast(BBjButton, emerLic!.getControl("exitBtn"))
+
+return
+
+[Function (logTheRequest)]
+rem ' -----------------------------------------------------------------
+rem ' logTheRequest
+rem ' -----------------------------------------------------------------
+
+logTheRequest:
+
+dim sn_emergency$:fattr(sn_emergency$)
+
+sn_emergency.uid$ = userId$
+sn_emergency.timdat$ = date(0:"%Y%Mz%Dz%Hz%mz%sz")
+sn_emergency.repemail$ = repemail$
+sn_emergency.firm_id$ = cvs(firmid!.getText(),3)
+sn_emergency.customer_nbr$ = cvs(custNbr!.getText(),3)
+sn_emergency.cust_name$ = cvs(custName!.getText(),3)
+sn_emergency.users$ = cvs(nbrOfUsers!.getText(),3)
+
+write record(sn_emergency, key = sn_emergency.uid$ + sn_emergency.timdat$)sn_emergency$
+
+return
+
+[Function (openFiles)]
+rem ' -----------------------------------------------------------------
+rem ' openFiles
+rem ' -----------------------------------------------------------------
+
+openFiles:
+
+call "ec_open::SN_EMERGENCY"
+
+return
+

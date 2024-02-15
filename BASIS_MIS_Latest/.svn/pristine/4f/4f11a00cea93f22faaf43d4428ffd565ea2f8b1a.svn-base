@@ -1,0 +1,40 @@
+// Barista Application Framework - Application Synchronization File
+// Proprietary Information. BASIS International Ltd. All rights reserved.
+SYSID=EXTRAMENU
+SYSDESC=
+SYSCOMP=00000000;BASIS International
+SYSCOPY=Extra Menus^Copyright (C) 2009-2011 BASIS International Ltd.^All rights reserved.^BASIS Extra Menus for Addon 6.0 and GUI functions.^
+SYSPAR=
+SYSDIR=/mnt/data/aon_prod/v1110/extramenu/
+SYSAPP=XTR;Extra Menus;;;extramenu;/mnt/data/aon_prod/v1110/extramenu/prop/;ENU
+SYSSTBL=SET EXTRAMENU=/mnt/data/aon_prod/v1110/extramenu/data/
+SYSSTBL=SET EXTRAMENU_LIB=/mnt/data/aon_prod/v1110/extramenu/lib/
+SYSSTBL=SET EXTRAMENU_PROG=/mnt/data/aon_prod/v1110/extramenu/prog/
+SYSSTBL=SET EXTRAMENU_PROP=/mnt/data/aon_prod/v1110/extramenu/prop/
+SYSSTBL=SET EXT=/mnt/data/bbj/utils/ext/
+SYSSTBL=SET DATA_SERVER=
+SYSSTBL=SET TEMP=/mnt/data/basisaon/aon/tmp/
+SYSSTBL=SET FLEXHOME=/u/docfiles/flexlic/
+SYSSTBL=SET CUST_SERVICE=/mnt/data/docfiles/cs/
+SYSSTBL=SET AON=/mnt/data/basisaon/aon/
+SYSSTBL=SET KEYGEN=/mnt/data/basisaon/aon/bas/
+SYSSTBL=SET E_COMM=/mnt/data/ec/
+SYSSTBL=SET BBJHOME=/mnt/data/bbj/
+SYSSTBL=SET TPM=/mnt/data/basisaon/aon/taos/config.TPM
+SYSPFX=/mnt/data/basisaon/aon/bas/
+SYSPFX=/mnt/data/basisaon/aon/mods/
+SYSPFX=/mnt/data/basisaon/aon/ADATA/
+SYSPFX=/mnt/data/basisaon/aon/MAS/
+SYSPFX=/mnt/data/basisaon/aon/DLR/
+SYSPFX=/mnt/data/basisaon/aon/61DD/
+SYSPFX=/mnt/data/basisaon/aon/SCN/
+SYSPFX=/mnt/data/basisaon/aon/ADM/
+SYSPFX=/mnt/data/basisaon/aon/ACT/
+SYSPFX=/mnt/data/basisaon/aon/DIS/
+SYSPFX=/mnt/data/basisaon/aon/MFG/
+SYSPFX=/mnt/data/basisaon/aon/GRW/
+SYSPFX=/mnt/data/basisaon/aon/sdsoffice/
+SYSPFX=/mnt/data/ec/
+SYSCFG=EXTRAMENU=/mnt/data/aon_prod/v1110/extramenu/data/
+SYSLANG=ENU
+

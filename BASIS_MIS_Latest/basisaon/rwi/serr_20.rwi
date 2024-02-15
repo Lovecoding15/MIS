@@ -1,0 +1,261 @@
+// <serr_20>
+
+display/form="MAS_HEAD"
+	screen_desc="Port Summary";
+
+choose/traditional /prompt="@Select Company" /black /drop
+	c0 from
+	"BASIS International"
+	"BASIS Software GmbH"
+	"End";
+if ctl(2) or c0>1 then exit;
+pause/message "Initializing port list";
+create temporary table picklist
+    	port char(5)/index
+    	selected char(1);
+
+for each csm03
+{
+if csm03.port_id(5,1)<>"4" then
+	{
+	picklist.port=csm03.port_id;
+	insert/noerror picklist;
+	}
+}
+
+choose/record
+	/rewind
+	/ctl(0)=toggle_one
+	/ctl(53)=toggle_all
+	/display=picklist.port+" |   "+picklist.selected+"    "
+	/title="@Select Ports"
+	/help="(#F0)=(de)select one  (#F53)=(de)select all  (#F7)=Accept  (#F2)=Cancel"
+	/colchar="|"
+	/rows=15
+	/cols=14
+	/nobreak
+	/secure
+	/black
+	/drop
+	picklist;
+if ctl(2) then exit;
+
+sdate$=date(0:"0101%Y");
+edate$=date(0:"%Mz%Dz%Y");
+datesin:
+prompt for/row=5/nobox/nodrop/prompt="Starting date for report: "/len=8 sdate$;
+if ctl(2) then exit;
+prompt for/row=7/nobox/nodrop/prompt="  Ending date for report: "/len=8 edate$;
+if ctl(2) then exit;
+call/nowindow "(BBX)aondate.bbx",edate$,enddate$,"P";
+call/nowindow "(BBX)aondate.bbx",sdate$,startdate$,"P";
+call/nowindow "(BBX)aondate.bbx",enddate$,disp_edate$,"U";
+call/nowindow "(BBX)aondate.bbx",startdate$,disp_sdate$,"U";
+
+choose/yesno/row=15/prompt="Dates Correct? "
+/drop
+/default=yes
+datesok;
+
+if datesok=0 then goto datesin;
+
+create temporary table portrpt
+	port_id char(5)
+	rev char(4)
+	dom_users num(8)
+	int_users num(8)
+	bsg_users num(8)
+	dom_lic num(5)
+	int_lic num(5)
+	bsg_lic num(5)
+	dom_rev num(12)
+	int_rev num(12)
+	bsg_rev num(12)
+	index(port_id,rev)
+	;
+
+portcount=0;
+init portrpt;
+for each picklist where selected="Y"
+{
+//portrpt.port_id=picklist.port;
+//insert/update portrpt;
+portcount=portcount+1;
+}
+if portcount=0 then {pause/message="No ports selected.";exit;}
+
+gosub pick_output_dev;
+
+pause/message/blink "Searching ...";
+
+for each snt01 
+where trans_date between startdate$ and enddate$
+and pos("BBX"=serial_nbr)=0
+and action<>"D"
+and (pos(snt01.type_of_sale="NEW ADD PLX TRD") or snt01.type_of_sale(1,1)="U")
+{
+find/noerror snm01 using snt01.serial_nbr;
+if available(snm01)=0 then {pause/message="Header not found for "+snt01.serial_nbr;continue;}
+if pos(snm01.license_type="STDSQLRTMJRRJRFJWR",3)=0 then continue;
+if snm01.active_flag="N" then continue;
+
+find/noerror picklist using snm01.port_id;
+if available(picklist)=0 continue;
+if picklist.selected<>"Y" then  continue;
+//pause/message "Checking "+snm01.serial_nbr;
+gosub check_co;
+//display/notitle c1/len=1 snm01.serial_nbr port_id license_type snt01.type_of_sale users ext_price;
+rev$="????";
+find/noerror csm04 using snm01.firm_id+product_rev;
+if available(csm04) then rev$=csm04.description+fill(4);
+init portrpt;
+portrpt.port_id=snm01.port_id;
+portrpt.rev=rev$(1,4);
+find/noerror portrpt;
+if c1=2 then
+	{
+	portrpt.bsg_lic=portrpt.bsg_lic+1;
+	portrpt.bsg_users=portrpt.bsg_users+snt01.users;
+	portrpt.bsg_rev=portrpt.bsg_rev+snt01.ext_price;
+	}
+if c1=1 then
+	{
+	intl=pos(type$="EUIDSIRSI");
+	if intl then
+		{
+		portrpt.int_lic=portrpt.int_lic+1;
+		portrpt.int_users=portrpt.int_users+snt01.users;
+		portrpt.int_rev=portrpt.int_rev+snt01.ext_price;
+		}
+	else
+		{
+		portrpt.dom_lic=portrpt.dom_lic+1;
+		portrpt.dom_users=portrpt.dom_users+snt01.users;
+		portrpt.dom_rev=portrpt.dom_rev+snt01.ext_price;
+		}
+	}
+if (c0=0 and c1=1) or (c0=1 and c1=2) then {insert/update portrpt;
+pause/message "Checking "+snm01.serial_nbr;}
+}
+
+h1$="            Domestic                  International                    TOTAL";
+h2$="   Lics   Users      Revenue    Lics   Users      Revenue    Lics   Users      Revenue";
+if c0=1 then { 	h1$="     BSG   (in Deutchmarks)";
+		h2$="   Lics   Users      Revenue"; }
+m7$="######0";
+m8$="#######0";
+mr$="##########.00-";
+display/skip/after
+ "          Port Sales Summary From "+disp_sdate$+" Through "+disp_edate$;
+display "     "+h1$; 
+display "Port "+h2$;
+pote$="";
+for each portrpt
+// ****************
+//where dom_lic+int_lic+bsg_lic>0
+// ****************
+{ 
+dom_lic_tot=dom_lic_tot+dom_lic;
+int_lic_tot=int_lic_tot+int_lic;
+bsg_lic_tot=bsg_lic_tot+bsg_lic;
+dom_usr_tot=dom_usr_tot+dom_users;
+int_usr_tot=int_usr_tot+int_users;
+bsg_usr_tot=bsg_usr_tot+bsg_users;
+dom_rev_tot=dom_rev_tot+dom_rev;
+int_rev_tot=int_rev_tot+int_rev;
+bsg_rev_tot=bsg_rev_tot+bsg_rev;
+if c0=1 then
+	{
+	line$=str(bsg_lic:m7$)+str(bsg_users:m8$)+str(bsg_rev:mr$);
+
+	totline$=
+	str(bsg_lic_tot:m7$)+str(bsg_usr_tot:m8$)+str(bsg_rev_tot:mr$);
+	}
+else
+	{
+	line$=str(dom_lic:m7$)+str(dom_users:m8$)+str(dom_rev:mr$)+
+	str(int_lic:m7$)+str(int_users:m8$)+str(int_rev:mr$);
+
+	totline$=
+	str(dom_lic_tot:m7$)+str(dom_usr_tot:m8$)+str(dom_rev_tot:mr$)+
+	str(int_lic_tot:m7$)+str(int_usr_tot:m8$)+str(int_rev_tot:mr$);
+
+	line$=line$+str(dom_lic+int_lic:m7$)+str(dom_users+int_users:m8$)+
+	str(dom_rev+int_rev:mr$);
+
+	totline$=totline$+str(dom_lic_tot+int_lic_tot:m7$)+
+	str(dom_usr_tot+int_usr_tot:m8$)+
+	str(dom_rev_tot+int_rev_tot:mr$);
+	}
+if port_id<>pote$ then {display/notitle port_id;pote$=port_id;}
+display/notitle " "+rev+line$;
+//if unknown_lic then display/notitle str(unknown_lic:m7$)+" Licenses could not be matched to an invoice or customer."/col=6;
+}
+display $$;
+display/notitle "Total"+totline$;
+
+subroutine check_co
+{
+type$="";
+c1=0;
+find/noerror arm02 using snt01.firm_id+customer_nbr+"  ";
+if available(arm02) then {type$=arm02.cust_type;c1=num(snt01.firm_id);}
+}
+
+subroutine toggle_one
+{
+if picklist.selected=" " then picklist.selected="Y";
+	else picklist.selected=" ";
+update picklist;
+}
+
+subroutine toggle_all
+{
+choose/traditional
+	/black
+	/row=15
+	/secure
+	toggle from
+	"Select ALL products"
+	"Deselect ALL products";
+
+for each picklist
+	{
+	if toggle=0 then
+		{
+		if picklist.selected<>"Y" then
+			{
+			picklist.selected="Y";
+			update picklist;
+			}
+		}
+	else
+		{
+		if picklist.selected="Y" then
+			{
+			picklist.selected=" ";
+			update picklist;
+			}
+		}
+	}
+find/first picklist;
+}
+
+subroutine pick_output_dev
+{
+style=1;
+terminal_device$=term();
+device_name$=terminal_device$;
+
+gosub select_device;
+if device_type$="F" then dev$="FILE";
+if device_type$="P" then dev$="PRINTER "+device_name$;
+if device_type$="T" then dev$="VIDEO";
+if device_type$="P" then set display/compress device_name$;
+else set display device_name$;
+display/form="MAS_HEAD" screen_desc="Port Summary" printer=dev$;
+}
+
+#include (LIBRARY)syseldev.h
+
+//

@@ -1,0 +1,79 @@
+Notes on Upgrading Barista
+
+Make sure we have backups of these config files
+
+addon.syn	apps/aon/config/        - main config source for our Addon install
+barista.cfg	barista/sys/config/enu  - backed up only for reference in case of a problem
+barista.syn	barista/sys/config      - contains pointers to our two custom apps, Partner Queries, and File Utility
+
+copying this one is no longer necessary - the extra menus have been moved to a new application and will be included in the sync
+addonxtra.men	apps/aon/config/enu   	- contains our additional menus
+
+run - Barista Utilities - Create Sync File Backup	
+	apps/aon/data/sync/* -- location of the backup files for addon
+	Entered backup directory - an external file location for barista files
+	copy these off to a safe location
+	
+backup the documents folder /mnt/data/bbj/barisa/documents
+
+install the upgrade
+
+apps/aon/data/sync - copy these back in from backup
+copy the barista external backup directory back to apps/aon/data/sync/*
+
+copy the documents backup back in
+
+addon.syn - restore for all installs
+barista.syn - restore only when installing a fresh install (uninstall done previously)
+
+restoring this one is no longer necessary - the extra menus have been moved to a new application and will be included in the sync
+addonxtra.men - restore only when installing a fresh install (uninstall done previously)
+
+edit the barista.cfg file to ensure +DBSSL=1 (default barista.cfg has +DBSSL=0) - no longer needed
+edit the barista.cfg file for Pooling configuration
+
+run the autosync
+	sync:
+	addon
+	partnerqueries
+	fileutil
+	extramenu
+	
+check the results (users, firms, roles, masks)
+
+put the BASIS custom AP check print program back in place, simply copy the source
+	from the repository svn://stable.basis.cloud/mis/trunk/basisaon/addon90/ap/apr_apchecks.aon
+	to ../apps/aon/ap/src/
+
+tasks to get the special menu items back in -
+	reload the addonxtra.men file into menu maintenance - no longer needed because of the extramenu application.
+	
+	the following should no longer be needed because they have been added to the extramenu.syn file as DEVICE= lines
+	load the changes to barista.cfg for the aliases needed for the 6.0 links
+		[printers defined for use by AddOn 6.1 users]
+		# PF print to a file special name used by AddOn
+		alias P2 "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -Psaleslj -oraw' >/dev/null" "Sales Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143
+		alias PA "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -P custlj -oraw' >/dev/null" "Customer Service Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+		alias PE "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -P englj -oraw' >/dev/null" "Customer Service Laser Jet" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+		alias PG "| unform50 -f basis.rul | ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -P coolj -oraw' >/dev/null" "Peggy's Laser Jet 4" cp=1B2873307031362e363768382e3576307330623054,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1b287330501b266b30531b287334303939541b266c363646,bs=1B26612D3143,SERVER
+		alias PH "| ssh -o BatchMode=yes -i /basisaon/cloudprint.pri cloudprint@basis.basis.cloud 'lpr -P hrlj -oraw' >/dev/null" "HR Laser Jet" cp=1B451B266C304F1B266C36441B266C32411B283130551B266B3253,cpcols=175,cr,ptoff=1B45,pton=1b451B266C35481b266b32471b266c372e323743,spcols=175,sp=1B266C306F326136441B283130551B28737031306831327673623354,bs=1B26612D3143,SERVER
+		alias PX $FILE "Output to File" O_CREATE,O_TRUNC,CR,LF=0A,SPCOLS=255,CPCOLS=255,FILE=/u/docfiles/pub/PX.txt,SERVER
+
+		[terminal alias for 6.1 sessions]
+		alias TQ0 syswindow "" invisible, USERID=ADMIN, LEGACYID=+ON
+		alias TQ1 syswindow "" invisible, USERID=GPARRA, LEGACYID=GP
+		alias TQ2 syswindow "" invisible, USERID=KPETERL, LEGACYID=KP
+		alias TQ3 syswindow "" invisible, USERID=KWILLIAM, LEGACYID=+ON
+		alias TQ4 syswindow "" invisible, USERID=NSPENCE, LEGACYID=+ON
+		alias TQ5 syswindow "" invisible, USERID=PLEWIS, LEGACYID=PL1
+		alias TQ6 syswindow "" invisible, USERID=SWAUFLE, LEGACYID=SW
+		alias TQ7 syswindow "" invisible, USERID=KKING, LEGACYID=KK
+
+
+
+
+
+
+
+
+

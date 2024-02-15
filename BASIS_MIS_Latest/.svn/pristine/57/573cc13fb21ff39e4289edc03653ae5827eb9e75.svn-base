@@ -1,0 +1,47 @@
+// <osnm_1> OEM Serial number maintenance
+
+enter oemhistory;
+init holdhistory$:fattr(oemhistory$);
+holdhistory$=oemhistory$;
+
+display/form="MAS_HEAD" firm_name="" 
+screen_desc="OEM Serial Number Maintenance";
+	
+display/form="OEMHISTORY" /nodrop
+	oemhistory;
+
+/*
+if info(3,2)="thines" then
+	{
+	prompt for/form="OEMHISTORY"
+		oemhistory/except=(serial_num,tran,date);
+	p$="Enter to continue, DEL to delete ";
+	prompt for /prompt=p$
+		/drop/row=20
+		/len=3 del$;
+	if ctl(2) then exit;
+	if del$="DEL" then 
+		{delete oemhistory;oemhistory.active_flag="D";exit;}
+	}
+*/
+
+if pos(info(3,2)="thines   cdinkel  gparra   sportwo  gcorcor  plewis   ") then
+	{
+	prompt for/form="OEMHISTORY"
+	//	oemhistory.lic_count
+		//oemhistory.comment
+		oemhistory.active_flag
+		oemhistory.link_to_sn;
+	//	oemhistory.link_to_tran;
+	}
+else 	{
+	p$="Enter to continue ";
+	prompt for /prompt=p$/nobox/len=1
+		/drop/row=20  x$;
+	}
+
+if ctl()=6 or ctl()=0 then exit;
+if ctl()=2 then { if holdhistory$<>oemhistory$ then update oemhistory;
+	exit;}
+
+//

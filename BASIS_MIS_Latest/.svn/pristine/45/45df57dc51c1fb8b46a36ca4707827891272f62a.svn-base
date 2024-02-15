@@ -1,0 +1,466 @@
+rem '----------------------------------------------------------------------------- 
+rem ' BasisPriceEngine.src
+rem ' this is the lowest level pricing object
+rem ' returns a list price based on a product code, type of sale, and quantity
+rem '----------------------------------------------------------------------------- 
+
+class public PriceEngine
+
+	field private BBjNumber csm10Dev!
+	field private BBjTemplatedString csm10!
+	field private BBjNumber canadian! = 0
+		
+	rem ' when we have price changes we set up the new price table in 
+	rem ' /mnt/data/basisaon/aon/alt_data and use it to calculate prices
+	rem ' for use in SAM, DVK and RNT renewal notices
+	field private BBjNumber usingAltPriceTable! = 0
+
+	rem ' 001014 InterNetworx has special pricing
+	field private BBjNumber usingInternetworx!
+	
+	rem ' TODO: Remove this code
+	rem ' do not believe these are really used any more
+	rem ' used to look up an upgrade percentage
+	rem ' field private BBjNumber csm04Dev!
+	rem ' field private BBjTemplatedString csm04!
+
+
+	method public PriceEngine(BBjNumber doCanadian)
+		seterr peError
+		
+		#canadian! = doCanadian
+		#usingAltPriceTable! = 0
+		#usingInternetworx! = 0
+		
+		#openPriceTable()
+		
+		methodret
+
+		peError:
+			throw "Price Engine Error initializing the object. Error: " + str(err) + " Line: " + str(tcb(5)) + " Message: " + errmes(-1), err 
+
+	methodend
+
+	method public PriceEngine(BBjNumber doCanadian, BBjNumber doAltPriceTable)
+		seterr peTwoArgsError
+		
+		#canadian! = doCanadian
+		#usingAltPriceTable! = doAltPriceTable
+		#usingInternetworx! = 0
+		
+		#openPriceTable()
+		
+		methodret
+
+		peTwoArgsError:
+			throw "Price Engine Error initializing the object. Error: " + str(err) + " Line: " + str(tcb(5)) + " Message: " + errmes(-1), err 
+
+	methodend
+
+	method public PriceEngine(BBjNumber doCanadian, BBjNumber doAltPriceTable, BBjNumber doInternetworx)
+		seterr peThreeArgsError
+		
+		#canadian! = 0
+		#usingAltPriceTable! = doAltPriceTable
+		#usingInternetworx! = doInternetworx
+		
+		#openPriceTable()
+		
+		methodret
+
+		peThreeArgsError:
+			throw "Price Engine Error initializing the object. Error: " + str(err) + " Line: " + str(tcb(5)) + " Message: " + errmes(-1), err 
+
+	methodend
+
+	method private void openPriceTable()
+		
+		seterr peoptError
+		
+		rem ' if canandian be either main price table or alt price tabl
+		if #canadian! and #usingAltPriceTable! then
+			rem ' using Pre price change Canadian price file
+			call "templates.pgm::CSM10"
+			csm10 = unt
+			open(csm10)"/mnt/data/basisaon/aon/alt_data/CSM-10.canada"
+			#csm10Dev! = csm10
+			#csm10! = BBjAPI().makeTemplatedString(fattr(csm10$))
+		else
+			if #canadian! then
+				rem ' using standard Canadian price table
+				call "ec_open::CSM10_CANADA"
+				#csm10Dev! = csm10_canada
+				#csm10! = BBjAPI().makeTemplatedString(fattr(csm10_canada$))
+			else
+				if #usingInternetworx! and #usingAltPriceTable! then
+					rem ' using Pre price change price file for internetworx
+					call "templates.pgm::CSM10"
+					csm10 = unt
+					open(csm10)"/mnt/data/basisaon/aon/alt_data/CSM-10.internetworx"
+					#csm10Dev! = csm10
+					#csm10! = BBjAPI().makeTemplatedString(fattr(csm10$))
+				else
+					if #usingInternetworx! then
+						rem ' using standard internetworx price table
+						call "templates.pgm::CSM10"
+						csm10 = unt
+						open(csm10)"/mnt/data/basisaon/aon/ADATA/CSM-10.internetworx"
+						#csm10Dev! = csm10
+						#csm10! = BBjAPI().makeTemplatedString(fattr(csm10$))
+					else
+						if #usingAltPriceTable! then
+							rem ' using Pre price change price file
+							call "templates.pgm::CSM10"
+							csm10 = unt
+							open(csm10)"/mnt/data/basisaon/aon/alt_data/CSM-10"
+							#csm10Dev! = csm10
+							#csm10! = BBjAPI().makeTemplatedString(fattr(csm10$))
+						else
+							rem ' using Standard price file
+							call "ec_open::CSM10"
+							#csm10Dev! = csm10
+							#csm10! = BBjAPI().makeTemplatedString(fattr(csm10$))
+						fi
+					fi
+				fi
+			fi
+		fi
+
+		methodret
+		
+		peoptError:
+			throw "Price Engine Error opening price table. Error: " + str(err) + " Line: " + str(tcb(5)) + " Message: " + errmes(-1), err 	
+		
+	methodend
+
+	method public BBjNumber isCanadian()
+	
+		methodret #canadian!
+	
+	methodend
+
+	method public void setCanadian(BBjNumber doCanadian)
+		
+		seterr pescError
+		
+		#canadian! = doCanadian
+		close(csm10Dev!,err=*next)
+		#openPriceTable()
+		
+		methodret
+
+		pescError:
+			throw "Price Engine Error setting Canadian. Error: " + str(err) + " Line: " + str(tcb(5)) + " Message: " + errmes(-1), err 	
+		
+	methodend
+
+	method public PriceElement getPriceElement()
+		
+		methodret new PriceElement()
+	
+	methodend
+	
+	method public PriceElement getPrice(PriceElement pel!)
+	
+		tier = pel!.getQuantity()
+		if pel!.getTierOverride() <> 0 then tier = pel!.getTierOverride()
+		
+		csm10Key$ = pel!.getFirmID() + pel!.getProductCode() + pel!.getTypeOfSale()
+		
+		while 1
+			found = 0
+			readrecord(#csm10Dev!, KEY = csm10Key$, DOM = *next)#csm10!; found = 1
+			
+			if found = 0 then break; rem ' can't find the pricing record
+			
+			rem ' do we use an alternate record
+			altkey$ = cvs(#csm10!.getFieldAsString("alt_key"),3)
+			if altkey$ <> "" then 
+			    found = 0
+			    readrecord(#csm10Dev!, key=pel!.getFirmID() + altkey$, DOM = *next)#csm10!; found = 1
+				if found = 0 then 
+				    break
+				    rem ' can't find the alt_key
+				endif
+			endif
+			
+			rem ' method is either F - fixed or P - Percentage
+			method$ = #csm10!.getFieldAsString("price_method")
+            rem ' the old code referenced a pricing Method "V", it means to use the percentage contained in the
+            rem ' CSM04, product level (rev) table, as of this writing (10/30/2014) there are no price records
+            rem ' in CSM10 that use the V method
+
+			discountable$ = #csm10!.getFieldAsString("disc_flag")
+			
+			rem ' DEBUG: code
+			rem ' print #csm10!.getFieldAsString("product")," ", #csm10!.getFieldAsString("type_of_sale"), " ", discountable$
+			rem ' input *
+			
+			if discountable$ = "Y" then			
+				pel!.setDiscountable(1)
+			else
+				pel!.setDiscountable(0)
+			endif
+			
+			
+			curTier=0, temp_price = -1
+			while temp_price<0 
+				curTier = curTier + 1
+				if curTier > 10 then break
+			
+				rem ' tier is the user quantity of this sale
+				if tier < #csm10!.getFieldAsNumber("min_users", curTier) or tier > #csm10!.getFieldAsNumber("max_users", curTier) then continue
+				
+				if method$ = "P"  
+					temp_price = pel!.getForPercentCalcPrice() * #csm10!.getFieldAsNumber("price", curTier) / 100 
+				else 
+					temp_price = #csm10!.getFieldAsNumber("price" , curTier)
+				endif
+			wend
+			
+			rem ' if no price found and we have an override level (special level) retry with the actual tier level
+			if temp_price < 0 and tier = pel!.getTierOverride() and tier <> pel!.getQuantity() then tier = pel!.getQuantity(); continue
+
+			rem ' multiply price by the quantity to get final list price			
+			if temp_price > 0 then temp_price = temp_price * pel!.getQuantity()
+			
+			break
+		wend
+		
+		if temp_price > 0 then
+			pel!.setListPrice(temp_price)
+			pel!.setPriceCalculated(1)
+			rem ' set discountedPrice = list price for now
+			pel!.setDiscountedPrice(pel!.getListPrice())
+		else
+			pel!.setListPrice(0.0)
+			pel!.setPriceCalculated(0)
+			pel!.setDiscountedPrice(0.0)
+		endif
+		
+		methodret pel!
+		
+	methodend
+
+classend
+
+
+class public PriceElement
+
+	field private BBjString firmID!
+	field private BBjString productCode!
+	field private BBjString typeOfSale!
+	field private BBjNumber quantity!
+	
+	rem ' this is used when there is a requirement to use a tier different than
+	rem ' the tier that the quantity matches, can be a special pricing level
+	field private BBjNumber tierOverride!
+	
+	rem ' when a price is based on a percentage of another price this 
+	rem ' member provides the number to take the percentage of (qty 1)
+	field private BBjNumber forPercentCalcPrice!
+	
+	field private BBjInt discountable!
+	field private BBjInt priceCalculated!
+	field private BBjNumber listPrice!
+	
+	field private BBjNumber discountedPrice!
+	field private BBjNumber discountUsed!
+	
+	method public PriceElement()
+	
+		#reset()
+		
+	methodend
+	
+	method public PriceElement(BBjString firmID!, BBjString productCode!, BBjString typeOfSale!, BBjNumber quantity!, BBjNumber tierOverride!, BBjNumber forPercentCalcPrice!)
+
+	 	#fill(firmID!, productCode!, typeOfSale!, quantity!, tierOverride!, forPercentCalcPrice!)
+			
+	methodend	
+
+	method public void fill(BBjString firmID!, BBjString productCode!, BBjString typeOfSale!, BBjNumber quantity!, BBjNumber tierOverride!, BBjNumber forPercentCalcPrice!)
+	
+		#reset()
+		
+		#firmID! = firmID!
+		#productCode! = productCode!
+		#typeOfSale! = typeOfSale!
+		#quantity! = quantity!
+		#tierOverride! = tierOverride!
+		#forPercentCalcPrice! = forPercentCalcPrice!
+		
+	methodend
+	
+	method public void reset()
+	
+		#firmID! = ""
+		#productCode! = ""
+		#typeOfSale! = "" 
+		#quantity! = 0
+		#tierOverride! = 0
+		#forPercentCalcPrice! = 0.0
+		#discountable! = 0
+		#priceCalculated! = 0
+		#listPrice! = 0.0
+		#discountedPrice! = 0.0
+		#discountUsed! = 0 
+		
+	methodend
+
+	rem ' getters and setters follow
+	
+	method public BBjString getFirmID()
+	
+		methodret #firmID!
+		
+	methodend
+	
+	method public void setFirmID(BBjString firmID!)
+	
+		#firmID! = firmID!
+		
+	methodend
+	
+	method public BBjString getProductCode()
+	
+		methodret #productCode!
+		
+	methodend
+
+	method public void setProductCode(BBjString productCode!)
+	
+		#productCode! = productCode!
+		
+	methodend
+
+	method public BBjString getTypeOfSale()
+	
+		methodret #typeOfSale!
+		
+	methodend
+
+	method public void setTypeOfSale(BBjString typeOfSale!)
+	
+		#typeOfSale! = typeOfSale!
+		
+	methodend
+
+	method public BBjNumber getQuantity()
+	
+		methodret #quantity!
+		
+	methodend
+
+	method public void setQuantity(BBjNumber quantity!)
+	
+		#quantity! = quantity!
+		
+	methodend
+	
+	method public BBjNumber getTierOverride()
+	
+		methodret #tierOverride!
+		
+	methodend
+
+	method public void setTierOverride(BBjNumber tierOverride!)
+	
+		#tierOverride! = tierOverride!
+		
+	methodend
+	
+	method public BBjNumber getForPercentCalcPrice()
+	
+		methodret #forPercentCalcPrice!
+	
+	methodend
+	
+	method public void setForPercentCalcPrice(BBjNumber forPercentCalcPrice!)
+	
+		#forPrecentCalcPrice! = forPrecentCalcPrice!
+		
+	methodend
+	
+	method public BBjInt getDiscountable()
+	
+		methodret #discountable!
+		
+	methodend
+
+	method public void setDiscountable(BBjInt discountable!)
+	
+		#discountable! = discountable!
+		
+	methodend
+
+	method public BBjInt getPriceCalculated()
+	
+		methodret #priceCalculated!
+		
+	methodend
+
+	method public void setPriceCalculated(BBjInt priceCalculated!)
+	
+		#priceCalculated! = priceCalculated!
+		
+	methodend
+
+	method public BBjNumber getListPrice()
+	
+		methodret #listPrice!
+		
+	methodend
+
+	method public void setListPrice(BBjNumber listPrice!)
+	
+		#listPrice! = listPrice!
+		
+	methodend
+
+	method public BBjNumber getDiscountedPrice()
+	
+	    methodret #discountedPrice!
+	    
+	methodend
+	
+	method public void setDiscountedPrice(BBjNumber discountedPrice!)
+	
+	    #discountedPrice! = discountedPrice!
+	
+	methodend
+	
+	method public BBjNumber getDiscountUsed()
+	
+	    methodret #discountUsed!
+	    
+	methodend
+	
+	method public void setDiscountUsed(BBjNumber discountUsed!)
+	
+	    #discountUsed! = discountUsed!
+	    
+	methodend
+	
+	method public BBjString toString()
+	    
+        outStr! = "Firm: " + #firmID! + $0A$
+        outStr! = outStr! + "Product: " + #productCode! + $0A$
+        outStr! = outStr! + "Type of Sale: " + #typeOfSale!  + $0A$
+        outStr! = outStr! + "Quantity: " + str(#quantity!) + $0A$
+        outStr! = outStr! + "Iier Override: " + str(#tierOverride!) + $0A$
+        outStr! = outStr! + "Target for Percent Calc Price: " + str(#forPercentCalcPrice!) + $0A$
+        outStr! = outStr! + "Discountable: " + str(#discountable!) + $0A$
+        outStr! = outStr! + "Price Calculated: " + str(#priceCalculated!) + $0A$
+        outStr! = outStr! + "List Price: " + str(#listPrice!) + $0A$
+        outStr! = outStr! + "Discounted Price: " + str(#discountedPrice!) + $0A$
+        outStr! = outStr! + "Discount Used: " + str(#discountUsed!)  + $0A$
+        
+        methodret outStr!
+	    	
+	methodend
+	
+classend
+
+
+

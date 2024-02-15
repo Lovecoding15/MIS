@@ -1,0 +1,460 @@
+0010 REM "CSE - Order/Invoice Entry (Configurator Serial Number Input)"
+0020 REM "Program CSE.DH"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.3 - 15May97 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * WA# 205 * COPIED FROM OPE.DH"
+0040 REM 
+0060 REM "S$=General Flag String
+0065 REM **BASIS mods @4930,5050,5055,6050,6055**
+0066 REM **BASIS mod @1622-correct dim statement**
+0067 REM **BASIS mod @1622,10500 routine**
+0069 REM 
+0070 REM **BASIS mod to update ARE83 with SAM/Developer Contract number
+0072 REM **BASIS mod-no changes allowed if invoice (PROGRAM$="OPE.CD")
+0085 SETESC 9000
+0090 SETERR 9000
+0150 IF PROGRAM$="OPE.CD" THEN LET CHANGEOK=0 ELSE LET CHANGEOK=1
+0200 REM " --- IOLists"
+0210 call "templates.pgm::are83"
+0220 call "templates.pgm::smc01"
+0240 SNM01A: IOLIST H0$,H1$,H2$,H3$,H4$,H[ALL]
+0250 CSM01A: IOLIST CS0$,CS1$,CS2$,CS3$,CS[ALL]
+0500 REM " --- Initialize Data"
+0510 PRECISION I[2]
+0520 DIM H0$(20),H[2],CS[2]
+0530 LET are83$(1,20)=W0$(1,20),L9=19
+0550 LET P8$="Serial Number"
+0560 LET O7=0
+0580 DIM J0$(100,"0")
+0600 REM " --- Add'l reads
+0605 DIM FLAGS$(3),SALE_TYPE$(5)
+0610 READ (CSM07_DEV,KEY=N0$+WX1$(4,3),DOM=0611)SALE_TYPE$(1),*,FLAGS$(1)
+0620 IF FLAGS$(1,1)="Y" THEN LET FLAGS$(1,1)="D" ELSE LET FLAGS$(1,1)=" "
+0625 IF FLAGS$(2,1)="Y" THEN LET FLAGS$(2,1)="A" ELSE LET FLAGS$(2,1)=" "
+0630 IF FLAGS$(3,1)="Y" THEN LET FLAGS$(3,1)="M" ELSE LET FLAGS$(3,1)=" "
+0650 READ (CSM03_DEV,KEY=N0$+W0$(39,3),DOM=0670)*,*,PORT_ID$
+0660 LET PORT_ID$=PORT_ID$(1,5)
+0690 LET SEQ$=WX1$(30,1); IF CVS(SEQ$,2)="" THEN LET SEQ$="N"
+0700 REM " --- Background"
+0710 IF L>L1+2 THEN PRINT @(0,L9+1),'CE',@(0,L1),'LD','LD'; LET L=L-2; GOTO 0710
+0740 LET ROW=L
+0750 PRINT 'SB',@(11,ROW),"Lic Seq",@(20),"Seq",@(25),"Action",@(32),"Serial Number",@(65),"?",'SF'
+0760 LET L=L+1
+0800 IF NEWLINE$="1" AND POS("A"=FLAGS$)>0 THEN GOSUB 6300; GOTO 0810
+0805 IF NEWLINE$="1" THEN GOTO 0900
+0810 GOSUB 5100
+0820 LET O7=0
+0830 READ (ARE83_DEV,KEY=W0$(1,20),DOM=0840)
+0835 rem " The following routine appeared to serve no purpose other than position to last
+0837 rem " are83 record for this line item - It now updates contract number when changed 
+0840 LET K$=KEY(ARE83_DEV,END=0885)
+0850 IF K$(1,20)<>W0$(1,20) THEN GOTO 0885
+0860 READ record(ARE83_DEV)ARE83$
+0870 if cvs(contract$,1+2)<>"" and are83.contract$<>contract$ then are83.contract$=contract$,are83$=field(are83$); writerecord (are83_dev,key=k$)are83$
+0880 GOTO 0840
+0885 IF POS("D"=FLAGS$)>0 THEN GOTO 0900; REM "JCM 9/29
+0890 GOTO 4800
+0900 REM " --- License Quantity Sequence"
+0910 LET QTY_SEQ=1
+0950 IF W[2]>0 THEN IF QTY_SEQ>W[2] THEN GOTO 4800
+0960 PRINT @(12,L),QTY_SEQ:"000"
+0980 LET are83.license_seq$=STR(QTY_SEQ:"000"),are83.sequence_nbr$="000"
+0990 READ (ARE83_DEV,KEY=are83$(1,26),DOM=0991)
+1000 REM " --- Overflow"
+1020 IF L>L9 THEN PRINT @(0,20),'CE',@(0,L1+3),'LD'; LET L=L-1; GOTO 1040
+1030 CALL "SYC.WC",1,0,80,0,0,20,0
+1040 IF V3=4 THEN GOTO 4000
+1100 REM " --- Next Key
+1120 LET K$=KEY(ARE83_DEV,END=1400)
+1130 IF LEN(K$)<20 THEN GOTO 1400
+1140 IF K$(1,23)<>W0$(1,20)+STR(QTY_SEQ:"000") THEN GOTO 1400
+1150 READ record(ARE83_DEV)ARE83$
+1160 GOTO 1490
+1400 REM " --- Seq"
+1405 IF CHANGEOK=0 THEN GOTO 4000
+1410 LET T0=NUM(are83.sequence_nbr$)+1
+1420 LET V0$="Z",V1$="KCER",V2$=STR(T0:"000"),V3$="",V0=3,V1=20,V2=L,I0=0
+1425 LET V4$="Enter A Sequence Number (<Enter>=Next/<F4>=End)"
+1426 REM LET V$=V2$; GOTO 1450
+1430 GOSUB 7000
+1435 IF V3=2 THEN GOTO 1420
+1440 IF V3=4 THEN GOTO 4000
+1450 IF NUM(V$)=0 THEN GOTO 1400
+1460 LET are83.sequence_nbr$=V$,are83.action$=" "
+1470 PRINT @(V1,V2),v$
+1480 FIND record(ARE83_DEV,KEY=are83$(1,26),DOM=1600)ARE83$
+1500 GOSUB 5000
+1530 GOTO 3300
+1600 REM " --- Setup"
+2000 REM " --- Action"
+2005 IF CHANGEOK=0 THEN GOTO 3200
+2020 LET V0$="S",V1$="CE^",V2$=are83.action$,V3$="MAD",V4$="<M>=Modify, <A>=Activate, <D>=Deactivate",V0=1,V1=27,V2=L,I0=1
+2030 IF are83.action$=" " THEN IF POS("M"=FLAGS$)>0 THEN LET are83.action$="M"; GOTO 2085
+2035 IF are83.action$=" " THEN IF POS("D"=FLAGS$)>0 THEN LET are83.action$="D"; GOTO 2085
+2040 GOSUB 7000
+2045 IF V3=2 THEN GOTO 3210
+2050 IF V3=4 THEN GOTO 4000
+2070 LET are83.action$=V$
+2080 IF POS(are83.action$=FLAGS$)=0 THEN DIM MESSAGE$[1]; LET MESSAGE$[0]="This Action not available for this Type of Sale (<Enter>=Continue)"; CALL "SYC.XA",2,MESSAGE$[ALL],0,22,-1,V$,V3; GOTO 2000
+2085 PRINT @(V1,V2),are83.action$
+2090 GOTO 3200
+2100 REM " --- Enter Serial Number"
+2105 IF CHANGEOK=0 THEN GOTO 3200
+2120 LET V0$="S",V1$="CE^",V2$=are83.serial_nbr$,V3$="",V4$="Enter a Serial Number (<F1>=New, R=Range)",V0=20,V1=32,V2=L
+2130 IF POS(are83.action$="MD")>0 THEN LET V4$="Enter a valid Serial Number (<F3>=Lookup, R=Range)"
+2135 IF POS(are83.action$="MD")>0 AND SERIAL$<>"" THEN LET V2$=SERIAL$,SERIAL$=""
+2140 GOSUB 7000
+2145 IF V3=2 THEN GOTO 3210
+2150 IF V3=4 THEN GOTO 4000
+2155 IF V3=3 THEN CALL "SYC.LS",V$
+2160 IF are83.action$="A" AND V3=1 THEN GOSUB 6000
+2170 IF CVS(V$,2)="R" THEN GOTO 6500; REM Range
+2180 PRINT @(V1,V2),V$
+2190 REM " --- "
+2200 LET are83.serial_nbr$=pad(V$,20),server$=""
+2220 IF are83.action$="A" THEN GOTO 2290
+2222 IF are83.action$="M" THEN GOSUB 10500; IF IN_PREV_LINE THEN GOTO 2290
+2230 FIND (SNM01_DEV,KEY=are83.serial_nbr$,DOM=2232)IOL=SNM01A; GOTO 2240
+2232 DIM MESSAGE$[2]
+2233 LET MESSAGE$[0]="This serial number is not on file (<Enter>=Continue <F1>=Don't verify)"; IF are83.action$="M" THEN LET MESSAGE$[0]=MESSAGE$[0](1,51)+")"
+2235 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+2236 IF V3=1 AND are83.action$<>"M" THEN GOTO 2290
+2237 GOTO 2100
+2240 LET SN$=are83.serial_nbr$
+2241 GOSUB 10000
+2243 IF H3$(5,6)=A0$(5,6) THEN GOTO 2270
+2244 DIM NAME$(30); LET NAME$(1)="** Not on file **"
+2245 FIND (ARM01_DEV,KEY=N0$+H3$(5,6),DOM=2246)*,NAME$
+2250 DIM MESSAGE$[2]
+2255 LET MESSAGE$[0]="This license registered to Customer: "+H3$(5,6)+" "+NAME$(1,30)
+2260 LET MESSAGE$[1]="not the Ordering Customer (<Enter>=Continue)"
+2262 LET MESSAGE$[2]=""
+2265 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+2270 IF H3$(1,1)="Y" THEN GOTO 2290
+2273 DIM MESSAGE$[1]
+2275 LET MESSAGE$[0]="This license is not active (<Enter>=Continue)",MESSAGE$[1]=""
+2280 CALL "SYC.XA",1,MESSAGE$[ALL],1,22,-1,V$,V3
+2290 IF are83.action$="D" AND H3$<>"" THEN LET are83.contract$=H3$(18,6),are83.sam_active$=h3$(24,1)
+2292 if cvs(contract$,1+2)="" then goto chk_server
+2294 gosub check_type
+2296 LET are83.contract$=CONTRACT$,are83.sam_active$=smc01.sam_active$
+2298 chk_server:
+2300 GOTO 3200
+3200 REM " --- Seq Control"
+3210 IF V3=4 THEN IF I0>1 THEN LET I0=4; GOTO 3300
+3220 IF V3<>2 THEN GOTO 3250
+3230 IF I0>0 THEN LET I0=I0-1
+3240 GOTO 3260
+3250 LET I0=I0+1
+3260 ON I0 GOTO 1400,2000,2100,3300
+3300 REM " --- Correct"
+3320 LET V0$="",V1$="^",V2$="",V3$="",V0=1,V1=78,V2=L,K9$=are83$(1,26),V4$="<Enter>=OK     <D>=Delete"
+3325 IF CHANGEOK=0 THEN LET V4$=""
+3330 GOSUB 7000
+3335 IF CHANGEOK=0 THEN GOTO 3400
+3340 IF V3=2 THEN LET I0=3; GOTO 3200
+3360 IF V$<>"" AND V$<>"D" THEN GOTO 3300
+3370 IF V$="D" THEN GOTO 3500
+3400 REM " --- Write"
+3410 LET L=L+1
+3420 gosub license_count
+3430 IF CHANGEOK THEN 
+3432   are83$=field(are83$)
+3434   WRITE record(ARE83_DEV,KEY=are83$(1,26))ARE83$
+3440 fi
+3485 IF V3=4 THEN GOTO 4000
+3490 GOTO 1000
+3500 REM " --- Delete"
+3510 REMOVE (ARE83_DEV,KEY=are83$(1,26),DOM=3520)
+3520 call "BVF.02::are93_delete",are83$
+3521 PRINT @(0,L),'CL',
+3590 GOTO 1000
+4000 REM " --- Options"
+4001 REM LET NEWLINE$="0"; REM "WA:200 testing...
+4002 PRINT @(0,L),'CE',
+4003 CALL "SYC.WC",1,0,80,0,0,20,0
+4020 LET V0$="S",V1$="C^",V2$="Y",V3$="",V4$="Is This Serial Number Group Correct (Y/N/Review/List/Delete)?",V0=6,V1=FNV(V4$),V2=22
+4030 GOSUB 7000
+4040 IF V$="R" OR V$="REVIEW" THEN GOTO 4600
+4050 IF V$="L" OR V$="LIST" THEN GOTO 4400
+4055 IF CHANGEOK=0 THEN GOTO 4100
+4060 IF V$="DELETE" THEN GOTO 4200
+4070 IF V$="" THEN LET V$="Y"
+4080 ON POS(V$="YN") GOTO 4000,4100,1000
+4100 REM " --- OK Here"
+4110 REM PRINT @(72,ROW),'CL',@(0,L1+2),'CE',; LET L=L1+2
+4120 IF SEQ$="N" THEN GOTO 4900
+4130 LET QTY_SEQ=QTY_SEQ+1
+4190 GOTO 0950
+4200 REM " --- Delete All Assignments Here"
+4210 READ (ARE83_DEV,KEY=W0$(1,20)+STR(QTY_SEQ:"000"),DOM=4220)
+4220 LET K$=KEY(ARE83_DEV,END=4290)
+4230 IF K$(1,23)<>W0$(1,20)+STR(QTY_SEQ:"000") THEN GOTO 4290
+4240 READ record(ARE83_DEV,key=k$)ARE83$
+4250 call "BVF.02::are93_delete",are83$
+4270 REMOVE (ARE83_DEV,KEY=K$)
+4280 GOTO 4220
+4290 GOTO 4100
+4400 REM " --- List"
+4420 GOSUB 5100
+4490 GOTO 4000
+4600 REM " --- Review"
+4620 READ (ARE83_DEV,KEY=W0$(1,20)+STR(QTY_SEQ:"000"),DOM=4630)
+4640 GOSUB 5400
+4650 LET V3=0
+4690 GOTO 1000
+4800 REM " --- Options"
+4802 PRINT @(0,L),'CE',
+4803 CALL "SYC.WC",1,0,80,0,0,20,0
+4820 LET V0$="S",V1$="C^",V2$="Y",V3$="",V4$="Is The "+P8$+" Information Correct (Y/N)?",V0=6,V1=FNV(V4$),V2=22
+4830 GOSUB 7000
+4870 IF V$="" THEN LET V$="Y"
+4880 ON POS(V$="YN") GOTO 4800,4900,0900
+4900 REM " --- OK Here"
+4930 IF CHANGEOK AND pos(SALE_TYPE$(3,2)="SM,TS,RI,RN")=0 THEN CALL "BLK.01",W0$(1,20); REM Generate keys, auth. numbers
+4950 IF CHANGEOK AND flags$(1,1)="D" and flags$(2,1)="A" THEN GOSUB CHECK_CONTRACT
+4960 return_pgm:
+4970 PRINT @(72,ROW),'CL',@(0,L1+2),'CE',; LET L=L1+2
+4980 LET L=L1+2,O1=1,K9$=W0$(1,20),L9=18,V$="",W0=NUM(W0$(18,3)),V3=0,T0=0,T1=0
+4990 RUN PROGRAM$,ERR=9900
+5000 REM " --- Display"
+5010 IF are83$(1,26)<=K9$ THEN GOSUB 5400
+5050 PRINT @(12,L),are83.license_seq$,@(20),are83.sequence_nbr$,@(27),are83.action$,@(32),are83.serial_nbr$,
+5055 PRINT @(52),are83.auth_code$
+5080 LET K9$=are83$(1,26)
+5090 RETURN 
+5100 REM " --- List"
+5105 LET Q5=0
+5110 GOSUB 5400
+5120 READ (ARE83_DEV,KEY=W0$(1,20),DOM=5130)
+5130 LET K$=KEY(ARE83_DEV,END=5290)
+5135 IF LEN(K$)<20 THEN GOTO 5290
+5140 IF K$(1,20)<>W0$(1,20) THEN GOTO 5290
+5150 READ record(ARE83_DEV)ARE83$
+5160 LET Q5=1
+5200 IF L<=L9 THEN GOTO 5250
+5210 LET V0$="S",V1$="CE",V2$="",V3$="",V4$="Press <Enter> To Continue",V0=1,V1=FNV(V4$),V2=22
+5220 GOSUB 7000
+5225 IF V3=4 THEN GOTO 5290
+5230 GOSUB 5400
+5250 GOSUB 5000
+5260 LET L=L+1
+5280 GOTO 5130
+5290 RETURN 
+5400 REM " --- Clear Screen
+5410 FOR X=L1+3 TO L9+1
+5420 PRINT @(0,X),'CL',
+5430 NEXT X
+5440 LET L=L1+3
+5490 RETURN 
+6000 REM " --- New Serial Number"
+6010 READ (CSM01_DEV,KEY=N0$+W0$(33,3),DOM=6090)IOL=CSM01A
+6020 LET PREFIX$=CS3$(1,3)
+6030 LET V$=PREFIX$+STR(CS[0])
+6040 LET CS[0]=CS[0]+1
+6050 REM WRITE (CSM01_DEV,KEY=CS0$)IOL=CSM01A
+6055 CALL "BSN.01",V$,ARM02_DEV,N0$,W0$(5,6)
+6060 rem PRINT @(V1,V2),V$
+6070 v$=pad(v$,20)
+6090 RETURN 
+6300 REM " --- Create initial serial numbers"
+6310 FOR I=1 TO W[2]
+6315 dim are83$:fattr(are83$)
+6320 LET are83$(1,20)=W0$(1,20)
+6324 LET ffl$=FATTR(are83$,"dealer_str"),ffl=DEC(ffl$(10,2))
+6326 LET are83.dealer_str$=FILL(ffl)
+6330 LET are83.license_seq$=STR(I:"000"),are83.sequence_nbr$="001"
+6340 IF SEQ$="N" THEN LET are83.license_seq$="001",are83.sequence_nbr$=str(I:"000")
+6350 LET are83.action$="A"
+6360 GOSUB 6000; LET are83.serial_nbr$=V$
+6370 if cvs(contract$,1+2)="" then goto chk_server1
+6372 gosub check_type
+6374 LET are83.contract$=CONTRACT$,are83.sam_active$=smc01.sam_active$
+6380 chk_server1:
+6385 are83$=field(are83$);WRITE record(ARE83_DEV,KEY=are83$(1,26),DOM=6880)ARE83$
+6390 NEXT I
+6396 RETURN 
+6500 REM " --- Enter / create a range"
+6510 LET WIDTH=50,HEIGHT=6,WINX=10,WINY=10
+6520 IF are83.action$="M" THEN LET HEADING$="Modify Range"
+6521 IF are83.action$="D" THEN LET HEADING$="Deactivate Range"
+6522 IF are83.action$="A" THEN LET HEADING$="Create Range"
+6530 CALL "SYC.WA",0,WIDTH,HEIGHT,WINX,WINY,HEADING$,NAME$
+6540 IF POS(are83.action$="MD")>0 THEN PRINT 'SB',@(13,0),"Prefix: ",@(2,1),"Beginning Serial #: ",@(5,2),"Ending Serial #: ",'SF', ELSE PRINT 'SB',@(2,0),"Number of New Serial #'s to Create: ",@(13,1),"Fixed or Floating (X/F): ",'SF',
+6600 REM " --- Number to Create"
+6605 IF are83.action$<>"A" THEN GOTO 6650
+6610 LET V0$="N",V1$="CE",V2$="",V3$="###",V4$="",V0=3,V1=38,V2=0
+6615 GOSUB 7000
+6617 IF V3=4 THEN GOTO 6990
+6620 LET CREATE=V
+6625 IF CREATE>999-NUM(are83.sequence_nbr$) THEN GOTO 6610
+6627 GOTO 6645
+6630 LET V0$="S",V1$="CE",V2$="",V3$="XF",V4$="",V0=1,V1=38,V2=1
+6635 GOSUB 7000
+6640 IF V3=2 THEN GOTO 6610
+6641 IF V3=4 THEN GOTO 6990
+6645 GOTO 6800
+6650 REM " --- Prefix"
+6655 LET V0$="S",V1$="CE^",V2$="",V3$="",V4$="",V0=3,V1=22,V2=0
+6660 GOSUB 7000
+6665 IF V3=4 THEN GOTO 6990
+6670 LET PREFIX$=V$
+6700 REM " --- Beginning Serial #
+6710 LET V0$="S",V1$="CE^",V2$="",V3$="",V4$="<F3>=Lookup",V0=20,V1=22,V2=1
+6720 GOSUB 7000
+6725 IF V3=2 THEN GOTO 6600
+6726 IF V3=4 THEN GOTO 6990
+6727 IF V3=3 THEN CALL "SYC.LS",V$
+6730 LET BEG$=V$
+6740 LET V=NUM(BEG$,ERR=6700)
+6750 REM " --- Ending Serial #
+6760 LET V0$="S",V1$="CE^",V2$="",V3$="",V4$="<F3>=Lookup",V0=20,V1=22,V2=2
+6765 GOSUB 7000
+6770 IF V3=2 THEN GOTO 6700
+6771 IF V3=4 THEN GOTO 6990
+6772 IF V3=3 THEN CALL "SYC.LS",V$
+6780 LET END$=V$
+6785 LET V=NUM(END$,ERR=6750)
+6789 IF NUM(END$)-NUM(BEG$)>999-NUM(are83.sequence_nbr$) THEN GOTO 6700
+6800 REM " --- ok"
+6810 LET V0$="Y",V1$="CE^",V2$="",V3$="",V4$="Is the information correct? <Y/N>: ",V0=1,V1=FNV(V4$),V2=22
+6820 GOSUB 7000
+6830 IF V$="N" THEN GOTO 6600
+6840 IF V$<>"Y" THEN GOTO 6800
+6850 REM Create them
+6855 IF are83.action$<>"A" THEN GOTO 6900
+6860 LET SEQ=NUM(are83.sequence_nbr$)-1
+6865 FOR X=1 TO CREATE
+6870 LET are83.action$="A"
+6875 GOSUB 6000; LET are83.serial_nbr$=V$
+6880 LET SEQ=SEQ+1,are83.sequence_nbr$=STR(SEQ:"000"),are83$=field(are83$)
+6885 WRITE record(ARE83_DEV,KEY=are83$(1,26),DOM=6880)ARE83$
+6890 NEXT X
+6896 GOTO 6990
+6900 REM Modify or Deactivate
+6910 LET SEQ=NUM(are83.sequence_nbr$)-1,VERIFIED=0
+6915 FOR X=NUM(BEG$) TO NUM(END$)
+6920 LET are83.serial_nbr$=PREFIX$+STR(X:J0$(1,LEN(BEG$))),are83.serial_nbr$=pad(are83.serial_nbr$,20)
+6925 FIND (SNM01_DEV,KEY=are83.serial_nbr$,DOM=7300)IOL=SNM01A
+6930 IF H3$(5,6)<>A0$(5,6) THEN GOTO 6990
+6935 IF H3$(1,1)<>"Y" THEN GOTO 6995
+6940 LET SEQ=SEQ+1,are83.sequence_nbr$=STR(SEQ:"000")
+6945 if cvs(contract$,1+2)="" then goto write_are83
+6950 gosub check_type
+6960 LET are83.contract$=CONTRACT$,are83.sam_active$=smc01.sam_active$
+6965 write_are83:
+6967 gosub license_count
+6970 are83$=field(are83$);WRITE record(ARE83_DEV,KEY=are83$(1,26),DOM=6940)ARE83$
+6973 LET VERIFIED=VERIFIED+1
+6975 NEXT X
+6980 DIM MESSAGE$[1]; LET MESSAGE$[0]=STR(NUM(END$)-NUM(BEG$)+1)+" licenses requested"
+6981 LET MESSAGE$[1]=STR(VERIFIED)+" licenses verified (<Enter>=Continue)"
+6982 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+6983 CALL "SYC.WD",NAME$
+6984 GOTO 0810
+6990 REM " --- Allow bypass
+6992 DIM MESSAGE$[1]; LET MESSAGE$[0]=are83.serial_nbr$+"Belongs To Another Customer (<Enter>=Continue <F1>=Ok"
+6993 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+6994 IF V3=1 THEN GOTO 6950 ELSE GOTO 6975
+6995 DIM MESSAGE$[1]; LET MESSAGE$[0]=are83.serial_nbr$+" Is Inactive (<Enter>=Continue <F1>=Ok"
+6996 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+6997 IF V3=1 THEN GOTO 6950 ELSE GOTO 6975
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+7300 rem " This routine goes with a modify of a range of serial numbers
+7310 rem " when one of the serial numbers does not exist - must check previous 
+7320 rem " line and return to range routine
+7330 gosub 10500
+7340 if IN_PREV_LINE then goto 6950
+7350 dim message$[1]; message$[0]=are83.serial_nbr$+"Does not exist (<Enter>=Continue)"
+7360 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+7370 goto 6975
+8000 REM " --- Functions"
+8085 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END
+10000 REM " --- Display serial number info
+10020 LET WIDTH=70,HEIGHT=14,WINX=10,WINY=10
+10030 LET HEADING1$="Serial Number Profile"
+10040 CALL "SYC.WA",0,WIDTH,HEIGHT,WINX,WINY,HEADING1$,NAME$
+10050 CALL "SNC.MA",SN$
+10060 CALL "SYC.WD",NAME$
+10090 RETURN 
+10500 REM " --- Look for serial number in previous line
+10510 LET PK$=W0$(1,20),IN_PREV_LINE=0
+10520 TRY_PREV: 
+10530 READ (ARE13_DEV,KEY=PK$(1,17),DOM=NEXT_ARE13)
+10540 NEXT_ARE13: LET K13$=KEY(ARE13_DEV,END=PREV_DONE); IF K13$(1,17)<>PK$(1,17) OR K13$>=PK$ THEN GOTO PREV_DONE
+10550 READ (ARE13_DEV,KEY=K13$)A13$
+10560 READ (ARE83_DEV,KEY=K13$,DOM=CHKSN)
+10570 CHKSN: READ (ARE83_DEV,END=NEXT_ARE13)K83$,ACTION$,SN83$
+10580 IF POS(K13$=K83$)<>1 THEN GOTO NEXT_ARE13
+10590 IF SN83$<>are83.serial_nbr$ OR ACTION$(1,1)="D" THEN GOTO CHKSN
+10600 LET IN_PREV_LINE=1
+10610 DIM MESSAGE$[2]
+10620 LET MESSAGE$[0]="This serial number is in a previous line (<Enter>=Continue)"
+10630 CALL "SYC.XA",3,MESSAGE$[ALL],1,22,-1,V$,V3
+10640 PREV_DONE: 
+10650 READ (ARE13_DEV,KEY=PK$,DOM=*NEXT)
+10660 return
+11000 CHECK_CONTRACT: REM " transfer sam/dev contract on serial number change
+11005 LET HOLD_KEY_INFO$=""
+11010 READ (ARE83_DEV,KEY=W0$(1,20),DOM=GET_ARE83)
+11020 GET_ARE83: 
+11030 READ (ARE83_DEV,END=DONE_CONTRACT)KEY_INFO$,CONTRACT_INFO$,SN$,CNT,NBR1,NBR2
+11040 IF KEY_INFO$(1,20)<>W0$(1,20) THEN GOTO DONE_CONTRACT
+11050 IF CONTRACT_INFO$(1,1)="A" THEN LET HOLD_KEY_INFO$=KEY_INFO$; GOTO GET_ARE83
+11060 IF CONTRACT_INFO$(1,1)<>"D" THEN GOTO GET_ARE83
+11070 IF CVS(CONTRACT_INFO$(33,6),1+2)="" THEN GOTO GET_ARE83
+11080 LET HOLD_CONTRACT$=CONTRACT_INFO$(33,7)
+11090 READ (ARE83_DEV,KEY=HOLD_KEY_INFO$,DOM=DONE_CONTRACT)KEY_INFO$,CONTRACT_INFO$,SN$,CNT,NBR1,NBR2
+11100 LET CONTRACT_INFO$(33,7)=HOLD_CONTRACT$
+11110 WRITE (ARE83_DEV,KEY=HOLD_KEY_INFO$)KEY_INFO$,CONTRACT_INFO$,SN$,CNT,NBR1,NBR2
+11120 DONE_CONTRACT: 
+11130 RETURN 
+11200 check_type:
+11220 DIM smc01$:fattr(smc01$)
+11230 find record(smc01_dev,key=contract$,dom=*next)smc01$
+11240 type_done:
+11250 return
+11500 license_count:
+11505 call "templates.pgm::snt01"
+11510 are83.license_cnt=0
+11515 read (snt01_dev,key=are83.serial_nbr$,dom=*next)
+11520 while 1
+11530   READ RECORD(SNT01_dev,END=*break)snt01$
+11540   IF POS(are83.serial_nbr$=snt01$)<>1 THEN break
+11550   if cvs(snt01.auth_code$,3)<>"" then LET are83.license_cnt=snt01.license_cnt
+11560 wend
+11570 return

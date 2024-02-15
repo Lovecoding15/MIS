@@ -1,0 +1,402 @@
+SETESC ESCTRAP; SETERR BADARG
+REM - License/key and order generation program
+REM - <basdirect>
+REM - (C) 1992-2001 BASIS International, Ltd.
+REM -
+
+rem '******************************************************************************
+rem ' Initialize Cart Action
+rem '******************************************************************************
+ 
+initial_cart:
+   enter reference$,stat
+   setesc esctrap; seterr badarg
+   action_code$="01"
+   stat=0
+
+   if cvs(reference$,1+2)="" or len(reference$)>10 then
+:     goto badarg
+
+   gosub getfile
+   if stat then
+:     goto do_exit
+   gosub openfile
+   if stat then
+:     goto do_exit
+
+   reference$=reference$+fill(10),reference$=reference$(1,10)
+   rec$=action_code$+reference$
+   gosub pass_info
+   if stat then
+:     goto do_exit
+
+   gosub openfile
+   if stat then
+:     stat=5;
+:     goto do_exit
+
+   gosub get_info
+   if stat then
+:     goto do_exit
+
+   stat=num(rec$,err=read_failed)
+   goto do_exit
+
+rem '******************************************************************************
+rem ' Add to Cart Action
+rem '******************************************************************************
+
+add_cart:
+   enter reference$,serial_nbr$[all],properties$[all],rev$,license_type$,users,port_id$,alt_cust$,features$[all],options$,stat,annual_dt$
+   setesc esctrap; seterr badarg
+   action_code$="02"
+   stat=0
+
+   if cvs(reference$,1+2)="" or len(reference$)>10 then
+:     goto badarg
+:  fi
+
+   array_dims$="dimen:i(1),d0elem:i(4),d0base:i(4),d1elem:i(4),d1base:i(4),d2elem:i(4),d2base:i(4)"
+   reference$=reference$+fill(10),reference$=reference$(1,10)
+   gosub parse_serial_nbrs
+   gosub parse_properties
+   if stat then
+:     goto badarg
+:  fi
+   if users and nbr_properties% and tot_users<>users then
+:     goto badarg
+:  fi
+   license_type$=cvs(license_type$,1+2+4)+fill(3,"0"),license_type$=license_type$(1,3)
+   rev$=cvs(rev$,1+2)+fill(5,"0"),rev$=rev$(1,5)
+   port_id$=str(num(port_id$,err=badarg):"0000")
+
+   if cvs(alt_cust$,1+2)="" then
+:     alt_cust$=fill(6,"0")
+:  else
+:     alt_cust$=str(num(alt_cust$,err=badarg):"000000")
+:  fi
+   options$=options$+fill(5,"0"),options$=options$(1,5)
+flag_check:
+   p0s=pos(" "=options$)
+   if p0s then
+:     options$(p0s,1)="0";
+:     goto flag_check
+:  fi
+   if cvs(annual_dt$,1+2)="" then
+:     annual_dt$=fill(8)
+:  else
+:     if len(annual_dt$)<8 then
+:        goto badarg
+:     else
+:        jul_dt=jul(num(annual_dt$(1,4),err=badarg),num(annual_dt$(5,2),err=badarg),num(annual_dt$(7,2),err=badarg),err=badarg)
+:     fi
+:  fi
+   if nbr_serials%=0 and (nbr_properties%=0 or rev$="00000" or license_type$="000" or users=0 or num(port_id$)=0) then
+:     goto badarg
+:  fi
+
+   gosub getfile
+   if stat then
+:     goto do_exit
+:  fi
+   gosub openfile
+   if stat then
+:     stat=5;
+:     goto do_exit
+:  fi
+
+   rec$=action_code$+reference$+str(nbr_serials%:"00")+serial_buff$+str(nbr_properties%:"00")+property_buff$+rev$+license_type$+
+:       str(users:"00000")+port_id$+alt_cust$
+   gosub parse_features
+   rec$=rec$+str(nbr_features%:"00")+buff$+options$+annual_dt$
+   gosub pass_info
+   if stat then
+:     goto do_exit
+:  fi
+
+   gosub openfile
+   if stat then
+:     stat=5;
+:     goto do_exit
+:  fi
+
+   gosub get_info
+   if stat then
+:     goto do_exit
+:  fi
+
+   stat=num(rec$,err=read_failed)
+   goto do_exit
+
+rem '******************************************************************************
+rem ' Buy Action
+rem '******************************************************************************
+
+buy_cart:
+   enter reference$,nbr_licenses,license$[all],stat
+   setesc esctrap; seterr badarg
+   action_code$="03"
+   stat=0
+
+   if cvs(reference$,1+2)="" or len(reference$)>10 then
+:     goto badarg
+:  fi
+
+   gosub getfile
+   if stat then
+:     goto do_exit
+:  fi
+
+   gosub openfile
+   if stat then
+:     stat=5;
+:     goto do_exit
+:  fi
+
+   reference$=reference$+fill(10),reference$=reference$(1,10)
+   rec$=action_code$+reference$
+   gosub pass_info
+   if stat then
+:     goto do_exit
+:  fi
+
+   gosub openfile
+   if stat then
+:     stat=5;
+:     goto do_exit
+:  fi
+
+   gosub get_info
+   if stat then
+:     goto do_exit
+:  fi
+
+   stat=num(rec$(1,2),err=read_failed)
+   if stat then
+:     goto do_exit
+:  fi
+   rec$=rec$(3)
+   nbr_licenses=num(rec$(1,2),err=read_failed)
+   rec$=rec$(3),count=1
+   dim license$[count:nbr_licenses,1:3]
+
+license_loop:
+   if rec$="" then
+:     goto do_exit
+:  fi
+
+   license$[count,1]=cvs(rec$(1,20),1+2),rec$=rec$(21)
+   license$[count,2]=cvs(rec$(1,13),1+2),rec$=rec$(14)
+   filelen=num(rec$(1,5),err=read_failed),rec$=rec$(6)
+   if filelen then
+:     license$[count,3]=rec$(1,filelen),rec$=rec$(filelen+1)
+:  fi
+   count=count+1
+   goto license_loop
+
+   goto do_exit
+
+rem '******************************************************************************
+rem ' Reset License Count Action
+rem '******************************************************************************
+
+reset_license:
+   enter reference$,serial_nbr$,stat
+   setesc esctrap; seterr badarg
+   action_code$="04"
+   stat=0
+
+   if cvs(reference$,1+2)="" or cvs(serial_nbr$,1+2)="" then
+:     goto badarg
+:  fi
+
+   gosub getfile
+   if stat then
+:     goto do_exit
+:  fi
+
+   gosub openfile
+   if stat then
+:     stat=5;
+:     goto do_exit
+:  fi
+
+   reference$=reference$+fill(10),reference$=reference$(1,10)
+   serial_nbr$=serial_nbr$+fill(20),serial_nbr$=serial_nbr$(1,20)
+   rec$=action_code$+reference$+serial_nbr$
+   gosub pass_info
+   if stat then
+:     goto do_exit
+:  fi
+
+   gosub openfile
+   if stat then
+:     stat=5;
+:     goto do_exit
+:  fi
+
+   gosub get_info
+
+   stat=num(rec$,err=read_failed)
+   if stat then
+:     goto do_exit
+:  fi
+
+   goto do_exit
+
+do_exit:
+   if tmp then
+:     close(tmp);
+:     erase tmpfile$,err=final_exit
+:  fi
+
+final_exit:
+exit
+ 
+REM - error exits
+badarg: 
+   stat=1
+   goto do_exit
+
+read_failed: 
+   stat=5
+   goto do_exit
+
+write_failed:
+   stat=10
+   goto do_exit
+
+REM - escape disable
+esctrap: 
+return
+ 
+REM - create temporary file to pass info to c program
+getfile: 
+   tmpfile$=cvs(reference$,1+2)+"."+action_code$
+   erase tmpfile$,err=nofile
+   goto goodname
+
+nofile: 
+   if err=12 then
+:     goto goodname
+:  fi
+   stat=3
+   goto done_getfile
+
+goodname: 
+   string tmpfile$,err=nocreate
+   goto done_getfile
+
+nocreate: 
+   stat=4
+
+done_getfile: 
+return
+
+openfile:
+   tmp=unt
+   open(tmp,err=write_failed)tmpfile$
+
+done_open:
+return
+
+pass_info:
+   write record(tmp,siz=len(rec$),err=write_failed)rec$
+   close(tmp)
+
+do_syscall:
+   badcall=0 
+   sys_command$="./directcomm "+tmpfile$
+   setesc write_failed; seterr write_failed
+   badcall=scall(sys_command$)
+   setesc esctrap; seterr badarg
+   if badcall<>0 then 
+:     exitto write_failed
+:  fi
+
+pass_info_done:
+return
+
+get_info:
+   rec$="",buff$=""
+
+read_loop:
+   read record(tmp,siz=1024,err=done_get_info)buff$
+   rec$=rec$+buff$
+   goto read_loop
+
+done_get_info:
+   if rec$="" or err<>2 then
+:     stat=5
+:  fi
+return
+
+parse_serial_nbrs:
+   serial_buff$=""
+   dim serial_dims$:array_dims$
+   serial_dims$=dims(serial_nbr$[all])
+
+   if serial_dims.d0elem%<1 or cvs(serial_nbr$[serial_dims.d0base%],1+2)="" then
+:     nbr_serials%=0;
+:     goto serial_done
+:  else
+:     nbr_serials%=serial_dims.d0elem%
+:  fi
+
+   for serial%=serial_dims.d0base% to serial_dims.d0elem%+serial_dims.d0base%-1
+      serial_num$=serial_nbr$[serial%]+fill(20)
+      serial_buff$=serial_buff$+serial_num$(1,20)
+   next serial%
+
+serial_done:
+return
+
+parse_properties:
+   property_buff$="",tot_users=0,stat=0
+   dim property_dims$:array_dims$
+   property_dims$=dims(properties$[all])
+
+   if property_dims.d1elem%<2 or property_dims.d0elem%<1 or cvs(properties$[property_dims.d0base%,property_dims.d1base%],1+2)="" then
+:     nbr_properties%=0;
+:     goto properties_done
+:  else
+:     nbr_properties%=property_dims.d0elem%
+:  fi
+
+   for property%=property_dims.d0base% to property_dims.d0elem%+property_dims.d0base%-1
+      property$=properties$[property%,property_dims.d1base%]+fill(3)
+      if property%>1 then
+:        property1$=properties$[property%-1,property_dims.d1base%]+fill(3);
+:        if cvs(property1$(3,1),4)<>cvs(property$(3,1),4) then
+:           stat=1
+:        fi
+:     fi
+      property_users$=properties$[property%,property_dims.d1base%+1]
+      tot_users=tot_users+num(property_users$)
+      property_buff$=property_buff$+cvs(property$(1,3),4)+str(num(property_users$):"00000")
+   next property%
+ 
+properties_done:
+return
+
+parse_features:
+   buff$=""
+   dim feature_dims$:array_dims$
+   feature_dims$=dims(features$[all])
+
+   if feature_dims.d1elem%<3 or feature_dims.d0elem%<1 or cvs(features$[feature_dims.d0base%,feature_dims.d1base%],1+2)="" then
+:     nbr_features%=0;
+:     goto features_done
+:  else
+:     nbr_features%=feature_dims.d0elem%
+:  fi
+
+   for feature%=feature_dims.d0base% to feature_dims.d0elem%+feature_dims.d0base%-1
+      feature_name$=features$[feature%,feature_dims.d1base%]+fill(30)
+      feature_rev$=features$[feature%,feature_dims.d1base%+1]+fill(5)
+      feature_users$=features$[feature%,feature_dims.d1base%+2]
+      buff$=buff$+feature_name$(1,30)+feature_rev$(1,5)+str(num(feature_users$):"00000")
+   next feature%
+ 
+features_done:
+return

@@ -1,0 +1,31 @@
+REM /**
+REM  * CustomerDiscountTest.src
+REM  * @author kwilliams
+REM  * test the CustomerDiscount class
+REM  */
+
+use ::CustomerDiscount.src::CustomerDiscount
+
+cd! = new CustomerDiscount("01", "001022")
+
+print ""
+print "customer: ", "01001022"
+print "standard discount: ", cd!.getStandardDiscount(), " expecting 60"
+print "sam discount: ", cd!.getSamDiscount(), " expecting 60"
+
+cd! = new CustomerDiscount("01", "001014")
+
+print ""
+print "customer: ", "01001014"
+print "standard discount: ", cd!.getStandardDiscount(), " expecting 30"
+print "sam discount: ", cd!.getSamDiscount(), " expecting 20"
+
+cd! = new CustomerDiscount("01", "001005")
+
+print ""
+print "customer: ", "01001005"
+print "standard discount: ", cd!.getStandardDiscount(), " expecting 0"
+print "sam discount: ", cd!.getSamDiscount(), " expecting 0"
+
+end
+

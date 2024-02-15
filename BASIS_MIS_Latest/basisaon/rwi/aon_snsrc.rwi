@@ -1,0 +1,61 @@
+//  Serial number search <aon_snsrc>
+
+serial_invoice_title$="@Serial No.| Port| Invoice| Date| Sold to";
+
+invnum:
+set display term();
+display/form="MAS_HEAD" firm_name=""
+screen_desc="Serial Number Search by Invoice";
+create temporary table invlist
+	serial char(20)/unique
+	port_id char(4)
+	inv_nbr char(7)
+	inv_date char(10)
+	cust_name char(30);
+
+sinvoice_num$="";
+prompt for /prompt="Invoice Number:"
+	/len=7 /mask="0000000" /help="Enter=end"
+	sinvoice_num$;
+if ctl(2) or cvs(sinvoice_num$,2)="" then exit;
+
+sinvoice_num$=str(num(sinvoice_num$):"0000000");
+pause/message "Searching ...";
+for each snt01 where ar_inv_nbr=sinvoice_num$
+{
+pause/message "Found "+snt01.serial_nbr;
+invlist.serial=snt01.serial_nbr;
+invlist.inv_nbr=snt01.ar_inv_nbr;
+find/noerror snm01 using snt01.serial_nbr;
+invlist.port_id=snm01.port_id(1,4);
+call/nowindow "(BBX)aondate.bbx",snt01.trans_date,d$,"U";
+invlist.inv_date=d$;
+find/noerror arm01 using snm01.firm_id+customer_nbr;
+if available(arm01) then invlist.cust_name=arm01.cust_name;
+insert/noerror invlist;
+}
+
+find/first/noerror invlist;
+if available(invlist)=0 then 
+{pause/message="No serial numbers found for invice "+sinvoice_num$;
+ goto invnum;}
+
+choose_rec:
+choose/record
+	/display=cvs(invlist.serial,2)+" | "+port_id+" | "+inv_nbr+" | "+inv_date+" | "+cust_name
+	/title=serial_invoice_title$
+	/rows=15
+	/row=3
+	/nowrap
+	/nobreak
+	/secure
+	/colchar="|"	
+	/help="(#F2)=exit"
+	invlist;
+if ctl(2) then goto invnum;
+
+find/noerror snm01 using invlist.serial;
+if available(snm01) then 
+{call/window "(BBX)aonserm_11.bbx",snm01;goto choose_rec;}
+goto invnum;
+//

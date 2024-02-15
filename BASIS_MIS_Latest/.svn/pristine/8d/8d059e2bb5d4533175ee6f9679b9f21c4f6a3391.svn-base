@@ -1,0 +1,306 @@
+REM /**
+REM  * fixUpgradeEmail.bbj
+REM  * @author kurte
+REM  *
+REM  */
+
+begin
+
+Print "This program must only be executed on upgrade.basis.cloud." 
+rem ' must run on bbjserver.basis.cloud only
+platformName$ = INFO(3,4)
+if platformName$ = "ip-172-30-0-74.us-west-2.compute.internal"
+    print "This is the Production server (" + platformName$ + "). This program should NEVER be run here."
+    end
+else
+    if platformName$ <> "ip-172-30-0-15.us-west-2.compute.internal" then
+        print "This server (" + platformName$ + ") is not the upgrade server."
+        print "This program will not run here."
+        end
+    else
+      if platformName$ = "ip-172-30-0-15.us-west-2.compute.internal" then
+          print "This server (" + platformName$ + ") is the upgrade server."
+          print "This program will only run here and not on any other platforn."
+          input "Enter YES to proceed: ", response$
+          if response$ <> "YES" then end
+          input "Process will begin: ", *
+      fi
+    fi
+fi
+
+rem ' change company to show Upgrade'
+sym06 = unt
+open(sym06)"SYM-06"
+dim sym06$:"FIRM_ID:C(2*=10),FIRM_NAME:C(40*=10),HELP_FLAG:C(1),BATCH_ENTRY:C(1),RESERVED_STR:C(14*=10)"
+
+rem ' BAS'
+read record(sym06,key = "01")sym06$
+compName$ = fill(40," ")
+compName$(1) = "*** Upgrade Training Sys *** BAS *** "
+sym06$.firm_name$ = compName$
+sym06$ = field(sym06$)
+write record(sym06, key = sym06.firm_id$)sym06$
+
+rem ' BSE'
+read record(sym06,key = "02")sym06$
+compName$ = fill(40," ")
+compName$(1) = "*** Upgrade Training Sys *** BSE *** "
+sym06$.firm_name$ = compName$
+sym06$ = field(sym06$)
+write record(sym06, key = sym06.firm_id$)sym06$
+input "Comapany Name changed for BAS and BSE to give visual queue that it is on Upgrade ",*
+
+call "ec_open::TMM05"
+call "ec_open::TMM03"
+call "ec_open::TMM06"
+call "ec_open::ARM10F"
+call "ec_open::SMC01"
+call "ec_open::SNMEU"
+call "ec_open::ECM01"
+call "ec_open::ECEEU"
+call "ec_open::LOGEXTRACT"
+
+rem ' TMM05           E_MAIL            DONE
+rem ' TMM03           E_MAIL            DONE
+rem ' ARM10F          E_MAIL            DONE
+rem ' SMC01           E_MAIL            DONE
+rem ' SNMEU       EMAIL_ADDRESS         DONE
+rem ' ECM01           E_MAIL, E_MAIL2   DONE
+rem ' JOB_QUEUE       E_MAIL, E_MAIL2   DONE
+rem ' REGISTRATIONS   EMAIL  - table does not exist
+rem ' LOGEXTRACT      EMAIL -           DONE
+rem ' EMXREF          EMAIL
+
+rem ' DD_FILE_ID,     DD_FIELD_ID
+rem ' ARM10F          ,E_MAIL                   DONE      
+rem ' ECEEU           ,EMAIL_ADDRESS            DONE
+rem ' ECM01           ,E_MAIL                   DONE          
+rem ' ECM01           ,E_MAIL2                  DONE        
+rem ' EMXREF          ,EMAIL           
+rem ' JOB_QUEUE       ,E_MAIL                   DONE    
+rem ' JOB_QUEUE       ,E_MAIL2                  DONE
+rem ' LOGEXTRACT      ,EMAIL                    DONE        
+rem ' REGISTRATIONS   ,EMAIL  - table does not exist          
+rem ' SMC01           ,E_MAIL                   DONE
+rem ' SNMEU           ,EMAIL_ADDRESS            DONE
+rem ' SN_EMERGENCY    ,REPEMAIL                 No Need  
+rem ' SN_EMER_SRCH_LOG,EMAIL                    No Need
+rem ' SN_EMER_SRCH_LOG,EMAILVERIFIEDCNT         No Need
+rem ' SN_LIMIT_EMAILS ,EMAIL_SENT               No Need
+rem ' TMM03           ,E_MAIL                   DONE
+rem ' TMM05           ,E_MAIL                   DONE
+rem ' TMM06           ,ATTENDEE_EMAIL           DONE  
+
+rem 'TMM05'
+fileinf$ = fin(tmm05)
+recnum = dec(fileinf$(77,4))
+reccount = 0
+print "Working on TMM05 " + str(recnum) + " records"
+read record(tmm05,key = "", dom = *next)tmm05$
+while 1
+    let k$ = key(tmm05, end = *break)
+    read record(tmm05, key = k$)tmm05$
+    tmm05.email$ = "trainingsys@addonsoftware.com"
+    tmm05$ = field(tmm05$)
+    write record(tmm05, key=k$)tmm05$
+    count = count + 1
+    rem ' input "Next ", *
+    if mod(count,1000) = 0 print count,
+wend
+print ""
+print "TMM05 finished " + str(count) + " records updated."
+close(tmm05)
+input "Continue ",*
+
+rem 'TMM03'
+count = 0
+fileinf$ = fin(tmm03)
+recnum = dec(fileinf$(77,4))
+reccount = 0
+print "Working on TMM03 " + str(recnum) + " records"
+read record(tmm03,key = "", dom = *next)tmm03$
+while 1
+    let k$ = key(tmm03, end = *break)
+    read record(tmm03, key = k$)tmm03$
+    tmm03.e_mail$ = "trainingsys@addonsoftware.com"
+    tmm03$ = field(tmm03$)
+    write record(tmm03, key=k$)tmm03$
+    count = count + 1
+    rem ' input "Next ", *
+    if mod(count,1000) = 0 print count,
+wend
+print ""
+print "TMM03 finished " + str(count) + " records updated."
+close(tmm03)
+input "Continue ",*
+
+rem 'TMM06'
+count = 0
+fileinf$ = fin(tmm06)
+recnum = dec(fileinf$(77,4))
+reccount = 0
+print "Working on TMM06 " + str(recnum) + " records"
+read record(tmm06,key = "", dom = *next)tmm06$
+while 1
+    let k$ = key(tmm06, end = *break)
+    read record(tmm06, key = k$)tmm06$
+    tmm06.attendee_email$ = "trainingsys@addonsoftware.com"
+    tmm06$ = field(tmm06$)
+    write record(tmm06, key=k$)tmm06$
+    count = count + 1
+    rem ' input "Next ", *
+    if mod(count,1000) = 0 print count,
+wend
+print ""
+print "TMM06 finished " + str(count) + " records updated."
+close(tmm06)
+input "Continue ",*
+
+rem 'ARM10F'
+count = 0
+print "Working on ARM10F via a SQL querey."
+sql$ = "SELECT firm_id, record_id_f, slspsn_code FROM ARM10F where record_id_f = 'F' and firm_id <> '99'"
+sqlChan = sqlunt
+sqlopen(sqlChan,mode="UID=basisaon,PWD=kQbmV7vAXRTyhazJ_ggAxD54@pRaCT-X*rH_7ww")"AddOnData"
+sqlprep(sqlChan)sql$
+sqlexec(sqlChan)
+dim rec$:sqltmpl(sqlChan)
+while 1
+    rec$=sqlfetch(sqlChan,end=*break)
+    read record(arm10f, key = rec.firm_id$ + rec.record_id_f$ + rec.slspsn_code$)arm10f$
+    arm10f.e_mail$ = "trainingsys@addonsoftware.com"
+    arm10f$ = field(arm10f$)
+    write record(arm10f, key = arm10f.firm_id$ + arm10f.record_id_f$ + arm10f.slspsn_code$)arm10f$
+    count = count + 1
+    rem ' input "Next ", *
+wend
+sqlclose(sqlchan)
+print ""
+print "ARM10F finished " + str(count) + " records updated."
+close(arm10f)
+input "Continue ",*
+
+rem 'SMC01'
+count = 0
+fileinf$ = fin(smc01)
+recnum = dec(fileinf$(77,4))
+reccount = 0
+print "Working on SMC01 " + str(recnum) + " records"
+read record(smc01,key = "", dom = *next)smc01$
+while 1
+    let k$ = key(smc01, end = *break)
+    read record(smc01, key = k$)smc01$
+    smc01.e_mail$ = "trainingsys@addonsoftware.com"
+    smc01$ = field(smc01$)
+    write record(smc01, key=k$)smc01$
+    count = count + 1
+    rem ' input "Next ", *
+    if mod(count,1000) = 0 print count,
+wend
+print ""
+print "SMC01 finished " + str(count) + " records updated."
+close(smc01)
+input "Continue ",*
+
+rem 'SNMEU'
+count = 0
+fileinf$ = fin(snmeu)
+recnum = dec(fileinf$(77,4))
+reccount = 0
+print "Working on SNMEU " + str(recnum) + " records"
+read record(snmeu,key = "", dom = *next)snmeu$
+while 1
+    let k$ = key(snmeu, end = *break)
+    read record(snmeu, key = k$)snmeu$
+    snmeu.email_address$ = "trainingsys@addonsoftware.com"
+    snmeu$ = field(snmeu$)
+    write record(snmeu, key=k$)snmeu$
+    count = count + 1
+    rem ' input "Next ", *
+    if mod(count,1000) = 0 print count,
+wend
+print ""
+print "SNMEU finished " + str(count) + " records updated."
+close(snmeu)
+input "Continue ",*
+
+rem 'ECM01'
+count = 0
+fileinf$ = fin(ecm01)
+recnum = dec(fileinf$(77,4))
+reccount = 0
+print "Working on ECM01 " + str(recnum) + " records"
+read record(ecm01,key = "", dom = *next)ecm01$
+while 1
+    let k$ = key(ecm01, end = *break)
+    read record(ecm01, key = k$)ecm01$
+    ecm01.e_mail$ = "trainingsys@addonsoftware.com"
+    ecm01.e_mail2$ = "trainingsys@addonsoftware.com"
+    ecm01$ = field(ecm01$)
+    write record(ecm01, key=k$)ecm01$
+    count = count + 1
+    rem ' input "Next ", *
+    if mod(count,1000) = 0 print count,
+wend
+print ""
+print "ECM01 finished " + str(count) + " records updated."
+close(ecm01)
+input "Continue ",*
+
+rem 'ECEEU'
+count = 0
+fileinf$ = fin(eceeu)
+recnum = dec(fileinf$(77,4))
+reccount = 0
+print "Working on ECEEU " + str(recnum) + " records"
+read record(eceeu,key = "", dom = *next)eceeu$
+while 1
+    let k$ = key(eceeu, end = *break)
+    read record(eceeu, key = k$)eceeu$
+    eceeu.email_address$ = "trainingsys@addonsoftware.com"
+    eceeu$ = field(eceeu$)
+    write record(eceeu, key=k$)eceeu$
+    count = count + 1
+    rem ' input "Next ", *
+    if mod(count,1000) = 0 print count,
+wend
+print ""
+print "ECEEU finished " + str(count) + " records updated."
+close(eceeu)
+input "Continue ",*
+
+rem 'JOB_QUEUE'
+rem ' initialize the JOB_QUEUE file'
+print "Initializing the JOB_QUEUE"
+initfile "job_queue.dat"
+print "JOB_QUEUE initialized"
+input "Continue ",*
+
+rem 'LOGEXTRACT'
+count = 0
+fileinf$ = fin(logextract)
+recnum = dec(fileinf$(77,4))
+reccount = 0
+print "Working on LOGEXTRACT " + str(recnum) + " records"
+read record(logextract,key = "", dom = *next)logextract$
+while 1
+    let k$ = key(logextract, end = *break)
+    read record(logextract, key = k$)logextract$
+    logextract.from$ = "trainingsys@addonsoftware.com"
+    if cvs(logextract.email$,3) <> "" then logextract.email$ = "trainingsys@addonsoftware.com"
+    logextract$ = field(logextract$)
+    write record(logextract, key=k$)logextract$
+    count = count + 1
+    rem ' input "Next ", *
+    if mod(count,1000) = 0 print count,
+wend
+print ""
+print "LOGEXTRACT finished " + str(count) + " records updated."
+close(logextract)
+input "Continue ",*
+
+rem ' ARM04'
+print "running arxrebuild.pgm"
+run "arxrebuild.pgm"
+
+end

@@ -1,0 +1,28 @@
+Table Definition Module
+APM_INVAPPROVAL - Invoice Approval Table
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+APM_INVAPPROVAL^^^^^Invoice Approval Table^Invoice Approval Table^^^^^^^^G^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;
+{ColumnDefs}
+FIRM_ID^APM_INVAPPROVAL^001^C^^^^^^^1^^Y^^^^^FIRM_ID^Firm ID^Firm ID^Firm ID^C^^H^^^^0^^^^^^^^^^^^^^^^^^^2^0^^^^^^^^^^0^^stbl("+FIRM_ID")^^^^^^
+VENDOR_ID^APM_INVAPPROVAL^002^C^^3001^dis_vendor_id^0^^^2^^Y^^^F^^VENDOR_ID^Vendor Number^Vendor ID^Vend ID^C^^E^^^^0^^^^^[+FIRM_ID]+@^APM_VENDMAST^VENDOR_NAME^^^^^^^^^^^^6^0^^^UUUUUU^^^I^^30^R^0^Enter A Valid Vendor^^^^^^^
+AP_INV_NO^APM_INVAPPROVAL^003^C^^3002^ine_ap_inv_no^0^^^3^^Y^^^^^AP_INV_NO^AP Invoice Number^AP Invoice Number^AP Inv No^C^^E^^^^0^^^^^^^^^^^^^^^^^^^10^0^^^^^^^^20^L^0^^^^^^^^
+SEQUENCE_NUM^APM_INVAPPROVAL^004^C^^3003^ine_sequence_num^0^^^4^^Y^^^^^SEQUENCE_NUM^Sequence Number^Sequence Number^Seq No^C^S^E^^^^0^^^^^^^^^^^^^^^^^^^2^^^^00^00^^^^30^R^^^^^^^^^
+APPROVAL_TYPE^APM_INVAPPROVAL^005^C^^3004^lbn_approval_type^0^^^5^^N^^^^^ACTIVITY_TYPE^Activity Type^Activity Type^Activity Type^C^A^L^^^^0^^^^^^^^^^^^^^^^^Telephone Call                                                  ~T                   ;Meeting                                                         ~M                   ;Presentation                                                    ~P                   ;Offsite Meeting                                                 ~O                   ;^^1^^^^^^^^^^^^^^^^^^^
+USER_ID^APM_INVAPPROVAL^006^C^^3005^dis_user_id^0^^^6^^N^^^F^^USER_ID^User ID^User ID^User ID^C^^E^^^^0^^^150^^^ADM_USER^NAME^^^^^^^^^^^^16^0^^^UUUUUUUUUUUUUUUU^^^^H;^20^L^0^^^^^^^^
+NAME^APM_INVAPPROVAL^007^C^^3006^ine_name^0^^^7^^N^^^^^NAME^Name^Name^Name^C^^E^^^^0^^^^^^^^^^^^^^^^^^^30^0^^^^^^^^^^0^^^^^^^^
+APPV_TIMESTAMP^APM_INVAPPROVAL^008^C^^3007^ine_appv_timestamp^0^^^8^^N^^^^^BAR_TEXT_20^Text 20^Text 20^Text 20^C^^E^^^^0^^^^^^^^^^^^^^^^^^^20^0^^^^^^^^^^0^^^^^^^^
+{ColumnDefsEnd}
+{KeyDefs}
+APM_INVAPPROVAL^PRIMARY^APM_INVAPPROVAL.FIRM_ID                 APM_INVAPPROVAL.VENDOR_ID               APM_INVAPPROVAL.AP_INV_NO               APM_INVAPPROVAL.SEQUENCE_NUM            ^stbl("+FIRM_ID")+APM_INVAPPROVAL.VENDOR_ID$+APM_INVAPPROVAL.AP_INV_NO$+APM_INVAPPROVAL.SEQUENCE_NUM$^stbl("+FIRM_ID")+RD_REC_DATA.VENDOR_ID$+RD_REC_DATA.AP_INV_NO$+RD_REC_DATA.SEQUENCE_NUM$^stbl("+FIRM_ID")                        RD_REC_DATA.VENDOR_ID$                  RD_REC_DATA.AP_INV_NO$                  RD_REC_DATA.SEQUENCE_NUM$               
+{KeyDefsEnd}
+{GridCols}
+002APM_INVAPPROVAL.VENDOR_ID               ;003APM_INVAPPROVAL.AP_INV_NO               ;004APM_INVAPPROVAL.SEQUENCE_NUM            ;005APM_INVAPPROVAL.APPROVAL_TYPE           ;006APM_INVAPPROVAL.USER_ID                 ;007APM_INVAPPROVAL.NAME                    ;008APM_INVAPPROVAL.APPV_TIMESTAMP          ;
+{GridColsEnd}

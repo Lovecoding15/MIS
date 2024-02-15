@@ -1,0 +1,571 @@
+rem Callpoint program for PQY_INACTIVE_PAR - Inactive Partners
+rem Program pqy_inactive_par_cpt.bbj
+rem Barista Application Framework.  Copyright BASIS International Ltd.
+
+	seterr std_error
+	setesc std_error
+
+	use ::sys/prog/bao_callpoint.bbj::Callpoint
+	declare Callpoint Callpoint!
+
+	enter
+:		Callpoint!,
+:		bar_tpl$,
+:		BarObj!,
+:		user_tpl$,
+:		UserObj!,
+:		gui_dev,
+:		SysGUI!,
+:		Form!,
+:		rec_data$,
+:		table_chans$[all],
+:		dtlg_param$[all],
+:		GridVect!,
+:		OrigVect!,
+:		hrec_data$[all],
+:		hattr_col$[all],
+:		err=*next
+
+rem --- Directory STBLs
+
+	dir_pgm$=stbl("+DIR_SYP")
+	dir_frm$=stbl("+DIR_FRM")
+	dir_img$=stbl("+DIR_IMG")
+	dir_wrk$=stbl("+DIR_WRK")
+
+rem --- Retrieve sysinfo Data
+
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=*next)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=*next)
+	firm_id$=sysinfo.firm_id$
+
+
+
+rem --- Callpoints and tables handled by this program
+
+	callpoint_event$=pad(Callpoint!.getCallpointEvent(),40)
+
+	callpoint_event_str$=
+:		pad("PQY_INACTIVE_PAR.ACUS",40)+
+:		pad("PQY_INACTIVE_PAR.AREC",40)+
+:		pad("PQY_INACTIVE_PAR.ASIZ",40)+
+:		pad("PQY_INACTIVE_PAR.BSHO",40)+
+:		pad("PQY_INACTIVE_PAR.PARTNER_TYPE.AMOD",40)
+
+	switch fnstr_pos(callpoint_event$,callpoint_event_str$,40)
+		case fnstr_pos(pad("PQY_INACTIVE_PAR.ACUS",40),callpoint_event_str$,40)			
+			ourEvent! = SysGUI!.getLastEvent()
+			
+			while 1
+				if pos("BBjNavigatorMoveFirstEvent"=ourEvent!.toString()) then
+			 		gosub navFirst
+					break
+				fi
+			 
+				if pos("BBjNavigatorMoveNextEvent"=ourEvent!.toString()) then
+					gosub navNext
+					break
+				fi
+			
+				if pos("BBjNavigatorMoveLastEvent"=ourEvent!.toString()) then
+					gosub navLast
+					break
+				fi
+			
+				if pos("BBjNavigatorMovePreviousEvent"=ourEvent!.toString()) then
+					gosub navPrevious
+					break
+				fi
+			
+				if pos("BBjDBGridRowChangeRequestEvent"=ourEvent!.toString()) then
+					gosub handleTheGridRowChangeRequests
+					break
+				fi
+			
+				if pos("BBjButtonPushEvent"=ourEvent!.toString()) then
+					gosub handleButtonPushEvents
+					break
+				fi
+			
+			wend
+		break
+		case fnstr_pos(pad("PQY_INACTIVE_PAR.AREC",40),callpoint_event_str$,40)			
+			rem set the default inactive date to one year ago
+			pqy_year = num(date(0,"%Y"))
+			pqy_year=pqy_year-1
+			pqy_month=num(date(0,"%Mz"))
+			pqy_day=num(date(0,"%Dz"))
+			if pqy_month=2 and pqy_day=29 then pqy_day=28
+			pqy_inactive_date$=str(pqy_year)+str(pqy_month:"00")+str(pqy_day:"00")
+			callpoint!.setColumnData("PQY_INACTIVE_PAR.INACTIVE_DATE", pqy_inactive_date$)
+			
+			rem set the default reseller types
+			pqy_reseller$="RS,PB,PS,PG"
+			callpoint!.setColumnData("PQY_INACTIVE_PAR.PARTNER_TYPES", pqy_reseller$)
+			callpoint!.setStatus("REFRESH")
+			
+			rem set the default number of users
+			callpoint!.setColumnData("PQY_INACTIVE_PAR.NUM_USERS","50")
+			
+			rem disable the Partner Types character edit
+			pqy_ctlid=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.PARTNER_TYPES","CTLI"))
+			pqy_cntxt=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.PARTNER_TYPES","CTLC"))
+			pqyWindow!=bbjapi().getSysGui().getWindow(pqy_cntxt)
+			
+			pqy_control!=pqyWindow!.getControl(pqy_ctlid)
+			pqy_control!.setEnabled(0)
+		break
+		case fnstr_pos(pad("PQY_INACTIVE_PAR.ASIZ",40),callpoint_event_str$,40)			
+			rem ' resize the grid
+			
+			id=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLI"))
+			context=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLC"))
+			
+			pqyWindow!=bbjapi().getSysGui().getWindow(context)
+			pqyControl!=pqyWindow!.getControl(id)
+			
+			gosub setMinimumWindowSize
+			
+			pqyRslGridID = 30000
+			pqyNavID = 30001
+			pqySerGridID = 30002
+			pqySerHistoryID=30004
+			pqyControlGap = 2
+			
+			pqyX = pqyControl!.getX()
+			pqyY = pqyControl!.getY() + pqyControl!.getHeight() + pqyControlGap
+			
+			pqyRemainingHeight = pqyWindow!.getHeight() - pqyY
+			
+			while 1
+				pqyHistory!=pqyWindow!.getControl(pqySerHistoryID, err=*break)
+				pqyRslDataGrid!=pqyWindow!.getControl(pqyRslGridID, err=*break)
+				pqyNav!=pqyWindow!.getControl(pqyNavID, err=*break)	
+				pqySerGrid!=pqyWindow!.getControl(pqySerGridID, err=*break)	
+				pqyRslDataGrid!.setVisible(0)
+				pqyNav!.setVisible(0)
+				pqySerGrid!.setVisible(0)
+				pqyHistory!.setVisible(0)
+			
+				rem ' set the edit box
+				stdEditBoxWidth=350
+				editBoxX = pqyWindow!.getWidth()-pqyControlGap-stdEditBoxWidth
+				editBoxY = pqyControlGap
+				editBoxHeight = pqyWindow!.getHeight() - (pqyControlGap * 2)
+				pqyHistory!.setLocation(editBoxX, editBoxY)
+				pqyHistory!.setSize(stdEditBoxWidth, editBoxHeight)
+			
+				pqyRemainingHeight = pqyRemainingHeight - pqyControlGap - pqyNav!.getHeight() - pqyControlGap - pqyControlGap 
+				pqyRslGridHeight = int(pqyRemainingHeight * .67)
+			
+				pqyRslGridWidth = pqyWindow!.getWidth() - pqyX - stdEditBoxWidth - pqyControlGap - pqyControlGap
+			
+				pqyRslDataGrid!.setSize(pqyRslGridWidth, pqyRslGridHeight)
+			
+				pqyY = pqyRslDataGrid!.getY()+pqyRslDataGrid!.getHeight()+pqyControlGap
+				pqyNav!.setLocation(pqyX, pqyY)
+			
+				pqyY = pqyY + pqyNav!.getHeight() + pqyControlGap
+				pqySerGrid!.setLocation(pqyX, pqyY)
+				pqySerGridHeight = pqyRemainingHeight - pqyRslDataGrid!.getHeight()
+				pqySerGrid!.setSize(pqyRslGridWidth, pqySerGridHeight)
+			
+				pqyRslDataGrid!.setVisible(1)
+				pqyNav!.setVisible(1)
+				pqySerGrid!.setVisible(1)
+				pqyHistory!.setVisible(1)
+			
+				break
+			wend
+		break
+		case fnstr_pos(pad("PQY_INACTIVE_PAR.BSHO",40),callpoint_event_str$,40)			
+			rem use statements
+			use java.util.StringTokenizer
+			use java.lang.StringBuffer
+			
+			rem ' add the grids and the navigator
+			
+			id=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLI"))
+			context=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLC"))
+			
+			pqyWindow!=bbjapi().getSysGui().getWindow(context)
+			pqyControl!=pqyWindow!.getControl(id)
+			
+			gosub setMinimumWindowSize
+			
+			pqyRslGridID = 30000
+			pqyNavID = 30001
+			pqySerGridID = 30002
+			pqyPartnerClearBtnID = 30003
+			pqySerHistoryID=30004
+			pqyRunQueryBtnID=30005
+			pqyOutputReportBtnID=30006
+			pqyControlGap = 2
+			
+			rem ' set the edit box
+			stdEditBoxWidth=350
+			editBoxX = pqyWindow!.getWidth()-pqyControlGap-stdEditBoxWidth
+			editBoxY = pqyControlGap
+			editBoxHeight = pqyWindow!.getHeight() - (pqyControlGap * 2)
+			pqyHistory!=pqyWindow!.addCEdit(pqySerHistoryID, editBoxX, editBoxY, stdEditBoxWidth, editBoxHeight, "")
+			pqyHistory!.setEditable(0)
+			pqyHistory!.setVerticalScrollable(1)
+			
+			pqyX = pqyControl!.getX()
+			pqyY = pqyControl!.getY() + pqyControl!.getHeight() + pqyControlGap
+			
+			pqyRemainingHeight = pqyWindow!.getHeight() - pqyY
+			
+			pqyNavHeight = pqyControl!.getHeight()
+			pqyRemainingHeight = pqyRemainingHeight - pqyControlGap - pqyNavHeight - pqyControlGap - pqyControlGap 
+			pqyRslGridHeight = int(pqyRemainingHeight * .67)
+			
+			pqyGridWidth = pqyWindow!.getWidth() - pqyX - stdEditBoxWidth - pqyControlGap - pqyControlGap
+			pqyNavWidth = 150
+			
+			rem ' create the partner grid
+			pqyRslGrid!=pqyWindow!.addDataBoundGrid(pqyRslGridID, pqyX, pqyY, pqyGridWidth, pqyRslGridHeight) 
+			pqyRslGrid!.setEnabled(0)
+			pqyRslGrid!.setCallback(pqyRslGrid!.ON_DB_GRID_ROW_CHANGE_REQUEST, "custom_event")
+			pqyRslGrid!.setShouldHighlightSelectedRow(1)
+			pqyRslGrid!.setHorizontalScrollable(1)
+			
+			pqyY = pqyY + pqyRslGrid!.getHeight() + pqyControlGap
+			pqySerGridHeight = pqyRemainingHeight - pqyRslGrid!.getHeight()
+			
+			rem ' create the navigator
+			pqyNav!=pqyWindow!.addNavigator(pqyNavID, pqyX, pqyY, pqyNavWidth, pqyNavHeight, " " )
+			pqyNav!.setEnabled(0)
+			pqyNav!.setCallback(pqyNav!.ON_NAV_FIRST, "custom_event")
+			pqyNav!.setCallback(pqyNav!.ON_NAV_PREVIOUS, "custom_event")
+			pqyNav!.setCallback(pqyNav!.ON_NAV_NEXT, "custom_event")
+			pqyNav!.setCallback(pqyNav!.ON_NAV_LAST, "custom_event")
+			
+			pqyY=pqyY + pqyNavHeight +  pqyControlGap
+			
+			rem ' create the serial number grid
+			pqySerGrid!=pqyWindow!.addDataBoundGrid(pqySerGridID, pqyX, pqyY, pqyGridWidth, pqySerGridHeight)
+			pqySerGrid!.setEnabled(0)
+			pqySerGrid!.setCallback(pqySerGrid!.ON_DB_GRID_ROW_CHANGE_REQUEST, "custom_event")
+			pqySerGrid!.setShouldHighlightSelectedRow(1)
+			
+			rem ' create the "clear partner types" button
+			ctlid =num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.PARTNER_TYPES","CTLI"))
+			partnerTypes! =pqyWindow!.getControl(ctlid)
+			btnX = partnerTypes!.getX() + partnerTypes!.getWidth() + pqyControlGap
+			btnY = partnerTypes!.getY()
+			pqyButton! = pqyWindow!.addButton(pqyPartnerClearBtnID, btnX, btnY, 150, partnerTypes!.getHeight(), "Clear Partner Types")
+			pqyButton!.setCallback(pqyButton!.ON_BUTTON_PUSH, "custom_event")
+			
+			rem ' create the run query and output reports buttons
+			ctlid = num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLI"))
+			numUsers!=pqyWindow!.getControl(ctlid)
+			btnY= numUsers!.getY()
+			pqyRunQueryBtn!=pqyWindow!.addButton(pqyRunQueryBtnID, btnX, btnY, 150, pqyButton!.getHeight(), "Load/Reload Grids")
+			pqyRunQueryBtn!.setCallback(pqyRunQueryBtn!.ON_BUTTON_PUSH, "custom_event")
+			btnX = pqyRunQueryBtn!.getX() + pqyRunQueryBtn!.getWidth() + pqyControlGap
+			pqyOutputReport!=pqyWindow!.addButton(pqyOutputReportBtnID, btnX, btnY, 150, pqyButton!.getHeight(), "Output Data")
+			pqyOutputReport!.setCallback(pqyOutputReport!.ON_BUTTON_PUSH, "custom_event")
+		break
+		case fnstr_pos(pad("PQY_INACTIVE_PAR.PARTNER_TYPE.AMOD",40),callpoint_event_str$,40)			
+			pqy_part_type$=callpoint!.getColumnData("PQY_INACTIVE_PAR.PARTNER_TYPE")
+			pqy_part_types$=callpoint!.getColumnData("PQY_INACTIVE_PAR.PARTNER_TYPES")
+			
+			newSelectedTypes! = new StringBuffer()
+			
+			if cvs(pqy_part_type$,3)<>"" then
+				if cvs(pqy_part_types$,3)="" then
+					newSelectedTypes!.append(pqy_part_type$)
+				else
+					selectedTypes! = new StringTokenizer(pqy_part_types$, ",")
+			
+					handled = 0
+					while selectedTypes!.hasMoreTokens()
+						this_type$=selectedTypes!.nextToken()
+						if this_type$<>pqy_part_type$ then
+							if newSelectedTypes!.length() > 0 then
+								newSelectedTypes!.append(","+this_type$)
+							else
+								newSelectedTypes!.append(this_type$)
+							fi
+						else
+							rem ' this is a remove
+							handled=1
+						fi
+					wend
+					if !handled then
+						if newSelectedTypes!.length() > 0 then
+							newSelectedTypes!.append(","+pqy_part_type$)
+						else
+							newSelectedTypes!.append(pqy_part_type$)
+						fi
+					fi
+				fi
+			else
+				newSelectedTypes!.append(pqy_part_types$)
+			fi
+			
+			callpoint!.setColumnData("PQY_INACTIVE_PAR.PARTNER_TYPES", newSelectedTypes!.toString())
+			callpoint!.setStatus("REFRESH")
+		break
+
+		case default
+		break
+	swend
+
+rem --- All done
+
+	goto std_exit
+
+rem [[PQY_INACTIVE_PAR.<CUSTOM>]]
+
+navFirst:
+	gosub getNavigatorAndRecordSet
+	pqyRecordSet!.first(err=*next)
+	gosub getTheCurrentReseller
+return
+
+navPrevious:
+	gosub getNavigatorAndRecordSet
+	pqyRecordSet!.previous(err=*next)
+	gosub getTheCurrentReseller
+return
+
+navNext:
+	gosub getNavigatorAndRecordSet
+	pqyRecordSet!.next(err=*next)
+	gosub getTheCurrentReseller
+return
+
+navLast:
+	gosub getNavigatorAndRecordSet
+	pqyRecordSet!.last(err=*next)
+	gosub getTheCurrentReseller
+return
+
+getNavigatorAndRecordSet:
+	pqyNavID=30001
+	context=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLC"))
+
+	pqyWindow!=bbjapi().getSysGui().getWindow(context)
+	pqyNavigator!=pqyWindow!.getControl(pqyNavID)
+	pqyRecordSet!=pqyNavigator!.getBoundRecordSet()
+return
+
+getSerialNumberRecordSet:
+	pqySerGridID = 30002
+	context=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLC"))
+	pqyWindow!=bbjapi().getSysGui().getWindow(context)
+	pqySerGrid!=pqyWindow!.getControl(pqySerGridID)
+	pqyRecordSet!=pqySerGrid!.getBoundRecordSet()
+return
+	
+getTheCurrentReseller:
+	pqyRecordData! = pqyRecordSet!.getCurrentRecordData()
+	pqyResellerNbr$ = pqyRecordData!.getFieldValue("CUSTOMER_NBR")
+	pqyNumUser$ = callpoint!.getColumnData("PQY_INACTIVE_PAR.NUM_USERS")
+	pqySerGridID = 30002
+	pqySerHistoryID = 30004
+	call stbl("PQY_PROGRAMS") +"pqy_serial_nbr_query.src", pqyResellerNbr$, pqyNumUser$, context, pqySerGridID, pqySerHistoryID
+return
+
+handleTheGridRowChangeRequests:
+	rem ' which grid did it come from
+	pqyRslGridID = 30000
+	pqyGridCtl!=ourEvent!.getControl()
+	if pqyGridCtl!.getID() = pqyRslGridID then
+		rem ' reseller grid change
+		row = ourEvent!.getRow()
+		gosub getNavigatorAndRecordSet
+		pqyRecordSet!.moveToRecord(row)
+		gosub getTheCurrentReseller
+	else
+		rem ' serial number grid change
+		row = ourEvent!.getRow()
+		gosub getSerialNumberRecordSet
+		pqyRecordSet!.moveToRecord(row)
+		pqyRecordData! = pqyRecordSet!.getCurrentRecordData()
+		pqySerialNbr$=pqyRecordData!.getFieldValue("SERIAL_NBR")
+
+		pqySerHistoryID = 30004
+		pqySerHistory!=pqyWindow!.getControl(pqySerHistoryID)
+		pqySerHistory!.setEnabled(0)
+		pqySerHistory!.setText("")
+
+		pqyLicHist$=""
+		call stbl("PQY_PROGRAMS")+"pqy_license_history.src", pqySerialNbr$, pqyLicHist$
+		pqySerHistory!.setText(pqyLicHist$)
+		pqySerHistory!.setEnabled(1)
+
+	fi
+return
+
+setMinimumWindowSize:
+	rem set Minimum Window Size if needed
+	minimumWinWidth = 1100
+	minimumWinHeight = 325
+	rem ' ensure window width and height => minimums
+	if pqyWindow!.getWidth() < minimumWinWidth or pqyWindow!.getHeight() < minimumWinHeight then
+		pqyWindow!.setSize(minimumWinWidth, minimumWinHeight)
+	fi
+return
+
+handleButtonPushEvents:
+	button!=ourEvent!.getControl()
+
+	pqyPartnerClearBtnID = 30003
+	pqyRunQueryBtnID=30005
+	pqyOutputReportBtnID=30006
+	
+	switch button!.getID()
+		case pqyPartnerClearBtnID
+			callpoint!.setColumnData("PQY_INACTIVE_PAR.PARTNER_TYPES","")
+			callpoint!.setStatus("REFRESH")
+			break
+		case pqyRunQueryBtnID
+			context=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLC"))
+			pqyWindow!=bbjapi().getSysGui().getWindow(context)
+
+			pqyWindow!.setEnabled(0)
+			call stbl("PQY_PROGRAMS")+"pqy_inactive_query.src"
+			pqyWindow!.setEnabled(1)			
+			break
+		case pqyOutputReportBtnID
+			context=num(callpoint!.getTableColumnAttribute("PQY_INACTIVE_PAR.NUM_USERS","CTLC"))
+			pqyWindow!=bbjapi().getSysGui().getWindow(context)
+			pqyWindow!.setVisible(0)			
+
+			rd_table_chans$[ALL]=table_chans$[ALL]
+			sysinfo_template$=stbl("+SYSINFO_TPL")
+    			dim sysinfo$:sysinfo_template$
+    			sysinfo$=stbl("+SYSINFO")
+			rd_task_val$=sysinfo.task_id$
+
+			rem ' set output directories
+			pqyServer$=STBL("PQY_PROD_SERVER")
+			thisServer$=info(3,4)
+			if len(thisServer$)>=len(pqyServer$) AND thisServer$(1,len(pqyServer$))=pqyServer$ then
+				rem ' production server
+				trash$=STBL("+DOC_DIR_PDF", STBL("PQY_PROD_DOCS"))
+				trash$=STBL("+DOC_DIR_HTM", STBL("PQY_PROD_DOCS"))
+				trash$=STBL("+DOC_DIR_XML", STBL("PQY_PROD_DOCS"))
+				trash$=STBL("+DOC_DIR_CSV", STBL("PQY_PROD_DOCS"))
+				trash$=STBL("+DOC_DIR_TXT", STBL("PQY_PROD_DOCS"))
+			else
+				rem ' testing server
+				trash$=STBL("+DOC_DIR_PDF", STBL("PQY_TESTING_DOCS"))
+				trash$=STBL("+DOC_DIR_HTM", STBL("PQY_TESTING_DOCS"))
+				trash$=STBL("+DOC_DIR_XML", STBL("PQY_TESTING_DOCS"))
+				trash$=STBL("+DOC_DIR_CSV", STBL("PQY_TESTING_DOCS"))
+				trash$=STBL("+DOC_DIR_TXT", STBL("PQY_TESTING_DOCS"))
+			fi
+
+			run stbl("PQY_PROGRAMS")+"pqy_inactive_rep.src"
+			break
+	swend
+
+return
+
+
+open_tables:rem --- Open Tables
+
+	call stbl("+DIR_SYP")+"bac_open_tables.bbj",
+:		open_beg,
+:		open_end,
+:		open_tables$[all],
+:		open_opts$[all],
+:		open_chans$[all],
+:		open_tpls$[all],
+:		table_chans$[all],
+:		open_batch,
+:		open_status$
+
+	if open_status$<>"" then
+		msg_id$="ENTRY_OPEN_ERROR"
+		dim msg_tokens$[1]
+		msg_tokens$[1]=open_status$
+		gosub disp_message
+		rdFuncSpace!=BBjAPI().getGroupNamespace().setValue("+build_task","OFF")
+		release
+	endif
+
+	return
+
+disp_message:rem --- Display Message Dialog
+
+	call stbl("+DIR_SYP")+"bac_message.bbj",msg_id$,msg_tokens$[all],msg_opt$,table_chans$[all]
+
+	return
+
+disp_msg:rem --- Display Message Dialog
+
+	call stbl("+DIR_SYP")+"bam_message.bbj",gui_dev,msg_title$,msg_text$,msg_defs$,msg_opt$
+
+	return
+
+disp_meter:rem --- Display Progress Meter
+
+	call dir_pgm$+"bam_prog_bar.bbj",SysGUI!,Form!,MeterWin!,meter_title$,meter_total_recs,meter_proc_recs,meter_data$,meter_action$
+
+	return
+
+rem --- Functions
+
+	def fnstr_pos(str_pos_att0$,str_pos_att1$,str_pos_att1)=int((pos(str_pos_att0$=str_pos_att1$,str_pos_att1)+str_pos_att1-1)/str_pos_att1)
+	def fngett_attr$(gett_attr_att0$)=attr_tbl$[fnstr_pos(gett_attr_att0$,attr_def_tbl$[0,0],5)]
+	def fngetc_attr$(getc_attr_att0,getc_attr_att0$)=attr_col$[getc_attr_att0,fnstr_pos(getc_attr_att0$,attr_def_col$[0,0],5)]
+	def fngetv_attr$(getv_attr_att0$,getv_attr_att1$)=attr_col$[fnstr_pos(getv_attr_att0$,attr_col$[0,1],40),fnstr_pos(getv_attr_att1$,attr_def_col$[0,0],5)]
+	def fnget_rec$(get_rec_att0$)=rec_data$[fnstr_pos(get_rec_att0$,rec_data$[0,0],40),0]
+	def fnget_rec_orig$(get_rec_att0$)=rec_data$[fnstr_pos(get_rec_att0$,rec_data$[0,0],40),1]
+	def fnget_hrec$(hrec_att0$)=hrec_data$[fnstr_pos(hrec_att0$,hrec_data$[0,0],40),0]
+	def fndate$(date_att0$)=date(jul(num(date_att0$(1,4)),num(date_att0$(5,2)),num(date_att0$(7,2))):stbl("+DATE_MASK"))
+	def fnget_dev(tmp0$)=num(table_chans$[0,0](pos(pad(tmp0$,17)=table_chans$[0,0],20)+17,3))
+	def fnget_tpl$(tmp0$)=table_chans$[num(table_chans$[0,0](pos(pad(tmp0$,17)=table_chans$[0,0],20)+17,3)),0]
+	def fnget_path$(tmp0$)=table_chans$[num(table_chans$[0,0](pos(pad(tmp0$,17)=table_chans$[0,0],20)+17,3)),1]
+	def fnmdy$(tmp0$)=tmp0$(5,4)+tmp0$(1,4)
+
+std_error: rem --- Standard error handler (01Apr2006)
+
+    if tcb(19)>0
+        rem --- Escape handler
+        if and(chr(tcb(19)),$08$)=$08$
+            release
+        else
+            setesc std_error
+            return
+        endif
+    endif
+
+    if err=0   
+        rem --- Get tcb(12) and tcb(10) to send into bac_error
+        lock_byte=tcb(10)
+        lock_chan=tcb(12)  
+    endif
+
+	err_text$=""
+    if tcb(2) = 0 and tcb(5) then err_text$ = pgm(tcb(5), tcb(13), err=*next)
+	pgmdir$=stbl("+DIR_SYP",err=std_error_exit)
+	call pgmdir$+"bac_error.bbj",err=std_error_exit,pgm(-2),str(tcb(5):"00000"),str(err:"000"),err_text$,err_act$,lock_byte,lock_chan
+	if pos("EXIT"=err_act$) then goto std_error_exit
+	if pos("ESCAPE"=err_act$) then seterr 0;setesc 0
+	if pos("RETRY"=err_act$) then retry
+
+std_error_exit:
+
+	master_user$=cvs(stbl("+MASTER_USER",err=std_error_release),2)
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=std_error_release)
+	if cvs(sysinfo.user_id$,2)=master_user$ then escape
+
+std_error_release:
+
+	status=999
+	if pgm(-1)<>pgm(-2) then exit
+	release
+
+std_exit: rem --- Standard called program exit (01Mar2006)
+
+	exit
+

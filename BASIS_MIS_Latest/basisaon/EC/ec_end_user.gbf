@@ -1,0 +1,1122 @@
+[Program]
+Creation Date=2007-02-13
+Creation Time=14:56:2
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2019-07-18
+Last Build Time=15:53:57
+Precision=99
+Program Name=C:\eclipse201812r\workspace\B_Commerce\ec_end_user
+Remarks=Yes
+Resource File=ec_end_user.arc
+Show Forms=All
+
+[EOJ]
+gosub show_callersWindow
+
+[Init]
+rem ' get our inteface objects
+ourAPI!=BBjAPI()
+ourSysGui!=ourAPI!.getSysGui()
+ourSystemMetrics!=ourSysGui!.getSystemMetrics()
+scrDimension!=ourSystemMetrics!.getScreenSize()
+ourContext=ourSysGui!.getContext()
+ourWindow!=ourSysGui!.getWindow(ourContext)
+topLevelWindow!=cast(BBjTopLevelWindow, ourSysGui!.getWindow(ourContext))
+rem ' the caller is managing it's own window
+rem ' callersWindow!=ourSysGui!.getWindow(gb__arg.callersContext)
+gosub center_window
+
+firm_id$=gb__arg.firm_id$
+customer_nbr$=gb__arg.customer_nbr$
+theLine$=gb__arg.firm_id$+gb__arg.customer_nbr$+gb__arg.user_code$+gb__arg.line_number$
+lang!=gb__arg.lang$
+serialNbr$=gb__arg.serial_nbr$
+
+gosub open_files
+
+translator!.translateWindow(ourWindow!)
+
+ourWindow!.setText(ourWindow!.getText() + " - " + gb__arg.customer_nbr$)
+
+ourWindow!.setVisible(1)
+
+rem ' hide the caller's Window
+rem ' the caller is managing it's own window
+rem ' rem ' rem ' rem ' urWindow!.setCursor(3)
+
+rem ' init window template
+win_id$=gb__win_id$, win_id=num(win_id$)
+dim win_data$:fngb__template$(win_id$)
+win_data$=fngb__get_screen$(win_id$,win_data$)
+
+gosub get_objects
+usingCompanyOrder=1; rem ' controls the order of the existing list button
+
+compNameReq!.setVisible(0)
+countryReq!.setVisible(0)
+emailReq!.setVisible(0)
+
+
+REM ' check to see if the end user data has been previously written
+gosub check_for_existing_data
+
+rem ' load the lists for the selection boxes
+gosub get_end_user_list
+gosub get_product_list
+gosub get_state_list
+gosub get_country_list
+gosub get_industry_list
+
+Rem ' set up the Marketing Comm updater TMM03
+gosub assemble_url
+marCommUpdater! = new EuMarCommUpdater(our_dburl$)
+
+rem ' load the data in the form
+gosub load_data
+
+rem ' init the window
+win_data$=fngb__put_screen$(win_id$,win_data$)
+
+rem ' set cursor to pointer
+ourWindow!.setCursor(0)
+referenceNbr!.focus()
+
+rem ----<define special user defined functions>-------
+
+rem ' replace $0A$ with \n
+def fngb_spec_esc_lf$(xx_inStr$)
+    sgb_temp$=xx_inStr$,xx_outStr$=""
+    while len(sgb_temp$)
+        sgb_pos=pos($0A$=sgb_temp$)
+        if sgb_pos=0 Then
+            xx_outStr$=xx_outStr$+sgb_temp$+"\n",sgb_temp$=""
+        else
+            xx_outStr$=xx_outStr$+sgb_temp$(1,sgb_pos-1)+"\n",sgb_temp$=sgb_temp$(sgb_pos+1)
+        fi
+    wend
+    return xx_outStr$
+fnend
+
+rem ' replace \n with $0A$
+def fngb_spec_unesc_lf$(xx_inStr$)
+    sgb_temp$=xx_inStr$,xx_outStr$=""
+    while len(sgb_temp$)
+        sgb_pos=pos("\n"=sgb_temp$)
+        if sgb_pos=0 then
+            xx_outStr$=xx_outStr$+sgb_temp$+$0A$,sgb_temp$=""
+        else
+            xx_outStr$=xx_outStr$+sgb_temp$(1,sgb_pos-1)+$0A$,sgb_temp$=sgb_temp$(sgb_pos+2)
+        fi
+    wend
+    return xx_outStr$
+fnend
+
+rem ' get selection from list button
+def fngb_spec_get_selection$(xx_inList$)
+    sgb_temp$=xx_inList$,sgb_selection$=""
+    sgb_marker=pos($ff$=sgb_temp$)
+    if sgb_marker<>0 then 
+        sgb_selIndex=num(sgb_temp$(sgb_marker+1))
+        sgb_index=0
+        while sgb_index <= sgb_selIndex
+            sgb_marker=pos($0a$=sgb_temp$)
+            sgb_sel$=sgb_temp$(1,sgb_marker-1),sgb_temp$=sgb_temp$(sgb_marker+1)
+            if sgb_index=sgb_selIndex then sgb_selection$=sgb_sel$
+            sgb_index=sgb_index+1
+        wend
+    fi
+    return sgb_selection$
+fnend
+
+def FNinsertSQLParameters!(udfSql!, firmId!, customerNbr!)
+    firmIdTarget!="\|FIRMID\|"
+    customerNbrTarget!="\|CUSTOMERNBR\|"
+    udfSql!=udfSql!.replaceAll(firmIdTarget!,firmId!)
+    udfSql!=udfSql!.replaceAll(customerNbrTarget!,customerNbr!)
+    return udfSql!
+fnend
+
+def FNgetNextSequence$(xProps!,xOur_dburl$)
+    udfChan=sqlunt
+    sqlopen(udfChan)XOur_dburl$
+    thisSQL$=props!.getProperty("snmeu.get.next.sequence")
+    sqlprep(udfChan)thisSQL$
+    nextKey$=sqlfetch(udfChan)
+    sqlclose(udfChan,err=*next)
+    retKey$=str(num(cvs(nextKey$,3)):"0000000000")
+    return retKey$
+fnend
+
+
+[Event Win=115 ID=0 Code=X <WIN_CLOSE> (W115_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+
+gosub close_files
+gosub show_callersWindow
+goto gb__eoj
+
+[Event Win=115 ID=101 Code=N2:19 <LIST_SELECT> (W115_C101_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set cursor to an hour glass
+ourWindow!.setCursor(3)
+compNameReq!.setVisible(0)
+countryReq!.setVisible(0)
+
+selidx=existingList!.getSelectedIndex()
+idx=0
+if usingCompanyOrder then
+    wrkList$=endUserValueListComp$
+else
+    wrkList$=endUserValueListRef$
+fi
+endUserSelection$=""
+
+if selidx < endUserListCount then
+    while idx <= selidx
+        dpos=pos($0A$=wrkList$)
+        endUserSelection$=wrkList$(1,dpos-1)
+        wrkList$=wrkList$(dpos+1)
+        idx=idx+1
+    wend
+fi
+
+if endUserSelection$<>"" then
+    
+    read record(snmeu,key=endUserSelection$)snmeu$
+    snmeu$=field(snmeu$)
+
+    eceeu.REFERENCE_NBR$=snmeu.REFERENCE_NBR$
+
+    eceeu.COMPANY_NAME$=snmeu.COMPANY_NAME$
+    eceeu.CONTACT$=snmeu.CONTACT$
+    eceeu.CONTACT_PHONE$=snmeu.CONTACT_PHONE$
+
+    eceeu.ADDR_1$=snmeu.ADDR_1$
+    eceeu.ADDR_2$=snmeu.ADDR_2$
+    eceeu.ADDR_3$=snmeu.ADDR_3$
+
+    eceeu.CITY$=snmeu.CITY$
+    eceeu.STATE$=snmeu.STATE$
+    eceeu.POSTAL_CODE$=snmeu.POSTAL_CODE$
+    eceeu.COUNTRY$=snmeu.COUNTRY$
+
+    eceeu.EMAIL_ADDRESS$=snmeu.EMAIL_ADDRESS$
+    eceeu.PHONE_NUMBER$=snmeu.PHONE_NUMBER$
+
+    eceeu.INDUSTRY$=snmeu.INDUSTRY$
+    eceeu.OTHER_INDUSTRY$=snmeu.OTHER_INDUSTRY$
+    eceeu.BASIS_PROD$=snmeu.BASIS_PROD$
+
+    eceeu.ADVANTAGE$=snmeu.ADVANTAGE$
+    eceeu.ANNOUNCEMENTS$=snmeu.ANNOUNCEMENTS$
+
+    eceeu.APP_MODULES_USED$=snmeu.APP_MODULES_USED$
+
+    eceeu.END_USER_NBR$=snmeu.END_USER_NBR$
+
+fi
+
+rem ' present the form
+gosub load_data
+win_data$=fngb__put_screen$(win_id$,win_data$)
+
+rem ' inform the user
+msg$=translator!.getMessage("loadUser.inform")
+
+masgmsg$ = msg$, msg$ = ""
+while pos("\n" = masgmsg$)
+    ppos = pos("\n" = masgmsg$)
+    msg$ = msg$ + masgmsg$(1, ppos - 1) + $0A$
+    masgmsg$ = masgmsg$(ppos + 2)
+wend
+msg$ = msg$ + masgmsg$
+
+title$=translator!.getMessage("loadUser.title")
+button1$=translator!.getMessage("edit")
+button2$=translator!.getMessage("new")
+button3$=translator!.getMessage("cancel")
+resp = msgbox(msg$,7+32,title$,button1$,button2$,button3$)
+
+rem ' 0 or 3 is a cancel, 2 is create a new record from existing data, 1 is preserve the link
+if resp=0 or resp=3 then
+    rem cancel
+    gosub clear_template
+    gosub load_data
+    win_data$=fngb__put_screen$(win_id$,win_data$)
+else
+    if resp=2 then
+        rem use data as a template for a new record
+        eceeu.END_USER_NBR$=""
+        rem win_data.endUserNbr$=""
+        gosub load_data
+        win_data$=fngb__put_screen$(win_id$,win_data$)
+    else
+        rem edit an existing end user record
+    fi
+fi
+referenceNbr!.focus()
+
+rem ' set cursor to pointer
+ourWindow!.setCursor(0)
+
+[Event Win=115 ID=127 Code=N2:19 <LIST_SELECT> (W115_C127_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+idx=industryCtl!.getSelectedIndex()
+thisVector!=industryCtl!.getAllItems()
+selection$=cast(BBjString, thisVector!.getItem(idx))
+
+if selection$="Other" then
+    otherDesc!.setEnabled(1)
+    otherDesc!.focus()
+else
+    otherDesc!.setEnabled(0)
+    otherDesc!.setText("")
+fi
+
+[Event Win=115 ID=136 Code=B <PUSH_BUTTON> (W115_C136_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' write the data
+gosub write_data
+
+if wasWritten then
+    gosub close_files
+    gosub show_callersWindow
+    goto gb__eoj
+fi
+
+[Event Win=115 ID=137 Code=B <PUSH_BUTTON> (W115_C137_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub close_files
+gosub show_callersWindow
+goto gb__eoj
+
+[Event Win=115 ID=143 Code=B <PUSH_BUTTON> (W115_C143_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+if usingCompanyOrder then
+    usingCompanyOrder = 0
+    existingList!.removeAllItems()
+    existingList!.insertItems(0,endUserDisplayListRef$)
+else
+    usingCompanyOrder = 1
+    existingList!.removeAllItems()
+    existingList!.insertItems(0,endUserDisplayListComp$)
+fi
+
+
+[Function (Close_Files)]
+rem ' -----------------------------------------------------------------rem ' Close_Filesrem ' -----------------------------------------------------------------
+
+Close_Files:
+
+IF LEN(chan$) THEN LET chan=NUM(chan$(1,4)),chan$=chan$(5); CLOSE (chan); GOTO close_files
+
+return
+
+[Function (Declarations)]
+rem ' -----------------------------------------------------------------rem ' Declarationsrem ' -----------------------------------------------------------------
+
+Declarations:
+
+USE ::LanguageTranslator.src::LanguageTranslator
+USE ::EuMarCommUpdater.src::EuMarCommUpdater
+
+DECLARE BBjAPI ourAPI!
+DECLARE BBjVector params!
+DECLARE BBjSysGui ourSysGui!
+rem ' the caller is managing it's own window
+rem ' DECLARE BBjWindow callersWindow!
+DECLARE BBjAppletProxy applet!
+DECLARE BBjTopLevelWindow topLevelWindow!
+DECLARE BBjString thisSQL!
+DECLARE EuMarCommUpdater marCommUpdater!
+
+
+return
+
+[Function (Open_Files)]
+rem ' -----------------------------------------------------------------rem ' Open_Filesrem ' -----------------------------------------------------------------
+
+Open_Files:
+
+eceeu=gb__arg.eceeu
+CALL "templates.pgm::ECEEU"
+
+csm01=gb__arg.csm01
+CALL "templates.pgm::CSM01"
+
+states=gb__arg.states
+CALL "templates.pgm::STATES"
+
+country=gb__arg.country
+CALL "templates.pgm::COUNTRY"
+
+snmeu=gb__arg.snmeu
+CALL "templates.pgm::SNMEU"
+
+snmel=gb__arg.snmel
+CALL "templates.pgm::SNMEL"
+
+rem ' template needed to get localize message texts
+rem 'dim ec_translate$:"mbid:c(4),lang:c(2*),text1:c(1*),text2:c(1*)"
+translator! = new LanguageTranslator("ec_end_user."+lang!+".properties")
+
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+
+return
+
+[Function (assemble_end_user_list_query)]
+rem ' -----------------------------------------------------------------rem ' assemble_end_user_list_queryrem ' -----------------------------------------------------------------
+
+assemble_end_user_list_query:
+
+sql$=props!.getProperty("endUserList.select")+" "
+sql$=sql$+props!.getProperty("endUserList.from")+" "
+sql$=sql$+props!.getProperty("endUserList.where")+" "
+
+udfSql!=sql$
+firmId!=firm_id$
+customerNbr!=customer_nbr$
+
+sql!=FNinsertSQLParameters!(udfSql!, firmId!, customerNbr!)
+
+byCompanyNameSQL$=sql!+props!.getProperty("endUserList.orderByCompany")
+byReferenceNbrSQL$=sql!+props!.getProperty("endUserList.orderByReferenceNbr")
+
+return
+
+[Function (assemble_industry_list_query)]
+rem ' -----------------------------------------------------------------rem ' assemble_industry_list_queryrem ' -----------------------------------------------------------------
+
+assemble_industry_list_query:
+
+sql$=props!.getProperty("industryList.select")+" "
+sql$=sql$+props!.getProperty("industryList.from")+" "
+sql$=sql$+props!.getProperty("industryList.orderby")
+
+return
+
+[Function (assemble_url)]
+rem ' -----------------------------------------------------------------rem ' assemble_urlrem ' -----------------------------------------------------------------
+
+assemble_url:
+
+our_dburl$=props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":"
+our_dburl$=our_dburl$+props!.getProperty("sqlURL.port")+"?database="
+our_dburl$=our_dburl$+props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password="
+our_dburl$=our_dburl$+props!.getProperty("sqlURL.password")
+
+return
+
+[Function (center_window)]
+rem ' -----------------------------------------------------------------rem ' center_windowrem ' -----------------------------------------------------------------
+
+center_window:
+
+rem 'no longer needed'
+return
+
+rem running as an applet
+if info(3,6)="2" then
+    topLevelWindow!.setTitleBarVisible(0)
+    applet!=ourAPI!.getAppletProxy()
+    applet!.setBounds(0,0,525,600)
+else
+    width = scrDimension!.width
+    height = scrDimension!.height
+    winWidth = ourWindow!.getWidth()
+    winHeight = ourWindow!.getHeight()
+
+    x = int((width-winWidth)/2)
+    y = int((height-winHeight)/2)
+
+    ourWindow!.setLocation(x,y)
+fi
+
+return
+
+[Function (check_for_existing_data)]
+rem ' -----------------------------------------------------------------rem ' check_for_existing_datarem ' -----------------------------------------------------------------
+
+check_for_existing_data:
+
+    rem ' check the cart end user data file first
+    read record(eceeu,key=theLine$,dom=cfed_not_eceeu)eceeu$
+    eceeu$=field(eceeu$)
+    goto cfed_return
+
+cfed_not_eceeu:
+
+    dim eceeu$:fattr(eceeu$)
+    eceeu.firm_id$=gb__arg.firm_id$
+    eceeu.customer_nbr$=gb__arg.customer_nbr$
+    eceeu.user_code$=gb__arg.user_code$
+    eceeu.line_number$=gb__arg.line_number$
+
+    rem ' check for an existing serial number
+    if cvs(serialNbr$,3)="" then goto cfed_return
+
+    read record(snmel,key=serialNbr$,dom=cfed_return)snmel$
+    
+    rem ' existing end user
+    read record(snmeu,key=snmel.end_user_nbr$)snmeu$
+    snmeu$=field(snmeu$)
+
+    rem ' inform the user
+    params!=ourAPI!.makeVector()
+    params!.add(0,cvs(serialNbr$,3))
+    params!.add(1,cvs(snmeu.reference_nbr$+" "+snmeu.company_name$,3))
+    msg$=translator!.getMessage("loadUser.inform.existing", params!)
+
+    masgmsg$ = msg$, msg$ = ""
+    while pos("\n" = masgmsg$)
+        ppos = pos("\n" = masgmsg$)
+        msg$ = msg$ + masgmsg$(1, ppos - 1) + $0A$
+        masgmsg$ = masgmsg$(ppos + 2)
+    wend
+    msg$ = msg$ + masgmsg$
+
+    title$=translator!.getMessage("loadUser.title")
+    button1$=translator!.getMessage("edit")
+    button2$=translator!.getMessage("new")
+    button3$=translator!.getMessage("cancel")
+
+    resp = msgbox(msg$,7+32,title$,button1$,button2$,button3$)
+
+    rem ' 0 or 3 is a cancel, 2 is create a new record from existing data, 1 is preserve the link
+    if resp=0 or resp=3 then
+        rem cancel
+        goto cfed_return
+    else
+        if resp=2 then
+            rem use data as a template for a new record
+            snmeu.END_USER_NBR$=""
+        fi
+        rem resp = 1 edit an existing end user record
+    fi
+
+    eceeu.REFERENCE_NBR$=snmeu.REFERENCE_NBR$
+
+    eceeu.COMPANY_NAME$=snmeu.COMPANY_NAME$
+    eceeu.CONTACT$=snmeu.CONTACT$
+    eceeu.CONTACT_PHONE$=snmeu.CONTACT_PHONE$
+
+    eceeu.ADDR_1$=snmeu.ADDR_1$
+    eceeu.ADDR_2$=snmeu.ADDR_2$
+    eceeu.ADDR_3$=snmeu.ADDR_3$
+
+    eceeu.CITY$=snmeu.CITY$
+    eceeu.STATE$=snmeu.STATE$
+    eceeu.POSTAL_CODE$=snmeu.POSTAL_CODE$
+    eceeu.COUNTRY$=snmeu.COUNTRY$
+
+    eceeu.EMAIL_ADDRESS$=snmeu.EMAIL_ADDRESS$
+    eceeu.PHONE_NUMBER$=snmeu.PHONE_NUMBER$
+
+    eceeu.INDUSTRY$=snmeu.INDUSTRY$
+    eceeu.OTHER_INDUSTRY$=snmeu.OTHER_INDUSTRY$
+    eceeu.BASIS_PROD$=snmeu.BASIS_PROD$
+
+    eceeu.ADVANTAGE$=snmeu.ADVANTAGE$
+    eceeu.ANNOUNCEMENTS$=snmeu.ANNOUNCEMENTS$
+
+    eceeu.APP_MODULES_USED$=snmeu.APP_MODULES_USED$
+
+    eceeu.END_USER_NBR$=snmeu.END_USER_NBR$
+
+cfed_return:
+return
+
+[Function (clear_template)]
+rem ' -----------------------------------------------------------------rem ' clear_templaterem ' -----------------------------------------------------------------
+
+clear_template:
+
+    eceeu.REFERENCE_NBR$=""
+
+    eceeu.COMPANY_NAME$=""
+    eceeu.CONTACT$=""
+    eceeu.CONTACT_PHONE$=""
+
+    eceeu.ADDR_1$=""
+    eceeu.ADDR_2$=""
+    eceeu.ADDR_3$=""
+
+    eceeu.CITY$=""
+    eceeu.STATE$=""
+    eceeu.POSTAL_CODE$=""
+    eceeu.COUNTRY$=""
+
+    eceeu.EMAIL_ADDRESS$=""
+    eceeu.PHONE_NUMBER$=""
+
+    eceeu.INDUSTRY$=""
+    eceeu.OTHER_INDUSTRY$=""
+    eceeu.BASIS_PROD$=""
+
+    eceeu.ADVANTAGE$=""
+    eceeu.ANNOUNCEMENTS$=""
+
+    eceeu.APP_MODULES_USED$=""
+
+    eceeu.END_USER_NBR$=""
+
+return
+
+[Function (find_industry_id)]
+rem ' -----------------------------------------------------------------rem ' find_industsry_idrem ' -----------------------------------------------------------------
+
+find_industry_id:
+
+industryId$=""
+
+if selection$<>"" then
+    sel=num(selection$(2))
+    wrk$=industryIDList$
+    
+    for x = 0 to sel
+        rpos=pos($0A$=wrk$)
+        industryId$=wrk$(1,rpos-1)
+        wrk$=wrk$(rpos+1)
+    next x
+fi
+
+return
+
+[Function (find_selection)]
+rem ' -----------------------------------------------------------------rem ' find_selectionrem ' -----------------------------------------------------------------
+
+find_selection:
+
+rem ' target$ value being searched for
+rem ' wrk$ is the $0A$ separated list
+rem ' selection$ is the ultimate selection marker either $ff$+str(-1) for no selection or $ff$+str(idx)
+
+idx = 0, selection$ = $ff$ + str(-1)
+while len(wrk$)
+    dpos=pos($0A$=wrk$)
+    suspect$=wrk$(1,dpos-1),wrk$=wrk$(dpos+1)
+    if target$=suspect$ then 
+        selection$=$ff$+str(idx)
+        break
+    fi
+    idx=idx+1
+wend
+
+return
+
+[Function (get_country_list)]
+rem ' -----------------------------------------------------------------rem ' get_country_listrem ' -----------------------------------------------------------------
+
+get_country_list:
+
+countrylist$=""
+countryListCount=0
+READ RECORD(country,key="",knum=1,err=*next)
+
+country_loop:
+    READ RECORD(country,end=end_country_loop)country$
+    countrylist$=countrylist$+cvs(country.country_name$,3)+$0A$
+    countryListCount=countryListCount+1
+    goto country_loop
+end_country_loop:
+
+return
+
+[Function (get_end_user_list)]
+rem ' -----------------------------------------------------------------rem ' get_end_user_listrem ' -----------------------------------------------------------------
+
+get_end_user_list:
+
+gosub assemble_url
+gosub assemble_end_user_list_query
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(our_dburl$,"",byCompanyNameSQL$)
+endUserListCount=0
+endUserDisplayListComp$="", endUserValueListComp$=""
+endUserDisplayListRef$="", endUserValueListRef$=""
+
+if !(ourRecordSet!.isEmpty()) then
+    
+    ourRecordSet!.first()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+
+        endUserDisplayListComp$=endUserDisplayListComp$+cvs(thisRecord!.getFieldValue("COMPANY_NAME"),3)
+        
+        wrk$=cvs(thisRecord!.getFieldValue("CONTACT"),3)
+        if wrk$<>"" then
+            endUserDisplayListComp$=endUserDisplayListComp$+", "+wrk$
+        fi
+        
+        wrk$=cvs(thisRecord!.getFieldValue("REFERENCE_NBR"),3)
+        if wrk$<>"" then
+            endUserDisplayListComp$=endUserDisplayListComp$+", "+wrk$
+        fi
+
+        endUserDisplayListComp$=endUserDisplayListComp$+" ("+str(num(cvs(thisRecord!.getFieldValue("END_USER_NBR"),3)))+")"+$0A$
+
+        endUserValueListComp$=endUserValueListComp$+cvs(thisRecord!.getFieldValue("END_USER_NBR"),3)+$0A$
+        endUserListCount=endUserListCount+1
+        ourRecordSet!.next(err=*break)
+
+    wend
+fi
+ourRecordSet!.close()
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(our_dburl$,"",byReferenceNbrSQL$)
+
+if !(ourRecordSet!.isEmpty()) then
+    
+    ourRecordSet!.first()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+
+        wrk$=cvs(thisRecord!.getFieldValue("REFERENCE_NBR"),3)
+        if wrk$="" then wrk$="No Number"
+        endUserDisplayListRef$=endUserDisplayListRef$+wrk$
+
+        wrk$=cvs(thisRecord!.getFieldValue("COMPANY_NAME"),3)
+        if wrk$<>"" then
+            endUserDisplayListRef$=endUserDisplayListRef$+", "+wrk$
+        fi
+        
+        wrk$=cvs(thisRecord!.getFieldValue("CONTACT"),3)
+        if wrk$<>"" then
+            endUserDisplayListRef$=endUserDisplayListRef$+", "+wrk$
+        fi
+
+        endUserDisplayListRef$=endUserDisplayListRef$+" ("+str(num(cvs(thisRecord!.getFieldValue("END_USER_NBR"),3)))+")"+$0A$
+
+        endUserValueListRef$=endUserValueListRef$+cvs(thisRecord!.getFieldValue("END_USER_NBR"),3)+$0A$
+        ourRecordSet!.next(err=*break)
+
+    wend
+fi
+ourRecordSet!.close()
+
+return
+
+[Function (get_industry_list)]
+rem ' -----------------------------------------------------------------rem ' get_industry_listrem ' -----------------------------------------------------------------
+
+get_industry_list:
+
+gosub assemble_url
+gosub assemble_industry_list_query
+
+industryList$=""
+industryIDList$=""
+otherIndustryID$=""
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(our_dburl$,"",sql$)
+industryListCount=0
+
+if !(ourRecordSet!.isEmpty()) then
+    
+    ourRecordSet!.first()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+
+        industryList$=industryList$+cvs(thisRecord!.getFieldValue("INDUSTRY_NAME"),3)+$0A$
+        industryIDList$=industryIDList$+cvs(thisRecord!.getFieldValue("INDUSTRY_ID"),3)+$0A$
+        if cvs(thisRecord!.getFieldValue("INDUSTRY_NAME"),3)="Other" then
+            otherIndustryID$=cvs(thisRecord!.getFieldValue("INDUSTRY_ID"),3)
+        fi
+        industryListCount=industryListCount+1
+        ourRecordSet!.next(err=*break)
+
+    wend
+fi
+ourRecordSet!.close()
+
+return
+
+[Function (get_objects)]
+rem ' -----------------------------------------------------------------rem ' get_objectsrem ' -----------------------------------------------------------------
+
+get_objects:
+
+rem ' existingList! - id of the list button that contains a list of exisitng end users
+
+ourControlVector! = ourWindow!.getAllControls()
+
+for i=0 to ourControlVector!.size() - 1
+    control!= cast(BBjControl, ourControlVector!.getItem(i))
+    if control!.getName().equals("existingList") then existingList!=cast(BBjListButton, control!)
+    if control!.getName().equals("OtherDesc") then otherDesc!=cast(BBjEditBox, control!)
+    if control!.getName().equals("Industry") then industryCtl!=cast(BBjListButton, control!)
+    if control!.getName().equals("CompName") then compName!=cast(BBjEditBox, control!)
+    if control!.getName().equals("Country") then country!=cast(BBjListButton, control!)
+    if control!.getName().equals("Advantage") then advantage!=cast(BBjCheckBox, control!)
+    if control!.getName().equals("Announcements") then announcements!=cast(BBjCheckBox, control!)
+    if control!.getName().equals("EmailAddress") then emailAddress!=cast(BBjEditBox, control!)
+    if control!.getName().equals("Save") then saveButton!=cast(BBjButton, control!)
+    if control!.getName().equals("referenceNbr") then referenceNbr!=cast(BBjEditBox, control!)
+    if control!.getName().equals("compNameReq") then compNameReq!=cast(BBjStaticText, control!)
+    if control!.getName().equals("countryReq") then countryReq!=cast(BBjStaticText, control!)
+    if control!.getName().equals("emailReq") then emailReq!=cast(BBjStaticText, control!)
+next i
+
+return
+
+[Function (get_product_list)]
+rem ' -----------------------------------------------------------------rem ' get_product_listrem ' -----------------------------------------------------------------
+
+get_product_list:
+
+basisProdList$=""
+basisProdListCount=0
+READ (csm01,KEY=firm_id$,DOM=*next)
+
+read_csm01: 
+    READ RECORD (csm01,END=end_csm01)csm01$
+    IF csm01.firm_id$<>firm_id$ THEN GOTO end_csm01
+    IF csm01.online_flag$<>"Y" THEN GOTO read_csm01
+ 
+    basisProdList$=basisProdList$+cvs(csm01.description$,3)+$0a$
+    basisProdListCount=basisProdListCount+1
+
+    GOTO read_csm01
+
+end_csm01: 
+basisProdList$=basisProdList$+"Uses several products"+$0a$
+basisProdListCount=basisProdListCount+1
+
+return
+
+[Function (get_state_list)]
+rem ' -----------------------------------------------------------------rem ' get_state_listrem ' -----------------------------------------------------------------
+
+get_state_list:
+
+statelist$=""
+stateListCount=0
+READ RECORD(states,key="",err=*next)
+
+states_loop:
+     READ RECORD(states,end=end_states_loop)states$
+     statelist$=statelist$+cvs(states.state_code$,3)+$0A$
+     stateListCount=stateListCount+1
+     goto states_loop
+end_states_loop:
+
+return
+
+[Function (insert_parameters)]
+rem ' -----------------------------------------------------------------rem ' insert_parametersrem ' -----------------------------------------------------------------
+
+insert_parameters:
+
+tag$="?"
+
+rem ' firm id
+fpos=pos(tag$=sql$)
+wrk$=sql$(1,fpos-1)+"'"+firm_id$+"'"
+sql$=sql$(fpos+len(tag$))
+
+rem ' customer nbr
+fpos=pos(tag$=sql$)
+wrk$=wrk$+sql$(1,fpos-1)+"'"+customer_nbr$+"'"
+wrk$=wrk$+sql$(fpos+len(tag$))
+
+sql$=wrk$
+
+return
+
+[Function (load_data)]
+rem ' -----------------------------------------------------------------rem ' load_datarem ' -----------------------------------------------------------------
+
+load_data:
+
+win_data.referenceNbr$=eceeu.REFERENCE_NBR$
+
+win_data.compname$=eceeu.COMPANY_NAME$
+win_data.CONTACTNAME$=eceeu.CONTACT$
+win_data.CONTACTPHONE$=eceeu.CONTACT_PHONE$
+win_data.ADDRLNONE$=eceeu.ADDR_1$
+win_data.ADDRLNTWO$=eceeu.ADDR_2$
+win_data.ADDRLNTHREE$=eceeu.ADDR_3$
+win_data.CITY$=eceeu.CITY$
+win_data.POSTALCODE$=eceeu.POSTAL_CODE$
+win_data.EMAILADDRESS$=eceeu.EMAIL_ADDRESS$
+win_data.PHONENUMBER$=eceeu.PHONE_NUMBER$
+win_data.OTHERDESC$=eceeu.OTHER_INDUSTRY$
+win_data.APPMODULESUSED$=fngb_spec_unesc_lf$(eceeu.APP_MODULES_USED$)
+
+if eceeu.ADVANTAGE$="Y" THEN win_data.ADVANTAGE = 1 ELSE win_data.ADVANTAGE = 0
+if eceeu.ANNOUNCEMENTS$="Y" then win_data.ANNOUNCEMENTS = 1 ELSE win_data.ANNOUNCEMENTS = 0
+
+win_data.endUserNbr$=eceeu.END_USER_NBR$
+
+gosub load_lists
+
+win_data.basisproduct$=basisProdListSel$
+win_data.state$=statelistSel$
+win_data.country$=countrylistSel$
+win_data.industry$=industrylistSel$
+
+if eceeu.Industry$=otherIndustryID$ then
+    otherDesc!.setEnabled(1)
+else
+    otherDesc!.setEnabled(0)
+fi
+
+return
+
+[Function (load_lists)]
+rem ' -----------------------------------------------------------------rem ' load_listsrem ' -----------------------------------------------------------------
+
+load_lists:
+
+rem ' existing end user list button
+if usingCompanyOrder then
+    win_data.existingList$=endUserDisplayListComp$ + $ff$ + str(-1)
+else
+    win_data.existingList$=endUserDisplayListRef$ + $ff$ + str(-1)
+fi
+
+rem ' load lists with the selections if any
+
+rem ' state list
+wrk$=stateList$, target$=cvs(eceeu.state$,3), selection$=""
+gosub find_selection
+stateListSel$=stateList$+selection$
+
+rem ' country list
+wrk$=countryList$, target$=cvs(eceeu.country$,3), selection$=""
+gosub find_selection
+countryListSel$=countryList$+selection$
+
+rem ' industry list
+wrk$=industryIDList$, target$=cvs(eceeu.industry$,3), selection$=""
+gosub find_selection
+industryListSel$=industryList$+selection$
+
+rem ' basis prod list
+wrk$=basisProdList$, target$=cvs(eceeu.basis_prod$,3), selection$=""
+gosub find_selection
+basisProdListSel$=basisProdList$+selection$
+
+return
+
+[Function (show_callersWindow)]
+rem ' -----------------------------------------------------------------
+rem ' show_callersWindow
+rem ' -----------------------------------------------------------------
+
+show_callersWindow:
+
+rem ' the caller is managing it's own window
+rem ' if callersWindow! <> NULL() then
+rem '     if info(3,6)="2" then
+rem '         applet!=ourAPI!.getAppletProxy()
+rem '         applet!.setBounds(0,0,500,400)
+rem '     fi
+rem '     callersWindow!.setVisible(1)
+rem ' fi
+
+return
+
+[Function (validate_form)]
+rem ' -----------------------------------------------------------------rem ' validate_formrem ' -----------------------------------------------------------------
+
+validate_form:
+
+isValid=1
+
+rem ' must at least enter a company name
+vCompName$=cvs(compName!.getText(),3)
+if len(vCompName$)=0 then
+    isValid=0
+    compNameReq!.setVisible(1)
+else
+    compNameReq!.setVisible(0)
+fi
+
+rem ' must at least select a country
+index=country!.getSelectedIndex()
+if index < 0 then
+    isValid=0
+    countryReq!.setVisible(1)
+else
+    countryReq!.setVisible(0)
+fi
+
+rem ' if advantage or announcements we must have a email address
+if (advantage!.isSelected() or announcements!.isSelected()) and cvs(emailAddress!.getText(),3)="" then
+    isValid=0
+    emailReq!.setVisible(1)
+else
+    emailReq!.setVisible(0)
+fi
+
+
+if !isValid then
+    msg$=translator!.getMessage("required.fields")
+    title$=translator!.getMessage("required.fields.title")
+    response=msgbox(msg$, 0+64, title$)
+fi
+
+return
+
+[Function (write_data)]
+rem ' -----------------------------------------------------------------rem ' write_datarem ' -----------------------------------------------------------------
+
+write_data:
+
+gosub validate_form
+
+if isValid then
+
+    win_data$=fngb__get_screen$(win_id$,win_data$)
+
+    rem ' we will write both the ECEEU file and the SNMEU file at the same time
+    rem ' this change makes the end user data for a new end user available 
+    rem ' immediately for use in another purchase
+
+    eceeu.REFERENCE_NBR$=win_data.referenceNbr$
+    snmeu.REFERENCE_NBR$=win_data.referenceNbr$
+
+    eceeu.COMPANY_NAME$=win_data.compname$
+    snmeu.COMPANY_NAME$=win_data.compname$
+
+    eceeu.CONTACT$=win_data.CONTACTNAME$
+    snmeu.CONTACT$=win_data.CONTACTNAME$
+
+    eceeu.CONTACT_PHONE$=win_data.CONTACTPHONE$
+    snmeu.CONTACT_PHONE$=win_data.CONTACTPHONE$
+    
+    eceeu.ADDR_1$=win_data.ADDRLNONE$
+    snmeu.ADDR_1$=win_data.ADDRLNONE$
+    
+    eceeu.ADDR_2$=win_data.ADDRLNTWO$
+    snmeu.ADDR_2$=win_data.ADDRLNTWO$
+    
+    eceeu.ADDR_3$=win_data.ADDRLNTHREE$
+    snmeu.ADDR_3$=win_data.ADDRLNTHREE$
+    
+    eceeu.CITY$=win_data.CITY$
+    snmeu.CITY$=win_data.CITY$
+    
+    eceeu.POSTAL_CODE$=win_data.POSTALCODE$
+    snmeu.POSTAL_CODE$=win_data.POSTALCODE$
+    
+    eceeu.EMAIL_ADDRESS$=win_data.EMAILADDRESS$
+    snmeu.EMAIL_ADDRESS$=win_data.EMAILADDRESS$
+    
+    eceeu.PHONE_NUMBER$=win_data.PHONENUMBER$
+    snmeu.PHONE_NUMBER$=win_data.PHONENUMBER$
+    
+    eceeu.OTHER_INDUSTRY$=win_data.OTHERDESC$
+    snmeu.OTHER_INDUSTRY$=win_data.OTHERDESC$
+
+    rem ' handle the $0A$ in the cedit control
+    eceeu.APP_MODULES_USED$=fngb_spec_esc_lf$(win_data.APPMODULESUSED$)
+    snmeu.APP_MODULES_USED$=fngb_spec_esc_lf$(win_data.APPMODULESUSED$)
+
+    eceeu.end_user_nbr$=win_data.endUserNbr$
+    snmeu.end_user_nbr$=win_data.endUserNbr$
+
+    rem ' list boxes
+    eceeu.basis_prod$=fngb_spec_get_selection$(win_data.basisproduct$)
+    snmeu.basis_prod$=fngb_spec_get_selection$(win_data.basisproduct$)
+
+    eceeu.state$=fngb_spec_get_selection$(win_data.state$)
+    snmeu.state$=fngb_spec_get_selection$(win_data.state$)
+
+    eceeu.country$=fngb_spec_get_selection$(win_data.country$)
+    snmeu.country$=fngb_spec_get_selection$(win_data.country$)
+
+    rem ' the industry
+    wrk$=industryList$
+    target$=fngb_spec_get_selection$(win_data.industry$)
+    selection$=""
+    gosub find_selection
+    gosub find_industry_id
+    eceeu.industry$=industryId$
+    snmeu.industry$=industryId$
+
+    if win_data.ADVANTAGE  then 
+        eceeu.ADVANTAGE$="Y" 
+        snmeu.ADVANTAGE$="Y"
+    ELSE 
+        eceeu.ADVANTAGE$="N"
+        snmeu.ADVANTAGE$="N"
+    fi
+
+    if win_data.ANNOUNCEMENTS then 
+        eceeu.ANNOUNCEMENTS$="Y" 
+        snmeu.ANNOUNCEMENTS$="Y" 
+    ELSE
+        eceeu.ANNOUNCEMENTS$="N"
+        snmeu.ANNOUNCEMENTS$="N"
+    fi
+
+    snmeu.firm_id$=eceeu.firm_id$
+    snmeu.customer_nbr$=eceeu.customer_nbr$
+
+    rem ' now let's write the snmeu first
+
+    rem ' final trap to prevent error 1
+    if len(snmeu$) > 1024 snmeu.APP_MODULES_USED$=""
+
+    if cvs(snmeu.end_user_nbr$,3)<>"" then
+        rem ' we already have an snmeu record just need to update it
+        snmeu$=field(snmeu$)
+        write record(snmeu)snmeu$
+    else
+        rem ' write a new snmeu record using the sequence
+        gosub assemble_url
+        hkey$=FNgetNextSequence$(props!,our_dburl$)
+        snmeu.end_user_nbr$=hkey$
+        snmeu$=field(snmeu$)
+        write record(snmeu)snmeu$
+        eceeu.end_user_nbr$=snmeu.end_user_nbr$
+    fi
+
+    rem update TMM03
+    snmeu! = ourAPI!.makeTemplatedString(fattr(snmeu$))
+    snmeu!.setString(snmeu$)
+    marCommUpdater!.updateMarComm(snmeu!)
+
+    rem write eceeu
+    write record(eceeu)eceeu$
+
+    wasWritten=1
+else
+    wasWritten=0
+fi
+
+return
+

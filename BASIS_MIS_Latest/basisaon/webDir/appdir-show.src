@@ -1,0 +1,81 @@
+0010 CALL "utaddr.wbb"
+0020 CALL "utcgi.wbb",ENV$,CGI$,HTML$
+0030 LET A$=OPTS; LET A$(4,1)=IOR($20$,A$(4,1)); SETOPTS A$
+0040 LET APP$=STBL("DATA_SERVER")+STBL("ADIR")
+0050 rem LET DEBUG=UNT; OPEN (DEBUG)"/home/basis/pro5/appdir/trace.log";SETTRACE (DEBUG)
+0060 LET PROD=UNT; OPEN (PROD)APP$+"PRODUCTS"
+0070 LET GOTIT$=FIELD(CGI$,"SEARCHTEXT",ERR=*next)
+0080 gosub get_country
+0090 firm$="",lg=len(gotit$)
+0100 if lg>6 then fp=pos(gotit$(1,2)="0102",2)
+0110 IF LG<8 or (lg=8 and fp=1) THEN LET gotit$=gotit$+"00"
+0120 IF fp THEN LET firm$="FIRM:C(2),"
+0130 LET DATA_RECP$=firm$+"CUSTID:C(6*=10),NAME:C(36*=10),ADDRESS1:C(32*=10),ADDRESS2:C(32*=10),CITY:C(32*=10),STATE:C(20*=10),POSTALCODE:C(10*=10),COUNTRY:C(16*=10),CONTACT:C(32*=10),PHONE:C(18*=10),FAX:C(18*=10),EMAIL:C(50*=10),WEBSITE:C(50*=10),CAT1:C(32),CAT2:C(32),CAT3:C(32),CAT4:C(32),CAT5:C(32),TEXT1:C(36*=10),TEXT2:C(36*=10),GRAPHIC1:C(36*=10),GRAPHIC2:C(36*=10),HTML:C(36*=10),LANGUAGE:C(1*=10),SHOW:C(1*=10),KEYWORDS:C(36*=10)"
+0140 DIM REC_DATAP$:DATA_RECP$
+0150 LET HFILE$="/home/basis/pro5/appdir/html/0100751400.html",ok=0
+0160 READ RECORD(PROD,KEY=GOTIT$,ERR=*next)REC_DATAP$;ok=1
+0170 if ok then LET HFILE$="/home/basis/pro5/appdir/html/"+REC_DATAP.HTML$
+0175 if debug then print(debug) "GOTIT$=",gotit$; print(debug)"ok=",ok;print(debug)hfile$
+0180 CALL "utcgi.wbb",ENV$,CGI$,ERRMSG$; IF ERRMSG$>"" THEN GOTO LOADERROR
+0190 ENDTRACE
+0200 LET TEXT$="{include "+HFILE$+"}"
+0210 CALL "uthtmout.wbb","",TEXT$+"",TEXT$,""
+0220 CALL "utsend.wbb",TEXT$
+0230 DONE: RELEASE 
+1000 LOADERROR: REM ^1000 - problem with utcgi - fatal problem
+1010 IF POS("DOS"=INFO(0,0))>0 OR POS("WIN"=INFO(0,0))>0 THEN GOTO DONE
+1020 PRINT "Content-type: text/html",$0A$
+1030 PRINT "The following error message was returned by utcgi.wbb:<br>"
+1040 PRINT ERRMSG$
+1050 GOTO DONE
+1060 REM "Display the data in a raw table
+1070 LET TABLE$=HEADER$+"<table border=1><TR>"
+1080 LET TABLE$=TABLE$+"<TH>Customer<br>Name</TH><TH>Address</TH><TH>City</TH>"
+1090 LET TABLE$=TABLE$+"</TR>"
+1100 LET TEXT$=TEXT$+TABLE$+footer$
+1110 CALL "uttags.wbb","HTML",TEXT$,FINALHTML$
+1120 CALL "uttags.wbb","submit choice","ButtonInfo",FINALHTML$
+1130 CALL "uthtmout.wbb","",FINALHTML$+"",FINALHTML$,""
+1140 CALL "utsend.wbb",FINALHTML$
+1145 gosub save_html
+1150 RELEASE 
+1160 get_country:
+1170 seterr country_end
+1180 country$="US",country$=cvs(CGI.ctry$,7)
+1190 country_end: seterr 0
+1200 Header$="{include eng_header.txt}",footer$="{include eng_footer.txt}"
+1210 txt1$="BASIS International Application/Service Directory."
+1220 txt2$="The following are the results of your query:"
+1230 txt3$="Select an entry"
+1240 btn$="Retrieve"
+1250 if country$="DE" then header$="{include ger_header.txt}",footer$="{include ger_footer.txt}"
+1260 if country$="FR" then header$="{include fra_header.txt}",footer$="{include fra_footer.txt}"
+1770 ttx=unt
+1780 open(ttx,err=end_get_country)"appdir_translation.txt"
+1790 fin$=fin(ttx)
+1800 sz=dec(fin$(1,4))
+1810 readrecord(ttx,siz=sz)trans$
+1820 srch$=country$+"1";gosub get_translation;if temp$<>"" then txt1$=temp$
+1830 srch$=country$+"2";gosub get_translation;if temp$<>"" then txt2$=temp$
+1840 srch$=country$+"3";gosub get_translation;if temp$<>"" then txt3$=temp$
+1850 srch$=country$+"4";gosub get_translation;if temp$<>"" then btn$=temp$
+1890 end_get_country:
+1900 return
+1910 get_translation:
+1920 temp$=""
+1930 p=pos(srch$+":"=trans$)
+1940 if p=0 then return
+1950 temp$=trans$(p+len(srch$))
+1960 p=pos("{"=temp$);if p=0 then temp$="";return
+1970 temp$=temp$(p+1)
+1980 p=pos("}"=temp$);if p<2 then temp$="";return
+1990 temp$=temp$(1,p-1)
+1991 return
+1992 save_html:                                                                                                                     
+1993 sv$="/home/basis/pro5/appdir/saved_show.html"                                                                               
+1994 erase sv$,err=*next                                                                                                            
+1995 string sv$,err=*next                                                                                                           
+1996 sv=unt,ok=0                                                                                                                    
+1997 open(sv,err=*next)sv$;ok=1                                                                                                     
+1998 if ok then print(sv)finalhtml$;close(sv)   
+2000 return

@@ -1,0 +1,522 @@
+0010 REM "CSC - Configuration Options Window - called from Order Entry"
+0020 REM "Program CSC.BA"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * WA# 205"
+0040 REM 
+0044 REM "LINE   : Window row location (input)"
+0050 REM "W0$    : Order line item 1st string (input/returned)"
+0052 REM "WX0$   : Shadow 1st string (input/returned)"
+0054 REM "WX1$   : Shadow 2nd string (input/returned)"
+0056 REM "WX[all]: Shadow numerics
+0062 REM "ARE13_DEV: ARE-13 channel"
+0067 REM "ARE73_DEV: ARE-73 channel"
+0068 REM "SAMFACTOR: Prorated days for SM1 Contracts (returned) -
+0069 REM "           returns 365 for non-SM1 sale type and non prorated contracts
+0070 REM "E_MAIL$  : E-mail address for SAM/Developer contracts
+0072 REM "EDIT_FLAG$ : "Y"=allow editing, "N"=no editing
+0079 REM 
+0080 SETERR 9000
+0085 SETESC 9000
+0090 ENTER LINE,W0$,WX0$,WX1$,WX[ALL],serial$,ARE13_DEV,IVM01_DEV,IVM02_DEV,ARE73_DEV,CREDIT$,SAMFACTOR,E_MAIL$,EDIT_FLAG$
+0100 REM " --- Open Files"
+0105 LET FILES=15
+0110 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0120 FILES$[1]="CSM-04",FILES$[2]="CSM-06",FILES$[3]="CSM-07",FILES$[4]="CSM-13"
+0125 FILES$[5]="CSM-14",FILES$[6]="CSM-01",FILES$[7]="SNM-01",FILES$[8]="CSM-03"
+0130 FILES$[9]="SMC-01",FILES$[10]="SERIALNUMBERS",FILES$[11]="CSM-05"
+0135 FILES$[12]="SNM-02",FILES$[13]="ARE-93",FILES$[14]="ARM-40"
+0140 files$[15]="ARE-83"
+0150 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0155 IF STATUS>0 THEN GOTO 9900
+0160 LET CSM04_DEV=CHANNELS[1],CSM06_DEV=CHANNELS[2],CSM07_DEV=CHANNELS[3]
+0165 LET CSM13_DEV=CHANNELS[4],CSM14_DEV=CHANNELS[5],CSM01_DEV=CHANNELS[6]
+0170 LET SNM01_DEV=CHANNELS[7],CSM03_DEV=CHANNELS[8],SMC01_DEV=CHANNELS[9]
+0175 SERIALNBRS_DEV=CHANNELS[10],CSM05_DEV=CHANNELS[11],snm02_dev=channels[12]
+0180 ARE93_DEV=CHANNELS[13],ARM40_DEV=CHANNELS[14],ARE83_DEV=CHANNELS[15]
+0200 REM " --- Iolists"
+0210 ARE73A: IOLIST WX0$,WX1$(1),WX[ALL]
+0220 CSM13A: IOLIST B0$,B1$
+0230 CSM14A: IOLIST C0$,C1$,C[ALL]
+0260 call "templates.pgm::SNM01"
+0270 call "templates.pgm::CSM04"
+0280 call "templates.pgm::CSM05"
+0290 call "templates.pgm::CSM07"
+0300 call "templates.pgm::SNM02"
+0310 call "templates.pgm::ARE13"
+0320 call "templates.pgm::ARE73"
+0330 call "templates.pgm::ARE83"
+0340 call "templates.pgm::ARE93"
+0350 call "templates.pgm::ARM40"
+0500 REM " --- Initialize Data"
+0510 LET WX0$=W0$(1,20),N0$=W0$(1,2),LICENSE_TYPE$=CVS(W0$(45,3),1+2),PRODUCT$=W0$(33,3),CUST$=W0$(5,6) 
+0520 LET UMSK$="####0",SAMFACTOR=365,CURR_YEAR$=DATE(0:"%Yl")
+0530 LET JUL_DT=JUL(0,0,0),JUL_DT=JUL_DT+1,START$=DATE(JUL_DT:"%Mz%Dz%Yl")
+0540 DIM D[12],L[20],C[1]
+0550 IF WX1$(4,3)="   " THEN LET wx1$(4,3)=CREDIT$
+0560 serv$=fill(20),contract_days=0
+0570 FIND (CSM01_DEV,KEY=N0$+product$,DOM=*next)*,*,SERV$,*,*,contract_days
+0580 LET contract_req$=serv$(6,1),props$=serv$(7,8)
+0590 if w0$(42,3)="CUR" then readrecord(CSM04_DEV,KEY=N0$+W0$(42,3),DOM=*next)csm04$; LET wx1$(27,3)=cvs(csm04.description$,3)
+0600 READ (ARE73_DEV,KEY=WX0$,DOM=*next)IOL=ARE73A
+0620 usrs: gosub user_types
+0625 if pos("F"=wx1$(10,4)) and pos("R"=wx1$(10,4)) then 
+0630   wx1$(12,2)="  ",wx[3]=0
+0635   goto usrs
+0640 fi
+0650 REM " --- Background
+0660 LET WIDTH=40,HEIGHT=9,WIN_X=80-WIDTH,HEADING$="Configuration Options"
+0670 IF LINE+2+HEIGHT>22 THEN LET WIN_Y=22-HEIGHT-2 ELSE LET WIN_Y=LINE
+0680 CALL "SYC.WA",0,WIDTH,HEIGHT,WIN_X,WIN_Y,HEADING$,NAME$
+0690 PRINT 'SB',@(5,1),"Type of Sale:",@(1,2),"SAM/DEV Contract:",@(6,3),"Annual MMDD:",
+0700 if product$="BAS" and w0$(45,3)<>"   " then ltype=(w0$(45,3)<>"STD");if ltype=0 then wx1$(16,11)=fill(11)
+0710 if ltype then print @(1,4),"Expiring LicType:",@(24,4),"Days/Dt: ",
+0720 PRINT @(2,5),"Serial Number:",'SF'
+0800 GOSUB FIND_CONTRACT
+0820 GOSUB 5000
+0840 IF EDIT_FLAG$="N" THEN GOTO 4000
+0900 LET WX1$(9,1)="F";rem fixed/float always float now
+1000 REM " --- Expiration Type/Days/Date"
+1005 LET I0=0,v3=0
+1010 if ltype=0 then wx1$(16,11)=fill(11);goto 3900
+1015 LET V0$="S",V1$="CER^",V2$=WX1$(16,3),V3$="",V0=3,V1=19,V2=4
+1020 LET V4$="Expiring License Type (<F3>=Lookup)"
+1025 GOSUB 7000
+1030 ON V3 GOTO 1040,1040,9900,1035,3900
+1035 CALL "CSC.LK",FILES$[12],V1,V2,V$,V0,30,"License Types"
+1040 readrecord(CSM05_DEV,KEY=n0$+V$,DOM=1000)CSM05$
+1042 if csm05.expires$<>"Y" then goto 1000
+1045 if WX1$(16,3)<>V$ then wx1$(19,8)=str(csm05.expire_days:"####")
+1050 LET WX1$(16,3)=V$,license_type$=v$,W0$(45,3)=v$; PRINT @(V1,V2),WX1$(16,3)
+1055 LET V0$="S",V1$="CER^",V2$=WX1$(19,8),V3$="",V0=8,V1=33,V2=4,V4$="#Days or Date(YYYYMMDD) License Expires"
+1060 gosub 7000;v$=cvs(v$,3),days=num(v$,err=*next)
+1065 ON V3 GOTO 1070,1070,9900,1070,3900
+1070 if len(v$)<8 and (days<7 or days>455) then goto 1050
+1075 if len(v$)=8 then gosub date_test;if v$="" then goto 1050
+1077 if len(v$)<8 then let contract_days=days
+1080 wx1$(19,8)=v$;goto 3900
+1200 serial_number:
+1205 if wx1$(4,3)="NEW" then goto 3900
+1210 V0$="S",V1$="CE^",SN$=serial$,V3$="",V0=20,V1=17,V2=5,V4$=""
+1220 if cvs(sn$,3)="" then gosub find_last_are83
+1230 v2$=sn$
+1240 GOSUB 7000
+1250 serial$=v$;gosub lookup_serial_nbr
+1260 if snm01.serial_nbr$=serial$ then goto 3900
+1270 if cvs(serial$,3)="" and feature$<>"" then goto serial_number
+1280 goto 3900
+1500 REM " --- Type of Sale"
+1510 LET V0$="S",V1$="CER^",V2$=WX1$(4,3),V3$="",V0=3,V1=19,V2=1,V4$="Valid Type of Sale (<F3>=Lookup)"
+1520 IF WX1$(4,3)="   " THEN LET V2$=CREDIT$
+1530 GOSUB 7000
+1540 ON V3 GOTO 1560,1560,1699,1550,3900
+1550 CALL "CSC.LK",FILES$[3],V1,V2,V$,V0,30,"Types of Sale"
+1560 IF V$="" THEN GOTO 1500
+1570 if feature$<>"" and pos(v$="ADD,RN1,SM1,RNW")=0 then goto 1500
+1580 if feature$="" and v$="RN1" then goto 1500
+1590 LET WX1$(4,3)=V$
+1600 readrecord (CSM07_DEV,KEY=N0$+WX1$(4,3),DOM=1500)csm07$
+1610 PRINT @(V1,V2),WX1$(4,3)
+1620 if v$="NEW" and len(cvs(w0$(33,15),3))=15 then serial$="";gosub 5000
+1699 GOTO 3900
+1800 contract_number: REM " --- SAM/Developer Contract Number
+1810 reqd=0,v$=serial$;gosub lookup_serial_nbr
+1820 if wx1$(31,6)=fill(6) then wx1$(31,6)=v$
+1830 IF pos(contract_req$="RA")=0 then goto 3900
+1850 v4$="";if pos("S"=csm07.type_of_sale$)=1 or pos(license_type$="KITNFRRN1",3) THEN v4$="<F1>=New ",reqd=1 
+1860 LET V0$="S",V1$="CE^",V2$=WX1$(31,6),V3$="",V0=6,V1=19,V2=2,V4$=v4$+"<F3>=Contract Lookup S=Serial#"
+1870 if cvs(v2$,3)="" and wx1$(4,3)<>"NEW" then gosub find_last_are83
+1880 GOSUB 7000
+1890 IF V3=1 and reqd THEN GOSUB CREATE_CONTRACT
+1900 IF V3=3 THEN GOSUB LOOKUP_CONTRACT; IF V$="" THEN GOTO contract_number
+1910 IF CVS(V$,4)="S" THEN GOSUB LOOKUP_SERIAL_NBR; IF V$="" THEN GOTO contract_number
+1930 if reqd=0 and wx1$(31,6)=fill(6) then goto 3900
+1940 LET WX1$(31,6)=STR(NUM(V$,ERR=contract_number):"000000")
+1950 GOSUB FIND_CONTRACT
+1955 IF CVS(smc01.CONTRACT$,1+2)="" THEN GOSUB NOT_CONTRACT; GOTO contract_number
+1960 IF smc01.CUSTOMER_NBR$<>cust$ THEN GOSUB NOT_CUSTOMER; GOTO contract_number
+1965 IF (WX1$(4,1)="S" AND smc01.CONTR_TYPE$(1,1)<>"S") OR ((pos(LICENSE_TYPE$="KITNFR",3)) AND smc01.CONTR_TYPE$<>"DV1") THEN GOSUB NOT_CONTRACT_TYPE; GOTO contract_number
+1970 IF WX1$(4,2)="SM" and contract_days>455 and SAM_MMDD$<>START$(1,4) AND EXPIRE_JUL-JUL_DT<760 AND smc01.SAM_ACTIVE$<>"N" THEN GOSUB NEW_OR_ADD
+1975 IF WX1$(4,1)="S" AND (smc01.SAM_ACTIVE$="N" OR smc01.EXPIRE_ON_DT$<START$(5,4)+START$(1,4)) THEN GOSUB SAM_EXPIRED; if v9$="N" then goto contract_number
+1980 PRINT @(v1,v2),smc01.CONTRACT$,@(v1,v2+1),SAM_MMDD$
+1990 GOTO 3900
+2000 REM " --- SAM/Developer Annual Month and Day
+2010 IF WX1$(4,1)<>"S" OR smc01.SAM_ACTIVE$="N" THEN GOTO 3900
+2015 IF smc01.NEW_FLAG$<>"Y" THEN IF SAM_MMDD$<>START$(1,4) THEN GOSUB FIGURE_SAM_FACTOR FI; GOTO 3900
+2020 LET V0$="S",V1$="CE^",V2$=SAM_MMDD$,V3$="",V0=4,V1=19,V2=3,V4$="Enter Annual Month and Day"
+2030 GOSUB 7000
+2040 LET SAM_MMDD$=STR(NUM(V$,ERR=2000):"0000")
+2050 LET smc01.ANNUAL_DT$(5,4)=SAM_MMDD$,smc01.EXPIRE_ON_DT$(5,4)=SAM_MMDD$
+2060 IF SAM_MMDD$<>smc01.CONTR_START$(5,4) THEN GOSUB FIGURE_SAM_FACTOR
+2070 GOTO 3900
+3900 REM " --- Next Field"
+3905 IF V3=4 THEN GOTO 4000
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 ON I0 GOTO 1000,1500,1800,2000,1200,3990
+4000 REM " --- Options"
+4010 IF EDIT_FLAG$="N" THEN LET V4$="<Enter>=Continue" ELSE LET V4$="<Enter>=Continue   <F2>=Modify"
+4020 LET V0$="S",V1$="C",V2$="",V3$="",V0=1,V1=FNV1(V4$,WIDTH),V2=HEIGHT-2
+4030 GOSUB 7000
+4035 IF EDIT_FLAG$="N" THEN GOTO 4100
+4040 IF V3=2 THEN GOTO 1000
+4060 WRITE (ARE73_DEV,KEY=WX0$)IOL=ARE73A
+4090 IF cvs(WX1$(31,6),2)<>"" THEN GOSUB UPDATE_CONTR
+4100 CALL "SYC.WD",NAME$
+4110 read(are13_dev,key=wx0$,err=*next)
+4190 GOTO 9900
+5000 REM " --- Print Here"
+5020 print @(19,1),WX1$(4,3),@(19,2),WX1$(31,6),@(19,3),SAM_MMDD$
+5030 PRINT @(19,4),wx1$(16,3),@(33,4),wx1$(19,8)
+5040 PRINT @(17,5),serial$
+5090 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8025 DEF FNC(Q$,Q)=INT((Q-LEN(Q$))/2)
+8080 DEF FNV1(Q$,Q)=FNC(Q$,Q)+LEN(Q$)
+8090 DEF FNU$(Q$)=CVS(Q$,4)
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9210 SETERR 9000
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 REM " --- Return to Caller"
+9910 CALL "SYC.WD",ERR=9920,NAME$
+9920 CALL "SYC.WB","0",1
+9930 PRINT @(0,20),
+9940 FOR I=1 TO FILES
+9950 CLOSE (CHANNELS[I],ERR=9951)
+9960 NEXT I
+9980 EXIT 
+9999 END
+10000 REM --- Find SAM/Developer Contract
+10010 FIND_CONTRACT: 
+10020 LET CONTRACT$=WX1$(31,6),SAM_MMDD$=FILL(4)
+10030 call "templates.pgm::smc01"
+10040 IF CVS(CONTRACT$,1+2)="" THEN GOTO CONTR_DONE
+10045 FIND RECORD(SMC01_DEV,KEY=CONTRACT$,DOM=CONTR_DONE)smc01$
+10050 LET SAM_MMDD$=smc01.ANNUAL_DT$(5,4),EXPIRE_JUL=JUL(NUM(smc01.EXPIRE_ON_DT$(1,4)),NUM(smc01.EXPIRE_ON_DT$(5,2)),NUM(smc01.EXPIRE_ON_DT$(7,2)))
+10080 CONTR_DONE: 
+10090 RETURN 
+10100 CREATE_CONTRACT: 
+10110 GOSUB GET_CONTRACT_NBR
+10120 expire$=date((contract_days+jul_dt):"%Mz%Dz%Yl")
+10130 IF CVS(SAM_MMDD$,3)<>"" and pos(license_type$="KITNFR",3)=0 THEN expire$(1,4)=sam_mmdd$
+10140 IF (pos(LICENSE_TYPE$="KITNFR",3)) THEN LET smc01.CONTR_TYPE$="DV1" else if license_type$="RN1" then smc01.contr_type$="RN1" ELSE LET smc01.CONTR_TYPE$=wx1$(4,3),smc01.SAM_ACTIVE$="Y"
+10150 LET smc01.FIRM_ID$=W0$(1,2),smc01.CUSTOMER_NBR$=cust$,smc01.CONTR_START$=START$(5,4)+START$(1,4)
+10160 LET smc01.EXPIRE_ON_DT$=EXPIRE$(5,4)+EXPIRE$(1,4)
+10165 if len(cvs(wx1$(19,8),3))=8 and pos(license_type$="EXP,RN1") then smc01.expire_on_dt$=wx1$(19,8)
+10170 LET smc01.ANNUAL_DT$=smc01.EXPIRE_ON_DT$
+10180 LET smc01.E_MAIL$=E_MAIL$,smc01.NEW_FLAG$="Y"
+10190 LET WX1$(31,6)=smc01.CONTRACT$,SAM_MMDD$=expire$(1,4),V$=WX1$(31,6)
+10200 GOSUB UPDATE_CONTR
+10290 RETURN 
+10500 LOOKUP_CONTRACT: 
+10510 CALL "SYC.LQ",CONTR_SELECTION$
+10515 IF CONTR_SELECTION$="END" THEN LET CONTR_SELECTION$=""
+10520 LET V$=CONTR_SELECTION$
+10590 RETURN 
+10600 FIGURE_SAM_FACTOR:
+10610 annual_year=num(smc01.annual_dt$(1,4))
+10620 do_factor:
+10660 LET JUL_ANNUAL=JUL(annual_year,NUM(smc01.ANNUAL_DT$(5,2)),NUM(smc01.ANNUAL_DT$(7,2)))
+10670 IF JUL_ANNUAL-JUL_DT>=1 and jul_annual-jul_dt<=30 THEN LET annual_year=annual_year+1; GOTO do_factor
+10680 LET SAMFACTOR=JUL_ANNUAL-JUL_DT
+10690 RETURN 
+10700 UPDATE_CONTR: 
+10710 LET smc01$=FIELD(smc01$)
+10720 WRITE RECORD(SMC01_DEV)smc01$
+10725 read(are93_dev,key=wx0$,dom=*next)
+10730 if feature$<>"" then
+10735   while 1
+10740     readrecord(are93_dev,end=*break)are93$
+10745     if pos(wx0$=are93$)<>1 then break
+10750     are93.type_of_sale$=WX1$(4,3)
+10760     if wx1$(4,3)="RN1" then are93.expire_on_dt$=smc01.expire_on_dt$
+10765     are93$=FIELD(are93$)
+10770     writerecord(are93_dev,key=are93$(1,29))are93$
+10775   wend
+10780 fi
+10790 RETURN 
+11000 GET_CONTRACT_NBR: 
+11010 DIM COUNTER$:"type:c(3),filler:c(7),nbr:n(6)"
+11020 LET COUNTER.TYPE$="CTR",COUNTER.NBR=1
+11030 EXTRACT RECORD(SERIALNBRS_DEV,KEY=COUNTER.TYPE$,DOM=NEXT)COUNTER$
+11035 LET COUNTER$=FIELD(COUNTER$)
+11040 NEXT: LET smc01.CONTRACT$=STR((COUNTER.NBR):"000000")
+11050 LET COUNTER.NBR$=STR((COUNTER.NBR+1):"000000")
+11060 WRITE RECORD(SERIALNBRS_DEV,KEY=COUNTER.TYPE$)COUNTER$
+11090 RETURN 
+11200 SAM_EXPIRED:
+11210 DIM MESSAGE$[1]
+11220 LET MESSAGE$[0]="This Contract has expired. Is this a credit"
+11230 LET MESSAGE$[1]="action? (<Y>=Credit <N>=Cancel)"
+11240 V9$="Y"
+11260 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V9$,V3
+11270 IF V9$="" THEN GOTO sam_expired
+11280 V9$=CVS(V9$,1+2+4)
+11290 IF POS(V9$="YN")=0 THEN GOTO sam_expired
+11300 IF V9$="Y" THEN sam_factor=365 
+11310 RETURN 
+11400 LOOKUP_SERIAL_NBR: 
+11410 if cvs(v$,4)="S" then CALL "SYC.LS",V$
+11420 IF cvs(V$,3)="" THEN GOTO SERIAL_DONE
+11430 DIM SN$(20); LET SN$(1)=V$,V$=""
+11440 readrecord (SNM01_DEV,KEY=SN$,DOM=SERIAL_DONE)SNM01$
+11445 if snm01.active_flag$="N" then goto serial_done
+11450 V$=cvs(SNM01.contract$,3),serial$=sn$
+11455 gosub find_last_are83;if item$<>"" then goto serial_done
+11460 item$=snm01.PRODUCT$+snm01.PLATFORM$+snm01.OS_LEVEL$+snm01.PRODUCT_REV$+snm01.LICENSE_TYPE$
+11465 std_usr=snm01.users,ent_usr=0,prx$="    "
+11470 readrecord(SNM02_DEV,KEY=SNM01.serial_nbr$,DOM=serial_done)SNM02$
+11475 std_usr=snm02.users1,ent_usr=snm02.users2,prx$=snm02.lic_property1$+snm02.lic_property2$
+11480 if pos("E"=snm02.LIC_PROPERTY1$)=1 then ent_usr=std_usr,std_usr=snm02.users2
+11485 SERIAL_DONE: 
+11490 RETURN 
+11500 NOT_CUSTOMER: 
+11530 DIM MESSAGE$[1]
+11540 LET MESSAGE$[0]="This Contract belongs to Customer: "+smc01.CUSTOMER_NBR$
+11550 LET MESSAGE$[1]="not the Ordering Customer (<Enter>=Continue)"
+11570 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V$,V3
+11580 RETURN 
+11600 NOT_CONTRACT: 
+11610 DIM MESSAGE$[1]
+11620 LET MESSAGE$[0]="This Contract number is not on file (<Enter>=Continue)"
+11640 LET MESSAGE$[1]="",V9$=""
+11650 CALL "SYC.XA",1,MESSAGE$[ALL],1,22,-1,V9$,V3
+11660 RETURN 
+11700 NOT_CONTRACT_TYPE: 
+11710 DIM MESSAGE$[1]
+11720 LET MESSAGE$[0]="This Contract "+smc01.CONTR_TYPE$+" type is"
+11730 LET MESSAGE$[1]="not compatible with sale type (<Enter>=Continue)",V9$=""
+11750 CALL "SYC.XA",2,MESSAGE$[ALL],1,22,-1,V9$,V3
+11760 RETURN 
+11800 NEW_OR_ADD:
+11810 DIM MESSAGE$[2]
+11820 LET MESSAGE$[0]="This Contract is in its second year which requires"
+11830 LET MESSAGE$[1]="a new contract unless you are adding users to an"
+11840 LET MESSAGE$[2]="existing serial number (<Y>=New Contract <N>=Add users)",V9$="Y"
+11860 CALL "SYC.XA",3,MESSAGE$[ALL],2,22,-1,V9$,V3
+11870 IF V9$="" THEN GOTO NEW_OR_ADD
+11880 V9$=CVS(V9$,1+2+4)
+11890 IF POS(V9$="YN")=0 THEN GOTO NEW_OR_ADD
+11900 IF V9$="Y" THEN GOSUB CREATE_CONTRACT
+11910 RETURN
+12000 date_test:
+12010 temp$=v$,v$="",y=0,m=0,d=0,jd1=0,jd2=0
+12020 y=num(temp$(1,4),err=*next),m=num(temp$(5,2),err=*next),d=num(temp$(7,2),err=*next),jd1=jul(0,0,0),jd2=jul(y,m,d,err=*next)
+12030 if jd2-jd1>6 and jd2-jd1<366 then v$=temp$
+12040 return
+12100 find_last_are83:
+12105 item$="",ent_usr=0,std_usr=0
+12110 read (are83_dev,key=wx0$(1,17),dom=*next)
+12120 while 1
+12130   readrecord(are83_dev,end=*break)are83$ 
+12140   if pos(wx0$(1,17)=are83$)<>1 then break
+12150   if wx0$(18,3)<are83.line_number$ then break
+12160   if cvs(are83.contract$,3)<>"" then v2$=are83.contract$
+12170   if are83.action$="D" then continue
+12175   sn$=are83.serial_nbr$,linekey$=are83$(1,20)
+12180   if cvs(serial$,3)="" then serial$=sn$
+12185   if sn$<>serial$ then continue
+12190   readrecord(are13_dev,key=linekey$,dom=*continue)are13$
+12195   if len(cvs(are13.item_number$,3))<>15 then continue
+12200   item$=are13.item_number$
+12210   readrecord(are73_dev,key=linekey$,dom=*continue)are73$
+12220   std_usr=are73.users,ent_usr=are73.users2
+12230   if pos("E"=are73.lic_property1$)=1 then ent_usr=std_usr,std_usr=are73.users2
+12260 wend
+12290 return
+13000 user_types:
+13010 dummy$=stbl("!CLEAR","feature",err=*next),feature$=""
+13020 FCOUNT=0,mlen=len(umsk$),user_list$=""
+13030 dim ulist$:"desc:c(30),code:c(3),rev:c(5),nusr:c(5)"
+13050 if wx[2]+wx[3]=0 then
+13060   v$=serial$;gosub lookup_serial_nbr
+13070   if pos(serial$=snm01.serial_nbr$) then
+13080     wx1$(10,4)=prx$,wx[2]=std_usr,wx[3]=ent_usr
+13090     if pos("E"=prx$)=1 then wx[2]=ent_usr,wx[3]=std_usr
+13100   fi
+13110 fi
+13120 cur_props$=wx1$(10,4),tmp$=cvs(props$,3)
+13140 while len(tmp$)>1
+13150   p$=tmp$(1,2),tmp$=tmp$(3),cu=0
+13160   p1=pos(p$=cur_props$);if p1 then cu=wx[int(p1/2)+2] 
+13170   ulist.code$=p$,ulist.desc$=p$,ulist.nusr$=str(cu:umsk$),ulist.rev$="NA",user_list$=user_list$+ulist$
+13175   fcount=fcount+1
+13180 wend
+13185 fk$=n0$+"000000"
+13186 if n0$ + cust$ <> "01007514" then fk$ = fk$ + n0$ + cust$
+13187 while fk$<>""
+13190 k$=fk$(1,8),fk$=fk$(9)
+13195 read(arm40_dev,key=k$,dom=*next)
+13200 while 1
+13210   readrecord(arm40_dev,end=*break)arm40$
+13220   if pos(k$=arm40$)<>1 then break
+13225   if product$<>arm40.prod_code$ then continue
+13226   rem ' following added for special handling of Barista users (DEV vs RUNTIME)
+13227	if product$ = "BAR" and W0$(36,3) = "DEV" and cvs(arm40.feature$,7) = "BARISTA_RUNTIME" then continue
+13228	if product$ = "BAR" and (W0$(36,3) = "RUN" or W0$(36,3) = "USE") and cvs(arm40.feature$,7) = "BARISTA" then continue
+13230   ulist.code$=arm40.prod_code$,ulist.desc$=arm40.feature$,ulist.rev$=arm40.feature_rev$,ulist.nusr$=str(0:umsk$),user_list$=user_list$+ulist$
+13240   fcount=fcount+1
+13250 wend
+13255 if fk$=k$ then break
+13260 wend
+13380 k$=wx0$+"001"
+13390 k93len=len(k$)+6
+13400 read(are93_dev,key=k$,dom=*next)
+13410 while 1
+13420   k93$=key(are93_dev,end=*break)
+13430   k93len=len(k93$)
+13440   if pos(k$=k93$)<>1 then break
+13450   readrecord(are93_dev,key=k93$)are93$
+13460   p=pos(are93.feature$=user_list$)
+13470   if p=0 then continue
+13480   ulist$=user_list$(p,len(ulist$))
+13490   ulist.nusr$=str(are93.users:umsk$)
+13500   ulist.rev$=are93.feature_rev$,user_list$(p,len(ulist$))=ulist$
+13510 wend
+13520 if fcount=0 then fcount=1,ulist.code$=product$,ulist.desc$=product$,ulist.nusr$=str(wx[2]:umsk$),ulist.rev$="NA",user_list$=ulist$
+13525 fkey=0
+13630 build_list:
+13635 if name$<>"" then CALL "SYC.WD",NAME$
+13640 temp_list$=user_list$
+13650 WIDTH=50,HEIGHT=12,WIN_X=10,WIN_Y=3,title$="Users"
+13660 DIM HEADING$(WIDTH-2),FOOTING$(WIDTH-2)
+13670 HEADING$(2)="Type"+fill(26)+"  Users  Rev"
+13680 FOOTING$(2)="Enter=Edit  F4=End  PgUp  PgDn"
+13690 CALL "SYC.WA",0,WIDTH,HEIGHT,WIN_X,WIN_Y,TITLE$,NAME$
+13700 PAGES=INT(fCOUNT*2/HEIGHT)+2,MAX_ROW=HEIGHT-6
+13710 DIM LLIST$[PAGES,MAX_ROW,5],MORE$[PAGES,MAX_ROW,2]
+13720 PRINT @(0,0),'SB','BR',HEADING$,@(0,HEIGHT-4),FOOTING$,'ER','SF',
+13730 X1=1,XMODE=5
+13740 page=1
+13750 while 1
+13760   P=len(temp_list$)
+13770   IF P=0 THEN 
+13780     selection$=llist$[page,1,2]
+13790     GOSUB DISPLAY_PAGE
+13800     break
+13810   fi
+13820   ulist$=temp_list$(1,len(ulist$)),temp_list$=temp_list$(len(ulist$)+1)
+13830   IF x1>=MAX_ROW THEN GOSUB DISPLAY_PAGE
+13835   x$="  "+ulist.desc$+ulist.nusr$+"  ";if pos("NA"=ulist.rev$)=0 then x$=x$+ulist.rev$
+13840   LET LLIST$[PAGE,X1,1]=x$,LLIST$[PAGE,X1,2]=ulist.desc$,X1=X1+1
+13850 wend
+13855 IF FKEY=0 THEN call "SYC.WD",name$;goto EDIT_INFO
+13860 DISPLAY_LIST_END: 
+13870 CALL "SYC.WD",NAME$
+13880 tlist$=user_list$,ul=len(ulist$),ux=0
+13890 while 1
+13895   if len(tlist$)<ul then break
+13900   ulist$=tlist$(1,ul),tlist$=tlist$(ul+1)
+13905   nusr=num(ulist.nusr$)
+13915   if ux=0 then wx1$(10,4)="    ",wx[2]=0,wx[3]=0
+13920   if ux<2 and nusr and pos(ulist.code$(1,2)=props$,2) then 
+13925      wx1$(10+2*ux,2)=ulist.code$
+13930   fi
+13935   if nusr and ux<2 then wx[ux+2]=nusr, ux=ux+1
+13940   if pos("NA"=ulist.rev$) then continue
+13950   k$=wx0$+"001",seq$="001",ftnr$="001",wx[3]=0
+13960   read(are93_dev,key=k$,dom=*next)
+13970   while 1
+13980    k93$=key(are93_dev,end=*break)
+13990    if pos(k$=k93$)<>1 then break
+14000    readrecord(are93_dev,key=k93$)are93$
+14010    seq$=str(num(are93.sequence_nbr$)+1:"000"),ftnr$=str(num(are93.feature_nbr$)+1:"000"),k$=k93$(1,23)
+14020    if are93.feature$=ulist.desc$ then ftnr$=are93.feature_nbr$,seq$=are93.sequence_nbr$;break
+14030   wend
+14050   readrecord(are93_dev,key=k$+seq$+ftnr$,dom=*next)are93$
+14060   are93.firm_id$=k$(1,2),are93.ar_type$="  ",are93.customer_nbr$=k$(5,6)
+14070   are93.order_number$=k$(11,7),are93.line_number$=k$(18,3)
+14080   are93.license_seq$="001",are93.sequence_nbr$=seq$,are93.feature_nbr$=ftnr$
+14090   are93.feature$=ulist.desc$,are93.feature_rev$=ulist.rev$,are93.prod_code$=ulist.code$
+14095   fl$=fattr(are93$,"available"),fl=dec(fl$(10,2)),are93.available$=fill(fl)
+14100   are93.users=nusr
+14105   if pos(are93.prod_code$="ACC,DIS,MFG") then are93.fax_flag$="Y" else are93.fax_flag$=" "
+14110   are93$=field(are93$),are93k$=k$+seq$+ftnr$
+14120   if wx1$(4,3)<>"SM1" then writerecord(are93_dev,key=are93k$)are93$
+14125   dummy$=stbl("feature",are93.feature$),feature$=cvs(are93.feature$,3)
+14130 wend
+14200 goto end_user_types
+14400 DISPLAY_PAGE: 
+14430 if fcount>1 then CALL "SYC.SA",XMODE,LLIST$[ALL],MORE$[ALL],SELECTION$,PAGE,MAX_ROW,NAME$,HEIGHT,WIDTH,FKEY
+14450 IF FKEY=-16 THEN LET PAGE=PAGE+1
+14470 LET X1=1,XMODE=5
+14480 RETURN
+14490 EDIT_INFO: 
+14500 LET p1=pos(SELECTION$=user_list$)
+14510 if p1=0 then selection$="";goto build_list
+14520 ulist$=user_list$(p1,len(ulist$))
+14530 LET WIDTH=40,HEIGHT=5,WIN_X=14,WIN_Y=15,TITLE$=cvs(ulist.desc$,3)
+14560 if aname$<>"" then CALL "SYC.WD",ANAME$
+14570 CALL "SYC.WA",0,WIDTH,HEIGHT,WIN_X,WIN_Y,TITLE$,ANAME$
+14580 PRINT 'CS','SB',@(0,1),"Users:         Rev:",
+14590 PRINT 'SF',@(7,1),ulist.nusr$,;if pos("NA"=ulist.rev$)=0 then print @(20,1),ulist.rev$,
+14605 if edit_flag$="N" then goto end_edit
+14610 goto users
+14620 Revision: 
+14630 LET V0$="S",V1$="C",V2$=ulist.rev$,V3$="",V0=5,V1=20,V2=1
+14640 LET V4$="Enter the feature revision"
+14650 GOSUB 7000
+14660 IF V3=2 THEN GOTO revision
+14670 IF V3=4 THEN GOTO END_EDIT
+14680 ulist.rev$=V$
+14690 users: 
+14700 LET V0$="N",V1$="CE",V2$=ulist.nusr$,V3$=M$,V0=mlen,V1=7,V2=1
+14710 LET V4$="TOTAL users";if pos("NA"=ulist.rev$)=0 then v4$=v4$+" <F2>=Revision"
+14720 GOSUB 7000
+14730 IF V3=2 and pos("NA"=ulist.rev$)=0 THEN GOTO revision
+14740 IF V3=4 THEN GOTO END_EDIT 
+14750 ulist.nusr$=str(V:umsk$)
+14760 END_EDIT: 
+14770 LET V0$="S",V1$="C^",V2$="Y",V3$="",V4$="Correct (Y/N)?",V0=1,V1=36,V2=2
+14780 GOSUB 7000
+14790 IF V3=4 THEN GOTO update_list
+14800 PRINT @(0,V2),'CL',
+14810 LET OPTION$=V$
+14820 ON POS(V$="YN") GOTO END_EDIT,UPDATE_list,users
+14830 UPDATE_list: 
+14840 user_list$(p1,len(ulist$))=ulist$,u$=ulist.nusr$,cd$=ulist.code$,xx=1,l=len(user_list$)
+14845 while xx<l
+14850   ulist$=user_list$(xx,len(ulist$));if ulist.code$=cd$ then ulist.nusr$=u$
+14855   user_list$(xx,len(ulist$))=ulist$,xx=xx+len(ulist$)
+14860 wend
+14865 fkey=4
+14870 EDIT_INFO_END: 
+14875 CALL "SYC.WD",ANAME$
+14880 goto build_list
+14890 END_user_types: 
+14900 if name$<>"" then CALL "SYC.WD",NAME$
+14960 return

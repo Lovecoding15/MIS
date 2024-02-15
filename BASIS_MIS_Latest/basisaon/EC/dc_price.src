@@ -1,0 +1,275 @@
+REM <ec_price.bbx> 
+REM Calculate price and transaction types by comparing current
+REM item and users with new item and users
+SETERR ERR_EXIT
+SETESC ERR_EXIT
+ENTER FIRM$,CUST$,QTY,CUR_ITEM$,CUR_USERS[all],c_prop$[all],NEW_ITEM$,NEW_USERS[all],n_prop$[all],RETURN_TYPE$[ALL],RETURN_PRICE[ALL],RETURN_DESC$,ARM02,ARM10I,CSM01,CSM02,CSM03,CSM04,CSM05,CSM07,CSM10,CSM13,IVM01,SMC01,SAM_FLAG,CONTRACT$,T,rental_commit,consolidate
+call "templates.pgm::SMC01"
+new_users=0,cur_users=0,n=0,c=0,cur_item=len(cvs(cur_item$,3))
+dim cur_lprop$[2],new_lprop$[2]
+for i=0 to 2
+ new_users=new_users+new_users[i]
+ cur_users=cur_users+cur_users[i]
+ cur_lprop$[i]=c_prop$[i]
+ new_lprop$[i]=n_prop$[i]
+ if (cvs(cur_lprop$[i],3)<>"") then c=1
+ if (cvs(new_lprop$[i],3)<>"") then n=1
+next i
+
+Rem 'What are we dealing with:  (set typeflag) 
+Rem '0- if no cur_item and no new props, then NEW p5
+rem '1- if cur_item, no cur props, no new props, then a p5 mod
+rem '2- if no cur_item and there are new props, then NEW bbj
+rem '3- if cur_item, both cur props and new props, then a bbj mod
+rem '4- if cur_item, no cur props, but there are new props, then TRD
+typeflag=0
+if cur_item=0 and n then typeflag=2
+if cur_item then 
+ if c=0 and n=0 then typeflag=1, cur_lprop$[0]=cur_item$(1,3)
+ if c and n then typeflag=3
+ if c=0 and n then typeflag=4,cur_lprop$[0]=cur_item$(1,3)
+fi
+if typeflag<2 then new_lprop$[0]=new_item$(1,3)
+
+LET RETURN_DESC$="",ADD_TS=RETURN_PRICE[0],RETURN_PRICE[0]=0
+LET override_tier=t,T=0
+IF NEW_USERS<1 OR CUR_USERS<0 THEN LET RETURN_DESC$="**Users must be greater than zero"; GOTO PGM_EXIT
+IF QTY<1 THEN LET RETURN_DESC$="**Quantity must be greater than zero"; GOTO PGM_EXIT
+cur$="CUR"
+cp=(pos(CUR$=cur_item$)=10)
+np=(pos(CUR$=new_item$)=10)
+if np or cp then 
+ tmp$=""
+ READ (CSM04,KEY=FIRM$+CUR$,dom=*NEXT)*,tmp$;tmp$=cvs(tmp$,3)
+ if cp and tmp$<>"" then cur_item$(10,3)=tmp$
+ if np and tmp$<>"" then new_item$(10,3)=tmp$
+fi
+
+LET cur_lic_rev=0,current_rev$=""
+READ (CSM04,KEY=FIRM$+CUR_ITEM$(10,3),ERR=*NEXT)*,CUR_REV$,TMP$; LET cur_lic_rev=POS("L"=TMP$(1,1)),current_rev$=TMP$(2,1)
+LET new_rev$=CUR_REV$,new_lic_rev=0
+READ (CSM04,KEY=FIRM$+NEW_ITEM$(10,3),DOM=*NEXT)*,NEW_REV$,TMP$; LET new_lic_rev=POS("L"=TMP$(1,1))
+READ (CSM05,KEY=FIRM$+CUR_ITEM$(13,3),ERR=ODBC_SINGLE_USER_TEST)*,*,TMP$
+expiring_license=(tmp$(3,1)="Y")
+
+ODBC_SINGLE_USER_TEST: IF NEW_ITEM$(1,3)<>"ODB" THEN GOTO NEW_ITEM_TEST
+REM ODBC is single user only for revs prior to flex license
+IF new_lic_rev=0 AND NEW_USERS>1 THEN LET RETURN_DESC$="**This is a single user product. Set users to 1 or select a later revision."; GOTO CLOSE_EXIT
+
+NEW_ITEM_TEST: 
+LET sam_required=0
+IF NEW_ITEM$=CUR_ITEM$ THEN GOTO INIT
+LET MSG$="**Select Product"
+FIND (CSM01,KEY=FIRM$+NEW_ITEM$(1,3),DOM=*next)*,PR$,F2$;msg$=""
+if len(f2$)>5 then sam_required=(F2$(6,1)="R")
+IF POS(NEW_ITEM$(1,3)="DS4P4E",3) THEN LET msg$="**Upgrading or adding users are the only options available",NEW_ITEM$=CUR_ITEM$
+if pos("-"=cvs(new_item$,3)) or pos(" "=cvs(new_item$,3)) then msg$="**Next"
+IF MSG$<>"" THEN LET RETURN_DESC$=MSG$; GOTO ERR_EXIT
+
+INIT: 
+LET TRANLIST$="",NL$=$0A$,SAM$="",SAMFACTOR=365,ON_SAM=0
+LET NEW$="NEW"+NL$,UG4$="UG4"+NL$,TRD$="TRD"+NL$,PLX$="PLX"+NL$,UPD$="UPD"+NL$,UNC$="UNC"+NL$,ADD$="ADD"+NL$,TSI$="TSI"+NL$,con$="CON"+nl$,rnw$="RNW"+nl$
+
+READ RECORD (SMC01,KEY=CONTRACT$,knum=0,DOM=*next)SMC01$
+IF SMC01.SAM_ACTIVE$="Y" THEN 
+  LET JUL_ANNUAL=JUL(NUM(SMC01.ANNUAL_DT$(1,4)),NUM(SMC01.ANNUAL_DT$(5,2)),NUM(SMC01.ANNUAL_DT$(7,2)))
+  LET JUL_DT=JUL(0,0,0)+1,SAMFACTOR=JUL_ANNUAL-JUL_DT
+  if samfactor<31 then samfactor=samfactor+365
+  LET ON_SAM=NUM(SMC01.CONTR_TYPE$(3,1),ERR=*next)
+  samfactor=0
+fi
+
+IF CUR_ITEM=0 THEN LET ADDUSERS=0,TRANLIST$=TRANLIST$+NEW$;GOTO PRICE_CALC
+
+LET ADDUSERS=NEW_USERS-CUR_USERS
+
+IF NEW_ITEM$(1,3)<>CUR_ITEM$(1,3) then 
+ LET T0$="D"+CUR_ITEM$(1,3),T1$=NEW_ITEM$(1,3); GOSUB FIND_CSM13
+ IF FOUND$<>"Y" THEN LET RETURN_DESC$="**Can't change product "+CUR_ITEM$(1,3)+" to "+NEW_ITEM$(1,3); GOTO CLOSE_EXIT
+ while len(exc$)
+  LET X=POS(NL$=EXC$);if x=0 then break
+  LET TRANLIST$=TRANLIST$+EXC$(1,X),EXC$=EXC$(X+1)
+ wend
+ IF POS(UG4$=TRANLIST$) OR POS(TRD$=TRANLIST$) THEN GOTO PRICE_CALC 
+else 
+ if NEW_ITEM$(4,6)<>CUR_ITEM$(4,6) or NEW_ITEM$(13,3)<>CUR_ITEM$(13,3) THEN LET TRANLIST$=TRANLIST$+PLX$
+fi
+
+IF NEW_ITEM$(10,3)=CUR_ITEM$(10,3) THEN GOTO PRICE_CALC
+
+LET INP$=new_rev$; GOSUB NUMERICS; LET new_rev$=TMP$,P1=P
+LET INP$=CUR_REV$; GOSUB NUMERICS; LET CUR_REV$=TMP$,P2=P
+REM Don't allow major rev backrev or license to revert to key
+IF INT(NUM(new_rev$))<INT(NUM(CUR_REV$)) OR new_lic_rev<cur_lic_rev THEN LET RETURN_DESC$="**Can't change revision "+CUR_REV$+" to "+new_rev$; GOTO CLOSE_EXIT
+IF new_rev$(1,P1)=CUR_REV$(1,P2) AND POS(PLX$=TRANLIST$)=0 THEN LET TRANLIST$=TRANLIST$+UNC$; REM Don't process a free minor rev updt if there's a plx 
+IF new_rev$(1,P1)<>CUR_REV$(1,P2) THEN LET TRANLIST$=TRANLIST$+UPD$
+
+PRICE_CALC: 
+precision 2
+LET T=POS(NL$=TRANLIST$,1,0)
+IF SAM_FLAG AND sam_required THEN LET SAM_FLAG=1
+IF SAM_FLAG>0 AND SAM_FLAG<10 and expiring_license=0 THEN LET SAM$="SM"+STR(SAM_FLAG)+NL$
+LET TRD=POS(TRD$=TRANLIST$)
+if consolidate then tranlist$=tranlist$+con$,t=t+1
+IF ADDUSERS>0 THEN LET TRANLIST$=TRANLIST$+ADD$,T=T+1
+REM User decrease must be 1st transaction
+IF ADDUSERS<0 THEN LET TRANLIST$=ADD$+TRANLIST$,T=T+1
+if cur_lprop$[0]<>new_lprop$[0] and t=0 then tranlist$=add$,t=1;if addusers=0 then addusers=new_users
+LET SAMUSERS=NEW_USERS
+IF ON_SAM THEN LET SAMUSERS=ADDUSERS; IF ADDUSERS<1 THEN LET SAM$=""
+rem IF ADDUSERS<0 AND T=1 THEN LET RETURN_DESC$="**User decrease must be combined with some other transaction."; GOTO CLOSE_EXIT
+IF SAM$<>"" THEN LET TRANLIST$=TRANLIST$+SAM$,T=T+1
+IF ADD_TS THEN LET TRANLIST$=TRANLIST$+TSI$,T=T+1
+
+REM 'remove N/C plx if there are other transactions
+LET P=POS(PLX$=TRANLIST$),TMP$=""
+IF P AND T>1 AND new_lic_rev THEN 
+IF P>1 THEN LET TMP$=TRANLIST$(1,P-1)
+LET TRANLIST$=TMP$+TRANLIST$(P+4),T=T-1
+FI 
+LET upgrade$=UPD$+UG4$+TRD$
+IF new_lic_rev=0 THEN LET upgrade$=upgrade$+PLX$
+LET TMP$=upgrade$+NEW$,tmp=0
+WHILE LEN(TMP$)
+IF POS(TMP$(1,3)+NL$=TRANLIST$) THEN LET tmp=tmp+1
+LET TMP$=TMP$(5)
+WEND
+REM 'Require upgrade when buying SAM not at current rev and no other upg or new transaction
+IF tmp=0 AND ON_SAM=0 and expiring_license=0 AND SAM_FLAG AND current_rev$<>"Y" THEN LET TRANLIST$=UPD$+TRANLIST$,T=T+1
+rem 'Remove nc update if there is a chargeable one
+if pos(upd$=tranlist$) then p=pos(unc$=tranlist$);if p then tranlist$(p,len(unc$))=fill(len(unc$)),t=t-1
+
+rem 'sam_flag for expiring_license indicates DVK,NFR renewal - rnw is like NEW
+IF SAM_FLAG and expiring_license THEN tranlist$=tranlist$+rnw$,t=t+1
+IF T=0 THEN GOTO NO_TRANS
+
+DIM TRAN$[T],T_PRICE[T],list_price[T],TEMP_TYPE$[T],RETURN_TYPE$[T],RETURN_PRICE[2*T],TEMP_DESC$[T]
+LET T=T-1
+LET l=0,upgrade=0,upgrade_done=0,samtotal=0
+d$=fill(8),disc_pct=0,splevel=0
+FIND (ARM02,KEY=FIRM$+CUST$+"  ",DOM=*next)*,D$,*,*,*,*,*,*,*,SPLEVEL
+if splevel=0 then let splevel=override_tier
+FIND (ARM10I,KEY=FIRM$+"I"+D$(6,2),ERR=*next)*,disc_pct
+
+if rental_commit then disc_pct=0
+
+WHILE l<=T
+LET n=POS(NL$=TRANLIST$,1,l+1); IF n<4 THEN LET l=l+1; CONTINUE
+LET trn$=TRANLIST$(n-3,3)
+LET TRAN$[l]=trn$,T_PRICE[l]=9999
+
+LET upgrade=POS(trn$+NL$=upgrade$)
+IF upgrade AND (ON_SAM OR upgrade_done) THEN LET T_PRICE[l]=0
+
+REM 'No charge for TRD of dataservers
+IF POS(trn$=TRD$) AND POS("DS5"=CUR_ITEM$)=1 THEN LET T_PRICE[l]=0
+
+REM 'SAM required for update or must be purchased w/new BBj product
+IF upgrade AND sam_required AND ON_SAM=0 AND SAM_FLAG=0 and pos(new_item$(13,3)="KITRN1NFR",3)=0 THEN LET RETURN_DESC$="**SAM required."; EXITTO close_exit
+
+REM N/C platform exch for licensed products
+IF POS(trn$=PLX$) AND new_lic_rev THEN LET T_PRICE[l]=0
+REM User decrease, price=0
+IF POS(trn$=ADD$) AND ADDUSERS<0 THEN LET T_PRICE[l]=0
+LET desc$=""; READ (CSM07,KEY=FIRM$+tran$[l],DOM=*NEXT)*,desc$
+
+rem LET prorate=(POS("SM"=trn$)=1)
+prorate=0
+
+line_item$=NEW_ITEM$
+U=cur_users;if addusers<0 then u=u+addusers
+IF POS(trn$=NEW$) THEN LET U=new_users
+IF POS(trn$=ADD$) THEN LET U=ADDUSERS,line_item$=fnsub$(NEW_ITEM$(1,3)) 
+IF trn$(1,1)="S" THEN LET line_item$=fnsub$(NEW_ITEM$(1,3)),line_item$=line_item$(1,3)+"SAM"+STR(ON_SAM); REM for SSR,SSF,SER
+IF POS(trn$=SAM$) THEN LET U=SAMUSERS,line_item$(LEN(line_item$),1)=STR(SAM_FLAG); REM SM1,SM2
+IF POS(trn$=TSI$) THEN LET line_item$="SUPPORT",QTY=ADD_TS
+LET line_item$="|"+line_item$+FILL(20),line_item$=line_item$(1,21)
+samtype$="",xx=len(sam$);if xx>2 then samtype$=sam$(1,3)
+
+IF t_price[l] THEN 
+ if pos("S"=trn$)=1 and on_sam and samtotal then goto skip_sam
+ IF upgrade THEN LET upgrade_done=1
+ lic_type$=new_item$(13,3)
+ old_rev$=""
+ if len(cur_item$)>12 then old_rev$=cur_item$(10,3)
+
+ call "price.pgm",firm$,trn$,lic_type$,cur_users[all],new_users[all],cur_lprop$[all],new_lprop$[all],old_rev$,samtype$,on_sam,disc_pct,splevel,price,samprice
+
+ rem "Code for 8130 (i-Flex) - special price level is 11 for the 11-25 user tier
+ rem "unless the actual user count is higher. Calculate w/both & use lesser amt.
+ if splevel and splevel<10000 then
+   call "price.pgm",firm$,trn$,lic_type$,cur_users[all],new_users[all],cur_lprop$[all],new_lprop$[all],old_rev$,samtype$,on_sam,disc_pct,0,price1,samprice1
+   price=min(price1,price),samprice=min(samprice,samprice1)
+ fi
+
+ samtotal=samtotal+samprice
+ skip_sam:
+ if pos("S"=trn$)=1 then price=max(0,samtotal)
+ if prorate then price=price*samfactor/365
+ t_price[l]=price*qty
+ IF price<0 THEN GOSUB ivm02_price
+FI 
+
+IF price<0 THEN LET RETURN_DESC$="**Price can't be calculated for this item",l=T+1; CONTINUE
+rem 'Reset old property after trd,upg for possible user change and/or sam
+if pos(trn$="TRD,UG4") then let cur_lprop$[0]=new_lprop$[0]
+LET TEMP_TYPE$[l]=tran$[l]+line_item$
+LET u$=", "+STR(U)+" user"; IF U>1 THEN LET u$=u$+"s"
+IF POS(trn$=TSI$) THEN LET u$=""
+if cur_users[0] then change$=str(cur_users[0])+" "+cur_lprop$[0]
+if cur_users[0]*cur_users[1] then change$=change$+","
+if cur_users[1] then change$=change$+" "+str(cur_users[1])+" "+cur_lprop$[1]
+change$=change$+" to "
+if new_users[0] then change$=change$+str(new_users[0])+" "+new_lprop$[0]
+if new_users[0]*new_users[1] then change$=change$+","
+if new_users[1] then change$=change$+" "+str(new_users[1])+" "+new_lprop$[1]
+IF POS(trn$=ADD$) THEN LET u$=": "+cvs(change$,35)
+LET TEMP_DESC$[l]=CVS(desc$,2)+u$+"; "
+IF TEMP_TYPE$[l]<>"" THEN LET RETURN_TYPE$[l]=TEMP_TYPE$[l],RETURN_PRICE[l]=T_PRICE[l]
+LET RETURN_PRICE[l+T+1]=list_price[l]; REM 'return list_price for promo price
+IF POS("**"=RETURN_DESC$)=0 THEN LET RETURN_DESC$=RETURN_DESC$+TEMP_DESC$[l]
+LET l=l+1
+WEND
+GOTO CLOSE_EXIT
+NO_TRANS: LET RETURN_DESC$="**Current item: "+CVS(CUR_ITEM$,2)+", "+STR(CUR_USERS)+" user"; IF CUR_USERS>1 THEN LET RETURN_DESC$=RETURN_DESC$+"s" FI 
+GOTO CLOSE_EXIT
+ERR_EXIT: 
+SETERR CLOSE_EXIT
+IF CVS(RETURN_DESC$,2)="" THEN LET RETURN_DESC$="**Program error"
+CLOSE_EXIT: 
+LET P=POS("; "=RETURN_DESC$,-1); IF P AND P=LEN(RETURN_DESC$)-1 THEN LET RETURN_DESC$(P,1)=" "
+LET RETURN_DESC$=CVS(RETURN_DESC$,3)
+REM ?"exiting ec_price";input xx$;if xx$<>"" then escape
+PGM_EXIT: EXIT
+
+DEF FNSUB$(X$)
+LET X1$="VP5",X2$="PR5",X=POS(X$=X1$,3); IF X THEN LET X$=CVS(X2$(X,3),2)
+RETURN X$+TRAN$[l]
+FNEND
+
+NUMERICS: 
+LET P=POS(" "=INP$); IF P THEN LET INP$=INP$(1,P)
+LET TMP$="",INP$=CVS(INP$,3),l=LEN(INP$); IF l=0 THEN GOTO END_NUMERICS
+FOR I=1 TO l; IF POS(INP$(I,1)="0123456789.") THEN LET TMP$=TMP$+INP$(I,1)
+NEXT I
+END_NUMERICS: 
+LET P=POS("."=TMP$); IF P=0 THEN LET P=1,TMP$=TMP$+" "
+RETURN
+
+FIND_CSM13: 
+LET FOUND$="",EXC$=""
+READ (CSM13,KEY=FIRM$+T0$,DOM=CSM13KEY)
+CSM13KEY: LET K$=KEY(CSM13,END=END_FIND_CSM13)
+IF K$(1,6)<>FIRM$+T0$ THEN GOTO END_FIND_CSM13
+READ (CSM13)C0$,C1$
+IF C1$(1,3)<>T1$ THEN GOTO CSM13KEY
+LET FOUND$="Y",EXC$=EXC$+C1$(4,3)+NL$; GOTO CSM13KEY
+END_FIND_CSM13: RETURN
+
+IVM02_PRICE: 
+CALL "ec_open::IVM02"
+READ RECORD (IVM02,KEY=FIRM$+"01"+line_item$(2),DOM=*NEXT)IVM02$
+REM 'ivm02$ was dimmed in ec_open, so if not found, cur_price=0
+IF IVM02.CUR_PRICE THEN LET price=IVM02.CUR_PRICE,T_PRICE[l]=price*QTY
+CLOSE (IVM02)
+RETURN

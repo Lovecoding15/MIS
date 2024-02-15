@@ -1,0 +1,24 @@
+Table Definition Module
+PQY_INACTIVE_PAR - Inactive Partners
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+PQY_INACTIVE_PAR^/mnt/data/aon_prod/apps/partnerqueries/;^ACUS;AREC;ASIZ;BSHO;^^Output Partners               OUTPM;^Inactive Partners^Inactive Partners^^^^^^^^S^^^^^^A;N;P;U;V;^pqy_inactive_query.src^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+INACTIVE_DATE^PQY_INACTIVE_PAR^001^C^^3001^ind_inactive_date^0^^^1^^N^^^C^^PQY_DATE^Date^Last Sale <=^Date^C^1^D^^^^0^-5^^^^^^^^^^^^^^^^^^8^^^^00/00/0000^^^^^^^0^^^^^^^^Y^
+PARTNER_TYPE^PQY_INACTIVE_PAR^002^C^^3002^lbn_partner_type^0^^^2^^N^/mnt/data/aon_prod/apps/partnerqueries/;^AMOD;^^^PQY_PARTNER_TYPE^Partner Type^Partner Type^Partner Type^C^^L^^^^0^^^^^^^^^^^^^^^^^Resellers                                                       ~RS                  ;Partners, Bronze                                                ~PB                  ;Partners, Silver                                                ~PS                  ;Partners, Gold                                                  ~PG                  ;Third Pary Resellers                                            ~3RD                 ;Dist/Reseller Int'l                                             ~DRI                 ;Int'l Distributor                                               ~DSI                 ;End User                                                        ~EU                  ;Int'l End User                                                  ~EUI                 ;Major Acct End User                                             ~EUM                 ;Member - Bronze                                                 ~MB                  ;Member - Gold                                                   ~MG                  ;Member - Silver                                                 ~MS                  ;OEM                                                             ~OEM                 ;Partner, Int'l Bronze                                           ~PBI                 ;Partner, Int'l Gold                                             ~PGI                 ;Partners, Platinum                                              ~PP                  ;Partner, Int'l Platinum                                         ~PPI                 ;Partner, Int'l Silver                                           ~PSI                 ;Reseller International                                          ~RSI                 ;^^3^^^^^^^^^^^0^^^^^^^^Y^
+PARTNER_TYPES^PQY_INACTIVE_PAR^003^C^^3003^ine_partner_types^0^^^3^^N^^^^^PQY_TEXT_30^Text 30^Partner Types^Text 30^C^^E^^^^0^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^^^^^^^^Y^
+NUM_USERS^PQY_INACTIVE_PAR^004^C^^3004^inn_num_users^0^^^4^^N^^^^^PQY_NUM_USERS^Number of Users^Users^Number of Users^N^^n^^^^0^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^0^^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+PQY_INACTIVE_PAR^PRIMARY^^^^
+{KeyDefsEnd}
+{GridCols}
+001PQY_INACTIVE_PAR.INACTIVE_DATE          ;002PQY_INACTIVE_PAR.PARTNER_TYPE           ;003PQY_INACTIVE_PAR.PARTNER_TYPES          ;004PQY_INACTIVE_PAR.NUM_USERS              ;
+{GridColsEnd}

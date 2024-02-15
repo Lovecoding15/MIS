@@ -1,0 +1,31 @@
+call "ec_open::ARM02"
+call "ec_open::TMM01"
+txt=unt
+open(txt)"sls_chg.csv"
+default$="104"
+firm$="01"
+
+while 1
+
+read (txt,end=*break)text$
+p=pos(","=text$
+if p=0 then continue
+cust$=text$(1,p-1)
+new$=cvs(text$(p+1),3)
+if new$="" then new$=default$
+k$=firm$+cust$+"  "
+
+readrecord (arm02,key=k$)arm02$
+arm02.slspsn_code$=new$
+arm02$=field(arm02$)
+writerecord(arm02,key=k$)arm02$
+
+k$=firm$+cust$+"000000"
+readrecord (tmm01,key=k$)tmm01$
+tmm01.slsperson$=new$
+tmm01$=field(tmm01$)
+writerecord(tmm01,key=k$)tmm01$
+
+wend
+
+end

@@ -1,0 +1,1611 @@
+[Program]
+Creation Date=2007-03-22
+Creation Time=17:6:52
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2020-06-10
+Last Build Time=15:34:17
+Precision=99
+Program Name=ec_eu_edit
+Remarks=Yes
+Resource File=ec_eu_edit.arc
+Show Forms=All
+
+[EOJ]
+gosub show_callersWindow
+
+ourWindow!.destory()
+
+[Init]
+rem ' get our inteface objects
+ourAPI!=BBjAPI()
+ourSysGui!=ourAPI!.getSysGui()
+ourSystemMetrics!=ourSysGui!.getSystemMetrics()
+scrDimension!=ourSystemMetrics!.getScreenSize()
+ourContext=gb__win.end_user_edit
+ourWindow!=ourSysGui!.getWindow(ourContext)
+topLevelWindow!=cast(BBjTopLevelWindow, ourSysGui!.getWindow(ourContext))
+blankWindow! = ourSysGui!.getWindow(gb__win.blankWindow)
+rem ' callersWindow!=ourSysGui!.getWindow(gb__arg.callersContext)
+
+firmId!=gb__arg.firm_id$
+customerNbr!=gb__arg.customer_nbr$
+lang!=gb__arg.lang$
+endUserSerialNbrs!=ourAPI!.makeVector()
+
+rem ' if running in BUI disable the download button
+rem ' added back 4/21/2011
+rem ' if info(3,6) = "5" then
+rem '    ourWindow!.getControl("download").setEnabled(0)
+rem ' fi
+
+gosub prep_files
+
+ourDbUrl! = FNgetDbUrl!(props!)
+logger! = new EndUserLogger(ourDbUrl!)
+marCommUpdater! = new EuMarCommUpdater(ourDBUrl!)
+
+translator!.translateWindow(ourWindow!)
+
+ourWindow!.setText(ourWindow!.getText() + " - " + gb__arg.customer_nbr$)
+gosub center_window
+ourWindow!.setVisible(1)
+ourWindow!.focus()
+
+rem ' hide the caller's Window
+rem ' the caller handles itself now 
+rem ' callersWindow!.setVisible(0)
+
+rem ' set cursor to hour glass
+ourWindow!.setCursor(3)
+
+gosub get_objects
+
+rem ' controls the order of the end user select list
+usingCompanyOrder=1
+
+rem ' load the lists for the selection boxes
+gosub get_country_list
+gosub get_industry_list
+gosub get_end_user_list
+gosub get_product_list
+gosub get_state_list
+gosub load_unlinked_serial_nbrs
+
+rem ' set cursor to pointer
+ourWindow!.setCursor(0)
+cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+gosub clear_form
+if formCleared then
+    gosub show_callersWindow
+    goto gb__eoj
+fi
+
+[Event Win=101 ID=100 Code=e <EDIT_CHANGE> (W101_C100_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+[Event Win=101 ID=101 Code=B <PUSH_BUTTON> (W101_C101_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+enteredSerialNumber$=""
+enteredSerialNumber$=cvs(cast(BBjEditBox, controls!.get("serialNumber")).getText(),4)
+
+if enteredSerialNumber$<>"" then
+    gosub find_serial_number
+fi
+enteredSerialNumber$=""
+
+[Event Win=101 ID=102 Code=N2:19 <LIST_SELECT> (W101_C102_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+selected = cast(BBjListButton, controls!.get("existingList")).getSelectedIndex()
+
+if usingCompanyOrder then
+    endUserNbr$=FNgetSelectedEndUserNbr$(endUserValueListComp$,selected)
+else
+    endUserNbr$=FNgetSelectedEndUserNbr$(endUserValueListRef$,selected)
+fi
+
+gosub retrieve_and_load_enduser
+
+[Event Win=101 ID=103 Code=e <EDIT_CHANGE> (W101_C103_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=104 Code=e <EDIT_CHANGE> (W101_C104_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=105 Code=e <EDIT_CHANGE> (W101_C105_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=106 Code=e <EDIT_CHANGE> (W101_C106_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=107 Code=e <EDIT_CHANGE> (W101_C107_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=108 Code=e <EDIT_CHANGE> (W101_C108_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=109 Code=e <EDIT_CHANGE> (W101_C109_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=110 Code=e <EDIT_CHANGE> (W101_C110_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=111 Code=N2:19 <LIST_SELECT> (W101_C111_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=112 Code=e <EDIT_CHANGE> (W101_C112_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=113 Code=N2:19 <LIST_SELECT> (W101_C113_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=114 Code=e <EDIT_CHANGE> (W101_C114_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=115 Code=e <EDIT_CHANGE> (W101_C115_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=116 Code=N2:19 <LIST_SELECT> (W101_C116_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+idx=cast(BBjListButton, controls!.get("Industry")).getSelectedIndex()
+selIndustry$=cast(BBjListButton, controls!.get("Industry")).getItemAt(idx)
+
+if selIndustry$="Other" then
+    cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(1)
+else
+    cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(0)
+    cast(BBjEditBox, controls!.get("OtherDesc")).setText("")
+fi
+
+[Event Win=101 ID=117 Code=e <EDIT_CHANGE> (W101_C117_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=118 Code=N2:19 <LIST_SELECT> (W101_C118_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=119 Code=e <EDIT_CHANGE> (W101_C119_EDIT_CHANGE)]
+rem ' Text control was modified
+rem ' gb__event! = cast(BBjEditModifyEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=120 Code=c0 <CHECK_OFF> (W101_C120_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=120 Code=c1 <CHECK_ON> (W101_C120_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=121 Code=c0 <CHECK_OFF> (W101_C121_CHECK_OFF)]
+rem ' Control unchecked (OFF)
+rem ' gb__event! = cast(BBjCheckOffEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=121 Code=c1 <CHECK_ON> (W101_C121_CHECK_ON)]
+rem ' Control checked (ON)
+rem ' gb__event! = cast(BBjCheckOnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=123 Code=B <PUSH_BUTTON> (W101_C123_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub add_serial_numbers
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=124 Code=B <PUSH_BUTTON> (W101_C124_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub remove_serial_numbers
+
+rem ' set the form dirty
+gosub set_form_dirty
+
+[Event Win=101 ID=127 Code=B <PUSH_BUTTON> (W101_C127_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub clear_form
+
+[Event Win=101 ID=128 Code=B <PUSH_BUTTON> (W101_C128_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub save_form
+
+[Event Win=101 ID=152 Code=B <PUSH_BUTTON> (W101_C152_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub toggle_select_list_order
+
+[Event Win=101 ID=155 Code=B <PUSH_BUTTON> (W101_C155_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gb__arg.callersContext=ourWindow!.getContextID()
+callingWindow! = BBjAPI().getSysGui().getWindow(gb__arg.callersContext)
+callingWindow!.setVisible(0)
+
+call "ec_man_eu.bbj",gb__arg$
+
+rem ' show this calling window again, forcing a repaint
+blankcontext = gb__win.blankWindow
+tempWindow! = BBjAPI().getSysGui().getWindow(blankcontext)
+tempWindow!.setVisible(1)
+tempWindow!.setVisible(0)
+callingWindow!.setVisible(1)
+callingWindow!.focus()
+
+gosub get_end_user_list
+gosub load_unlinked_serial_nbrs
+
+[Event Win=101 ID=156 Code=B <PUSH_BUTTON> (W101_C156_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub clear_form
+if formCleared then
+    gosub show_callersWindow
+    goto gb__eoj
+fi
+
+[Event Win=101 ID=162 Code=B <PUSH_BUTTON> (W101_C162_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' adding a specific serial number
+
+addSN$ = cvs(cast(BBjEditBox, controls!.get("specificSerialNbr")).getText(),3)
+rem ' serial numbers are 9 bytes
+if len(addSN$) <> 9 then return
+
+wrkVector2!=cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).getAllItems()
+
+added = 0
+if wrkVector2!.size() then
+    for x = 0 to wrkVector2!.size()-1
+        wrkString$=cast(BBjString, wrkVector2!.getItem(x))
+        if wrkString$ = addSN$ then
+            cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).selectIndex(x)
+            gosub add_serial_numbers
+            cast(BBjEditBox, controls!.get("specificSerialNbr")).setText("")
+            added = 1
+            break
+        fi
+    next x
+fi
+if !added then
+    xresp = msgbox(addSN$ + " not found.",0,"Not Found")
+fi
+
+
+[Function (Declarations)]
+rem ' -----------------------------------------------------------------rem ' Declarationsrem ' -----------------------------------------------------------------
+
+Declarations:
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+USE java.util.HashMap
+USE java.awt.Dimension
+USE ::LanguageTranslator.src::LanguageTranslator
+USE ::EndUserLogger.src::EndUserLogger
+USE ::EuMarCommUpdater.src::EuMarCommUpdater
+
+rem ' general objects
+DECLARE BBjAPI ourAPI!
+DECLARE BBjSysGui ourSysGui!
+DECLARE BBjWindow ourWindow!
+DECLARE BBjTopLevelWindow topLevelWindow!
+rem ' DECLARE BBjWindow callersWindow!
+DECLARE BBjWindow blankWindow!
+DECLARE BBjAppletProxy applet!
+DECLARE BBjSystemMetrics ourSystemMetrics!
+DECLARE BBjFileInfo snmeuFileInfo!
+DECLARE BBjVector wrkVector1!
+DECLARE BBjVector wrkVector2!
+DECLARE BBjVector endUserSerialNbrs!
+DECLARE BBjInt index!
+DECLARE BBjString lang!
+
+rem ' control objects
+DECLARE BBjVector ourControlVector!
+DECLARE BBjControl control!
+
+rem ' SQL objects
+DECLARE BBjRecordSet ourRecordSet!
+DECLARE BBjRecordData ourRecordData!
+DECLARE BBjVector currentListBoxItems!
+DECLARE BBjListBox unlinkedSerialNbrs!
+DECLARE BBjString ourDbUrl!
+DECLARE BBjString udfSql!
+DECLARE BBjString sql!
+DECLARE BBjString firmId!
+DECLARE BBjString customerNbr!
+DECLARE BBjString serialNbr!
+DECLARE BBjString firmIdTarget!
+DECLARE BBjString customerNbrTarget!
+DECLARE BBjString serialNbrTarget!
+DECLARE BBjTemplatedString snmeu!
+
+DECLARE File file!
+DECLARE FileInputStream fis!
+DECLARE BufferedInputStream bis!
+DECLARE Properties props!
+DECLARE StringBuffer sqlBuilder!
+DECLARE StringBuffer wrkBuilder!
+DECLARE StringBuffer wrkBuilder2!
+DECLARE HashMap Controls!
+DECLARE LanguageTranslator translator!
+DECLARE Dimension scrDimension!
+DECLARE EndUserLogger logger!
+DECLARE EuMarCommUpdater marCommUpdater!
+
+return
+
+[Function (add_serial_numbers)]
+rem ' -----------------------------------------------------------------rem ' add_serial_numbersrem ' -----------------------------------------------------------------
+
+add_serial_numbers:
+
+wrkVector1!=cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).getSelectedIndices()
+wrkVector2!=cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).getAllItems()
+
+if wrkVector1!.size() then
+    for x = 0 to wrkVector1!.size()-1
+        index!=cast(BBjInt, wrkVector1!.getItem(x))
+        wrkString$=cast(BBjString, wrkVector2!.getItem(index!))
+        if endUserSerialNbrs!.size() > 0 then
+            rem ' put it in the right order
+            inserted=0
+            for y = 0 to endUserSerialNbrs!.size()-1
+                targetStr$=cast(BBjString, endUserSerialNbrs!.getItem(y))
+                if wrkString$ <= targetStr$ then
+                    endUserSerialNbrs!.insertItem(y, wrkString$)
+                    inserted=1
+                    break
+                fi
+            next y
+            if !inserted then
+                endUserSerialNbrs!.insertItem(endUserSerialNbrs!.size(), wrkString$)
+            fi
+        else
+            endUserSerialNbrs!.addItem(wrkString$)
+        fi
+    next x
+
+    rem ' remove the serial numbers
+    for x = wrkVector1!.size()-1 to 0 step -1
+        index!=cast(BBjInt, wrkVector1!.getItem(x))
+        wrkVector2!.removeItem(index!)
+    next x
+    cast(BBjListBox, controls!.get("LinkedSerialNbrs")).removeAllItems()
+    cast(BBjListBox, controls!.get("LinkedSerialNbrs")).insertItems(0, endUserSerialNbrs!)
+    cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).removeAllItems()
+    cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).insertItems(0, wrkVector2!)
+    formDirty=1
+fi
+
+return
+
+[Function (center_window)]
+rem ' -----------------------------------------------------------------rem ' center_windowrem ' -----------------------------------------------------------------
+
+center_window:
+
+rem ' this app is strictly BUI now
+return
+
+rem are we running as an applet
+if info(3,6)="2" then
+    topLevelWindow!.setTitleBarVisible(0)
+    applet!=ourAPI!.getAppletProxy()
+    applet!.setBounds(0,0,525,600)
+else
+    width = scrDimension!.width
+    height = scrDimension!.height
+    winWidth = ourWindow!.getWidth()
+    winHeight = ourWindow!.getHeight()
+
+    x = int((width-winWidth)/2)
+    y = int((height-winHeight)/2)
+
+    ourWindow!.setLocation(x,y)
+fi
+
+return
+
+[Function (check_form)]
+rem ' -----------------------------------------------------------------
+rem ' check_form
+rem ' -----------------------------------------------------------------
+
+check_form:
+
+rem the purpose of this routine is to decide if the form is dirty, but only
+rem dirty because the user has added a serial number to the linked serial 
+rem number listbox
+
+preserveSerialNbr=0
+
+rem if the form is not dirty return
+if !formDirty then return
+
+rem if no serial numbers linked return
+let gotSerialNbrs = cast(BBjListBox, controls!.get("LinkedSerialNbrs")).getItemCount()
+if gotSerialNbrs = 0 then return
+
+rem ok the form is dirty and we have serial numbers
+rem everything else must be empty
+
+if cvs(cast(BBjEditBox, controls!.get("endUserNbr")).getText(),3)<>"" then return
+
+if cvs(cast(BBjEditBox, controls!.get("referenceNbr")).getText(),3)<>"" then return
+if cvs(cast(BBjEditBox, controls!.get("CompName")).getText(),3)<>"" then return
+if cvs(cast(BBjEditBox, controls!.get("ContactName")).getText(),3)<>"" then return
+if cvs(cast(BBjEditBox, controls!.get("ContactPhone")).getText(),3)<>"" then return
+if cvs(cast(BBjEditBox, controls!.get("AddrLnOne")).getText(),3)<>"" then return
+if cvs(cast(BBjEditBox, controls!.get("AddrLnTwo")).getText(),3)<>"" then return
+if cvs(cast(BBjEditBox, controls!.get("AddrLnThree")).getText(),3)<>"" then return
+if cvs(cast(BBjEditBox, controls!.get("City")).getText(),3)<>"" then return
+
+if cast(BBjListButton, controls!.get("State")).getSelectedIndex() > -1 then return
+
+if cvs(cast(BBjEditBox, controls!.get("PostalCode")).getText(),3)<>"" then return
+
+if cast(BBjListButton, controls!.get("Country")).getSelectedIndex() > -1 then return
+
+if cvs(cast(BBjEditBox, controls!.get("EmailAddress")).getText(),3)<>"" then return
+if cvs(cast(BBjEditBox, controls!.get("PhoneNumber")).getText(),3)<>"" then return
+
+if cast(BBjListButton, controls!.get("Industry")).getSelectedIndex() > -1 then return
+
+if cvs(cast(BBjEditBox, controls!.get("OtherDesc")).getText(),3)<>"" then return
+
+if cast(BBjListButton, controls!.get("BasisProduct")).getSelectedIndex() > -1 then return
+
+if cvs(cast(BBjCEdit, controls!.get("AppModulesUsed")).getText(),3)<>"" then return
+
+
+if cast(BBjCheckBox, controls!.get("Advantage")).isSelected() then return
+if cast(BBjCheckBox, controls!.get("Announcements")).isSelected() then return
+
+rem the form is dirty only because we started with an empty form and
+rem added a serialNbr
+msg$=translator!.getMessage("merge.serialNbrs.question")
+title$=translator!.getMessage("merge.serialNbrs.quesiton.title")
+response=msgbox(msg$, 4+32, title$)
+if response=6 then preserveSerialNbr=1
+
+return
+
+[Function (clear_form)]
+rem ' -----------------------------------------------------------------rem ' clear_formrem ' -----------------------------------------------------------------
+
+clear_form:
+
+formCleared=1
+
+rem ' need to ask if save needed when dirty flag set
+if formDirty then
+    msg$=translator!.getMessage("save.question")
+    title$=translator!.getMessage("save.quesiton.title")
+    response=msgbox(msg$, 4+32, title$)
+    if response=6 then
+        gosub save_form
+        if !isValid then
+            formCleared=0
+            return
+        fi
+    fi
+fi
+
+formDirty=0
+
+ourWindow!.setCursor(3)
+
+cast(BBjListButton, controls!.get("existingList")).deselect()
+cast(BBjEditBox, controls!.get("serialNumber")).setText("")
+cast(BBjEditBox, controls!.get("endUserNbr")).setText("")
+cast(BBjEditBox, controls!.get("referenceNbr")).setText("")
+cast(BBjEditBox, controls!.get("CompName")).setText("")
+cast(BBjEditBox, controls!.get("ContactName")).setText("")
+cast(BBjEditBox, controls!.get("ContactPhone")).setText("")
+cast(BBjEditBox, controls!.get("AddrLnOne")).setText("")
+cast(BBjEditBox, controls!.get("AddrLnTwo")).setText("")
+cast(BBjEditBox, controls!.get("AddrLnThree")).setText("")
+cast(BBjEditBox, controls!.get("City")).setText("")
+cast(BBjListButton, controls!.get("State")).deselect()
+cast(BBjEditBox, controls!.get("PostalCode")).setText("")
+cast(BBjListButton, controls!.get("Country")).deselect()
+cast(BBjEditBox, controls!.get("EmailAddress")).setText("")
+cast(BBjEditBox, controls!.get("PhoneNumber")).setText("")
+cast(BBjListButton, controls!.get("Industry")).deselect()
+cast(BBjEditBox, controls!.get("OtherDesc")).setText("")
+cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(0)
+cast(BBjListButton, controls!.get("BasisProduct")).deselect()
+cast(BBjCEdit, controls!.get("AppModulesUsed")).setText("")
+cast(BBjCheckBox, controls!.get("Advantage")).setSelected(0)
+cast(BBjCheckBox, controls!.get("Announcements")).setSelected(0)
+cast(BBjListBox, controls!.get("LinkedSerialNbrs")).removeAllItems()
+cast(BBjEditBox, controls!.get("specificSerialNbr")).setText("")
+endUserSerialNbrs!.clear()
+gosub load_unlinked_serial_nbrs
+cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).deselectAll()
+
+cast(BBjStaticText, controls!.get("compNameReq")).setVisible(0)
+cast(BBjStaticText, controls!.get("countryReq")).setVisible(0)
+cast(BBjStaticText, controls!.get("emailReq")).setVisible(0)
+cast(BBjStaticText, controls!.get("emailFlag")).setVisible(0)
+
+ourWindow!.setCursor(0)
+cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+
+return
+
+[Function (find_serial_number)]
+rem ' -----------------------------------------------------------------
+rem ' find_serial_number
+rem ' -----------------------------------------------------------------
+
+find_serial_number:
+
+rem ' serial number in enteredSerialNumber$
+
+ourDbUrl! = FNgetDbUrl!(props!)
+sql!=FNgetFindSerialNumberQuery!(props!)
+sql!=FNinsertSerialNumber!(sql!, enteredSerialNumber$)
+ourRecordSet!=ourAPI!.createSQLRecordSet(ourDbUrl!,"",sql!)
+
+if ourRecordSet!.isEmpty() then
+    msg$=translator!.getMessage("nonexistant.serialNbr")
+    title$=translator!.getMessage("nonexistant.serialNbr.title")
+    response=msgbox(msg$, 64, title$)
+    cast(BBjEditBox, controls!.get("serialNumber")).setText("")
+else
+    rem ' if it is not empty then the serial number is there, is it linked
+    tempSerNbr$=enteredSerialNumber$+FILL(20," "), tempSerNbr$=tempSerNbr$(1,20)
+    dim snmel$:fattr(snmel$)
+    read record(snmel,key=tempSerNbr$,knum=0,dom=*next)snmel$
+    if cvs(snmel.end_user_nbr$,3) <> "" then
+        rem ' we got an end user
+        gosub clear_form
+        if formCleared then
+            endUserNbr$=snmel.end_user_nbr$
+            gosub retrieve_and_load_enduser
+            cast(BBjEditBox, controls!.get("serialNumber")).setText("")
+        fi
+    else
+        rem ' have an unlinked serial number
+        msg$=translator!.getMessage("unlinked.serialNbr")
+        title$=translator!.getMessage("unlinked.serialNbr.title")
+        response=msgbox(msg$, 4+32, title$)
+        if response=6 then
+            gosub clear_form
+            if formCleared then
+                cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).deselectAll()
+                wrkVector2!=cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).getAllItems()
+                if wrkVector2!.size() then
+                    for x = 0 to wrkVector2!.size()-1
+                        wrkString$=cast(BBjString, wrkVector2!.getItem(x))
+                        if wrkString$=cvs(tempSerNbr$,3) then
+                            cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).selectIndex(x)
+                            gosub add_serial_numbers
+                            cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+                            break
+                        fi
+                    next x
+                fi
+                cast(BBjEditBox, controls!.get("serialNumber")).setText("")
+            fi
+        else
+            cast(BBjEditBox, controls!.get("serialNumber")).setText("")
+        fi
+    fi
+fi
+
+return
+
+[Function (get_country_list)]
+rem ' -----------------------------------------------------------------rem ' get_country_listrem ' -----------------------------------------------------------------
+
+get_country_list:
+
+ourDbUrl! = FNgetDbUrl!(props!)
+
+sql!=FNgetCountriesQuery!(props!)
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(ourDbUrl!,"",sql!)
+
+countrylist$=""
+
+if !(ourRecordSet!.isEmpty()) then
+
+    ourRecordSet!.first()
+    
+    wrkBuilder! = new StringBuffer()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+
+        wrkBuilder!.append(cvs(thisRecord!.getFieldValue("COUNTRY_NAME"),3)+$0a$)
+
+        ourRecordSet!.next(err=*break)
+
+    wend
+    countryList$=wrkBuilder!.toString()
+fi
+ourRecordSet!.close()
+
+cast(BBjListButton, controls!.get("Country")).insertItems(0, countryList$)
+cast(BBjListButton, controls!.get("Country")).deselect()
+
+return
+
+[Function (get_end_user_list)]
+rem ' -----------------------------------------------------------------rem ' get_end_user_listrem ' -----------------------------------------------------------------
+
+get_end_user_list:
+
+cast(BBjListButton, controls!.get("existingList")).removeAllItems()
+
+ourDbUrl! = FNgetDbUrl!(props!)
+sql!=FNgetEndUserLstQuery!(props!)
+
+byCompanyNameSQL$=sql!+props!.getProperty("endUserList.orderByCompany")
+byReferenceNbrSQL$=sql!+props!.getProperty("endUserList.orderByReferenceNbr")
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(ourDbUrl!,"",byCompanyNameSQL$)
+endUserListCount=0
+endUserDisplayListComp$="", endUserValueListComp$=""
+endUserDisplayListRef$="", endUserValueListRef$=""
+
+if !(ourRecordSet!.isEmpty()) then
+    
+    ourRecordSet!.first()
+    wrkBuilder! = new StringBuffer()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+
+        wrkBuilder!.append(cvs(thisRecord!.getFieldValue("COMPANY_NAME"),3))
+        
+        if cvs(thisRecord!.getFieldValue("CONTACT"),3)<>"" then
+            wrkBuilder!.append(", "+cvs(thisRecord!.getFieldValue("CONTACT"),3))
+        fi
+        
+        if cvs(thisRecord!.getFieldValue("REFERENCE_NBR"),3)<>"" then
+            wrkBuilder!.append(", "+cvs(thisRecord!.getFieldValue("REFERENCE_NBR"),3))
+        fi
+
+        wrkBuilder!.append(" ("+str(num(cvs(thisRecord!.getFieldValue("END_USER_NBR"),3)))+")" + $0A$)
+
+        endUserValueListComp$=endUserValueListComp$+cvs(thisRecord!.getFieldValue("END_USER_NBR"),3)+$0A$
+        endUserListCount=endUserListCount+1
+        ourRecordSet!.next(err=*break)
+
+    wend
+    endUserDisplayListComp$=wrkBuilder!.toString()
+fi
+ourRecordSet!.close()
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(ourDbUrl!,"",byReferenceNbrSQL$)
+
+if !(ourRecordSet!.isEmpty()) then
+    
+    ourRecordSet!.first()
+    wrkBuilder! = new StringBuffer()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+        
+        wrk$=cvs(thisRecord!.getFieldValue("REFERENCE_NBR"),3)
+        if wrk$="" then wrk$="No Number"
+        wrkBuilder!.append(wrk$)
+        
+        if cvs(thisRecord!.getFieldValue("COMPANY_NAME"),3)<>"" then
+            wrkBuilder!.append(", "+cvs(thisRecord!.getFieldValue("COMPANY_NAME"),3))
+        fi
+        
+        if cvs(thisRecord!.getFieldValue("CONTACT"),3)<>"" then
+            wrkBuilder!.append(", "+cvs(thisRecord!.getFieldValue("CONTACT"),3))
+        fi
+
+        wrkBuilder!.append(" ("+str(num(cvs(thisRecord!.getFieldValue("END_USER_NBR"),3)))+")" + $0A$)
+
+        endUserValueListRef$=endUserValueListRef$+cvs(thisRecord!.getFieldValue("END_USER_NBR"),3)+$0A$
+        ourRecordSet!.next(err=*break)
+
+    wend
+    endUserDisplayListRef$=wrkBuilder!.toString()
+fi
+ourRecordSet!.close()
+
+if usingCompanyOrder then
+    cast(BBjListButton, controls!.get("existingList")).insertItems(0, endUserDisplayListComp$)
+else
+    cast(BBjListButton, controls!.get("existingList")).insertItems(0, endUserDisplayListRef$)
+fi
+
+cast(BBjListButton, controls!.get("existingList")).deselect()
+
+return
+
+[Function (get_industry_list)]
+rem ' -----------------------------------------------------------------rem ' get_industry_listrem ' -----------------------------------------------------------------
+
+get_industry_list:
+
+ourDbUrl! = FNgetDbUrl!(props!)
+
+sql!=FNgetIndustriesQuery!(props!)
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(ourDbUrl!,"",sql!)
+
+industrylist$=""
+industryIdList$=""
+otherIndustryID$=""
+
+if !(ourRecordSet!.isEmpty()) then
+
+    ourRecordSet!.first()
+    
+    wrkBuilder! = new StringBuffer()
+    wrkBuilder2! = new StringBuffer()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+        wrkStr$=cvs(thisRecord!.getFieldValue("INDUSTRY_NAME"),3)
+        wrkStr2$=cvs(thisRecord!.getFieldValue("INDUSTRY_ID"),3)
+        if wrkStr$="Other" then
+            otherIndustryID$=wrkStr2$
+        fi
+        wrkBuilder!.append(wrkStr$+$0a$)
+        wrkBuilder2!.append(wrkStr2$+$0a$)
+        ourRecordSet!.next(err=*break)
+
+    wend
+    industryList$=wrkBuilder!.toString()
+    industryIdList$=wrkBuilder2!.toString()
+fi
+ourRecordSet!.close()
+
+cast(BBjListButton, controls!.get("Industry")).insertItems(0, industryList$)
+cast(BBjListButton, controls!.get("Industry")).deselect()
+
+return
+
+[Function (get_objects)]
+rem ' -----------------------------------------------------------------rem ' get_objectsrem ' -----------------------------------------------------------------
+
+get_objects:
+
+ourControlVector! = ourWindow!.getAllControls()
+controls! = new HashMap()
+
+for i=0 to ourControlVector!.size() - 1
+    control!= cast(BBjControl, ourControlVector!.getItem(i))
+    controls!.put(control!.getName(), control!)
+next i
+
+return
+
+[Function (get_product_list)]
+rem ' -----------------------------------------------------------------rem ' get_product_listrem ' -----------------------------------------------------------------
+
+get_product_list:
+
+ourDbUrl! = FNgetDbUrl!(props!)
+
+sql!=FNgetBasisProdListQuery!(props!)
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(ourDbUrl!,"",sql!)
+
+basisProdList$=""
+
+if !(ourRecordSet!.isEmpty()) then
+
+    ourRecordSet!.first()
+    
+    wrkBuilder! = new StringBuffer()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+
+        wrkBuilder!.append(cvs(thisRecord!.getFieldValue("DESCRIPTION"),3)+$0a$)
+
+        ourRecordSet!.next(err=*break)
+
+    wend
+    basisProdList$=wrkBuilder!.toString()
+fi
+ourRecordSet!.close()
+
+basisProdList$=basisProdList$+"Uses several products"+$0a$
+
+cast(BBjListButton, controls!.get("BasisProduct")).insertItems(0, basisProdList$)
+cast(BBjListButton, controls!.get("BasisProduct")).deselect()
+
+return
+
+[Function (get_state_list)]
+rem ' -----------------------------------------------------------------rem ' get_state_listrem ' -----------------------------------------------------------------
+
+get_state_list:
+
+ourDbUrl! = FNgetDbUrl!(props!)
+
+sql!=FNgetStatesQuery!(props!)
+
+ourRecordSet!=ourAPI!.createSQLRecordSet(ourDbUrl!,"",sql!)
+
+stateList$=""
+
+if !(ourRecordSet!.isEmpty()) then
+
+    ourRecordSet!.first()
+    
+    wrkBuilder! = new StringBuffer()
+
+    while 1
+        thisRecord!=ourRecordSet!.getCurrentRecordData()
+
+        wrkBuilder!.append(cvs(thisRecord!.getFieldValue("STATE_CODE"),3)+$0a$)
+
+        ourRecordSet!.next(err=*break)
+
+    wend
+    stateList$=wrkBuilder!.toString()
+fi
+ourRecordSet!.close()
+
+cast(BBjListButton, controls!.get("State")).insertItems(0, stateList$)
+cast(BBjListButton, controls!.get("State")).deselect()
+
+return
+
+[Function (load_unlinked_serial_nbrs)]
+rem ' -----------------------------------------------------------------rem ' load_unlinked_serial_nbrsrem ' -----------------------------------------------------------------
+
+load_unlinked_serial_nbrs:
+
+ourWindow!.setCursor(3)
+
+cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).removeAllItems()
+ourDbUrl! = FNgetDbUrl!(props!)
+sql!=FNgetUnlinkedSerialNbrsQuery!(props!)
+ourRecordSet!=ourAPI!.createSQLRecordSet(ourDbUrl!,"",sql!)
+
+recordSetCount = ourRecordSet!.getRecordCount()
+
+currentListBoxItems! = ourAPI!.makeVector()
+
+ourRecordSet!.first(err=*next)
+if recordSetCount = 0 then
+    return
+else
+    while 1
+        ourRecordData! = ourRecordSet!.getCurrentRecordData()
+        currentListBoxItems!.addItem(cvs(ourRecordData!.getFieldValue("SERIAL_NBR"),3))
+        ourRecordSet!.next(err = *break)
+    wend
+    cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).insertItems(0, currentListBoxItems!)
+fi
+
+ourWindow!.setCursor(0)
+
+
+return
+
+[Function (prep_files)]
+rem ' -----------------------------------------------------------------rem ' prep_filesrem ' -----------------------------------------------------------------
+
+prep_files:
+
+csm01=gb__arg.csm01
+CALL "templates.pgm::CSM01"
+
+states=gb__arg.states
+CALL "templates.pgm::STATES"
+
+country=gb__arg.country
+CALL "templates.pgm::COUNTRY"
+
+snmeu=gb__arg.snmeu
+CALL "templates.pgm::SNMEU"
+snmeuFileInfo!=ourAPI!.getFileSystem().getFileInfo(snmeu)
+
+snmel=gb__arg.snmel
+CALL "templates.pgm::SNMEL"
+
+translator! = new LanguageTranslator("ec_eu_edit."+lang!+".properties")
+
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+
+return
+
+[Function (remove_serial_numbers)]
+rem ' -----------------------------------------------------------------rem ' remove_serial_numbersrem ' -----------------------------------------------------------------
+
+remove_serial_numbers:
+
+wrkVector1!=cast(BBjListBox, controls!.get("LinkedSerialNbrs")).getSelectedIndices()
+wrkVector2!=cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).getAllItems()
+
+if wrkVector1!.size() then
+    for x = 0 to wrkVector1!.size()-1
+        index!=cast(BBjInt, wrkVector1!.getItem(x))
+        wrkString$=cast(BBjString, endUserSerialNbrs!.getItem(index!))
+        if wrkVector2!.size() > 0 then
+            rem ' put it in the right order
+            inserted=0
+            for y = 0 to wrkVector2!.size()-1
+                targetStr$=cast(BBjString, wrkVector2!.getItem(y))
+                if wrkString$ <= targetStr$ then
+                    wrkVector2!.insertItem(y, wrkString$)
+                    inserted=1
+                    break
+                fi
+            next y
+            if !inserted then
+                wrkVector2!.insertItem(wrkVector2!.size(), wrkString$)
+            fi
+        else
+            wrkVector2!.addItem(wrkString$)
+        fi
+    next x
+
+    rem ' remove the serial numbers
+    for x = wrkVector1!.size()-1 to 0 step -1
+        index!=cast(BBjInt, wrkVector1!.getItem(x))
+        endUserSerialNbrs!.removeItem(index!)
+    next x
+    cast(BBjListBox, controls!.get("LinkedSerialNbrs")).removeAllItems()
+    cast(BBjListBox, controls!.get("LinkedSerialNbrs")).insertItems(0, endUserSerialNbrs!)
+    cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).removeAllItems()
+    cast(BBjListBox, controls!.get("UnlinkedSerialNbrs")).insertItems(0, wrkVector2!)
+    formDirty=1
+fi
+
+
+return
+
+[Function (retrieve_and_load_enduser)]
+rem ' -----------------------------------------------------------------rem ' retrieve_and_load_enduserrem ' -----------------------------------------------------------------
+
+retrieve_and_load_enduser:
+
+ourWindow!.setCursor(3)
+
+rem check to see if the user added a serial number
+rem to a blank record
+gosub check_form
+if !preserveSerialNbr then
+    gosub clear_form
+    if !formCleared then
+        ourWindow!.setCursor(0)
+        return  
+    fi
+fi
+
+cast(BBjEditBox, controls!.get("endUserNbr")).setText(endUserNbr$)
+
+
+read record(snmeu,key=endUserNbr$)snmeu$
+
+rem ' get list of serial numbers linked to this end user
+if preserveSerialNbr then 
+    cast(BBjListBox, controls!.get("LinkedSerialNbrs")).removeAllItems()
+else
+    endUserSerialNbrs!.clear()
+fi
+read (snmel,key=snmeu.end_user_nbr$,knum=1,err=*next)
+while 1
+    read record(snmel,end=*break)snmel$
+    if snmel.end_user_nbr$<>snmeu.end_user_nbr$ then break
+    endUserSerialNbrs!.addItem(snmel.serial_nbr$)
+wend
+
+
+cast(BBjEditBox, controls!.get("referenceNbr")).setText(snmeu.reference_nbr$)
+cast(BBjEditBox, controls!.get("CompName")).setText(snmeu.company_name$)
+cast(BBjEditBox, controls!.get("ContactName")).setText(snmeu.contact$)
+cast(BBjEditBox, controls!.get("ContactPhone")).setText(snmeu.contact_phone$)
+cast(BBjEditBox, controls!.get("AddrLnOne")).setText(snmeu.addr_1$)
+cast(BBjEditBox, controls!.get("AddrLnTwo")).setText(snmeu.addr_2$)
+cast(BBjEditBox, controls!.get("AddrLnThree")).setText(snmeu.addr_3$)
+cast(BBjEditBox, controls!.get("City")).setText(snmeu.city$)
+
+stateIndex=FNgetIndex(snmeu.state$, statelist$)
+if stateIndex > -1 then
+    cast(BBjListButton, controls!.get("State")).selectIndex(stateIndex)
+else
+    cast(BBjListButton, controls!.get("State")).deselect()
+fi
+
+cast(BBjEditBox, controls!.get("PostalCode")).setText(snmeu.postal_code$)
+
+countryIndex=FNgetIndex(snmeu.country$, countryList$)
+if countryIndex > -1 then
+    cast(BBjListButton, controls!.get("Country")).selectIndex(countryIndex)
+else
+    cast(BBjListButton, controls!.get("Country")).deselect()
+fi
+
+cast(BBjEditBox, controls!.get("EmailAddress")).setText(snmeu.email_address$)
+cast(BBjEditBox, controls!.get("PhoneNumber")).setText(snmeu.phone_number$)
+
+theIndustry$=FNgetMathcingItem$(industryIdList$, industryList$, snmeu.industry$)
+industryIndex=FNgetIndex(theIndustry$, industryList$)
+if industryIndex > -1 then
+    cast(BBjListButton, controls!.get("Industry")).selectIndex(industryIndex)
+else
+    cast(BBjListButton, controls!.get("Industry")).deselect()
+fi
+
+cast(BBjEditBox, controls!.get("OtherDesc")).setText(snmeu.other_industry$)
+if theIndustry$="Other" then
+    cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(1)
+else
+    cast(BBjEditBox, controls!.get("OtherDesc")).setEnabled(0)
+    cast(BBjEditBox, controls!.get("OtherDesc")).setText("")
+fi
+
+basisProdIndex=FNgetIndex(snmeu.basis_prod$, basisProdList$)
+if basisProdIndex > -1 then
+    cast(BBjListButton, controls!.get("BasisProduct")).selectIndex(basisProdIndex)
+else
+    cast(BBjListButton, controls!.get("BasisProduct")).deselect()
+fi
+
+cast(BBjCEdit, controls!.get("AppModulesUsed")).setText(FNunescLf$(snmeu.app_modules_used$))
+
+if snmeu.advantage$="Y" then
+    cast(BBjCheckBox, controls!.get("Advantage")).setSelected(1)
+else
+    cast(BBjCheckBox, controls!.get("Advantage")).setSelected(0)
+fi
+
+if snmeu.announcements$="Y" then
+    cast(BBjCheckBox, controls!.get("Announcements")).setSelected(1)
+else
+    cast(BBjCheckBox, controls!.get("Announcements")).setSelected(0)
+fi
+
+cast(BBjListBox, controls!.get("LinkedSerialNbrs")).insertItems(0, endUserSerialNbrs!)
+
+cast(BBjListButton, controls!.get("existingList")).deselect()
+ourWindow!.setCursor(0)
+cast(BBjEditBox, controls!.get("referenceNbr")).focus()
+
+ourWindow!.setCursor(0)
+
+return
+
+[Function (save_form)]
+rem ' -----------------------------------------------------------------rem ' save_formrem ' -----------------------------------------------------------------
+
+save_form:
+
+rem ' validate the data we are saving
+gosub validate_form
+
+if isValid then
+    
+    dim snmeu$:fattr(snmeu$)
+
+    snmeu.end_user_nbr$=cvs(cast(BBjEditBox, controls!.get("endUserNbr")).getText(),3)
+    snmeu.reference_nbr$=cvs(cast(BBjEditBox, controls!.get("referenceNbr")).getText(),3)
+    snmeu.company_name$=cvs(cast(BBjEditBox, controls!.get("CompName")).getText(),3)
+    snmeu.contact$=cvs(cast(BBjEditBox, controls!.get("ContactName")).getText(),3)
+    snmeu.contact_phone$=cvs(cast(BBjEditBox, controls!.get("ContactPhone")).getText(),3)
+    snmeu.addr_1$=cvs(cast(BBjEditBox, controls!.get("AddrLnOne")).getText(),3)
+    snmeu.addr_2$=cvs(cast(BBjEditBox, controls!.get("AddrLnTwo")).getText(),3)
+    snmeu.addr_3$=cvs(cast(BBjEditBox, controls!.get("AddrLnThree")).getText(),3)
+    snmeu.city$=cvs(cast(BBjEditBox, controls!.get("City")).getText(),3)
+    
+    idx=cast(BBjListButton, controls!.get("State")).getSelectedIndex()
+    if idx > -1 then snmeu.state$=cast(BBjListButton, controls!.get("State")).getItemAt(idx)
+
+    snmeu.postal_code$=cvs(cast(BBjEditBox, controls!.get("PostalCode")).getText(),3)
+
+    idx=cast(BBjListButton, controls!.get("Country")).getSelectedIndex()
+    if idx > -1 snmeu.country$=cast(BBjListButton, controls!.get("Country")).getItemAt(idx)
+
+    snmeu.email_address$=cvs(cast(BBjEditBox, controls!.get("EmailAddress")).getText(),3)
+    snmeu.phone_number$=cvs(cast(BBjEditBox, controls!.get("PhoneNumber")).getText(),3)
+
+    idx=cast(BBjListButton, controls!.get("Industry")).getSelectedIndex()
+    if idx > -1 then
+        theIndustry$=cvs(cast(BBjListButton, controls!.get("Industry")).getItemAt(idx),3)
+        snmeu.industry$=FNgetMathcingItem$(industryList$, industryIDList$, theIndustry$)
+    fi
+
+    snmeu.other_industry$=cvs(cast(BBjEditBox, controls!.get("OtherDesc")).getText(),3)
+    
+    idx=cast(BBjListButton, controls!.get("BasisProduct")).getSelectedIndex()
+    if idx > -1 snmeu.basis_prod$=cast(BBjListButton, controls!.get("BasisProduct")).getItemAt(idx)
+
+    snmeu.app_modules_used$=FNescLf$(cvs(cast(BBjCEdit, controls!.get("AppModulesUsed")).getText(),3))
+
+    if cast(BBjCheckBox, controls!.get("Advantage")).isSelected() then
+        snmeu.advantage$="Y"
+    else
+        snmeu.advantage$="N"
+    fi
+
+    if cast(BBjCheckBox, controls!.get("Announcements")).isSelected() then
+        snmeu.announcements$="Y"
+    else
+        snmeu.announcements$="N"
+    fi
+
+    snmeu.firm_id$=firmId!
+    snmeu.customer_nbr$=customerNbr!
+
+    rem ' write the record getting a new end user number for new records by using the sequence
+    if cvs(snmeu.end_user_nbr$,3)<>"" then
+        rem ' we are writing an existing user
+        write record(snmeu)snmeu$
+        reloadEndUserList=0
+    else
+        ourDbUrl! = FNgetDbUrl!(props!)
+        thisdbUrl$=ourDbUrl!
+        hkey$=FNgetNextSequence$(props!,thisdburl$)
+        snmeu.end_user_nbr$=hkey$
+        write record(snmeu)snmeu$
+        reloadEndUserList=1
+    fi
+    rem update TMM03
+    snmeu! = ourAPI!.makeTemplatedString(fattr(snmeu$))
+    snmeu!.setString(snmeu$)
+    marCommUpdater!.updateMarComm(snmeu!)
+
+    rem ' update the current links
+    read (snmel,key=snmeu.end_user_nbr$,knum=1,dom=*next)
+    while 1
+        thiskey$=key(snmel,end=*break,knum=1)
+        read record(snmel,key=thiskey$,knum=1)snmel$
+        if snmel.end_user_nbr$<>snmeu.end_user_nbr$ then break
+        remove(snmel,key=snmel.serial_nbr$)
+        logger!.makeUnlinkEntry(snmel.serial_nbr$, snmel.end_user_nbr$, firmId!, customerNbr!)
+    wend
+
+    rem ' write the link file
+    wrkVector1!=cast(BBjListBox, controls!.get("LinkedSerialNbrs")).getAllItems()
+    if wrkVector1!.size() > 0 then
+        for x = 0 to wrkVector1!.size() - 1
+            sfSerialNbr$=cast(BBjString, wrkVector1!.get(x))
+            dim snmel$:fattr(snmel$)
+            snmel.serial_nbr$=sfSerialNbr$
+            snmel.end_user_nbr$=snmeu.end_user_nbr$
+            write record(snmel)snmel$
+            logger!.makeLinkEntry(snmel.serial_nbr$, snmel.end_user_nbr$, firmId!, customerNbr!)
+        next x
+    fi
+
+    formDirty=0
+    gosub clear_form
+    if reloadEndUserList then
+        gosub get_end_user_list
+    fi
+fi
+
+return
+
+[Function (set_form_dirty)]
+rem ' -----------------------------------------------------------------rem ' set_form_dirtyrem ' -----------------------------------------------------------------
+
+set_form_dirty:
+
+formDirty=1
+
+return
+
+[Function (show_callersWindow)]
+rem ' -----------------------------------------------------------------
+rem ' show_callersWindow
+rem ' -----------------------------------------------------------------
+
+show_callersWindow:
+
+rem ' the caller handles itself now
+return
+
+if callersWindow! <> NULL() then
+    if info(3,6)="2" then
+        applet!=ourAPI!.getAppletProxy()
+        rem returning to ec_man_eu
+        applet!.setBounds(0,0,500,400)
+    fi
+   callersWindow!.setVisible(1)
+fi
+
+return
+
+[Function (toggle_select_list_order)]
+rem ' -----------------------------------------------------------------rem ' toggle_select_list_orderrem ' -----------------------------------------------------------------
+
+toggle_select_list_order:
+
+if usingCompanyOrder then
+    usingCompanyOrder=0
+    cast(BBjListButton, controls!.get("existingList")).removeAllItems()
+    cast(BBjListButton, controls!.get("existingList")).insertItems(0, endUserDisplayListRef$)
+
+else
+    usingCompanyOrder=1
+    cast(BBjListButton, controls!.get("existingList")).removeAllItems()
+    cast(BBjListButton, controls!.get("existingList")).insertItems(0, endUserDisplayListComp$)
+fi
+
+cast(BBjListButton, controls!.get("existingList")).deselect()
+
+return
+
+[Function (user_defined_functions)]
+rem ' -----------------------------------------------------------------
+rem ' user_defined_functions
+rem ' -----------------------------------------------------------------
+
+user_defined_functions:
+
+rem -------------------user defined functions---------------------
+
+def FNgetDbUrl!(props!)
+    sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+    sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+    sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+    sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+    ourDbUrl! = sqlBuilder!.toString()
+    return ourDbUrl!
+fnend
+
+def FNinsertSQLParameters!(udfSql!, firmId!, customerNbr!)
+    firmIdTarget!="\|FIRMID\|"
+    customerNbrTarget!="\|CUSTOMERNBR\|"
+    udfSql!=udfSql!.replaceAll(firmIdTarget!,firmId!)
+    udfSql!=udfSql!.replaceAll(customerNbrTarget!,customerNbr!)
+    return udfSql!
+fnend
+
+def FNgetUnlinkedSerialNbrsQuery!(props!)
+    sqlBuilder! = new StringBuffer(props!.getProperty("unlinkedSerialNbrs.select")+" ")
+    sqlBuilder!.append(props!.getProperty("unlinkedSerialNbrs.from")+" ")
+    sqlBuilder!.append(props!.getProperty("unlinkedSerialNbrs.leftOuterJoin")+" ")
+    sqlBuilder!.append(props!.getProperty("unlinkedSerialNbrs.where")+" ")
+    sqlBuilder!.append(props!.getProperty("unlinkedSerialNbrs.orderby"))
+    sql!=sqlBuilder!.toString()
+    sql!=FNinsertSQLParameters!(sql!, firmId!, customerNbr!)
+    return sql!
+fnend
+
+def FNgetEndUserLstQuery!(props!)
+    sqlBuilder! = new StringBuffer(props!.getProperty("endUserList.select")+" ")
+    sqlBuilder!.append(props!.getProperty("endUserList.from")+" ")
+    sqlBuilder!.append(props!.getProperty("endUserList.where"))
+    sql!=sqlBuilder!.toString()
+    sql!=FNinsertSQLParameters!(sql!, firmId!, customerNbr!)
+    return sql!
+fnend
+
+def FNgetStatesQuery!(props!)
+    sqlBuilder! = new StringBuffer(props!.getProperty("statesList.select")+" ")
+    sqlBuilder!.append(props!.getProperty("statesList.from")+" ")
+    sqlBuilder!.append(props!.getProperty("statesList.orderby"))
+    sql!=sqlBuilder!.toString()
+    return sql!
+fnend
+
+def FNgetIndustriesQuery!(props!)
+    sqlBuilder! = new StringBuffer(props!.getProperty("industryList.select")+" ")
+    sqlBuilder!.append(props!.getProperty("industryList.from")+" ")
+    sqlBuilder!.append(props!.getProperty("industryList.orderby"))
+    sql!=sqlBuilder!.toString()
+    return sql!
+fnend
+
+def FNgetCountriesQuery!(props!)
+    sqlBuilder! = new StringBuffer(props!.getProperty("countryList.select")+" ")
+    sqlBuilder!.append(props!.getProperty("countryList.from")+" ")
+    sqlBuilder!.append(props!.getProperty("countryList.orderby"))
+    sql!=sqlBuilder!.toString()
+    return sql!
+fnend
+
+def FNgetBasisProdListQuery!(props!)
+    sqlBuilder! = new StringBuffer(props!.getProperty("basisProdList.select")+" ")
+    sqlBuilder!.append(props!.getProperty("basisProdList.from")+" ")
+    sqlBuilder!.append(props!.getProperty("basisProdList.where"))
+    sql!=sqlBuilder!.toString()    
+    sql!=FNinsertSQLParameters!(sql!, firmId!, customerNbr!)
+    return sql!
+fnend
+
+def FNgetFindSerialNumberQuery!(props!)
+    sqlBuilder! = new StringBuffer(props!.getProperty("findSerialNumber.select")+" ")
+    sqlBuilder!.append(props!.getProperty("findSerialNumber.from")+" ")
+    sqlBuilder!.append(props!.getProperty("findSerialNumber.where")+" ")
+    sql!=sqlBuilder!.toString()
+    sql!=FNinsertSQLParameters!(sql!, firmId!, customerNbr!)
+    return sql!
+fnend
+
+def FNinsertSerialNumber!(udfSql!, serialNbr!)
+    serialNbrTarget!="\|SERIALNBR\|"
+    udfSql!=udfSql!.replaceAll(serialNbrTarget!, serialNbr!)
+    return udfSql!
+fnend
+
+def FNgetSelectedEndUserNbr$(endUserValueList$,selected)
+    wrkList$=endUserValueList$
+    for x = 0 to selected
+        rpos=pos($0A$=wrkList$)
+        selected$=wrkList$(1,rpos-1)
+        wrkList$=wrkList$(rpos+1)
+    next x
+    endUserNbr$=selected$
+    return endUserNbr$
+fnend
+
+def FNgetMathcingItem$(List1$, List2$, xMatch$)
+    wrkList1$=List1$, wrkList2$=List2$
+    xresult$=""
+    xOffset=0
+    while len(wrkList1$)
+        xOffset=xOffset+1
+        rpos=pos($0a$=wrkList1$)
+        xtarget$=wrkList1$(1,rpos-1)
+        wrkList1$=wrkList1$(rpos+1)
+        if xtarget$=xMatch$ then
+            for x = 1 to xOffset
+                dpos=pos($0a$=wrkList2$)
+                xresult$=wrkList2$(1,dpos-1)
+                wrkList2$=wrkList2$(dpos+1)
+            next x
+            break
+        fi
+    wend
+    return xresult$
+fnend
+
+rem ' get index of an item from $0A$ delimited list 
+def FNgetIndex(target$, in_list$)
+    wrkList$=in_list$
+    out_index=-1
+    while 1
+        rpos=pos($0A$=wrklist$)
+        if rpos then
+            out_index=out_index+1
+            this_target$=wrkList$(1,rpos-1)
+            wrkList$=wrkList$(rpos+1)
+            if target$=this_target$ then 
+                break
+            fi
+        else
+            out_index=-1
+            break
+        fi
+    wend
+    return out_index
+fnend
+
+rem ' replace $0A$ with \n
+def FNescLf$(xx_inStr$)
+    sgb_temp$=xx_inStr$,xx_outStr$=""
+    while len(sgb_temp$)
+        sgb_pos=pos($0A$=sgb_temp$)
+        if sgb_pos=0 Then
+            xx_outStr$=xx_outStr$+sgb_temp$+"\n",sgb_temp$=""
+        else
+            xx_outStr$=xx_outStr$+sgb_temp$(1,sgb_pos-1)+"\n",sgb_temp$=sgb_temp$(sgb_pos+1)
+        fi
+    wend
+    return xx_outStr$
+fnend
+
+rem ' replace \n with $0A$
+def FNunescLf$(xx_inStr$)
+    sgb_temp$=xx_inStr$,xx_outStr$=""
+    while len(sgb_temp$)
+        sgb_pos=pos("\n"=sgb_temp$)
+        if sgb_pos=0 then
+            xx_outStr$=xx_outStr$+sgb_temp$+$0A$,sgb_temp$=""
+        else
+            xx_outStr$=xx_outStr$+sgb_temp$(1,sgb_pos-1)+$0A$,sgb_temp$=sgb_temp$(sgb_pos+2)
+        fi
+    wend
+    return xx_outStr$
+fnend
+
+def FNgetNextSequence$(xProps!,xOur_dburl$)
+    udfChan=sqlunt
+    sqlopen(udfChan)XOur_dburl$
+    thisSQL$=props!.getProperty("snmeu.get.next.sequence")
+    sqlprep(udfChan)thisSQL$
+    nextKey$=sqlfetch(udfChan)
+    sqlclose(udfChan, err=*next)
+    retKey$=str(num(cvs(nextKey$,3)):"0000000000")
+    return retKey$
+fnend
+
+return
+
+[Function (validate_form)]
+rem ' -----------------------------------------------------------------rem ' validate_formrem ' -----------------------------------------------------------------
+
+validate_form:
+
+isValid=1
+
+rem ' must at least enter a company name
+vCompName$=cvs(cast(BBjEditBox, controls!.get("CompName")).getText(),3)
+if len(vCompName$)=0 then
+    isValid=0
+    cast(BBjStaticText, controls!.get("compNameReq")).setVisible(1)
+else
+    cast(BBjStaticText, controls!.get("compNameReq")).setVisible(0)
+fi
+
+rem ' there must be a country selection
+index=cast(BBjListButton, controls!.get("Country")).getSelectedIndex()
+if index < 0 then 
+    isValid=0
+    cast(BBjStaticText, controls!.get("countryReq")).setVisible(1)
+else
+    cast(BBjStaticText, controls!.get("countryReq")).setVisible(0)
+fi
+
+rem ' if advantage or announcements are selected there must be an email address
+if (cast(BBjCheckBox, controls!.get("Advantage")).isSelected() or cast(BBjCheckBox, controls!.get("Announcements")).isSelected()) and cvs(cast(BBjEditBox, controls!.get("EmailAddress")).getText(),3) = "" Then
+    isValid=0
+    cast(BBjStaticText, controls!.get("emailReq")).setVisible(1)
+    cast(BBjStaticText, controls!.get("emailFlag")).setVisible(1)
+else
+    cast(BBjStaticText, controls!.get("emailReq")).setVisible(0)
+fi
+
+if !isValid then
+    msg$=translator!.getMessage("required.fields")
+    title$=translator!.getMessage("required.fields.title")
+    response=msgbox(msg$, 0+64, title$)
+fi
+
+return
+

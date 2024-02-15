@@ -1,0 +1,289 @@
+0010 REM "CSM - Configurator System Maintenance (Product Pricing Maint)
+0020 REM "Program CSM.HA"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.2 - 01Jan96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * WA# 204 * BASIS
+0040 REM 
+0050 SETERR 9000
+0055 SETESC 9000
+0070 BEGIN 
+0080 SETERR 9000
+0090 SETESC 9000
+0100 REM " --- Open/Lock Files"
+0105 LET FILES=6
+0110 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0115 LET FILES$[1]="SYS-01",FILES$[2]="CSM-10",FILES$[3]="CSM-01"
+0120 LET FILES$[4]="CSM-07",FILES$[5]="ARM-10",FILES$[6]="CSM-05"
+0150 CALL "SYC.DA",1,1,files,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0155 IF STATUS>0 THEN GOTO 9900
+0160 LET SYS01_DEV=CHANNELS[1],CSM10_DEV=CHANNELS[2],CSM01_DEV=CHANNELS[3]
+0165 LET CSM07_DEV=CHANNELS[4],ARM10_DEV=CHANNELS[5],CSM05_DEV=CHANNELS[6]
+0200 REM " --- IOLIST's"
+0210 call "templates.pgm::CSM10"
+0260 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0270 IVS01A: IOLIST I0$,I1$,I2$,I3$,I4$,M0$,M1$,M2$,M3$,M4$,M5$
+0275 ARS01A: IOLIST P0$,P1$,P2$,P3$,P4$,M0$
+0290 IVS10D: IOLIST I5$,I6$(1),I7$(1)
+0400 REM " --- Parameters"
+0405 DIM P[8],G[4],INFO$[20]
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0415 LET N0$=F0$(16,2),N2$="IV",LF$="N",LS$="N",MF$="N",MAXROW=15,N4$=F5$,N1$=F4$
+0420 LET AR$="N",AP$="N",BM$="N",GL$="N",OP$="N",PO$="N",WO$="N",DI$="N"
+0435 FIND (SYS01_DEV,KEY=N0$+N2$+"00",DOM=9800)IOL=IVS01A
+0437 LET P[0]=NUM(I2$(1,2)),P[1]=NUM(I2$(5,1)),P[2]=NUM(I2$(7,2))
+0440 LET P[3]=NUM(I2$(9,2)),P[4]=NUM(I2$(11,2)),P[5]=NUM(I2$(13,2))
+0443 LET P[6]=NUM(I4$(1,2)),P[7]=FNYY_YEAR(I4$(3,2)),P[8]=NUM(I2$(3,2))
+0500 REM " --- Initializations"
+0505 PRECISION P[1]
+0510 DIM J0$(20,"0"),J$(80,"-"),J1$(80," ")
+0520 DIM OPTLIST$[2,MAXROW,6],PARAM$[2,MAXROW,3]
+0530 LET L0=9,M1=LEN(M1$),M2=LEN(M2$),M3=LEN(M3$),M4=LEN(M4$),M5=LEN(M5$),MQ$="#####"
+0545 LET csm10.firm_id$=N0$
+0680 REM " --- Other file opens"
+0700 REM " --- Background"
+0710 CALL "SYC.WC",1,0,80,0,0,L0-2,0
+0720 PRINT 'SB',@(5,3),"Product/LicType:",@(8,4),"Type of Sale:",
+0730 PRINT @(12,5),"Discount:",@(28,5),"Distribution Code:",
+0740 PRINT @(51,5),"Pricing Method:",
+0750 PRINT @(5,6),"Use price table:",
+0770 PRINT 'SB',@(6,8),"Minimum Users",@(20),"Maximum Users",@(54),"List Price or Percent",@(0,L0),'CE','SF'
+
+0772 PRINT @(6,22),"Select Table: (G)eneral, (C)anada, (M) Marriott, (I)InterNetworx"
+0773 Input @(27,3),"Select Table G, C, M, or I: ",table$
+0774 if pos(table$="GCMI") = 0 then print 'cf',; goto 0772
+0775 close(CSM10_DEV)
+0776 if table$ = "G" then
+0776:   open(CSM10_DEV)"CSM-10"
+0776: else
+0776:   if table$ = "C" then 
+0776:      open(CSM10_DEV)"CSM-10.canada"
+0776:   else
+0776:      if table$ = "M" then 
+0776:         open(CSM10_DEV)"CSM-10.marriott"
+0776:      else
+0776:         open(CSM10_DEV)"CSM-10.internetworx"
+0776:      fi
+0776:   fi
+0776: fi
+0785 tablefid$ = fid(CSM10_DEV),tablefid$ = tablefid$(9)
+0786 Print 'cf','sb',@(11,23),tablefid$,'sf',
+
+0800 read(csm10_dev,key=n0$,err=*next)
+0900 k$=key(csm10_dev,end=*next)
+1000 REM " --- Product ID"
+1010 PRINT 'CF',
+1015 if pos(n0$=k$)<>1 then k$=n0$+fill(6)
+1020 dim csm10$:fattr(csm10$)
+1025 csm10.firm_id$=n0$,v2$=k$(3,3)
+1030 LET V0$="S",V1$="KCE^",V3$="",V4$="",V0=3,V1=22,V2=3
+1040 LET V4$="Enter A Product or License Type (<F3>=Lookup)"
+1045 GOSUB 7000
+1050 ON V3 GOTO 1070,1070,1000,1055,4500
+1055 v$="";CALL "CSC.LK",FILES$[3],V1,V2,V$,V0,30,"Product IDs"
+1060 IF V$="" THEN CALL "CSC.LK",FILES$[6],V1,V2,V$,V0,30,"License Types"
+1070 IF V$="" THEN k$=n0$+fill(6);GOTO 1000 
+1075 if pos(v$=k$)<>3 then k$=n0$+v$+fill(3)
+1080 LET csm10.product$=V$,desc$=""
+1090 FIND (CSM01_DEV,KEY=N0$+V$,DOM=*next)*,DESC$
+1095 if desc$="" then FIND (CSM05_DEV,KEY=N0$+V$,DOM=1030)*,DESC$
+1097 PRINT @(V1,V2),V$,@(27),DESC$
+1100 REM " --- Type of Sale"
+1110 READrecord (CSM10_DEV,KEY=k$,DOM=*next)csm10$
+1120 LET V2$=k$(6,3)
+1130 LET V0$="S",V1$="KCE^",V3$="",V4$="",V0=3,V1=22,V2=4
+1140 LET V4$="Enter A Valid Type Of Sale (<F3>=Lookup)"
+1145 GOSUB 7000
+1150 ON V3 GOTO 1180,1180,1100,1155,4500
+1155 v$="";CALL "CSC.LK",FILES$[4],V1,V2,V$,V0,30,"Types of Sale"
+1180 IF V$="" THEN GOTO 1000
+1190 LET csm10.type_of_sale$=V$
+1195 FIND (CSM07_DEV,KEY=N0$+V$,DOM=1130)*,SALE_DESC$
+1197 PRINT @(V1,V2),V$,@(27),SALE_DESC$
+1200 REM " --- Find record"
+1210 k$=csm10$(1,8)
+1220 READ record(CSM10_DEV,KEY=k$,DOM=1400)CSM10$
+1230 k$=key(csm10_dev,end=*next)
+1240 if pos(n0$=k$)<>1 then k$=n0$+fill(6)
+1300 REM " --- Display record"
+1320 GOSUB 5000
+1340 GOTO 1600
+1400 REM " --- New record?"
+1410 CALL "SYC.YN",1,"Is This A New Record",1,V$,V3
+1440 ON V3 GOTO 1460,1400,1400,1400,0900
+1490 ON POS(V$="YN") GOTO 1400,1500,0900
+1500 REM " --- Initializations for new record"
+1510 read(csm10_dev,key="",dom=*next)
+1520 readrecord(csm10_dev,end=*next)csm10$
+1530 csm10$(1,8)=k$,csm10$(10,20)=" "
+1540 FOR X=1 TO 10
+1550 csm10.min_users[X]=0,csm10.max_users[X]=0,csm10.price[X]=0 
+1560 next x
+1580 GOSUB 5000
+1600 REM " --- Discountable"
+1605 LET V0$="S",V1$="^",V3$="",V2$=csm10.disc_flag$,V0=1,V1=22,V2=5
+1610 LET V4$="N=None, Y=Customer discount, I=Inventory Item Class discount"
+1615 GOSUB 7000; IF V3=4 THEN GOTO 4000
+1620 IF POS(V$="YNI")=0 THEN GOTO 1600
+1625 LET csm10.disc_flag$=V$; PRINT @(V1,V2),V$,
+1700 REM " --- Distribution Code"
+1710 V0$="S",V1$="^",V3$="",V2$=csm10.dist_code$,V0=2,V1=47,V2=5
+1720 V4$="Enter A Valid Distribution Code (<F3>=Lookup)"
+1730 GOSUB 7000
+1740 ON V3 GOTO 1760,1760,1600,1750,4000
+1750 GOSUB 6000; IF V$="" THEN GOTO 1700
+1760 DIM CODE_DESC$(20)
+1765 IF cvs(V$,3)="" THEN GOTO SKIP_IT
+1770 FIND(ARM10_DEV,KEY=N0$+"D"+V$,DOM=1700)DIST$,*
+1780 CODE_DESC$(1)=DIST$(6,20)
+1790 SKIP_IT:
+1800 csm10.dist_code$=V$
+1810 PRINT @(47,5),V$;rem ,@(50,5),CODE_DESC$
+1900 REM " --- Pricing method
+1910 V0$="S",V1$="^",V3$="",V2$=csm10.price_method$,V0=1,V1=67,V2=5
+1920 V4$="Price Method (F=Fixed $, P=Percent of List, V=Variable% by Rev)"
+1930 GOSUB 7000
+1940 ON V3 GOTO 1950,1950,1950,1950,4000
+1950 if pos(V$="FPV")=0 then goto 1900
+1960 csm10.price_method$=V$
+2000 REM " --- Alternate table
+2010 V0$="S",V1$="^",V3$="",V2$=csm10.alt_key$,V0=6,V1=22,V2=6
+2020 V4$="Product/LicType and Type of Sale of other price table to use"
+2030 GOSUB 7000
+2040 if cvs(v$,3)<>"" then find(csm10_dev,key=n0$+v$,dom=2000)
+2050 csm10.alt_key$=v$
+2100 x=1;REM " --- Begin loop"
+2110 LET L=L0+X-1
+2120 LET V0$="N",V1$="CE",V2$=STR(csm10.min_users[X]),V3$=MQ$,V0=LEN(V3$),V1=9,V2=L
+2130 LET V4$="Enter the Minimum Users for this Price Level"
+2140 GOSUB 7000
+2150 ON V3 GOTO 2151,2151,2500,2151,3900
+2180 LET csm10.min_users[X]=V
+2200 REM " --- Maximum Users"
+2220 LET V0$="N",V1$="CE",V2$=STR(csm10.max_users[X]),V3$=MQ$,V0=LEN(V3$),V1=25,V2=L
+2230 LET V4$="Enter the Maximum Users for this Price Level"
+2240 GOSUB 7000
+2250 ON V3 GOTO 2251,2251,2100,2251,3900
+2280 LET csm10.max_users[X]=V
+2300 REM " --- Price per User
+2320 LET V0$="N",V1$="CE",V2$=STR(csm10.price[X]),V3$=M4$,V0=LEN(V3$),V1=54,V2=L
+2330 LET V4$="Enter the List Price per User for this Level"
+2335 if csm10.price_method$="P" then LET V4$="Enter the % of List Price for this Level"
+2340 GOSUB 7000
+2350 ON V3 GOTO 2351,2351,2200,2351,3900
+2380 LET csm10.price[X]=V
+2400 REM " --- End of loop"
+2430 LET X=X+1
+2450 IF X<11 THEN GOTO 2110
+2490 GOTO 3900
+2500 REM " --- Back up one line"
+2520 LET X=X-1
+2530 IF X<1 THEN LET X=1
+2590 GOTO 2110
+3900 REM " --- Next Field"
+3905 IF V3=4 THEN GOTO 4000
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 ON I0 GOTO 2000,3990
+3990 LET I0=0
+4000 REM " --- Correct?"
+4010 LET V4$="Is The Above Information Correct (Y/N/Delete)?"
+4020 LET V0$="S",V1$="CER^",V2$="Y",V3$="",V0=6,V2=22,V1=FNV(V4$)
+4030 GOSUB 7000
+4040 ON V3 GOTO 4050,4000,4000,4000,4500
+4060 IF V$="DELETE" THEN GOTO 4200
+4090 ON POS(V$="YN") GOTO 4000,4100,1600
+4100 REM " --- Write record"
+4105 csm10$=field(csm10$)
+4110 WRITE record(CSM10_DEV,KEY=csm10$(1,8))CSM10$
+4190 GOTO 0900
+4200 REM " --- Remove record"
+4220 REMOVE (CSM10_DEV,KEY=csm10$(1,8),DOM=*next)
+4290 GOTO 0900
+4500 REM " --- Print Listing"
+4505 goto 9900
+4510 CALL "SYC.YN",1,"Print A List Of All Records",1,V$,V3
+4540 ON V3 GOTO 4550,4500,4500,4500,9900
+4590 ON POS(V$="YN") GOTO 4500,4595,9900
+4595 RUN "CSM.HF"
+5000 REM " --- Display"
+5010 PRINT @(22,3),csm10.product$,@(22,4),csm10.type_of_sale$,
+5020 IF POS(csm10.disc_flag$="YNI")=0 THEN LET csm10.disc_flag$="Y"
+5030 PRINT @(22,5),csm10.disc_flag$,@(47,5),csm10.dist_code$,
+5040 PRINT @(67,5),csm10.price_method$,
+5045 PRINT @(22,6),csm10.alt_key$,
+5050 FOR X=1 TO 10
+5060 PRINT @(9,L0+X-1),csm10.min_users[X]:MQ$,@(25),csm10.max_users[X]:MQ$,
+5070 IF csm10.price[X]<>0 THEN PRINT @(54),csm10.price[X]:M4$
+5080 NEXT X
+5090 RETURN 
+5400 REM " --- Clear bottom"
+5410 CALL "SYC.WC",1,0,80,0,0,L0-1,0
+5420 PRINT @(0,L0),'CE',
+5430 IF SELECTION$<>"" THEN PRINT 'SB',@(8,L0-1)," ",DESCRIPTION$," ",'SF',
+5500 REM " --- Window initializations for overlays"
+5510 LET WIN_X=0,WIN_Y=5,HEIGHT=19,WIDTH=80,PAGES=MIN(INT((DSZ-5000)/4000),20)
+5520 LET TITLE$=DESCRIPTION$,MAXROW=HEIGHT-5,H0=WIDTH-1
+5530 DIM HEADING$(WIDTH-2),FOOTING$(WIDTH-2)
+5590 RETURN 
+6000 REM " --- Code Lookup"
+6010 LET NUMBER=1
+6015 RECORD$="D",TITLE$="AR Distribution Codes"
+6020 DIM DESCRIPTION$[NUMBER],FIELD[NUMBER],POSITION[NUMBER],LENGTH[NUMBER]
+6030 LET DESCRIPTION$[0]="Code",DESCRIPTION$[1]="Description"
+6040 LET FIELD[0]=1,POSITION[0]=4,LENGTH[0]=2
+6050 LET FIELD[1]=1,POSITION[1]=6,LENGTH[1]=20
+6060 LET COLUMN=79-LENGTH[0]-LENGTH[1]-2-NUMBER*4,V$="SKIP",ROW=V2+2
+6080 CALL "SYC.LK",ARM10_DEV,RECORD$,NUMBER,TITLE$,DESCRIPTION$[ALL],FIELD[ALL],POSITION[ALL],LENGTH[ALL],COLUMN,ROW,V$
+6090 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8080 DEF FNS$(Q$)=CVS(Q$,3)
+8090 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8145 REM " --- FNYY21_YY$ Un-Convert 21st Century 2-Char Year to 2-Char Year"
+8150 DEF FNYY21_YY$(Q1$)
+8155 LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+8160 RETURN Q1$
+8165 FNEND
+8170 REM " --- FNYY_YEAR Convert 2-Char Year to 21st Century Numeric Year"
+8175 DEF FNYY_YEAR(Q1$)
+8180 LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+8185 RETURN Q
+8190 FNEND
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 RUN "SYS.AA"
+9999 END

@@ -1,0 +1,21 @@
+Table Definition Module
+APM_APP_LIST - Approvers List
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+APM_APP_LIST^^^^^Approvers List^Approvers List^^^^^^^^S^^^^^^A;N;P;U;V;^^approver_list.src^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;
+{ColumnDefs}
+INCL_CHK_SIGNER^APM_APP_LIST^001^C^^3001^cbx_incl_chk_signer^0^^^1^^N^^^^^YN_PROMPT^Yes/No Prompt^Include Check Signing Flag^Incl Chk Sign Flag^C^^C^^^Y;N^0^^^^^^^^^^^^^N^^^^^^1^^^^^^^^^^^^^^^^^^^
+{ColumnDefsEnd}
+{KeyDefs}
+APM_APP_LIST^PRIMARY^^^^
+{KeyDefsEnd}
+{GridCols}
+001APM_APP_LIST.INCL_CHK_SIGNER            ;
+{GridColsEnd}

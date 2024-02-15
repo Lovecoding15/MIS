@@ -1,0 +1,129 @@
+// Routine to handle line item editing <aonintr_13>
+
+enter prev_cust_num$,first_order$,shipname$,quit$;
+
+create temporary table com_line_item/nocreate
+	counter char(4)/index
+	product_class char(2)/index
+	line_type char(1)
+	item_num char(15)
+	desc char(50)
+	comment char(30)
+	qty num(5)
+	unit_price num(7)/precision=2
+	extension num(9)/precision=2;
+
+find arm01 using prev_cust_num$;
+find are03 using prev_cust_num$(1,2)+"  "+prev_cust_num$(3)+first_order$+"000";
+
+edit_section:
+choose/record/form="intr_13"
+	/title="@WORKING ON FORM FOR CUSTOMER "+arm01.customer_nbr+"  "+
+		cvs(arm01.cust_name,3)
+	+"\SHIPPING TO "+cvs(shipname$,3)
+	+"\\ITEM            DESCRIPTION                       QTY.     PRICE  EXTEN.     "
+//	/help="(#F6)=DONE (#F23)=EXIT FORMS ((#F0)=edit (#F44)=insert (#F46)=add to end (#F45)=delete)"
+	/help="(#F6)=DONE (#F23)=EXIT FORMS ((#F0)=edit (#F44)=insert (#F46)=add to end (#F38)=delete)"
+	/insert=insert_routine
+//	/delete=delete_routine
+	/ctl(38)=delete_routine
+	/ctl(0)=update_routine
+	/update=update_routine
+	/append=append_routine
+	/rewind
+	/rows=15
+	/cols=78
+	/nowrap
+	com_line_item;
+if ctl()=23 then 
+	{
+	quit$="Y";
+	exit;
+	}
+if ctl()<>6 then goto edit_section;
+pause/message "LOOKING FOR INTERNATIONAL INVOICES";
+
+subroutine update_routine
+{
+prompt for/form="intr_13"
+	counter=com_line_item.counter
+	item_num=com_line_item.item_num
+	desc=com_line_item.desc
+	qty=com_line_item.qty
+	unit_price=com_line_item.unit_price
+	extension=com_line_item.extension;
+update com_line_item;
+}
+
+subroutine insert_routine
+{
+want_to_be=num(com_line_item.counter);
+init com_line_item;
+prompt for/form="intr_13"
+	counter=com_line_item.counter
+	item_num=com_line_item.item_num
+	desc=com_line_item.desc
+	unit_price=com_line_item.unit_price
+	qty=com_line_item.qty
+	extension=com_line_item.extension;
+com_line_item.counter=str(want_to_be:"0000");
+//insert/noerror com_line_item;
+//if available(com_line_item)=0 then gosub resequence_lines;
+gosub resequence_lines;
+}
+
+subroutine resequence_lines
+{
+init hold$:fattr(com_line_item$);
+hold$=com_line_item$;
+find/last com_line_item;
+loop:
+com_line_item.counter=str(num(com_line_item.counter)+1:"0000");
+insert/update com_line_item;
+find/previous com_line_item;
+if num(com_line_item.counter)=1 then goto end_loop;
+find/previous com_line_item;
+if num(com_line_item.counter)>=want_to_be then goto loop;
+end_loop:
+com_line_item$=hold$;
+update com_line_item;
+}
+
+subroutine append_routine
+{
+find/last com_line_item;
+blank_spot=num(com_line_item.counter)+1;
+init com_line_item;
+prompt for/form="intr_13"
+	counter=com_line_item.counter
+	item_num=com_line_item.item_num
+	desc=com_line_item.desc
+	unit_price=com_line_item.unit_price
+	qty=com_line_item.qty
+	extension=com_line_item.extension;
+com_line_item.counter=str(blank_spot:"0000");
+insert com_line_item;
+}
+
+subroutine delete_routine
+{
+blank_spot=num(com_line_item.counter);
+delete com_line_item;
+/*
+next_com_line:
+find/next/noerror com_line_item;
+if available(com_line_item) then
+	{
+	this_spot=num(com_line_item.counter);
+	com_line_item.counter=str(blank_spot:"0000");
+	insert com_line_item;
+	com_line_item.counter=str(this_spot:"0000");
+	delete com_line_item;
+	blank_spot=this_spot;
+	goto next_com_line;
+	}
+*/
+find/first/noerror com_line_item;
+if available(com_line_item)=0 then ctlval=6;
+}
+//

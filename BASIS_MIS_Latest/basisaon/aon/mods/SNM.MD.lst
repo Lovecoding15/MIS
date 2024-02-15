@@ -1,0 +1,107 @@
+0010 REM "SNM - Serial Number Maintenance (Deactivated/Activated)"
+0020 REM "Program SNM.MD"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.0 - 15May96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * WA# 208 * BASIS"
+0040 REM 
+0070 SETERR 9000
+0080 SETESC 9000
+0090 PRECISION P[1]
+0200 REM " --- IOLIST's"
+0210 SNT03A: IOLIST Y0$,Y1$,Y2$,Y[ALL]
+0500 REM " --- Initializations"
+0510 DIM Y0$(25),Y1$(31),Y2$(20),Y[1]
+0520 LET L0=8,L=L0,L9=20,L2=8
+0700 REM " --- Background"
+0705 PRINT @(0,6),'CE',
+0720 PRINT 'SB',@(4,6),"Serial Number",@(30),"Action",@(46),"Date",@(57),"Invoice",'SF',
+0900 REM " --- Display any existing lines"
+0920 GOSUB 5100
+0990 GOTO 4000
+4000 REM " --- Options"
+4010 LET V4$="Is The Above Information Correct (Y/List)?"
+4020 LET V0$="S",V1$="C",V2$="Y",V3$="",V0=6,V1=FNV(V4$),V2=22
+4030 GOSUB 7000
+4040 ON V3 GOTO 4050,4000,4000,4000,4100
+4050 IF V$="L" OR V$="LIST" THEN GOTO 4500
+4090 ON POS(V$="YN") GOTO 4000,4100,4000
+4100 REM " --- Return to header"
+4110 GOSUB 5400
+4190 GOTO 4900
+4500 REM " --- List"
+4510 LET Y0$(21)=""
+4520 GOSUB 5100
+4590 GOTO 4000
+4900 REM " --- Run menu overlay"
+4990 RUN "SNM.MA"
+5000 REM " --- Display"
+5010 IF Y1$(31,1)="A" THEN LET ACTION$="Activated"
+5020 IF Y1$(31,1)="D" THEN LET ACTION$="Deactivated"
+5040 PRINT @(4,L),Y1$(1,20),@(30),ACTION$,@(44),FNB$(Y1$(21,3)),@(57),Y1$(24,7)
+5090 RETURN 
+5100 REM " --- List"
+5105 LET Q1=0
+5110 GOSUB 5400
+5120 READ (SNT03_DEV,KEY=A0$,DOM=5130)
+5130 LET K$=KEY(SNT03_DEV,END=5300)
+5140 IF POS(A0$=K$)<>1 THEN GOTO 5300
+5160 READ (SNT03_DEV)IOL=SNT03A
+5190 IF L<=L9 THEN GOTO 5250
+5200 REM " --- Continue"
+5210 LET V4$="Press <Enter> To Continue:"
+5215 LET V0$="S",V1$="CE",V2$="",V3$="",V0=1,V1=FNV(V4$),V2=22
+5220 GOSUB 7000
+5230 IF V3=4 THEN GOTO 5300
+5240 GOSUB 5400
+5250 GOSUB 5000
+5260 LET L=L+1,K9$=W0$
+5290 GOTO 5130
+5300 RETURN 
+5400 REM " --- Clear Screen"
+5420 PRINT @(0,L2),'CE',
+5440 LET L=L2
+5490 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+8085 DEF FNV(Q$)=42+INT(LEN(Q$)/2)
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END

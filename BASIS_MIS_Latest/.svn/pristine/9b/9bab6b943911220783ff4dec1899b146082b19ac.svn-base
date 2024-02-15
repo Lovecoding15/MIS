@@ -1,0 +1,22 @@
+0010 REM "ADC - Bridge - Create Window"
+0020 REM "Program: ADC.WA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0090 ENTER MODE,WIDTH,HEIGHT,COLUMN,ROW,HEADING$,NAME$
+0920 IF WIDTH=80 AND HEIGHT=24 AND COLUMN=0 AND ROW=0 THEN GOTO 5000
+0930 LET FLAG=INT(MODE/10),MODE=MOD(MODE,10)
+1020 CALL "SYC.WA",MODE,WIDTH,HEIGHT,COLUMN,ROW,HEADING$,NAME$
+1040 IF FLAG=0 THEN GOTO 4000
+1100 REM " ---- Add Flag Functions Below
+1120 IF FLAG=1 THEN PRINT 'WRAP'("OFF"),'SCROLL'("OFF"),
+4990 GOTO 9900
+5000 REM "---- Create Borderless Full Screen Window"
+5020 PRINT 'WINDOW'(0,0,80,24),'WRAP'("OFF"),'CS',
+5040 LET FIN$=FIN(0)
+5060 LET NAME$=FIN$(10,1)
+9900 REM "---- Exit"
+9990 EXIT 
+9999 END

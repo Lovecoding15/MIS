@@ -1,0 +1,311 @@
+rem package FUT.base
+
+use ::BaristaBC.bbj::BaristaBC
+use ::FutOlddomBC.bbj::FutOlddomBC
+
+use ::sys/prog/bao_utilities.bbj::BarUtils
+use ::DataSourceConnection.bbj::DataSourceConnection
+
+rem -- Other USE statements for related business classes
+
+use com.basiscomponents.bc.BusinessComponent
+use com.basiscomponents.db.ResultSet
+use com.basiscomponents.db.DataRow
+
+use java.util.HashMap
+
+
+rem /**
+rem  * FutOlddomBCT.bbj::FutOlddomBCT<br>
+rem  * Barista Base Business Component Class for FUT_OLDDOM<br>
+rem  * A business component is a named collection of business elements, including other business components, if applicable.<br>
+rem  * It is the glue between the data source(s) used to get and store the elements and the application interface.<br>
+rem  * WARNING: This base class is generated. Any manual changes will be overwritten!
+rem  * <p>
+rem  * @author The Barista Team
+rem  * @version 1.0
+rem  */
+class public FutOlddomBCT extends BaristaBC
+
+    rem /**
+    rem  * Gets the data source connection with its persistence provider.<br>
+    rem  * Sets the data source name (e.g. table), key column(s), field scopes and attributes.
+    rem  */
+    method public FutOlddomBCT()
+        #super!()
+        #init()
+        dsConnect! = BarUtils.getDSConnect("")
+        #setDSConnect(dsConnect!)
+        #super!.setDSAlias("FUT_OLDDOM")
+        #super!.setDSName("FUT_OLDDOM")
+        #super!.getKeyColumns().addItem("CUSTOMER_NBR")
+        #super!.getKeyColumns().addItem("SEQUENCE_NBR")
+        #setScopes()
+        #setAttributes()
+    methodend
+
+    rem /**
+    rem  * Constructor taking an existing data source connection for use by this instance.<br>
+    rem  * Sets the data source name, key columns, field scopes and attributes.
+    rem  *
+    rem  * @param dsConnect!  the data source connection
+    rem  */
+    method public FutOlddomBCT(DataSourceConnection dsConnect!)
+        #super!()
+        #init()
+        #setDSConnect(dsConnect!)
+        #super!.setDSAlias("FUT_OLDDOM")
+        #super!.setDSName("FUT_OLDDOM")
+        #super!.getKeyColumns().addItem("CUSTOMER_NBR")
+        #super!.getKeyColumns().addItem("SEQUENCE_NBR")
+        #setScopes()
+        #setAttributes()
+    methodend
+
+
+    rem -- Class methods
+
+    rem /**
+    rem  * Class initialization
+    rem  */
+    rem @Override
+    method public void init()
+        #super!.init()
+    methodend
+
+    rem /**
+    rem  * Sets the data source connection to be used by this business component.
+    rem  *
+    rem  * @param dsConnect!  the data source connection
+    rem  */
+    rem @Override
+    method public void setDSConnect(DataSourceConnection dsConnect!)
+        if dsConnect! <> null() then
+            #super!.setDSConnect(dsConnect!)
+        endif
+    methodend
+
+    rem /**
+    rem  * Set predefined scopes
+    rem  * By default, creates:<ul>
+    rem  * <li>Scope D (Default) with all column names.
+    rem  * <li>Scope B (Basic Information), e.g. ID + Description.
+    rem  * <li>Scope L (Linked Information) to other business classes.</ul>
+    rem  */
+    rem @Override
+    method public void setScopes()
+        declare BBjVector v!
+
+        rem Scope D (Default)
+        #super!.setScopes()
+
+        rem Scope B (Basic Information)
+        v! = #super!.getScopeFieldList("B")
+        if !(v!.contains("CUSTOMER_NBR")) then v!.addItem("CUSTOMER_NBR")
+        if !(v!.contains("SEQUENCE_NBR")) then v!.addItem("SEQUENCE_NBR")
+        rem if !(v!.contains("<descr_col>")) then v!.addItem("<descr_col>")
+        #super!.getScopes().put("B", v!)
+
+        rem Scope L (Linked Information)
+        rem v! = BBjAPI().makeVector()
+        rem v!.addItem("<related field A>")
+        rem #super!.getScopes().put("L", v!)
+    methodend
+
+    rem /**
+    rem  * By default:<br>
+    rem  *   Sets predefined master attributes for all columns.<br>
+    rem  *   Flags primary key column(s) with EDITABLE=2.<br>
+    rem  *   Sets attributes for any linked (aka joined) columns.
+    rem  */
+    rem @Override
+    method public void setAttributes()
+        declare DataRow attrs!
+
+        rem initializes the master attributes, i.e. all attributes for all columns
+        #super!.setAttributes()
+        attrs! = #super!.getMasterAttributesRecord()
+
+        rem Set ResultSet (aka Table) attributes
+        rem attrs!.setAttribute("<Attribute>", "<value>")
+        rem ...
+
+        rem Set field attributes
+        rem attrs!.setFieldAttribute("<COLUMN_NAME>", "<Attribute>", "<value>")
+        rem ...
+
+        rem Flag primary key column(s)
+        attrs!.setFieldAttribute("CUSTOMER_NBR", "EDITABLE", "2")
+        attrs!.setFieldAttribute("SEQUENCE_NBR", "EDITABLE", "2")
+        #super!.setMasterAttributes(attrs!)
+
+    methodend
+
+    rem /**
+    rem  * Validates a data row before it can be written.<br>
+    rem  * This method is also used internally by the write method.
+    rem  *
+    rem  * @param dr!  the data row to be validated
+    rem  * @return a result set with validation messages (an empty result set means no validation errors).
+    rem  * Each data row in the message result set has the following fields:<ul>
+    rem  * <li>FIELD_NAME: The name of the validated field
+    rem  * <li>TYPE: INFO, WARNING or ERROR
+    rem  * <li>MESSAGE: The validation message</ul>
+    rem  * @see #write(DataRow)
+    rem  */
+    rem @Override
+    method public ResultSet validateWrite(DataRow dr!)
+        rem declare DataRow attrs!
+
+        #super!.validateWrite(dr!); rem inits error result set and checks for empty data row
+
+        rem Check required fields, nullability, dependencies and other field-wise validations
+        rem attrs! = #super!.getAttributesRecord()
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "EDITABLE"); rem 0=non-editable, 1=editable, 2=key field
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_BLNK")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MAXL")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MAXR")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MAXV")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MINL")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MINV")
+        rem #super!.addError("<COLUMN_NAME>", "INFO|WARNING|ERROR", "<message>")
+
+        methodret #super!.getErrorRS()
+    methodend
+
+    rem /**
+    rem  * Updates the data source using a given data row.
+    rem  *
+    rem  * @param dr!  the affected data row
+    rem  * @return the data row after writing (e.g. may contain auto-generated or computed values)
+    rem  * @throws Exceptions occuring while updating, incl. validation errors, in which case the passed data row is left unchanged
+    rem  * @see #validateWrite(DataRow)
+    rem  */
+    rem @Override
+    method public DataRow write(DataRow dr!)
+        seterr writeErr
+
+        methodret #super!.write(dr!)
+
+        writeErr:
+        throw errmes(-1), err
+    methodend
+
+    rem /**
+    rem  * Validates a data row before it can be removed.<br>
+    rem  * This method is also used internally by the remove method.<br>
+    rem  *
+    rem  * @param dr!  the data row to be validated
+    rem  * @return a result set with validation messages (an empty result set means no validation errors).
+    rem  * Each data row in the result set has the following fields:<ul>
+    rem  * <li>FIELD_NAME: The name of the validated field
+    rem  * <li>TYPE: INFO, WARNING or ERROR
+    rem  * <li>MESSAGE: The validation message</ul>
+    rem  * @see #remove(DataRow)
+    rem  */
+    rem @Override
+    method public ResultSet validateRemove(DataRow dr!)
+        #super!.validateRemove(dr!); rem inits error result set and checks for empty data row
+
+        rem Check required fields and removability, e.g dependencies
+        rem #super!.addError("<COLUMN_NAME>", "INFO|WARNING|ERROR", "<message>")
+
+        methodret #super!.getErrorRS()
+    methodend
+
+    rem /**
+    rem  * Removes a given data row from the data source after successful removal validation.<br>
+    rem  * The current working data row is set to NULL upon susccessful removal.
+    rem  *
+    rem  * @param dr!  the data row to be removed
+    rem  * @throws Exceptions occurring during removal
+    rem  * @see #validateRemove(DataRow)
+    rem  */
+    rem @Override
+    method public void remove(DataRow dr!)
+        seterr removeErr
+
+        #super!.remove(dr!)
+        methodret
+
+        removeErr:
+        throw errmes(-1), err
+    methodend
+
+    rem /**
+    rem  * @return name of this business component type
+    rem  */
+    rem @Override
+    method public String toString()
+        methodret "FutOlddomBCT"
+    methodend
+
+    rem /**
+    rem  * @return BC of list value/description pairs or filtered lookup records
+    rem  */
+    rem @Override
+    method public BusinessComponent getLookup(String colName!, DataRow dr!)
+        attrs! = #super!.getAttributesRecord()
+        if attrs!.contains(colName!) then
+            attr_dtab$ = cvs(attrs!.getFieldAttribute(colName!, "DD_ATTR_DTAB"), 2)
+            attr_ctyp$ = attrs!.getFieldAttribute(colName!, "DD_ATTR_CTYP")
+
+            if attr_dtab$ = "" then
+                if pos(attr_ctyp$="LOR") then
+                    methodret #super!.getLookup(colName!, dr!)
+                endif
+                methodret null()
+            endif
+
+        methodret null()
+    methodend
+
+    rem /**
+    rem  * @return result set of list value/description pairs or filtered lookup records
+    rem  */
+    rem @Override
+    method public ResultSet getLookupData(String colName!, DataRow dr!)
+        attrs! = #super!.getAttributesRecord()
+        if attrs!.contains(colName!) then
+            attr_dtab$ = cvs(attrs!.getFieldAttribute(colName!, "DD_ATTR_DTAB"), 2)
+            attr_ctyp$ = attrs!.getFieldAttribute(colName!, "DD_ATTR_CTYP")
+
+            if attr_dtab$ = "" then
+                if pos(attr_ctyp$="LOR") then
+                    methodret #super!.getLookupData(colName!, dr!)
+                endif
+                methodret null()
+            endif
+
+        methodret rs!
+    methodend
+
+
+    rem -- Generic field validators
+    rem -- Uses #super!.getDataRow() to get the current working data row,
+    rem -- so setDataRow(DataRow) beforehand, if manipulated externally.
+
+    rem /**
+    rem  * Validate field value found in the current working data row
+    rem  * @param colName!  Name of column to validate
+    rem  * @return Indicator whether value passed validation (1) or not (0)
+    rem  */
+    method public BBjNumber validateField(String colName!)
+        val! = #super!.getDataRow().getFieldValue(colName!)
+        methodret #validateField(colName!, val!)
+    methodend
+
+    rem /**
+    rem  * Validate a value for a field
+    rem  * @param colName!  Name of column to validate
+    rem  * @param val!  Value to validate
+    rem  * @return Indicator whether value passed validation (1) or not (0)
+    rem  */
+    method public BBjNumber validateField(String colName!, Object val!)
+        rem do field validation...
+        methodret BBjAPI.TRUE
+    methodend
+
+
+
+classend

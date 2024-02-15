@@ -1,0 +1,47 @@
+Table Definition Module
+FUT_TMM03 - Telemkt Add'l Contacts
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_TMM03^^^^^Telemkt Add'l Contacts^Telemkt Add'l Contacts^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_TMM03^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Firm ID^^^^^^^N^
+CUSTOMER_NBR^FUT_TMM03^002^C^^3002^dis_customer_nbr^0^^^2^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^^^^0^^^^N^
+TM_NUMBER^FUT_TMM03^003^C^^3003^ine_tm_number^0^^^3^^Y^^^^^FUT_TM_NUMBER^Main Sort^Main Sort^Main Sort^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^0^Enter Main Sort^^^^^^^N^
+SEQUENCE_NBR^FUT_TMM03^004^C^^3004^ine_sequence_nbr^0^^^4^^Y^^^^^FUT_SEQUENCE_NBR^Sequence Number^Sequence Number^Sequence Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Sequence Number^^^^^^^N^
+CONTACT_NAME^FUT_TMM03^005^C^^3005^ine_contact_name^0^^^5^^N^^^^^FUT_CONTACT_NAME^Contact Name^Contact Name^Contact Name^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^Enter Contact Name^^^^^^^N^
+POSITION^FUT_TMM03^006^C^^3006^ine_position^0^^^6^^N^^^^^FUT_POSITION^Position^Position^Position^C^^E^^^^^^^^^^^^^^^^^^^^^^^18^^^^^^^^^^^0^Enter Position^^^^^^^N^
+PHONE_NUMBER^FUT_TMM03^007^C^^3007^ine_phone_number^0^^^7^^N^^^^^FUT_PHONE_NUMBER^Telephone Number^Telephone Number^Telephone Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^14^^^^^^^^^^^0^Enter Telephone Number^^^^^^^N^
+EXTENSION^FUT_TMM03^008^C^^3008^ine_extension^0^^^8^^N^^^^^FUT_EXTENSION^Extension^Time of Day^Time of Day^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^0^Enter Time of Day^^^^^^^N^
+PRIMARY_CONTACT^FUT_TMM03^009^C^^3009^ine_primary_contact^0^^^9^^N^^^^^FUT_PRIMARY_CONT^Primary Contact^Newsletter^Newsletter^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Newsletter^^^^^^^N^
+AP_CONTACT^FUT_TMM03^010^C^^3010^ine_ap_contact^0^^^10^^N^^^^^FUT_AP_CONTACT^Ap Contact^Ap Contact^Ap Contact^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+USE_FIRM_ADDR^FUT_TMM03^011^C^^3011^ine_use_firm_addr^0^^^11^^N^^^^^FUT_USE_FIRM_ADD^Use Firm Addr^Literature Code^Literature Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Literature Code^^^^^^^N^
+SEND_LIT^FUT_TMM03^012^C^^3012^ine_send_lit^0^^^12^^N^^^^^FUT_SEND_LIT^Send Literature^Send Literature^Send Literature^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Send Literature^^^^^^^N^
+LIT_DT^FUT_TMM03^013^C^^3013^ine_lit_dt^0^^^13^^N^^^^^FUT_LIT_DT^Literature Date^Literature Date^Literature Date^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^Enter Literature Date^^^^^^^N^
+SAM_CONTACT^FUT_TMM03^014^C^^3014^ine_sam_contact^0^^^14^^N^^^^^FUT_SAM_CONTACT^Sam Contact^Sam Contact^Sam Contact^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^N^
+DEALER_STR_1^FUT_TMM03^015^C^^3015^ine_dealer_str_1^0^^^15^^N^^^^^FUT_DEALER_STR_1^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Reserved For Dealer Use^^^^^^^N^
+ADDRESS_1^FUT_TMM03^016^C^^3016^ine_address_1^0^^^16^^N^^^^^FUT_ADDRESS_1^Address 1^Address 1^Address 1^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^Enter Address 1^^^^^^^N^
+ADDRESS_2^FUT_TMM03^017^C^^3017^ine_address_2^0^^^17^^N^^^^^FUT_ADDRESS_2^Address 2^Address 2^Address 2^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^Enter Address 2^^^^^^^N^
+CITY^FUT_TMM03^018^C^^3018^ine_city^0^^^18^^N^^^^^FUT_CITY^Telemkt City^Telemkt City^Telemkt City^C^^E^^^^^^^^^^^^^^^^^^^^^^^25^^^^^^^^^^^0^Enter Telemkt City^^^^^^^N^
+STATE_CODE^FUT_TMM03^019^C^^3019^ine_state_code^0^^^19^^N^^^^^FUT_STATE_CODE^State Code^State Code^State Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter State Code^^^^^^^N^
+ZIP_CODE^FUT_TMM03^020^C^^3020^ine_zip_code^0^^^20^^N^^^^^FUT_ZIP_CODE^Zip/Postal Code^Zip/Postal Code^Zip/Postal Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^9^^^^^^^^^^^0^Enter Zip/Postal Code^^^^^^^N^
+COUNTRY_CODE^FUT_TMM03^021^C^^3021^ine_country_code^0^^^21^^N^^^^^FUT_COUNTRY_CODE^Country^Country^Country^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Country^^^^^^^N^
+END_USER_NBR^FUT_TMM03^022^C^^3022^ine_end_user_nbr^0^^^22^^N^^^^^FUT_END_USER_NBR^End User Nbr^End User Nbr^End User Nbr^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^0^^^^^^^^N^
+AVAIL^FUT_TMM03^023^C^^3023^ine_avail^0^^^23^^N^^^^^FUT_AVAIL^Available^Available^Available^C^^E^^^^0^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+ANNOUNCEMENTS^FUT_TMM03^024^C^^3024^ine_announcements^0^^^24^^N^^^^^FUT_ANNOUNCEMENT^Send Announcements^Mail Announcements^Mail Announcements^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Mail Announcements^^^^^^^N^
+FAX_NUMBER^FUT_TMM03^025^C^^3025^ine_fax_number^0^^^25^^N^^^^^FUT_FAX_NUMBER^Fax Telephone Number^Fax Telephone Number^Fax Telephone Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^0^Enter Fax Telephone Number^^^^^^^N^
+DEALER_STR_2^FUT_TMM03^026^C^^3026^ine_dealer_str_2^0^^^26^^N^^^^^FUT_DEALER_STR_2^Reserved For Dealer Use^Reserved For Dealer Use^Reserved For Dealer Use^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^Enter Reserved For Dealer Use^^^^^^^N^
+E_MAIL^FUT_TMM03^027^C^^3027^ine_e_mail^0^^^27^^N^^^^^FUT_E_MAIL^E-mail^E mail^E mail^C^^E^^^^^^^^^^^^^^^^^^^^^^^80^^^^^^^^^^^0^Enter E-mail^^^^^^^N^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_TMM03^PRIMARY^FUT_TMM03.FIRM_ID                       FUT_TMM03.CUSTOMER_NBR                  FUT_TMM03.TM_NUMBER                     FUT_TMM03.SEQUENCE_NBR                  ^FUT_TMM03.FIRM_ID$+FUT_TMM03.CUSTOMER_NBR$+FUT_TMM03.TM_NUMBER$+FUT_TMM03.SEQUENCE_NBR$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.CUSTOMER_NBR$+RD_REC_DATA.TM_NUMBER$+RD_REC_DATA.SEQUENCE_NBR$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.CUSTOMER_NBR$               RD_REC_DATA.TM_NUMBER$                  RD_REC_DATA.SEQUENCE_NBR$               
+{KeyDefsEnd}
+{GridCols}
+001FUT_TMM03.FIRM_ID                       ;002FUT_TMM03.CUSTOMER_NBR                  ;003FUT_TMM03.TM_NUMBER                     ;004FUT_TMM03.SEQUENCE_NBR                  ;005FUT_TMM03.CONTACT_NAME                  ;006FUT_TMM03.POSITION                      ;007FUT_TMM03.PHONE_NUMBER                  ;008FUT_TMM03.EXTENSION                     ;009FUT_TMM03.PRIMARY_CONTACT               ;010FUT_TMM03.AP_CONTACT                    ;011FUT_TMM03.USE_FIRM_ADDR                 ;012FUT_TMM03.SEND_LIT                      ;013FUT_TMM03.LIT_DT                        ;014FUT_TMM03.SAM_CONTACT                   ;015FUT_TMM03.DEALER_STR_1                  ;016FUT_TMM03.ADDRESS_1                     ;017FUT_TMM03.ADDRESS_2                     ;018FUT_TMM03.CITY                          ;019FUT_TMM03.STATE_CODE                    ;020FUT_TMM03.ZIP_CODE                      ;021FUT_TMM03.COUNTRY_CODE                  ;022FUT_TMM03.END_USER_NBR                  ;023FUT_TMM03.AVAIL                         ;024FUT_TMM03.ANNOUNCEMENTS                 ;025FUT_TMM03.FAX_NUMBER                    ;026FUT_TMM03.DEALER_STR_2                  ;027FUT_TMM03.E_MAIL                        ;
+{GridColsEnd}

@@ -1,0 +1,301 @@
+REM /**
+REM  * ARM.WI.lst
+REM  * Displays a pie chart widget that shows AR aging information
+REM  * @author bhipple
+REM  *
+REM  */
+
+seterr err_exit
+
+declare DashboardWidget salesdashboardWidget!
+declare DashboardWidget agingdashboardWidget!
+
+enter firmId$, custNum$, context, salesdashboardWidget!, agingdashboardWidget!
+
+declare BBjSysGui sysgui!
+sysgui! = BBjAPI().getSysGui()
+rem ' window! = cast(BBjTopLevelWindow, sysgui!.getWindow(context))
+rem ' xresp = msgbox("old context " + str(oldContext),0,"debug")
+
+rem Use statements
+use ::dashboard/dashboard.bbj::Dashboard
+use ::dashboard/dashboard.bbj::DashboardCategory
+use ::dashboard/dashboard.bbj::DashboardWidget
+use ::dashboard/dashboard.bbj::WidgetControl
+use ::dashboard/widget.bbj::Widget
+use ::dashboard/widget.bbj::ChartWidget
+use ::dashboard/widget.bbj::PieChartWidget
+use ::dashboard/widget.bbj::BarChartWidget
+use ::BBUtils.bbj::BBUtils
+use ::BBXImage.bbj::BBXImageFactory
+use ::BBXImage.bbj::BBXImage
+use ::bbwindowutils.bbj::BBWindowUtils
+
+use java.awt.TexturePaint
+use java.awt.geom.Rectangle2D
+use java.awt.image.BufferedImage
+
+rem Database stuff
+rem use java.sql.DriverManager
+rem use java.sql.Connection
+call "ec_open::ARM01"
+call "ec_open::ARM02"
+call "ec_open::ARM06"
+
+
+if (firmID$ <> "" and custNum$ <> "")
+	rem Create the connect string
+	rem host$ = "upgrade.@basis.cloud"
+	host$ = "localhost"
+	db$ = "AddOnData"
+	user$ = "guest"
+	ssl$ = "true"
+	connectString$="jdbc:basis:" + host$ + "?database=" + db$ + "&user=" + user$ + "&ssl=" + ssl$
+else
+	goto finished
+endif
+
+rem ' aging widget
+
+	rem Create the SQL string
+	rem sql$ = "select CUST_NAME,AGING_FUTURE,AGING_CUR,AGING_30,AGING_60,AGING_90,AGING_120 FROM ARM01,ARM02 "
+	rem sql$ = sql$ +  "where ARM01.FIRM_ID = ARM02.FIRM_ID and " 
+	rem sql$ = sql$ +  "ARM01.CUSTOMER_NBR = ARM02.CUSTOMER_NBR and "
+	rem sql$ = sql$ + "FIRM_ID = '" + firmID$ + "' and "
+	rem sql$ = sql$ + "CUSTOMER_NBR = '" + custNum$ + "' and "
+	rem sql$ = sql$ + "AR_TYPE = ''"
+
+	rem Make sure the JDBC driver is loaded
+	rem java.lang.Class.forName("com.basis.jdbc.BasisDriver")
+
+	rem Make connection, prepare the statement, and execute the query
+	rem c! = DriverManager.getConnection(connectString$)
+	rem p! = c!.prepareStatement(sql$)
+	rem r! = p!.executeQuery()
+    
+	rem Get the  data
+	rem if (r!.next())
+	rem 	custName$ = r!.getObject(1)
+	rem 	future = r!.getObject(2)
+	rem 	current = r!.getObject(3))
+	rem 	over30 = r!.getObject(4)
+	rem 	over60 = r!.getObject(5)
+	rem 	over90 = r!.getObject(6)
+	rem 	over120 = r!.getObject(7)
+	rem 	totalAging = future + current + over30 + over60 + over90 + over120
+	rem else
+	rem 	custName$ = firmID$ + custNum$
+	rem 	future = 0
+	rem 	current = 0
+	rem 	over30 = 0
+	rem 	over60 = 0
+	rem 	over90 = 0
+	rem 	over120 = 0
+	rem 	totalAging = future + current + over30 + over60 + over90 + over120
+	rem endif
+	
+	read record(arm01, key = firmID$ + custNum$)arm01$
+	custName$ = arm01.cust_name$
+	success = 0
+	read record(arm02, key = firmID$ + custNum$ + "  ", err=*next)arm02$; success = 1
+	if !success then
+		future = 0
+		current = 0
+		over30 = 0
+		over60 = 0
+		over90 = 0
+		over120 = 0
+		totalAging = future + current + over30 + over60 + over90 + over120
+	else
+		future = arm02.aging_future
+		current = arm02.aging_cur
+		over30 = arm02.aging_30
+		over60 = arm02.aging_60
+		over90 = arm02.aging_90
+		over120 = arm02.aging_120
+		totalAging = future + current + over30 + over60 + over90 + over120
+	endif
+
+	REM Debug
+	REM print "custName: ",custName$
+	REM print "future:   ",future
+	REM print "current:  ",current
+	REM print "over30:   ",over30
+	REM print "over60:   ",over60
+	REM print "over90:   ",over90
+	REM print "over120:  ",over120
+
+        rem ' if (totalAging > 0)
+       
+	rem Create the dashboard and category
+	dashboard! = new Dashboard("CustomerSalesAndAging","Customer Sales and Aging")
+	dashboardCategory! = dashboard!.addDashboardCategory("CustomerSalesAndAging","Customer Sales and Aging")
+	dashboardCategory!.setWidgetTitlebarNameBackColor(bbjapi().makeColor(215,215,215))
+	dashboardCategory!.setWidgetTitlebarDecorationBackColor(bbjapi().makeColor(225,225,225))    
+
+	rem Create the widget
+	widgetName$ = "CustomerAging"
+	title$ = "AR Aging for " + custName$
+	previewText$ = ""
+	previewImage$ = ""
+	chartTitle$ = ""
+	flat = 1 
+	legend = 0
+	numSlices = 6
+	agingdashboardWidget! = dashboardCategory!.addPieChartDashboardWidget(widgetName$,title$,previewText$,previewImage$,chartTitle$,flat,legend,numSlices)
+	agingdashboardWidget!.setCloseEnabled(0,err=*NEXT)
+	widget! = agingdashboardWidget!.getWidget()
+            
+	rem Get the background image for the AR Aging Chart
+	declare BBXImage xImage!
+	xImage! = BBXImageFactory.createImageFromServerFile(System.getProperty("basis.BBjHome") + "/utils/dashboard/images/chartBG.jpg")
+	xImage!.setOpacity(20)
+	tr! = new Rectangle2D.Double(0, 0, xImage!.getWidth(), xImage!.getHeight())
+	chartTexturePaint! = new TexturePaint(xImage!.getBufferedImage(BufferedImage.TYPE_INT_ARGB), tr!)
+            
+	rem Customize the chart
+	widget!.setLabelFormat("{0}: {1} ({2})", java.text.NumberFormat.getCurrencyInstance(), java.text.NumberFormat.getPercentInstance())
+	widget!.setChartBackground(chartTexturePaint!)
+	widget!.setPlotPadding(.06)
+	colors! = ChartWidget.getVectorOfJavaColorsFromHexColorStrings(4, "#f5bcbc", "#861313", .65, .65)
+	colors!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#169c16", 0.65))
+	colors!.insertItem(0, ChartWidget.getColorWithAlphaFromHexString("#1d56c9", 0.65))
+	widget!.setChartColors(colors!)
+	widget!.setLegendPosition(ChartWidget.getSideLeft(), ChartWidget.getHAlignRight(), ChartWidget.getVAlignCenter())
+            
+	rem Set the Widget data
+	widget!.setDataSetValue("  Future", future)
+	widget!.setDataSetValue(" Current", current)
+	widget!.setDataSetValue(" 30 Days", over30)
+	widget!.setDataSetValue(" 60 Days", over60)
+	widget!.setDataSetValue(" 90 Days", over90)
+	widget!.setDataSetValue("120 Days", over120)
+            
+	rem Create a window
+	rem ' sysgui! = BBjAPI().openSysGui("X0")
+	rem ' width=600
+	rem ' height=210
+	rem ' context = sysgui!.getAvailableContext()
+	rem ' xresp = msgbox("new context " + str(context),0,"debug")
+	rem ' window! = sysgui!.addWindow(context,200,200,width,height,"Aging report for " + custName$,$01000012$)
+	rem ' widgetControl! = new WidgetControl(dashboardWidget!,window!,0,0,width,height,$$)
+	rem ' agingWidgetControl! = new WidgetControl(dashboardWidget!,window!,335,200,300,240,$$)
+	rem ' agingWidgetControl!.setMoveParentWindow(1)
+        rem ' Embed the chart widget in the window passed in
+        rem ' embeddedAgingWidgetControl! = new WidgetControl(agingdashboardWidget!,customerSalesAndAging!,300,0,240,240,$$)
+       
+	rem ' closeButton! = widgetControl!.getBBjControl(WidgetControl.getDASHBOARD_WIDGET_CLOSE_BUTTON_NAME())
+	rem ' closeButton!.setCallback(BBjToolButton.ON_TOOL_BUTTON_PUSH,"Finished")
+
+rem ' sales widget
+
+	rem Create the SQL string
+	rem sql$ = "select MTD_SALES, YTD_SALES, PYR_SALES, NMTD_SALES FROM ARM06 "
+	rem sql$ = sql$ +  "where FIRM_ID = '" + firmID$ + "' and "
+	rem sql$ = sql$ +  "CUSTOMER_NBR = '" + custNum$ + "'"
+
+	rem prepare the statement, and execute the query
+	rem p1! = c!.prepareStatement(sql$)
+	rem r1! = p1!.executeQuery()
+
+	rem Get the  data
+	rem if (r1!.next())
+	rem 	mtd_sales = r1!.getObject(1)
+	rem 	ytd_sales = r1!.getObject(2)
+	rem 	pyr_sales = r1!.getObject(3)
+	rem 	nmtd_sales = r1!.getObject(4)
+	rem else
+	rem 	mtd_sales = 0
+	rem 	ytd_sales = 0
+	rem 	pyr_sales = 0
+	rem 	nmtd_sales = 0
+	rem endif
+    
+	success = 0
+	read record(arm06, key = firmID$ + custNum$, err=*next)arm06$; success = 1
+	if !success then
+		mtd_sales = 0
+		ytd_sales = 0
+		pyr_sales = 0
+		nmtd_sales = 0
+	else
+		mtd_sales = arm06.mtd_sales
+		ytd_sales = arm06.ytd_sales
+		pyr_sales = arm06.pyr_sales
+		nmtd_sales = arm06.nmtd_sales
+	endif
+        
+        rem Create the widget
+        widgetName$ = "Sales"
+        title$ = "Sales for " + custName$
+        previewText$ = ""
+        previewImage$ = ""
+        chartTitle$ = ""
+        flat = 0 
+        legend = 0
+        rem ' numSlices = 6
+        domainTitle$ = ""
+	rangeTitle$ = ""
+	orientation=BarChartWidget.getORIENTATION_VERTICAL()
+        salesdashboardWidget! = dashboardCategory!.addBarChartDashboardWidget(widgetName$,title$,previewText$,previewImage$,chartTitle$,domainTitle$,rangeTitle$,flat,orientation,legend)
+        salesdashboardWidget!.setCloseEnabled(0,err=*NEXT)
+        saleswidget! = salesdashboardWidget!.getWidget()
+		
+        rem Customize the chart
+        saleswidget!.setChartRangeAxisToCurrency()
+        saleswidget!.setChartBackground(chartTexturePaint!)
+        rem ' saleswidget!.setPlotPadding(.06)
+        saleswidget!.setChartColors(colors!)
+        saleswidget!.setLegendPosition(ChartWidget.getSideLeft(), ChartWidget.getHAlignRight(), ChartWidget.getVAlignCenter())
+
+        rem Set the Widget data
+        saleswidget!.setDataSetValue("Sales", "MTD", mtd_sales)
+        saleswidget!.setDataSetValue("Sales", "YTD", ytd_sales)
+        saleswidget!.setDataSetValue("Sales", "PYTD", pyr_sales)
+        saleswidget!.setDataSetValue("Sales", "NMTD", nmtd_sales)
+
+        rem ' saleswidgetControl! = new WidgetControl(salesdashboardWidget!,window!,10,200,300,240,$$)
+        rem ' saleswidgetControl!.setMoveParentWindow(1)
+        rem ' Embed the chart widget in the window passed in
+        rem ' embeddedSalesWidgetControl! = new WidgetControl(salesdashboardWidget!,customerSalesAndAging!,0,0,240,240,$$)
+            
+            
+        rem ' salescloseButton! = saleswidgetControl!.getBBjControl(WidgetControl.getDASHBOARD_WIDGET_CLOSE_BUTTON_NAME())
+        rem ' salescloseButton!.setCallback(BBjToolButton.ON_TOOL_BUTTON_PUSH,"Finished")
+
+        rem ' BBWindowUtils.centerWindow(window!)
+        rem ' window!.setVisible(1)
+        rem 'process_events
+    
+    	goto finished
+    	
+err_exit:    
+	xresp = msgbox("ARM.WI.called Error: " + str(err) + " stmt: " + str(tcb(5)) + " " + errmes(-1),0,"debug")
+	
+finished:
+	rem Clean up
+	
+	sysgui!.setContext(context)
+	
+	rem ' window!.setVisible(0, err=*next)
+	rem ' window!.destroy(err=*next)
+	rem ' window! = null()
+
+	rem r!.close(err=*next)
+	rem p!.close(err=*next)
+	rem r1!.close(err=*next)
+	rem p1!.close(err=*next)
+	rem c!.close(err=*next)
+
+	close(arm01, err=*next)
+	close(arm02, err=*next)
+	close(arm06, err=*next)
+	
+	xresp = msgbox("successfully reach the exit!",0,"debug")
+
+exit
+
+
+
+
+

@@ -1,0 +1,4 @@
+file_name$="/basisaon/aon/ADATA/ARM-02"
+myAPI!=BBJAPI()
+myFileSystem!=myAPI!.getFileSystem()
+myFileSystem!.recoverFile(FILE_NAME$)

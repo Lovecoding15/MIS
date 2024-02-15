@@ -1,0 +1,123 @@
+REM /**
+REM  * Audev_Login.bbj
+REM  * @author jayasakthidevendiran
+REM  *
+REM  */
+REM Login.bbj
+declare auto BBjAPI myAPI!
+declare auto BBjSysGui mySysGui!
+declare auto BBjWindow loginWindow!
+declare auto BBjButton loginButton!
+declare auto BBjButton cancelButton!
+declare auto BBjEditBox usernameEdit!
+declare auto BBjEditBox passwordEdit!
+declare auto BBjStaticText text1!
+declare auto BBjStaticText text2!
+
+
+style! = "
+: .frame {
+:   display:flex;
+:   gap:20px;
+:   flex-direction:column;
+:   padding: 50px;
+:   background-color: white;
+:   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+: }
+: .entry-window {
+:   display:flex;
+:   gap:10px;
+:   align-items: center;
+: }
+:  .top-window{
+:   display: flex;
+:   justify-content: center;
+:   align-items: center;
+:   height:100%;
+: }
+:   .button-window{
+:   display: flex;
+:   justify-content: space-evenly;
+:   padding-left: 50px;
+:
+:}
+:
+:"
+
+
+web! = BBjAPI().getWebManager()
+web!.injectStyle(style!, 0)
+
+
+REM Obtain the instance of the BBjAPI object
+LET myAPI! = BBjAPI()
+
+REM Open the SysGui device
+SYSGUI = UNT
+OPEN (SYSGUI) "X0"
+
+LET mySysGui! = myAPI!.getSysGui()
+
+tmp$ = stbl("!COMPAT", "LEGACY_FONTS=TRUE")
+
+REM Create a new BBj window
+loginWindow! = mySysGui!.addWindow(10, 10, 280, 160, "Login",$01101000$)
+loginWindow!.addPanelStyle("top-window")
+childWindow! = loginWindow!.addChildWindow("", $00108800$, mySysGui!.getAvailableContext())
+childWindow!.addStyle("frame")
+
+userNameWindow! = childWindow!.addChildWindow("", $00108800$, mySysGui!.getAvailableContext())
+passwordWindow! = childWindow!.addChildWindow("", $00108800$, mySysGui!.getAvailableContext())
+
+userNameWindow!.addStyle("entry-window")
+passwordWindow!.addStyle("entry-window")
+
+text1! = userNameWindow!.addStaticText(201, 30, 30, 100, 20, "Username:")
+
+text2! = passwordWindow!.addStaticText(202, 30, 70, 100, 20, "Password:")
+
+usernameEdit! = userNameWindow!.addEditBox(102, 90, 30, 150, 20, "")
+
+passwordEdit! = passwordWindow!.addEditBox(104, 90, 70, 150, 20, "",$0400$)
+
+buttonWindow! = childWindow!.addChildWindow("", $00108800$, mySysGui!.getAvailableContext())
+
+loginButton! = buttonWindow!.addButton(105, 80, 110, 70, 30, "Login")
+loginButton!.setAttribute("theme","primary")
+
+
+loginButton!.setCallback(loginButton!.ON_BUTTON_PUSH, "loginButtonClick")
+
+cancelButton! = buttonWindow!.addButton(106, 160, 110, 70, 30, "Cancel")
+cancelButton!.setAttribute("theme","primary")
+
+buttonWindow!.addStyle("button-window")
+
+cancelButton!.setCallback(cancelButton!.ON_BUTTON_PUSH, "APP_CLOSE")
+
+CALLBACK(ON_CLOSE,APP_CLOSE,mySysGui!.getContext())
+
+REM Process Events
+PROCESS_EVENTS
+
+APP_CLOSE:
+RELEASE
+
+
+REM Callback routine called when the "Login" button is clicked
+loginButtonClick:
+    REM Get the entered username and password
+    username$ = usernameEdit!.getText()
+    password$ = passwordEdit!.getText()
+
+    REM Perform authentication
+    IF username$ = stbl("+USER") AND password$ = stbl("+PASSWORD") THEN
+       loginWindow!.setVisible(0)
+       Call "Audev_App.bbj"
+    ELSE
+     msg =  msgbox("Login Failed! Please check your credentials.", BBjSysGui.MSGBOX_ICON_STOP,"Login Failed", mode="theme=danger")
+    ENDIF
+
+    RETURN
+
+

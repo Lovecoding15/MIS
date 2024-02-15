@@ -1,0 +1,22 @@
+0010 REM "ADC - ADD+ON 6.0 Bridge - User Data Input Called Routine"
+0020 REM "Program: ADC.IA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0090 ENTER TYPE$,FLAGS$,DEFAULT$,MASK$,MESSAGE$,PGM$,LENGTH,COLUMN,ROW,FIELD$,V,FKEY,DISPLAY
+1000 REM " --- Call ADD+ON input program"
+1020 CALL "SYC.IA",TYPE$,FLAGS$,DEFAULT$,MASK$,MESSAGE$,PGM$,LENGTH,COLUMN,ROW,FIELD$,V,FKEY,DISPLAY
+1030 IF FKEY=999 THEN LET FKEY=5; GOTO 9900
+1040 IF FKEY=127 THEN CALL "SYC.ES",PGM(-2),TCB(8),E$,E2,FKEY; IF FKEY=127 THEN LET FKEY=6 FI; GOTO 9900 FI
+1100 REM " --- Printer selection (what uses this? Is it still needed?)"
+1120 IF FKEY<>9 THEN GOTO 9900
+1140 LET FLAG$="01"; REM "---- Printers From User Record W/Mode Selection"
+1150 LET MODE$="0"; REM "----- Don't return the result"
+1160 CALL "ADC.05",FLAG$,PRINTER$,MODE$
+1170 LET FKEY=0
+1190 GOTO 1000
+9900 REM " --- Exit"
+9990 EXIT 
+9999 END

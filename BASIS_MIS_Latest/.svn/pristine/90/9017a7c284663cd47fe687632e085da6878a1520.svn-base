@@ -1,0 +1,32 @@
+//  menu for licensing functions   <aonlic_mnu>
+
+repeat
+	{
+	display/form="MAS_HEAD"
+		screen_desc="LICENSE FUNCTIONS MENU" firm_name="";
+
+choose/title="@SELECT FUNCTION"
+	/traditional
+	/drop
+	/black
+	/help="ENTER CHOICE ((#F6)=end)"
+	a from
+	"CHECK SERIAL NUMBER AND LICENSING INFO"
+	"LICENSE GENERATOR AND COUNTER RESET"
+	"END";
+	
+switch a
+	{
+	case 0: call/window "(BBX)aonserm_1.bbx";
+	case 1: call/window "(BBX)aonserm_7.bbx";
+	case 2: goto exit_now;
+	}
+}
+exit_now:
+//If this procedure is CALLed then exit, otherwise RELEASE BBx
+#3glbegin
+called_proc=tcb(13)
+#3glend
+if called_proc then exit;
+else exit/release;
+//

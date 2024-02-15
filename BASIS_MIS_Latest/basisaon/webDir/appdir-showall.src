@@ -1,0 +1,126 @@
+0010 CALL "utaddr.wbb"
+0020 CALL "utcgi.wbb",ENV$,CGI$,HTML$
+0030 LET A$=OPTS; LET A$(4,1)=IOR($20$,A$(4,1)); SETOPTS A$
+0040 LET APP$=STBL("DATA_SERVER")+STBL("ADIR")
+0050 rem LET GAG$=DSK("")+DIR("")+PGM(-1)
+0060 gosub get_country
+0070 rem LET TRACELOG$="/home/basis/pro5/appdir/trace.log",DEBUG=UNT; OPEN (DE
+0070:BUG)TRACELOG$; SETTRACE (DEBUG)
+0080 REM build a header
+0090 LET HTML$=header$
+0100 CALL "uttags.wbb","H2",txt1$,HTML$
+0110 CALL "uttags.wbb","H2",txt2$,HTML$
+0120 LET DATA_RECP$="FIRM:C(2),CUSTID:C(8*=10),NAME:C(36*=10),ADDRESS1:C(32*=1
+0120:0),ADDRESS2:C(32*=10),CITY:C(32*=10),STATE:C(20*=10),POSTALCODE:C(10*=10)
+0120:,COUNTRY:C(16*=10),CONTACT:C(32*=10),PHONE:C(18*=10),FAX:C(18*=10),EMAIL:
+0120:C(50*=10),WEBSITE:C(50*=10),CAT1:C(32),CAT2:C(32),CAT3:C(32),CAT4:C(32),C
+0120:AT5:C(32),TEXT1:C(36*=10),TEXT2:C(36*=10),GRAPHIC1:C(36*=10),GRAPHIC2:C(3
+0120:6*=10),HTML:C(36*=10),LANGUAGE:C(1*=10),SHOW:C(1*=10),KEYWORDS:C(36*=10)"
+0130 CALL "uttags.wbb","H2",txt3$,HTML$
+0140 REM define the template
+0150 gosub dimrs
+0160 DIM DATARECP$:DATA_RECP$
+0170 DIM DATARECR$:DATA_RES$
+0180 REM open the datafile
+0190 LET PROD=UNT; OPEN (PROD)APP$+"PRODUCTS"
+0200 LET RSL=UNT; OPEN (RSL)STBL("DATA_SERVER")+STBL("PDIR")+"reseller"
+0210 REM loop the file and build the option entries for the select control
+0220 EXTRACT (RSL,KEY="",KNUM=1,DOM=main_loop)
+0230 MAIN_LOOP: 
+0240 READ RECORD(RSL,END=END_LOOP)DATARECR$
+0245 if datarecr.firm$<>cfirm$ then goto main_loop
+0250 READ RECORD(PROD,KEY=datarecr.firm$+DATARECR.CUST_NUM$+"00",DOM=main_loop
+0250:)DATARECP$
+0260 IF DATARECP.HTML$="" THEN GOTO main_loop
+0270 LET TYPE$=DATARECR.COMPANY$+FILL(80," ")
+0280 LET TYPE$=TYPE$(1,36)
+0290 LET X=POS(TYPE$+$0A$=LIST$)
+0300 IF X=0 THEN LET LIST$=LIST$+"<option value="+datarecp.firm$+DATARECP.CUST
+0300:ID$+">"+TYPE$+$0D0A$
+0310 GOTO MAIN_LOOP
+0320 END_LOOP: 
+0330 REM create the hidden control
+0340 CALL "uttags.wbb","hidden style","NAME",HIDDEN$
+0350 REM create the select control
+0360 LET LIST$=HIDDEN$+"<SELECT NAME="+CHR(34)+"searchtext"+CHR(34)+" SIZE=8>"
+0360:+LIST$+"</SELECT>"
+0370 REM add the submit / search button
+0380 CALL "uttags.wbb","br","",LIST$
+0390 CALL "uttags.wbb","br","",LIST$
+0400 CALL "uttags.wbb","submit choice",btn$,LIST$
+0410 CALL "uttags.wbb","br","",LIST$; CALL "uttags.wbb","br","",LIST$
+0420 REM CALL "uttags.wbb","href appdir.sh","Return to the Menu",LIST$
+0430 CALL "uttags.wbb","br","",LIST$
+0440 REM wrap the form tags around the form with the post url
+0450 CALL "uttags.wbb","form appdir-show.sh",LIST$,HTML$
+0460 LET HTML$=HTML$+footer$
+0520 CALL "uttags.wbb","HTML",HTML$,FINALHTML$
+0530 CALL "uthtmout.wbb",ENV$,FINALHTML$+"",FINALHTML$,""
+0540 CALL "utsend.wbb",FINALHTML$
+0550 CALL "utexit.wbb",CGI$
+0555 rem gosub save_html
+0560 RELEASE 
+0570 dimrs:
+0580 x1$="firm:c(2),cust_num:c(6),password:c(6*),"
+0590 xx$="company:c(30*),addr1:c(30),addr2:c(30),addr3:c(30),addr4:c(30),city:
+0590:c(25),state:c(2),zip:c(9),country:c(15),phone:c(14),fax:c(14)"
+0600 xx$=xx$+",contact1:c(30),cont1_title:c(18),cont1_same:c(1),cont1_email:c(
+0600:80),cont1_addr1:c(30),cont1_addr2:c(30),cont1_city:c(25),cont1_state:c(2)
+0600:,cont1_zip:c(9),cont1_country:c(24),cont1_phone:c(14),cont1_ext:c(6),cont
+0600:1_ap:c(1)"
+0610 xx$=xx$+",contact2:c(30),cont2_title:c(18),cont2_same:c(1),cont2_email:c(
+0610:80),cont2_addr1:c(30),cont2_addr2:c(30),cont2_city:c(25),cont2_state:c(2)
+0610:,cont2_zip:c(9),cont2_country:c(24),cont2_phone:c(14),cont2_ext:c(6),cont
+0610:2_adv:c(1),cont2_ann:c(1),cont2_ap:c(1)"
+0620 xx$=xx$+",contact3:c(30),cont3_title:c(18),cont3_same:c(1),cont3_email:c(
+0620:80),cont3_addr1:c(30),cont3_addr2:c(30),cont3_city:c(25),cont3_state:c(2)
+0620:,cont3_zip:c(9),cont3_country:c(24),cont3_phone:c(14),cont3_ext:c(6),cont
+0620:3_adv:c(1),cont3_ann:c(1),cont3_ap:c(1)"
+0630 xx$=xx$+",contact4:c(30),cont4_title:c(18),cont4_same:c(1),cont4_email:c(
+0630:80),cont4_addr1:c(30),cont4_addr2:c(30),cont4_city:c(25),cont4_state:c(2)
+0630:,cont4_zip:c(9),cont4_country:c(24),cont4_phone:c(14),cont4_ext:c(6),cont
+0630:4_adv:c(1),cont4_ann:c(1),cont4_ap:c(1)"
+0640 data_res$=x1$+xx$+",cust_type:c(3)"
+0650 return
+0660 get_country:
+0670 seterr country_end
+0680 country$="US",country$=cvs(CGI.ctry$,7)
+0690 country_end: seterr 0
+0700 Header$="{include eng_header.txt}",footer$="{include eng_footer.txt}"
+0710 txt1$="BASIS International Application/Service Directory."
+0720 txt2$="The following are the results of your query:"
+0730 txt3$="Select an entry"
+0740 btn$="Retrieve",cfirm$="01"
+0750 if country$="DE" then header$="{include ger_header.txt}",footer$="{includ
+0750:e ger_footer.txt}",cfirm$="02"
+0760 if country$="FR" then header$="{include fra_header.txt}",footer$="{includ
+0760:e fra_footer.txt}",cfirm$="02"
+0770 ttx=unt
+0780 open(ttx,err=end_get_country)"appdir_translation.txt"
+0790 fin$=fin(ttx)
+0800 sz=dec(fin$(1,4))
+0810 readrecord(ttx,siz=sz)trans$
+0820 srch$=country$+"1";gosub get_translation;if temp$<>"" then txt1$=temp$
+0830 srch$=country$+"2";gosub get_translation;if temp$<>"" then txt2$=temp$
+0840 srch$=country$+"3";gosub get_translation;if temp$<>"" then txt3$=temp$
+0850 srch$=country$+"4";gosub get_translation;if temp$<>"" then btn$=temp$
+0890 end_get_country:
+0900 return
+0910 get_translation:
+0920 temp$=""
+0930 p=pos(srch$+":"=trans$)
+0940 if p=0 then return
+0950 temp$=trans$(p+len(srch$))
+0960 p=pos("{"=temp$);if p=0 then temp$="";return
+0970 temp$=temp$(p+1)
+0980 p=pos("}"=temp$);if p<2 then temp$="";return
+0990 temp$=temp$(1,p-1)
+1000 return
+1500 save_html:
+1510 sv$="/home/basis/pro5/appdir/saved_showall.html"
+1520 erase sv$,err=*next
+1530 string sv$,err=*next
+1540 sv=unt,ok=0
+1550 open(sv,err=*next)sv$;ok=1
+1560 if ok then print(sv)finalhtml$;close(sv)
+1590 return

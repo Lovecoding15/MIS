@@ -1,0 +1,318 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<barista_record_table>ADM_USERROLES</barista_record_table>
+<barista_admin_records>
+	<barista_record>
+		<USER_ID>ADMIN_APP       </USER_ID>
+		<SEC_ROLE_ID>RESTRICT</SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>ADMIN_DEV       </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>ATIMM           </USER_ID>
+		<SEC_ROLE_ID>BSGUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>ATIMM           </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BARISTA         </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BARISTA         </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BARISTA_APP     </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BARISTA_APP     </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BARISTA_APP     </USER_ID>
+		<SEC_ROLE_ID>RESTRICT</SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BARISTA_DEV     </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BHALSTED        </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BHIPPLE         </USER_ID>
+		<SEC_ROLE_ID>BASGUI  </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BHIPPLE         </USER_ID>
+		<SEC_ROLE_ID>DASHB   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BHIPPLE         </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GPARRA          </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GROBLED         </USER_ID>
+		<SEC_ROLE_ID>BASGUI  </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GROBLED         </USER_ID>
+		<SEC_ROLE_ID>LIMFUT  </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>GUEST           </USER_ID>
+		<SEC_ROLE_ID>BASGUI  </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>IROESCH         </USER_ID>
+		<SEC_ROLE_ID>BSGUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>IROESCH         </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>JKARASZ         </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KKING           </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KKING           </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<SEC_ROLE_ID>DASHB   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<SEC_ROLE_ID>EXCLUSER</SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KPETERL         </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KWILLIAM        </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCHUR           </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LGUINEY         </USER_ID>
+		<SEC_ROLE_ID>BASGUI  </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LGUINEY         </USER_ID>
+		<SEC_ROLE_ID>DASHB   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LGUINEY         </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>MREIMANN        </USER_ID>
+		<SEC_ROLE_ID>BSGUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>NSPENCE         </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>NSPENCE         </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PLEWIS          </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>PYEOMANS        </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>RBUTLER         </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SDARLIN         </USER_ID>
+		<SEC_ROLE_ID>BASGUI  </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SDARLIN         </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SVOLUPAS        </USER_ID>
+		<SEC_ROLE_ID>DEBUG   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWALD           </USER_ID>
+		<SEC_ROLE_ID>BSGUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWALD           </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<SEC_ROLE_ID>EXCLUSER</SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SWAUFLE         </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SHANEY          </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>SHANEY          </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>JVENEGAS        </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BGARDNE         </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>CHAWKINS        </USER_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>CHAWKINS        </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KORTIZ          </USER_ID>
+		<SEC_ROLE_ID>BASGUI  </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>KORTIZ          </USER_ID>
+		<SEC_ROLE_ID>USER    </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCOLLINS        </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCOLLINS        </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BSANCHEZ        </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>BSANCHEZ        </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>JAYA            </USER_ID>
+		<SEC_ROLE_ID>ADMIN   </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>JAYA            </USER_ID>
+		<SEC_ROLE_ID>DEV     </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+	<barista_record>
+		<USER_ID>LCOLLINS        </USER_ID>
+		<SEC_ROLE_ID>FUTUSER </SEC_ROLE_ID>
+		<USER_MODIFIED>A</USER_MODIFIED>
+	</barista_record>
+</barista_admin_records>

@@ -1,0 +1,30 @@
+// Application Synchronization File
+// Barista Application Framework.  Copyright BASIS International Ltd.
+SYSID=AUTHINVOICES
+SYSDESC=Authorize AP Invoices
+SYSCOMP=01007514;BASIS International
+SYSCOPY=Copyright: Authorize invoices for payment, save images of the invoices and print checks with a signature graphic file.^
+SYSPAR=ADDON           
+SYSDIR=/mnt/data/aon_prod/v1110/authinvoices/
+SYSAPP=APM;AP Modifications;;;authinvoices;/mnt/data/aon_prod/v1110/authinvoices/prop/;ENU
+SYSSTBL=SET AUTHINVOICES=/mnt/data/aon_prod/v1110/authinvoices/data/
+SYSSTBL=SET AUTHINVOICES_IMAGE=/mnt/data/aon_prod/v1110/authinvoices/image/
+SYSSTBL=SET AUTHINVOICES_LIB=/mnt/data/aon_prod/v1110/authinvoices/lib/
+SYSSTBL=SET AUTHINVOICES_PROG=/mnt/data/aon_prod/v1110/authinvoices/prog/
+SYSSTBL=SET AUTHINVOICES_PROP=/mnt/data/aon_prod/v1110/authinvoices/prop/
+SYSSTBL=SET ARCHIVEBASE=AP Vendor Invoices/
+SYSSTBL=SET AUTHTHRESHHOLD=1000
+#SYSSTBL=SET +DOC_DIR_PDF=/mnt/data/aon_prod/v1110/authinvoices/documents/
+#SYSSTBL=SET +DOC_DIR_HTM=/mnt/data/aon_prod/v1110/authinvoices/documents/
+#SYSSTBL=SET +DOC_DIR_XML=/mnt/data/aon_prod/v1110/authinvoices/documents/
+#SYSSTBL=SET +DOC_DIR_CSV=/mnt/data/aon_prod/v1110/authinvoices/documents/
+#SYSSTBL=SET +DOC_DIR_TXT=/mnt/data/aon_prod/v1110/authinvoices/documents/
+#SYSSTBL=SET +DOC_DIR_XLS=/mnt/data/aon_prod/v1110/authinvoices/documents/
+#SYSSTBL=SET +DOC_DIR_DEFAULT=/mnt/data/aon_prod/v1110/authinvoices/documents/
+#SYSSTBL=SET +DOC_DIR_ARCHIVE=/mnt/data/aon_prod/v1110/authinvoices/documents/archive/
+SYSPFX=/mnt/data/aon_prod/v1110/authinvoices/prog/
+SYSPFX=/mnt/data/aon_prod/v1110/authinvoices/data/
+SYSPFX=/mnt/data/bbj/utils/email/
+SYSCFG=AUTHINVOICES=/mnt/data/aon_prod/v1110/authinvoices/data/
+SYSLANG=ENU
+

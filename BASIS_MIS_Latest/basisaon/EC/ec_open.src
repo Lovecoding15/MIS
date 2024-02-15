@@ -1,0 +1,994 @@
+REM ' ec_open.src
+REM '
+REM ' Created by: template.bbx
+REM ' Revision  : 13 November 2000 @ 17:33:56
+REM '
+REM ' Returns XF$ as the file name
+REM '         (tablename) numeric variable is the channel
+REM '         (tablename)$ is dimensioned with the record
+
+APM12: ENTER; REM ' AMP12 -- Bank Rec Deposits Record
+call "templates.pgm::APM12"
+LET APM12=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/APM-12"
+OPEN (APM12,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE01: ENTER; REM ' ARE01 -- Cash Receipts Entry Header
+call "templates.pgm::ARE01"
+LET ARE01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-01"
+OPEN (ARE01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE02: ENTER; REM ' ARE02 -- Conversion Invoice Entry
+call "templates.pgm::ARE02"
+LET ARE02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-02"
+OPEN (ARE02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE03: ENTER; REM ' ARE03 -- Order/Invoice Entry Header
+call "templates.pgm::ARE03"
+LET ARE03=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-03"
+OPEN (ARE03,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE04: ENTER; REM ' ARE04 -- Order/Invoice Print File
+call "templates.pgm::ARE04"
+LET ARE04=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-04"
+OPEN (ARE04,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE05: ENTER; REM ' ARE05 -- Simple Invoice Entry Header
+call "templates.pgm::ARE05"
+LET ARE05=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-05"
+OPEN (ARE05,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE07: ENTER; REM ' ARE07 -- Open Orders By Item
+call "templates.pgm::ARE07"
+LET ARE07=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-07"
+OPEN (ARE07,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE11: ENTER; REM ' ARE11 -- Cash Receipts Entry Detail
+call "templates.pgm::ARE11"
+LET ARE11=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-11"
+OPEN (ARE11,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE13: ENTER; REM ' ARE13 -- Order/Invoice Entry Detail
+call "templates.pgm::ARE13"
+LET ARE13=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-13"
+OPEN (ARE13,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE15: ENTER; REM ' ARE15 -- Simple Invoice Entry Detail
+call "templates.pgm::ARE15"
+LET ARE15=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-15"
+OPEN (ARE15,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE20: ENTER; REM ' ARE20 -- Invoice Cash Receipts
+call "templates.pgm::ARE20"
+LET ARE20=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-20"
+OPEN (ARE20,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE21: ENTER; REM ' ARE21 -- Cash Receipts Entry GL
+call "templates.pgm::ARE21"
+LET ARE21=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-21"
+OPEN (ARE21,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE31: ENTER; REM ' ARE31 -- Cash Receipts Entry Balance
+call "templates.pgm::ARE31"
+LET ARE31=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-31"
+OPEN (ARE31,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE33: ENTER; REM ' ARE33 -- Manual Ship-To History
+call "templates.pgm::ARE33"
+LET ARE33=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-33"
+OPEN (ARE33,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE43: ENTER; REM ' ARE43 -- Open Order Sort
+call "templates.pgm::ARE43"
+LET ARE43=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-43"
+OPEN (ARE43,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE63: ENTER; REM ' ARE63 -- Credit Card Transaction Entry
+call "templates.pgm::ARE63"
+LET ARE63=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-63"
+OPEN (ARE63,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE64: ENTER; REM ' ARE64 -- Credit Card Trans Message
+call "templates.pgm::ARE64"
+LET ARE64=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-64"
+OPEN (ARE64,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE73: ENTER; REM ' ARE73 -- Order/Invoice Config. Detail
+call "templates.pgm::ARE73"
+LET ARE73=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-73"
+OPEN (ARE73,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE83: ENTER; REM ' ARE83 -- BASIS Serial Number Detail
+call "templates.pgm::ARE83"
+LET ARE83=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-83"
+OPEN (ARE83,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARE93: ENTER; REM ' ARE93 -- User Feature Detail
+call "templates.pgm::ARE93"
+LET ARE93=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARE-93"
+OPEN (ARE93,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM01: ENTER; REM ' ARM01 -- Customer Master
+call "templates.pgm::ARM01"
+LET ARM01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-01"
+OPEN (ARM01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM02: ENTER; REM ' ARM02 -- Customer Detail
+call "templates.pgm::ARM02"
+LET ARM02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-02"
+OPEN (ARM02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM02_CANADA: ENTER; REM ' ARM02_CANADA -- use Canadian Price Table
+call "templates.pgm::ARM02_CANADA"
+LET ARM02_CANADA=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM02_CANADA"
+OPEN (ARM02_CANADA,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM03: ENTER; REM ' ARM03 -- Customer Ship-To Addresses
+call "templates.pgm::ARM03"
+LET ARM03=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-03"
+OPEN (ARM03,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM04A: ENTER; REM ' ARM04A -- Customer Cross-Reference
+call "templates.pgm::ARM04A"
+LET ARM04A=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-04"
+OPEN (ARM04A,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM05: ENTER; REM ' ARM05 -- Customer Comments
+call "templates.pgm::ARM05"
+LET ARM05=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-05"
+OPEN (ARM05,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM06: ENTER; REM ' ARM06 -- Customer Payment Summary
+call "templates.pgm::ARM06"
+LET ARM06=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-06"
+OPEN (ARM06,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10A: ENTER; REM ' ARM10A -- Accounts Receivable Codes
+call "templates.pgm::ARM10A"
+LET ARM10A=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10A,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10B: ENTER; REM ' ARM10B -- Accounts Receivable Codes
+call "templates.pgm::ARM10B"
+LET ARM10B=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10B,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10C: ENTER; REM ' ARM10C -- Accounts Receivable Codes
+call "templates.pgm::ARM10C"
+LET ARM10C=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10C,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10D: ENTER; REM ' ARM10D -- Accounts Receivable Codes
+call "templates.pgm::ARM10D"
+LET ARM10D=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10D,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10E: ENTER; REM ' ARM10E -- Accounts Receivable Codes
+call "templates.pgm::ARM10E"
+LET ARM10E=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10E,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10F: ENTER; REM ' ARM10F -- Accounts Receivable Codes
+call "templates.pgm::ARM10F"
+LET ARM10F=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10F,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10G: ENTER; REM ' ARM10G -- Accounts Receivable Codes
+call "templates.pgm::ARM10G"
+LET ARM10G=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10G,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10H: ENTER; REM ' ARM10H -- Accounts Receivable Codes
+call "templates.pgm::ARM10H"
+LET ARM10H=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10H,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10I: ENTER; REM ' ARM10I -- Accounts Receivable Codes
+call "templates.pgm::ARM10I"
+LET ARM10I=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10I,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10L: ENTER; REM ' ARM10L -- Accounts Receivable Codes
+call "templates.pgm::ARM10L"
+LET ARM10L=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10L,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM10M: ENTER; REM ' ARM10M -- Accounts Receivable Codes
+call "templates.pgm::ARM10M"
+LET ARM10M=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-10"
+OPEN (ARM10M,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARM40: ENTER; REM ' ARM40 -- Customer License Features
+call "templates.pgm::ARM40"
+LET ARM40=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARM-40"
+OPEN (ARM40,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARS10C: ENTER; REM ' ARS10C -- Accounts Receivable System
+call "templates.pgm::ARS10C"
+LET ARS10C=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARS-10"
+OPEN (ARS10C,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARS10N: ENTER; REM ' ARS10N -- Accounts Receivable System
+call "templates.pgm::ARS10N"
+LET ARS10N=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARS-10"
+OPEN (ARS10N,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ARS10S: ENTER; REM ' ARS10S -- Accounts Receivable System
+call "templates.pgm::ARS10S"
+LET ARS10S=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ARS-10"
+OPEN (ARS10S,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART01: ENTER; REM ' ART01 -- A/R Open Invoices Header
+call "templates.pgm::ART01"
+LET ART01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-01"
+OPEN (ART01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART02: ENTER; REM ' ART02 -- Sales Tax History
+call "templates.pgm::ART02"
+LET ART02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-02"
+OPEN (ART02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART03: ENTER; REM ' ART03 -- Invoice History Header
+call "templates.pgm::ART03"
+LET ART03=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-03"
+OPEN (ART03,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART03_CANADA: ENTER; REM ' ART03_CANADA -- exchange rates used on invoices quoted in Canadian Dollars
+call "templates.pgm::ART03_CANADA"
+LET ART03_CANADA=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART03_CANADA"
+OPEN (ART03_CANADA,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART06: ENTER; REM ' ART06 -- Cash Receipts History Header
+call "templates.pgm::ART06"
+LET ART06=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-06"
+OPEN (ART06,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART07: ENTER; REM ' ART07 -- Invoice Cash Receipts History
+call "templates.pgm::ART07"
+LET ART07=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-07"
+OPEN (ART07,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART11: ENTER; REM ' ART11 -- A/R Open Invoices Detail
+call "templates.pgm::ART11"
+LET ART11=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-11"
+OPEN (ART11,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART13: ENTER; REM ' ART13 -- Invoice History Detail
+call "templates.pgm::ART13"
+LET ART13=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-13"
+OPEN (ART13,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART16: ENTER; REM ' ART16 -- Cash Receipts History Detail
+call "templates.pgm::ART16"
+LET ART16=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-16"
+OPEN (ART16,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART26: ENTER; REM ' ART26 -- Cash Receipts History GL
+call "templates.pgm::ART26"
+LET ART26=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-26"
+OPEN (ART26,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART33: ENTER; REM ' ART33 -- Manual Ship-To History
+call "templates.pgm::ART33"
+LET ART33=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-33"
+OPEN (ART33,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART63: ENTER; REM ' ART63 -- Credit Card Transaction History
+call "templates.pgm::ART63"
+LET ART63=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-63"
+OPEN (ART63,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART64: ENTER; REM ' ART64 -- Credit Card Trans Message History
+call "templates.pgm::ART64"
+LET ART64=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-64"
+OPEN (ART64,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART73: ENTER; REM ' ART73 -- Invoice History Config Detail
+call "templates.pgm::ART73"
+LET ART73=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-73"
+OPEN (ART73,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART83: ENTER; REM ' ART83 -- Invoice History - Serial #
+call "templates.pgm::ART83"
+LET ART83=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-83"
+OPEN (ART83,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ART93: ENTER; REM ' ART93 -- Invoice History - User Feature
+call "templates.pgm::ART93"
+LET ART93=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ART-93"
+OPEN (ART93,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+BBXTYPES: ENTER; REM ' BBXYTPES -- activation key types, text file, no template
+LET BBXTYPES=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/BBXTYPES"
+OPEN (BBXTYPES,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CANADIAN_EXCH: ENTER; REM ' CANADIAN_EXCH -- Canadian Exchange Rates through time
+call "templates.pgm::CANADIAN_EXCH"
+LET CANADIAN_EXCH=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CANADIAN_EXCH.dat"
+OPEN (CANADIAN_EXCH,ERR=FILE_OPEN_ERROR)XF$; EXIT
+
+COUNTRY: ENTER; REM ' COUNTRY -- Country names
+call "templates.pgm::COUNTRY"
+LET COUNTRY=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/country.dat"
+OPEN (COUNTRY,ERR=FILE_OPEN_ERROR)XF$; EXIT
+
+CSM01: ENTER; REM ' CSM01 -- Product ID
+call "templates.pgm::CSM01"
+LET CSM01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-01"
+OPEN (CSM01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM02: ENTER; REM ' CSM02 -- Platform ID
+call "templates.pgm::CSM02"
+LET CSM02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-02"
+OPEN (CSM02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM03: ENTER; REM ' CSM03 -- OS Level ID
+call "templates.pgm::CSM03"
+LET CSM03=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-03"
+OPEN (CSM03,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM04: ENTER; REM ' CSM04 -- Product Level ID
+call "templates.pgm::CSM04"
+LET CSM04=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-04"
+OPEN (CSM04,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM05: ENTER; REM ' CSM05 -- License Type ID
+call "templates.pgm::CSM05"
+LET CSM05=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-05"
+OPEN (CSM05,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM06: ENTER; REM ' CSM06 -- Media Type ID
+call "templates.pgm::CSM06"
+LET CSM06=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-06"
+OPEN (CSM06,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM07: ENTER; REM ' CSM07 -- Type of Sale ID
+call "templates.pgm::CSM07"
+LET CSM07=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-07"
+OPEN (CSM07,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM10: ENTER; REM ' CSM10 -- Configurator Pricing Table
+call "templates.pgm::CSM10"
+LET CSM10=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-10"
+OPEN (CSM10,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM10_CANADA: ENTER; REM ' CSM10_CANADA -- Configurator Pricing Table
+call "templates.pgm::CSM10_CANADA"
+LET CSM10_CANADA=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-10.canada"
+OPEN (CSM10_CANADA,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM10_MARRIOTT: ENTER; REM ' CSM10_MARRIOTT -- Configurator Pricing Table
+call "templates.pgm::CSM10_MARRIOTT"
+LET CSM10_MARRIOTT=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-10.marriott"
+OPEN (CSM10_MARRIOTT,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM13: ENTER; REM ' CSM13 -- Configurator Relationships
+call "templates.pgm::CSM13"
+LET CSM13=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-13"
+OPEN (CSM13,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM13A: ENTER; REM ' CSM13A -- Configurator Relationships
+call "templates.pgm::CSM13A"
+LET CSM13A=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-13"
+OPEN (CSM13A,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM13B: ENTER; REM ' CSM13B -- Configurator Relationships
+call "templates.pgm::CSM13B"
+LET CSM13B=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-13"
+OPEN (CSM13B,ERR=FILE_OPEN_ERROR)XF$; EXIT
+
+CSM13C: ENTER; REM ' CSM13C -- Configurator Relationships
+call "templates.pgm::CSM13C"
+LET CSM13C=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-13"
+OPEN (CSM13C,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM13D: ENTER; REM ' CSM13D -- Configurator Relationships
+call "templates.pgm::CSM13D"
+LET CSM13D=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-13"
+OPEN (CSM13D,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+CSM13H: ENTER; REM ' CSM13H -- Configurator Relationships
+call "templates.pgm::CSM13H"
+LET CSM13H=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/CSM-13"
+OPEN (CSM13H,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+DIR_RNW_PO_LOG: ENTER; REM ' DIR_RNW_PO_LOG -- log PO Number changes on renewal invoice via DIRECT_RENEW
+call "templates.pgm::DIR_RNW_PO_LOG"
+LET DIR_RNW_PO_LOG=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/dir_rnw_po_log.dat"
+OPEN (DIR_RNW_PO_LOG,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+DIRECT_RENEW_LOG: ENTER; REM ' DIRECT_RENEW_LOG -- log client platform characteristics for the Direct Renew app
+call "templates.pgm::DIRECT_RENEW_LOG"
+LET DIRECT_RENEW_LOG=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/direct_renew_log.dat"
+OPEN (DIRECT_RENEW_LOG,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECE11: ENTER; REM ' ECE11 -- E-Comm Shopping Cart Detail
+call "templates.pgm::ECE11"
+LET ECE11=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECE-11"
+OPEN (ECE11,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECE12: ENTER; REM ' ECE12 -- E-Comm Shopping Cart User Features
+call "templates.pgm::ECE12"
+LET ECE12=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECE-12"
+OPEN (ECE12,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECE83: ENTER; REM ' ECE83 -- E-Comm Shopping Cart Serial Number List
+call "templates.pgm::ECE83"
+LET ECE83=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECE-83"
+OPEN (ECE83,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECEEU: ENTER; REM ' ECEEU -- E-Comm end user data 
+call "templates.pgm::ECEEU"
+let ECEEU=UNT;XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECE-EU"
+open(ECEEU,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECEIN: ENTER; REM ' ECEIN -- E-Commerce Industry List
+call "templates.pgm::ECEIN"
+LET ECEIN=UNT;XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECE-IN"
+open(ECEIN,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECM01: ENTER; REM ' ECM01 -- E-Commerce Master
+call "templates.pgm::ECM01"
+LET ECM01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECM-01"
+OPEN (ECM01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECM02: ENTER; REM ' ECM02 -- E-Comm Customer Credit Cards
+call "templates.pgm::ECM02"
+pwd=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/password"
+OPEN (pwd,ERR=FILE_OPEN_ERROR)XF$
+read(pwd)password$
+close(pwd)
+LET ECM02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECM-02"
+OPEN (ECM02,mode="CRYPTPASS="+password$,ERR=*next)XF$;exit
+OPEN (ECM02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECM10: ENTER; REM ' ECM10 -- E-Comm Site Configuration Header
+call "templates.pgm::ECM10"
+LET ECM10=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECM-10"
+OPEN (ECM10,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+ECM11: ENTER; REM ' ECM11 -- E-Comm Site Configuration Detail
+call "templates.pgm::ECM11"
+LET ECM11=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/ECM-11"
+OPEN (ECM11,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+EMXREF: ENTER; REM ' Email xref
+call "templates.pgm::EMXREF"
+LET EMXREF=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/emxref.dat"
+OPEN (EMXREF,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+HOSTID_ALIAS: ENTER; REM ' hostid taken, hash and full cross reference file
+call "templates.pgm::HOSTID_ALIAS"
+LET HOSTID_ALIAS=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/hostid_alias.dat"
+OPEN (HOSTID_ALIAS,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+INC01: ENTER; REM ' Tech support incident xref
+call "templates.pgm::INC01"
+LET INC01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/INC-01"
+OPEN (INC01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+IVM01: ENTER; REM ' IVM01 -- Inventory Item Master
+call "templates.pgm::IVM01"
+LET IVM01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/IVM-01"
+OPEN (IVM01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+IVM02: ENTER; REM ' IVM02 -- Inventory Warehouse Detail
+call "templates.pgm::IVM02"
+LET IVM02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/IVM-02"
+OPEN (IVM02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+IVM13: ENTER; REM ' IVM13 -- Item Class Master
+call "templates.pgm::IVM13"
+LET IVM13=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/IVM-13"
+OPEN (IVM13,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+IVM14: ENTER; REM ' IVM14 -- Inventory Item Synonyms
+call "templates.pgm::IVM14"
+LET IVM14=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/IVM-14"
+OPEN (IVM14,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+IVM15: ENTER; REM ' IVM15 -- Item Type Master
+call "templates.pgm::IVM15"
+LET IVM15=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/IVM-15"
+OPEN (IVM15,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+IVM24: ENTER; REM ' IVM24 -- Inventory Item Synonyms Xref
+call "templates.pgm::IVM24"
+LET IVM24=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/IVM-24"
+OPEN (IVM24,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+IVS01: ENTER; REM ' IVS01 -- Inventory System Parameters
+call "templates.pgm::IVS01"
+LET IVS01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SYS-01"
+OPEN (IVS01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+JOB_QUEUE: ENTER
+call "templates.pgm::job_queue"
+LET job_queue=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/job_queue.dat"
+OPEN (job_queue,ERR=FILE_OPEN_ERROR)XF$; EXIT
+
+LANGUAGES: ENTER; REM 
+call "templates.pgm::LANGUAGES"
+LET LANGUAGES=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/languages.dat"
+OPEN (languages,ERR=FILE_OPEN_ERROR)XF$; EXIT
+
+LICENSE_RESET: ENTER; REM ' LICENSE_RESET -- License Counter Resets
+call "templates.pgm::LICENSE_RESET"
+LET LICENSE_RESET=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/license_reset.dat"
+OPEN (LICENSE_RESET,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+LOGEXTRACT: ENTER; REM ' LOGEXTRACT -- Logged License Requests
+call "templates.pgm::LOGEXTRACT"
+LET LOGEXTRACT=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/logextract.dat"
+OPEN (LOGEXTRACT,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+OEMHISTORY: ENTER; REM ' OEMHISTORY -- OEM SN history from AKG meterlog
+call "templates.pgm::OEMHISTORY"
+LET OEMHISTORY=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/oemhistory.dat"
+OPEN (OEMHISTORY,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+OEM_SN_CANCEL: ENTER; REM ' OEM_SN_CANCEL -- OEM Canceled Serial Numbers
+call "templates.pgm::OEM_SN_CANCEL"
+LET OEM_SN_CANCEL=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADAT/oem_sn_cancel.dat"
+OPEN (OEM_SN_CANCEL,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+OEM_SN_TRANS: ENTER; REM ' OEM_SN_TRANS -- OEM Serial Number Transactions
+call "templates.pgm::OEM_SN_TRANS"
+LET OEM_SN_TRANS=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/oem_sn_trans.dat"
+OPEN (OEM_SN_TRANS,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+OEM_SN_XREF: ENTER; REM ' OEM_SN_XREF -- OEM Canceled/New SN Xref
+call "templates.pgm::OEM_SN_XREF"
+LET OEM_SN_XREF=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/oem_sn_xref.dat"
+OPEN (OEM_SN_XREF,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+OEM_AR_PRICE: ENTER; REM ' OEM_AR_PRICE -- OEM Invoice line items with Pricing
+call "templates.pgm::OEM_AR_PRICE"
+let OEM_AR_PRICE=unt,xf$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/oem_ar_price.dat"
+open (oem_ar_price,err=file_open_error)xf$
+exit
+ 
+RESET_REASON: ENTER; REM ' Reasons for license resets
+call "templates.pgm::RESET_REASON"
+let reset_reason=unt,xf$=stbl("DATA_SERVER")+"/basisaon/aon/ADATA/reset_reason.dat"
+open (reset_reason,err=file_open_error)xf$
+exit
+
+SAM01: ENTER; REM ' SAM01 - Sales Analysis Customer
+call "templates.pgm::SAM01"
+let sam01=unt,xf$=stbl("DATA_SERVER")+"/basisaon/aon/ADATA/SAM-01"
+open (sam01,err=file_open_error)xf$
+exit
+
+SAM03: ENTER; REM ' SAM01 - Sales Analysis Sales Rep
+call "templates.pgm::SAM03"
+let sam03=unt,xf$=stbl("DATA_SERVER")+"/basisaon/aon/ADATA/SAM-03"
+open (sam03,err=file_open_error)xf$
+exit
+
+SAM2_DS_XREF: ENTER; REM ' SAM2_DS_XREF -- Matching client & DS serial numbers for trade
+call "templates.pgm::SAM2_DS_XREF"
+let sam2_ds_xref=unt,xf$=stbl("DATA_SERVER")+"/basisaon/aon/ADATA/SAM2_ds_xref.dat"
+open (sam2_ds_xref,err=file_open_error)xf$
+exit
+
+SERIALNUMBERS: ENTER; REM ' SERIALNUMBERS -- Serial number prefix & count
+call "templates.pgm::SERIALNUMBERS"
+LET SERIALNUMBERS=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SERIALNUMBERS"
+OPEN (SERIALNUMBERS,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SHIPPING: ENTER; REM ' SHIPPING -- Shipping Charges
+call "templates.pgm::SHIPPING"
+LET SHIPPING=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/shipping.dat"
+OPEN (SHIPPING,ERR=FILE_OPEN_ERROR)XF$; EXIT
+
+SMC01: ENTER; REM ' SMC01 -- SAM/Developer Contracts
+call "templates.pgm::SMC01"
+LET SMC01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SMC-01"
+OPEN (SMC01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SMC02: ENTER
+call "templates.pgm::SMC02"
+LET SMC02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SMC-02"
+OPEN (SMC02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNM01: ENTER; REM ' SNM01 -- Serial Number Master
+call "templates.pgm::SNM01"
+LET SNM01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNM-01"
+OPEN (SNM01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNM01_BLS: ENTER; REM ' SNM01_BLS -- Serial Number licensed via BLS
+call "templates.pgm::SNM01_BLS"
+LET SNM01_BLS=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/snm01_bls.dat"
+OPEN (SNM01_BLS,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNM02: ENTER; REM ' SNM02 -- Serial Nbr Additional Information
+call "templates.pgm::SNM02"
+LET SNM02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNM-02"
+OPEN (SNM02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNM03: ENTER; REM ' SNM03 -- Serial Nbr Marketing Profile
+call "templates.pgm::SNM03"
+LET SNM03=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNM-03"
+OPEN (SNM03,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNM04: ENTER; REM ' SNM04 -- Serial Nbr Comments
+call "templates.pgm::SNM04"
+LET SNM04=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNM-04"
+OPEN (SNM04,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNMEL: ENTER; REM ' SNMEL -- Serail Number End User Data Link
+call "templates.pgm::SNMEL"
+LET SNMEL=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNM-EL"
+OPEN (SNMEL,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNMEU: ENTER; REM ' SNMEL -- Serail Number End User Data
+call "templates.pgm::SNMEU"
+LET SNMEU=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNM-EU"
+OPEN (SNMEU,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNT01: ENTER; REM ' SNT01 -- Serial Number Detail
+call "templates.pgm::SNT01"
+LET SNT01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNT-01"
+OPEN (SNT01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNT02: ENTER; REM ' SNT02 -- Server-linked Clients
+call "templates.pgm::SNT02"
+LET SNT02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNT-02"
+OPEN (SNT02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNT03: ENTER; REM ' SNT03 -- Serial Number Act/Deact Nbrs
+call "templates.pgm::SNT03"
+LET SNT03=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNT-03"
+OPEN (SNT03,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SNT04: ENTER; REM ' SNT04 -- SN Customer Features
+call "templates.pgm::SNT04"
+LET SNT04=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SNT-04"
+OPEN (SNT04,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_BLMBLS_WHTLST: ENTER; REM ' SN_BLMBLS_WHTLST -- Serial Numbers exempt from the block on returning to a BLM registration
+call "templates.pgm::SN_BLMBLS_WHTLST"
+LET SN_BLMBLS_WHTLST=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_blmbls_whtlst.dat"
+OPEN (SN_BLMBLS_WHTLST,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_DEACT_REG: ENTER; REM ' SN_DEACT_REG -- log of attempts by a deactivated license to register and obtain a license
+call "templates.pgm::SN_DEACT_REG"
+LET SN_DEACT_REG=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_deact_reg.dat"
+OPEN (SN_DEACT_REG,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_HOST: ENTER; REM ' SN_HOST -- Redundant Lic Data from flex generator
+call "templates.pgm::SN_HOST"
+LET SN_HOST=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_host.dat"
+OPEN (SN_HOST,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_HOST_MULTI_SN: ENTER; REM ' SN_HOST_MULTI_SN -- hosts with multiple serial numbers
+call "templates.pgm::SN_HOST_MULTI_SN"
+LET SN_HOST_MULTI_SN=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_host_multi_sn.dat"
+OPEN (SN_HOST_MULTI_SN,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_LICENSE: ENTER; REM ' SN_LICENSE -- Lic Data from flex generator
+call "templates.pgm::SN_LICENSE"
+LET SN_LICENSE=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_license.dat"
+OPEN (SN_LICENSE,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_LIMIT_EMAILS: ENTER; REM ' SN_LIMIT_EMAILS -- to logged emails sent when a SN limit to a specific host id attempts to register with a invalid hostid
+call "templates.pgm::SN_LIMIT_EMAILS"
+LET SN_LIMIT_EMAILS=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_limit_emails.dat"
+OPEN (SN_LIMIT_EMAILS,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_LIMIT_HOSTID: ENTER; REM ' SN_LIMIT_HOSTID -- to limit a SN to a specific host id
+call "templates.pgm::SN_LIMIT_HOSTID"
+LET SN_LIMIT_HOSTID=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_limit_hostid.dat"
+OPEN (SN_LIMIT_HOSTID,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_LIMIT_REJECTS: ENTER; REM ' SN_LIMIT_REJECTS -- to log rejected attempts to register a serial number to a host id that is not the valid hostid
+call "templates.pgm::SN_LIMIT_REJECTS"
+LET SN_LIMIT_REJECTS=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_limit_rejects.dat"
+OPEN (SN_LIMIT_REJECTS,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_PROD_BACKUP: ENTER; REM ; SN_PROD_BACKUP -- table of Production and Backup licenses
+call "templates.pgm::SN_PROD_BACKUP"
+LET SN_PROD_BACKUP=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_prod_backup.dat"
+OPEN (SN_PROD_BACKUP,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+
+SN_SELECT: ENTER; REM ' SN_SELECT -- SN's to be renewed (rn1 & SAM contracts)
+call "templates.pgm::sn_select"
+LET SN_select=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_select.dat"
+OPEN (SN_SELECT,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_STATS: ENTER; REM ' SN_STATS -- summary table for data to be used by dashboard widgets
+call "templates.pgm::SN_STATS"
+LET SN_STATS=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_stats.dat"
+OPEN (SN_STATS,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_STATS01: ENTER; REM ' SN_STATS01 -- summary table for data to be used by dashboard widgets
+call "templates.pgm::SN_STATS01"
+LET SN_STATS01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_stats01.dat"
+OPEN (SN_STATS01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_STATS02: ENTER; REM ' SN_STATS02 -- summary table for data to be used by dashboard widgets
+call "templates.pgm::SN_STATS02"
+LET SN_STATS02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_stats02.dat"
+OPEN (SN_STATS02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_LIC_REG_ERR: ENTER; REM ' SN_LIC_REG_ERR -- table recording error in flexlic.bbx
+call "templates.pgm::SN_LIC_REG_ERR"
+LET SN_LIC_REG_ERR=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_lic_reg_err.dat"
+OPEN (SN_LIC_REG_ERR,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SPEC_DATE: ENTER; REM ' Special deal fixed SAM dates
+call "templates.pgm::SPEC_DATE"
+LET SPEC_DATE=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/spec_date.dat"
+OPEN (SPEC_DATE,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+STATES: ENTER; REM ' STATES -- State list
+call "templates.pgm::STATES"
+LET STATES=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/states.dat"
+OPEN (STATES,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SYM02: ENTER; REM ' SYM02 -- User ID's
+call "templates.pgm::SYM02"
+LET SYM02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SYM-02"
+OPEN (SYM02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SYM02_ADM_XRF: ENTER; REM ' SYM02_ADM_XRF -- xref BBj Admin username to Addon 6.0 User Id
+call "templates.pgm::SYM02_ADM_XRF"
+LET SYM02_ADM_XRF=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SYM02_ADM_XRF"
+OPEN (SYM02_ADM_XRF,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SYM02_GDOCS: ENTER; REM ' SYM02_GDOCS -- usernames and passwords for Google Docs access
+call "templates.pgm::SYM02_GDOCS"
+LET SYM02_GDOCS=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SYM02_GDOCS"
+OPEN (SYM02_GDOCS,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SYS01C: ENTER; REM ' SYS01C -- Accounts Receivable Parameters
+call "templates.pgm::SYS01C"
+LET SYS01C=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SYS-01"
+OPEN (SYS01C,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SYS01G: ENTER; REM ' SYS01G -- System Control
+call "templates.pgm::SYS01G"
+LET SYS01G=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SYS-01"
+OPEN (SYS01G,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SYS01S: ENTER; REM ' SYS01S -- System Control
+call "templates.pgm::SYS01S"
+LET SYS01S=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SYS-01"
+OPEN (SYS01S,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SYS01T: ENTER; REM ' SYS01T -- System Control
+call "templates.pgm::SYS01T"
+LET SYS01T=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/SYS-01"
+OPEN (SYS01T,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+TMM01: ENTER; REM ' TMM01 -- Telemaster Masterfile
+call "templates.pgm::TMM01"
+LET TMM01=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-01"
+OPEN (TMM01,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+TMM02: ENTER; REM ' TMM02 -- Telemarketing Comments
+call "templates.pgm::TMM02"
+LET TMM02=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-02"
+OPEN (TMM02,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+TMM03: ENTER; REM ' TMM03 -- Telemkt Add'l Contacts
+call "templates.pgm::TMM03"
+LET TMM03=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-03"
+OPEN (TMM03,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+
+TMM05: ENTER; REM ' TMM05 -- Main email
+call "templates.pgm::TMM05"
+LET TMM05=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-05"
+OPEN (TMM05,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+TMM06: ENTER; REM ' TMM06 -- Attendees
+call "templates.pgm::TMM06"
+LET TMM06=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-06"
+OPEN (TMM06,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+TMM07: ENTER; REM ' TMM07 -- Class/Attendee
+call "templates.pgm::TMM07"
+LET TMM07=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-07"
+OPEN (TMM07,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+TMM10: ENTER; REM ' TMM10 -- Telemaster Codes Maintenance
+call "templates.pgm::TMM10"
+LET TMM10=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-10"
+OPEN (TMM10,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+TMM11: ENTER; REM ' TMM11 -- Classee
+call "templates.pgm::TMM11"
+LET TMM11=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-11"
+OPEN (TMM11,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+TMM12: ENTER; REM ' TMM12 -- Telemkt Contact Comments
+call "templates.pgm::TMM12"
+LET TMM12=UNT,XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/TMM-12"
+OPEN (TMM12,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_DORMANT_SN: ENTER; REM ' list of customers to exclude from the perpetual licensing expiration notices
+call "templates.pgm::SN_DORMANT_SN"
+LET SN_DORMANT_SN=UNT, XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_dormant_sn.dat"
+OPEN (SN_DORMANT_SN,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_EMERGENCY: ENTER; REM ' log of emergency licenses requested
+call "templates.pgm::SN_EMERGENCY"
+LET SN_EMERGENCY=UNT, XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_emergency.dat"
+OPEN (SN_EMERGENCY,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_EXCL_CUST: ENTER; REM ' list of customers to exclude from the perpetual licensing model
+call "templates.pgm::SN_EXCL_CUST"
+LET SN_EXCL_CUST=UNT, XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_excl_cust.dat"
+OPEN (SN_EXCL_CUST,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+SN_EXCL_SN: ENTER; REM ' list of specific serial numbers to exclude from the perpetual licensing model
+call "templates.pgm::SN_EXCL_SN"
+LET SN_EXCL_SN=UNT, XF$=STBL("DATA_SERVER")+"/basisaon/aon/ADATA/sn_excl_sn.dat"
+OPEN (SN_EXCL_SN,ERR=FILE_OPEN_ERROR)XF$
+EXIT
+
+REM ' Table not defined in the dictionary -- return !ERROR=12
+LET FILE_OPEN_ERROR=MSGBOX("File '"+F$+"' is not defined",16,"Program terminated")
+EXIT 12
+
+REM ' Error encountered attempting to open the file -- return error
+FILE_OPEN_ERROR: 
+seterr err_exit
+if info(6,0)="" then goto err_exit
+LET FILE_OPEN_ERROR=MSGBOX("Program terminated: "+ERRMES(ERR),16,"Couldn't open file '"+XF$+"'")
+err_exit:
+EXIT ERR
+
+END

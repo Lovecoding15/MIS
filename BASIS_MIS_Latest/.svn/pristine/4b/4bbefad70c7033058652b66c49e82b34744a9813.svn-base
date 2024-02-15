@@ -1,0 +1,93 @@
+Version 6.x:
+Addressing the Year 2010 and Beyond
+
+AddonSoftware provides this manual,as is, without warranty of any kind, either 
+expressed or implied, including, but not limited to, the particular purpose. 
+AddonSoftware reserves the right to make improvements and/or changes in the 
+product(s) described in this manual at any time.
+
+This product could include technical inaccuracies or typographical errors.
+Periodically, new versions of this manual may be made available. 
+Any changes to the product will be incorporated in these new versions.
+
+SpeedShip, SpeedSearch, AddonSoftware,  ADD+ON, ADD+ON Software, 
+ADD+ON Software, Inc., and ADD+ON Systems are trademarks of AddonSoftware.
+
+AddonSoftware 2006
+All Rights Reserved
+
+Revised February, 2006
+
+
+Disclaimer
+
+The procedures described in this document have been designed and implemented 
+by AddonSoftware and have received limited testing by the AddonSoftware staff. 
+They have been successfully performed by partners who have had to address this 
+problem prior to 2006. However, AddonSoftware can not guarantee that they will 
+work under all circumstances or in all situations and partners using these 
+procedures should test the resulting software as thoroughly as possible prior 
+to introducing it to a production environment.
+
+
+
+Section 1 - Introduction
+
+AddonSoftware Version 6.x was originally released in May, 1996. The software 
+as released was Y2K compliant and correctly processed dates through the year 2009. 
+Many of those systems continue to be used and are beginning to bump up against the 
+2009 limit. This document is intended to provide you with a solution for modifying 
+v6.x to handle dates beyond 2009.
+
+
+Section 2 - AddonSoftware Version 6.x
+
+Standard AddonSoftware Version 6.x can be modified to process dates beyond 2009 using 
+a simple search and replacement of the literals used by the date functions in the programs. 
+Changes are required to two functions. In this example, the upper limit is being moved from 
+2009 to 2019 and the change is bolded and highlighted.
+
+Change line 8130 (function FNYY_YY21$) from:
+
+8130 LET Q3$=" A123456789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+
+to:
+
+8130 LET Q3$=" AB23456789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+
+and again to:
+
+8130 LET Q3$=" ABCDE56789ABCDEFGHIJ",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+
+And change line 8180 (function FNYY_YEAR) from:
+
+8180 LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<10 THEN LET Q=Q+100
+
+to:
+
+8180 LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<20 THEN LET Q=Q+100
+
+and again to:
+
+8180 LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+
+
+No conversions of existing data are required. If you would prefer to move the limit out to 
+2029 or beyond, simply continue replacing digits with letters in line 8130 and change the 
+test in line 8180 from 20 to 30 (or more).
+
+Section 3 - GENERAL Report Writer
+
+The date handling functions contained in the GENERAL Report Writer Data Dictionary are 
+capable of dates beyond 2009. No changes are required.
+
+Section 4 - The BASIS ODBC Driver
+
+The BASIS ODBC driver has not been tested with these changes. Because the date functions 
+are hardcoded into the driver by BASIS the possibility exists that dates beyond 2009 may 
+not be imported or displayed correctly.
+
+Please let us know if you encounter problems with these dates and the ODBC driver. We will 
+try and work with you and BASIS (if necessary) to resolve the problems.
+
+

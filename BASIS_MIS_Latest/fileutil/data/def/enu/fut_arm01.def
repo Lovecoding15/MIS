@@ -1,0 +1,43 @@
+Table Definition Module
+FUT_ARM01 - Customer Master
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_ARM01^^^^^Customer Master^Customer Master^^^^^^^^T^^^^^^A;N;P;U;V;^^^^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_ARM01^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^N^
+CUSTOMER_NBR^FUT_ARM01^002^C^^3002^ine_customer_nbr^0^^^2^^Y^^^^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^2^^^^0^^^^Y^
+CUST_NAME^FUT_ARM01^003^C^^3003^ine_cust_name^0^^^3^^N^^^^^FUT_CUST_NAME^Cust Name^Cust Name^Cust Name^C^^E^^^^^^^^^^^^^^^^^^^^^^^30^^^^^^^^^^^0^^^^^^^^N^
+ADDR_LINE_1^FUT_ARM01^004^C^^3004^ine_addr_line_1^0^^^4^^N^^^^^FUT_ADDR_LINE_1^Addr Line 1^Addr Line 1^Addr Line 1^C^^E^^^^^^^^^^^^^^^^^^^^^^^24^^^^^^^^^^^0^^^^^^^^N^
+ADDR_LINE_2^FUT_ARM01^005^C^^3005^ine_addr_line_2^0^^^5^^N^^^^^FUT_ADDR_LINE_2^Addr Line 2^Addr Line 2^Addr Line 2^C^^E^^^^^^^^^^^^^^^^^^^^^^^24^^^^^^^^^^^0^^^^^^^^N^
+ADDR_LINE_3^FUT_ARM01^006^C^^3006^ine_addr_line_3^0^^^6^^N^^^^^FUT_ADDR_LINE_3^Addr Line 3^Addr Line 3^Addr Line 3^C^^E^^^^^^^^^^^^^^^^^^^^^^^24^^^^^^^^^^^0^^^^^^^^N^
+ZIP_CODE^FUT_ARM01^007^C^^3007^ine_zip_code^0^^^7^^N^^^^^FUT_ZIP_CODE^Zip/Postal Code^Zip/Postal Code^Zip/Postal Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^9^^^^^^^^^^^0^^^^^^^^N^
+PHONE_NUM^FUT_ARM01^008^C^^3008^ine_phone_num^0^^^8^^N^^^^^FUT_PHONE_NUM^Telephone Number^Telephone Numnber^Telephone Numnber^C^^E^^^^0^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^0^^^^^^^^N^
+PHONE_EXTEN^FUT_ARM01^009^C^^3009^ine_phone_exten^0^^^9^^N^^^^^FUT_PHONE_EXTEN^Phone Exten^Phone Exten^Phone Exten^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^0^^^^^^^^N^
+RESALE_NBR^FUT_ARM01^010^C^^3010^ine_resale_nbr^0^^^10^^N^^^^^FUT_RESALE_NBR^Resale Nbr^Resale Nbr^Resale Nbr^C^^E^^^^^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^^^^^^^^N^
+ALT_SEQUENCE^FUT_ARM01^011^C^^3011^ine_alt_sequence^0^^^11^^N^^^^^FUT_ALT_SEQUENCE^Alt Sequence^Alt Sequence^Alt Sequence^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^0^^^^^^^^N^
+OPENED_DATE^FUT_ARM01^012^C^^3012^ine_opened_date^0^^^12^^N^^^^^FUT_OPENED_DATE^Opened Date^Opened Date^Opened Date^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^^^^^^^^N^
+AR_SHIP_VIA^FUT_ARM01^013^C^^3013^ine_ar_ship_via^0^^^13^^N^^^^^FUT_AR_SHIP_VIA^Ar Ship Via^Ar Ship Via^Ar Ship Via^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^0^^^^^^^^N^
+FAX_NUMBER^FUT_ARM01^014^C^^3014^ine_fax_number^0^^^14^^N^^^^^FUT_FAX_NUMBER^Fax Telephone Number^Fax Telephone Number^Fax Telephone Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^0^^^^^^^^N^
+ADDR_LINE_4^FUT_ARM01^015^C^^3015^ine_addr_line_4^0^^^15^^N^^^^^FUT_ADDR_LINE_4^Addr Line 4^Addr Line 4^Addr Line 4^C^^E^^^^^^^^^^^^^^^^^^^^^^^24^^^^^^^^^^^0^^^^^^^^N^
+ADDR_LINE_5^FUT_ARM01^016^C^^3016^ine_addr_line_5^0^^^16^^N^^^^^FUT_ADDR_LINE_5^Addr Line 5^Addr Line 5^Addr Line 5^C^^E^^^^^^^^^^^^^^^^^^^^^^^24^^^^^^^^^^^0^^^^^^^^N^
+RETAIN_CUST^FUT_ARM01^017^C^^3017^ine_retain_cust^0^^^17^^N^^^^^FUT_RETAIN_CUST^Retain Cust^Retain Cust^Retain Cust^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^^^^^^^^N^
+CONTACT_NM^FUT_ARM01^018^C^^3018^ine_contact_nm^0^^^18^^N^^^^^FUT_CONTACT_NM^Contact Name^Contact Name^Contact Name^C^^E^^^^0^^^^^^^^^^^^^^^^^^^20^^^^^^^^^^^0^^^^^^^^N^
+D_B_NUMBER^FUT_ARM01^019^C^^3019^ine_d_b_number^0^^^19^^N^^^^^FUT_D_B_NUMBER^D B Number^D B Number^D B Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^9^^^^^^^^^^^0^^^^^^^^N^
+SIC_CODE^FUT_ARM01^020^C^^3020^ine_sic_code^0^^^20^^N^^^^^FUT_SIC_CODE^Sic Code^Sic Code^Sic Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^8^^^^^^^^^^^0^^^^^^^^N^
+COUNTRY^FUT_ARM01^021^C^^3021^ine_country^0^^^21^^N^^^^^FUT_COUNTRY^Country^Country^Country^C^^E^^^^^^^^^^^^^^^^^^^^^^^24^^^^^^^^^^^0^^^^^^^^N^
+FOB^FUT_ARM01^022^C^^3022^ine_fob^0^^^22^^N^^^^^FUT_FOB^Fob^Fob^Fob^C^^E^^^^^^^^^^^^^^^^^^^^^^^15^^^^^^^^^^^0^^^^^^^^N^
+OP_FRT_TERMS^FUT_ARM01^023^C^^3023^ine_op_frt_terms^0^^^23^^N^^^^^FUT_OP_FRT_TERMS^Op Frt Terms^Op Frt Terms^Op Frt Terms^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_ARM01^PRIMARY^FUT_ARM01.FIRM_ID                       FUT_ARM01.CUSTOMER_NBR                  ^FUT_ARM01.FIRM_ID$+FUT_ARM01.CUSTOMER_NBR$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.CUSTOMER_NBR$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.CUSTOMER_NBR$               
+{KeyDefsEnd}
+{GridCols}
+001FUT_ARM01.FIRM_ID                       ;002FUT_ARM01.CUSTOMER_NBR                  ;003FUT_ARM01.CUST_NAME                     ;004FUT_ARM01.ADDR_LINE_1                   ;005FUT_ARM01.ADDR_LINE_2                   ;006FUT_ARM01.ADDR_LINE_3                   ;007FUT_ARM01.ZIP_CODE                      ;008FUT_ARM01.PHONE_NUM                     ;009FUT_ARM01.PHONE_EXTEN                   ;010FUT_ARM01.RESALE_NBR                    ;011FUT_ARM01.ALT_SEQUENCE                  ;012FUT_ARM01.OPENED_DATE                   ;013FUT_ARM01.AR_SHIP_VIA                   ;014FUT_ARM01.FAX_NUMBER                    ;015FUT_ARM01.ADDR_LINE_4                   ;016FUT_ARM01.ADDR_LINE_5                   ;017FUT_ARM01.RETAIN_CUST                   ;018FUT_ARM01.CONTACT_NM                    ;019FUT_ARM01.D_B_NUMBER                    ;020FUT_ARM01.SIC_CODE                      ;021FUT_ARM01.COUNTRY                       ;022FUT_ARM01.FOB                           ;023FUT_ARM01.OP_FRT_TERMS                  ;
+{GridColsEnd}

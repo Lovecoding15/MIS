@@ -1,0 +1,76 @@
+rem ' row by row edits for FUT_TMM01
+
+seterr error_routine
+
+enter inq_mode$, rec_tpl$, calc_tpl$, table_chans$[], status$
+
+rem ' inq_mode$ Not currently used
+rem ' rec_tpl$  Current inquiry row database columns
+rem ' calc_tpl$ Current inquiry row calculation columns
+rem ' table_chans$[]  Barista opened table/channel array
+rem ' status$ Returned status: "" = Display current row, "SKIP" = Skip current row
+
+rem ' format zip code tmm01
+zip$ = cvs(rec_tpl.zip_code$,3)
+if len(zip$) = 9 then 
+	zip$ = zip$(1,5) + "-" + zip$(6,4)
+	rec_tpl.fax_num$ = zip$
+else
+	rec_tpl.fax_num$ = zip$
+fi
+
+rem ' format zip code tmm03
+zip$ = cvs(rec_tpl.cntct_zip_code$,3)
+if len(zip$) = 9 then 
+	zip$ = zip$(1,5) + "-" + zip$(6,4)
+	rec_tpl.fax_number$ = zip$
+else
+	rec_tpl.fax_number$ = zip$
+fi
+
+rem ' force country code to US if blank and zip code length = 5 or 9 for tmm01
+if cvs(rec_tpl.country_code$,3) = "" and (len(cvs(rec_tpl.zip_code$,3)) = 5 or len(cvs(rec_tpl.zip_code$,3)) = 9) then
+	rec_tpl.country_code$ = "US"
+	rec_tpl.goals_flag$ = "*"
+else
+	rec_tpl.goals_flag$ = " "
+fi
+
+rem ' force country code to US if blank and zip code length = 5 or 9 for tmm03
+if cvs(rec_tpl.cntct_country$,3) = "" and (len(cvs(rec_tpl.cntct_zip_code$,3)) = 5 or len(cvs(rec_tpl.cntct_zip_code$,3)) = 9) then
+	rec_tpl.cntct_country$ = "US"
+	rec_tpl.ap_contact$ = "*"
+else
+	rec_tpl.ap_contact$ = " "
+fi
+
+rem ' blank contact name when equal to the firm name
+if cvs(rec_tpl.cont_firm$,3) = cvs(rec_tpl.contact_name$,3) then
+	rec_tpl.contact_name$ = ""
+fi
+
+rem ' replace the arm02 address with the tmm03 address if tmm03 exists
+if cvs(rec_tpl.cntct_address_1$,3) <> "" then
+	rem ' replace arm02 address with the tmm03 address
+	rec_tpl.address_1$ = rec_tpl.cntct_address_1$
+	rec_tpl.address_2$ = rec_tpl.cntct_address_2$
+	rec_tpl.address_3$ = ""
+	rec_tpl.address_4$ = ""
+	rec_tpl.city$ = rec_tpl.cntct_city$
+	rec_tpl.state$ = rec_tpl.state_code$
+	rec_tpl.fax_num$ = rec_tpl.fax_number$; rem ' zip/postal code is in the fax number, see above
+	rec_tpl.country_code$ = rec_tpl.cntct_country$
+fi
+		
+status$ = ""
+
+exit
+
+error_routine:
+	usageNote$ = "An error " + str(err) + " occurred on line of fut_tmm01_row.src: " + str(tcb(5)) + " Description: " + errmes(-1) + " "
+	x = msgbox(usageNote$, 0, "Error processing row")
+	escape
+end
+
+
+

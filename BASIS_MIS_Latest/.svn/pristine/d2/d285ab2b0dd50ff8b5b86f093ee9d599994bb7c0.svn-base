@@ -1,0 +1,393 @@
+[Program]
+Creation Date=2008-12-1
+Creation Time=9:56:10
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2021-03-1
+Last Build Time=15:1:11
+Precision=99
+Program Name=ec_CreditCardVer
+Remarks=Yes
+Resource File=ec_CreditCardVer.arc
+Show Forms=All
+
+[Init]
+rem ' get our interface objects
+ourAPI!=BBjAPI()
+ourSysGui!=ourAPI!.getSysGui()
+ourSystemMetrics!=ourSysGui!.getSystemMetrics()
+scrDimension!=ourSystemMetrics!.getScreenSize()
+ourContext=ourSysGui!.getContext()
+ourWindow!=ourSysGui!.getWindow(ourContext)
+if gb__arg.card2 then 
+    ourWindow!.setSize(790,395)
+else
+    ourWindow!.setSize(790,240)
+fi
+topLevelWindow!=cast(BBjTopLevelWindow, ourSysGui!.getWindow(ourContext))
+
+rem ' the caller manages his own window
+rem ' callersWindow!=ourSysGui!.getWindow(gb__arg.callersContext)
+
+gosub get_objects
+
+gosub set_the_window
+
+gosub center_window
+
+lang!=gb__arg.lang$
+REM ' we only have English at this point
+lang!="EN"
+
+rem ' template needed to get localize message texts
+rem 'dim ec_translate$:"mbid:c(4),lang:c(2*),text1:c(1*),text2:c(1*)"
+translator! = new LanguageTranslator("ec_CreditCardVer."+lang!+".properties")
+translator!.translateWindow(ourWindow!)
+
+rem ' put address in the text box
+address! = cast(BBjEditBox, controls!.get("verificationAddress"))
+address!.setText(gb__arg.address$)
+zipCode! = cast(BBjEditBox, controls!.get("verificationZipCode"))
+zipCode!.setText(gb__arg.zip$)
+if gb__arg.card2 then
+    address2! = cast(BBjEditBox, controls!.get("verificationAddress2"))
+    address2!.setText(gb__arg.address_2$)
+    zipCode2! = cast(BBjEditBox, controls!.get("verificationZipCode2"))
+    zipCode2!.setText(gb__arg.zip_2$)
+fi
+
+ourWindow!.setVisible(1)
+
+rem ' hide the caller's Window
+rem ' the caller manages his own window now
+rem ' callersWindow!.setVisible(0)
+
+
+[Event Win=101 ID=101 Code=B <PUSH_BUTTON> (W101_C101_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+msg$=translator!.getMessage("verificationAddress.message")
+title$=translator!.getMessage("whatsThis.title")
+response=msgbox(msg$, 64, title$)
+
+[Event Win=101 ID=104 Code=B <PUSH_BUTTON> (W101_C104_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+msg$=translator!.getMessage("verificationCode.message")
+title$=translator!.getMessage("whatsThis.title")
+response=msgbox(msg$, 64, title$)
+
+[Event Win=101 ID=105 Code=B <PUSH_BUTTON> (W101_C105_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub validateData
+
+if dataValidated then
+    gosub show_callersWindow
+    goto gb__eoj
+endif
+
+[Event Win=101 ID=109 Code=B <PUSH_BUTTON> (W101_C109_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub cancel_entry
+
+[Event Win=101 ID=201 Code=B <PUSH_BUTTON> (W101_C201_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+msg$=translator!.getMessage("verificationAddress.message")
+title$=translator!.getMessage("whatsThis.title")
+response=msgbox(msg$, 64, title$)
+
+[Event Win=101 ID=204 Code=B <PUSH_BUTTON> (W101_C204_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+msg$=translator!.getMessage("verificationCode.message")
+title$=translator!.getMessage("whatsThis.title")
+response=msgbox(msg$, 64, title$)
+
+
+[Function (Declarations)]
+rem ' -----------------------------------------------------------------
+rem ' Declarations
+rem ' -----------------------------------------------------------------
+
+Declarations:
+
+USE java.util.HashMap
+USE ::LanguageTranslator.src::LanguageTranslator
+
+DECLARE BBjAPI ourAPI!
+DECLARE BBjVector params!
+DECLARE BBjSysGui ourSysGui!
+DECLARE BBjWindow ourWindow!
+rem ' the caller manages his own window now
+rem ' DECLARE BBjWindow callersWindow!
+DECLARE BBjWindow level2Window!
+DECLARE BBjAppletProxy applet!
+DECLARE BBjTopLevelWindow topLevelWindow!
+
+rem ' control objects
+DECLARE BBjVector ourControlVector!
+DECLARE BBjControl control!
+DECLARE HashMap controls!
+
+DECLARE BBjEditBox address!
+DECLARE BBjEditBox cvv2!
+DECLARE BBjEditBox zipCode!
+DECLARE BBjGroupBox theBox!
+
+return
+
+[Function (cancel_entry)]
+rem ' -----------------------------------------------------------------
+rem ' cancel_entry
+rem ' -----------------------------------------------------------------
+
+cancel_entry:
+
+msg$=translator!.getMessage("cancel.message")
+title$=translator!.getMessage("cancel.title")
+response=msgbox(msg$, 4+32, title$)
+
+rem ' do they want to cancel
+if response = 6 then
+    gb__arg.status = 0
+    gosub show_callersWindow
+    goto gb__eoj
+fi
+
+return
+
+[Function (center_window)]
+rem ' -----------------------------------------------------------------
+rem ' center_window
+rem ' -----------------------------------------------------------------
+
+center_window:
+
+rem ' the caller manages his own window now
+return
+
+rem running as an applet
+if info(3,6)="2" then
+    callersWindow!.setVisible(0)
+    topLevelWindow!.setTitleBarVisible(0)
+    topLevelWindow!.setSize(500,400)
+    theBox! = cast(BBjGroupBox, controls!.get("theBox"))
+    theBox!.setVisible(1)
+    applet!=ourAPI!.getAppletProxy()
+    applet!.setBounds(0,0,500,400)
+else
+    width = scrDimension!.width
+    height = scrDimension!.height
+    winWidth = ourWindow!.getWidth()
+    winHeight = ourWindow!.getHeight()
+
+    x = int((width-winWidth)/2)
+    y = int((height-winHeight)/2)
+
+    ourWindow!.setLocation(x,y)
+fi
+
+return
+
+[Function (get_objects)]
+rem ' -----------------------------------------------------------------
+rem ' get_objects
+rem ' -----------------------------------------------------------------
+
+get_objects:
+
+ourControlVector! = ourWindow!.getAllControls()
+controls! = new HashMap()
+
+for i=0 to ourControlVector!.size() - 1
+    control!= cast(BBjControl, ourControlVector!.getItem(i))
+    controls!.put(control!.getName(), control!)
+next i
+
+return
+
+[Function (prep_routine)]
+rem ' -----------------------------------------------------------------
+rem ' prep_routine
+rem ' -----------------------------------------------------------------
+
+prep_routine:
+
+rem ' place holder to kill the error 
+
+return
+
+[Function (set_the_window)]
+rem ' -----------------------------------------------------------------
+rem ' set_the_window
+rem ' -----------------------------------------------------------------
+
+set_the_window:
+
+if gb__arg.card2 then
+    cast(BBjEditBox, controls!.get("verificationAddress2")).setVisible(1)
+    cast(BBjEditBox, controls!.get("verificationZipCode2")).setVisible(1)
+    cast(BBjEditBox, controls!.get("verificationCode2")).setVisible(1)
+    cast(BBjButton, controls!.get("whatsThis3")).setVisible(1)
+    cast(BBjButton, controls!.get("whatsThis4")).setVisible(1)
+    cast(BBjStaticText, controls!.get("StaticText21")).setVisible(1)
+    cast(BBjStaticText, controls!.get("StaticText22")).setVisible(1)
+    cast(BBjStaticText, controls!.get("StaticText23")).setVisible(1)
+    cast(BBjGroupBox, controls!.get("theBox2")).setVisible(1)
+    cast(BBjButton, controls!.get("saveButton")).setLocation(500, 355)
+    cast(BBjButton, controls!.get("cancelButton")).setLocation(640, 355)
+else
+    cast(BBjEditBox, controls!.get("verificationAddress2")).setVisible(0)
+    cast(BBjEditBox, controls!.get("verificationZipCode2")).setVisible(0)
+    cast(BBjEditBox, controls!.get("verificationCode2")).setVisible(0)
+    cast(BBjButton, controls!.get("whatsThis3")).setVisible(0)
+    cast(BBjButton, controls!.get("whatsThis4")).setVisible(0)
+    cast(BBjStaticText, controls!.get("StaticText21")).setVisible(0)
+    cast(BBjStaticText, controls!.get("StaticText22")).setVisible(0)
+    cast(BBjStaticText, controls!.get("StaticText23")).setVisible(0)
+    cast(BBjGroupBox, controls!.get("theBox2")).setVisible(0)
+    cast(BBjButton, controls!.get("saveButton")).setLocation(500, 200)
+    cast(BBjButton, controls!.get("cancelButton")).setLocation(640, 200)
+fi
+
+return
+
+[Function (show_callersWindow)]
+rem ' -----------------------------------------------------------------
+rem ' show_callersWindow
+rem ' -----------------------------------------------------------------
+
+show_callersWindow:
+
+rem ' the caller manages his own window now
+return
+
+if callersWindow! <> NULL() then
+    if info(3,6)="2" then
+
+        ourWindow!.setVisible(0)
+        applet!=ourAPI!.getAppletProxy()
+        applet!.setBounds(0,0,500,400)
+    fi
+    callersWindow!.setVisible(1)
+fi
+
+
+return
+
+[Function (validateData)]
+rem ' -----------------------------------------------------------------
+rem ' validateData
+rem ' -----------------------------------------------------------------
+
+validateData:
+
+dataValidated = 1
+
+while 1
+
+    address! = cast(BBjEditBox, controls!.get("verificationAddress"))
+    cvv2! = cast(BBjEditBox, controls!.get("verificationCode"))
+    zipCode! = cast(BBjEditBox, controls!.get("verificationZipCode"))
+
+    address$ = address!.getText()
+    cvv2$ = cvv2!.getText()
+    zipCode$ = zipCode!.getText()
+
+    rem ' addresss must exist
+    if len(address$)=0 then
+        msg$=translator!.getMessage("noAddress.message")
+        title$=translator!.getMessage("validationError.title")
+        response=msgbox(msg$, 16, title$)
+        dataValidated = 0
+        break
+    endif
+
+    rem ' zip code must exist
+    if len(zipCode$)=0 then
+        msg$=translator!.getMessage("noZipCode.message")
+        title$=translator!.getMessage("validationError.title")
+        response=msgbox(msg$, 16, title$)
+        dataValidated = 0
+        break
+    endif
+
+    rem ' cvv2 must be 3 or 4 bytes long
+    if len(cvv2$)<>3 and len(cvv2$)<>4 then
+        msg$=translator!.getMessage("badCVV2.message")
+        title$=translator!.getMessage("validationError.title")
+        response=msgbox(msg$, 16, title$)
+        dataValidated = 0
+        break
+    endif
+
+    gb__arg.address$ = address$
+    gb__arg.cvv2$ = cvv2$
+    gb__arg.zip$ = zipCode$
+
+
+    if gb__arg.card2 then
+        address2! = cast(BBjEditBox, controls!.get("verificationAddress2"))
+        cvv22! = cast(BBjEditBox, controls!.get("verificationCode2"))
+        zipCode2! = cast(BBjEditBox, controls!.get("verificationZipCode2"))
+
+        address2$ = address2!.getText()
+        cvv22$ = cvv22!.getText()
+        zipCode2$ = zipCode2!.getText()
+
+        rem ' addresss must exist
+        if len(address2$)=0 then
+            msg$=translator!.getMessage("noAddress2.message")
+            title$=translator!.getMessage("validationError.title")
+            response=msgbox(msg$, 16, title$)
+            dataValidated = 0
+            break
+        endif
+
+        rem ' zip code must exist
+        if len(zipCode2$)=0 then
+            msg$=translator!.getMessage("noZipCode2.message")
+            title$=translator!.getMessage("validationError.title")
+            response=msgbox(msg$, 16, title$)
+            dataValidated = 0
+            break
+        endif
+
+        rem ' cvv2 must be 3 or 4 bytes long
+        if len(cvv22$)<>3 and len(cvv22$)<>4 then
+            msg$=translator!.getMessage("badCVV22.message")
+            title$=translator!.getMessage("validationError.title")
+            response=msgbox(msg$, 16, title$)
+            dataValidated = 0
+            break
+        endif
+
+        gb__arg.address_2$ = address2$
+        gb__arg.cvv2_2$ = cvv22$
+        gb__arg.zip_2$ = zipCode2$
+
+    fi
+    
+    gb__arg.status = 1
+        
+    break
+
+wend
+
+return
+

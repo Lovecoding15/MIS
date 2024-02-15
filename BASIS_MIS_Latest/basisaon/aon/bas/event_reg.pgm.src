@@ -1,0 +1,114 @@
+seterr err_rtn
+
+debug=0
+rem gosub trace
+
+sp! = BBjAPI().getFileSystem().getStoredProcedureData()
+reginfo$ = sp!.getParameter("REGDATA")
+
+reginfo$=tbl(reginfo$,tbl=tlabel)
+
+if debug then print(debug)reginfo$
+
+lf$=$0a$
+firm$="01"
+
+call "templates.pgm::registrations"
+dim reg$:fattr(registrations$)
+
+dim rx$:"cust:c(8*),event:c(80*),start_dt:c(8*),name:c(30*),company:c(30*),addr1:c(30*),addr2:c(30*),city:c(25*),state:c(2*),zip:c(9*),country:c(2*),phone:c(14*),email:c(80*),amt:c(10*),pmt_type:c(1*),check_dt:c(8*),cc_number:c(32*),cc_exp_dt:c(6*),cc_address:c(80*),cc_name:c(30*)"
+rx$=reginfo$
+rx.cc_exp_dt$=pad(rx.cc_exp_dt$,6)
+
+reg=unt
+path$=stbl("DATA_SERVER")+stbl("AON")+"ADATA/"
+open(reg)path$+"registrations.dat"
+
+tries=0
+while 1
+  now$=date(0:"%Yd%Mz%Dz%Hz%mz%sz")
+  readrecord(reg,key=now$,dom=*break)x$
+  wait 1
+  tries=tries+1
+  if tries>5 then msg$="Can't generate key";goto err_rtn
+wend
+
+reg$=now$+lf$+fill(7)+lf$+rx$+fill(20)+lf$
+cust$=cvs(reg.cust$,3)
+if len(cust$)<7 then reg.cust$=firm$+str(num(cust$,err=*next):"000000")
+
+if reg.pmt_type$="C" then payby$="Check "+cvs(reg.check_dt$,3) else payby$="Credit Card" 
+cc$=cvs(reg.cc_number$,3)
+if cc$<>"" then
+  plain$=reg.cc_number$                                                        
+  encrypt_cc$=""                                                               
+  call "BCC.11",plain$,encrypt_cc$                                             
+  reg.cc_number$=encrypt_cc$   
+  rem pwd=unt
+  rem open(pwd)"password"
+  rem read(pwd)password$
+  rem close(pwd)
+  rem reg.cc_number$=encrypt(cc$,mode="cryptpass="+password$)
+fi
+
+reg$=field(reg$)
+
+writerecord(reg)reg$
+
+close(reg)
+
+from$="info@basis.cloud"
+to$="customer-service@basis.cloud"
+cc$=""
+subj$="Training/event registration"
+msg$=reg.event$+" "+reg.start_dt$+lf$+reg.name$+lf$+reg.cust$+" "+reg.company$+lf$
+if cvs(reg.addr1$,3)<>"" then msg$=msg$+reg.addr1$+lf$
+if cvs(reg.addr2$,3)<>"" then msg$=msg$+reg.addr2$+lf$
+if cvs(reg.city$,3)<>"" then msg$=msg$+reg.city$+lf$
+if cvs(reg.state$,3)<>"" then msg$=msg$+reg.state$+lf$
+if cvs(reg.zip$,3)<>"" then msg$=msg$+reg.zip$+lf$
+if cvs(reg.country$,3)<>"" then msg$=msg$+reg.country$+lf$
+if cvs(reg.phone$,3)<>"" then msg$=msg$+reg.phone$+lf$
+if cvs(reg.email$,3)<>"" then msg$=msg$+reg.email$+lf$
+msg$=msg$+"Amount "+reg.amt$+lf$
+msg$=msg$+"Paid by "+payby$+lf$
+
+goto send_msg
+
+tlabel: TABLE FF 00 01 02 03 04 05 06 07 08 0A
+
+trace:
+TRACELOG$="/basisaon/aon/tmp/trace.log",DEBUG=UNT
+erase tracelog$,err=*next
+string tracelog$
+open(debug)tracelog$
+settrace(debug)
+return
+
+err_rtn:
+seterr end_pgm
+if msg$="" then msg$="Error "+str(err)+" in "+str(tcb(5))+$0a$+errmes(-1)
+from$="info@basis.cloud"
+to$="mis@basis.cloud"
+cc$=""
+subj$="Problem with event registration"
+
+send_msg:
+clock$=date(0:"%Hz%mz%sz")
+hdr$="To: "+to$+$0A$
+hdr$=hdr$+"From: "+from$+$0A$
+hdr$=hdr$+"Cc: "+cc$+$0A$
+hdr$=hdr$+"Subject: "+Subj$+$0A$+$0A$
+hdr$=hdr$+msg$+$0a$
+tmpfile$=stbl("TEMP")+clock$+"event.txt"
+erase tmpfile$,err=*next
+string tmpfile$
+tmp=unt
+open(tmp)tmpfile$
+writerecord(tmp)hdr$
+close(tmp)
+A=SCALL("/usr/lib/sendmail -t < "+tmpfile$)
+erase tmpfile$,err=*next
+
+end_pgm:
+END

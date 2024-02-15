@@ -1,0 +1,33 @@
+#! /bin/ksh
+
+#
+# usage: mailcvslist list-name "subject" < filename
+#
+# This simple little script is to get around the mailers that are
+# too "smart" to mail someone on a mail alias a copy of his own
+# mail.  This forces a user onto the list of receipients for a message
+# if we are on one of the smart hosts.  Just add hosts as needed.
+#
+
+host=`uname -n`
+case $host in
+  bbx)
+    user=`whoami`
+    mailer=mailx
+    ;;
+  speedyg)
+    mailer=/usr/local/bin/elm
+    ;;
+  leghorn)
+    user=`whoami`
+    mailer=mailx
+    ;;
+  *)
+    mailer=mailx
+    ;;
+esac
+#
+# send mail to user (if set), the specified list, and the cvs-all list
+#
+$mailer -s "$2" $user $1 cvs-mis
+

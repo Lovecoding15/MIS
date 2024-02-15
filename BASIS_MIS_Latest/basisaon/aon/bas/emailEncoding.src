@@ -1,0 +1,96 @@
+rem ' program emailEncoding.src
+
+rem ' encoding support for emails for use in SAM renewal notices (SMC.30) and rental renewal notices (RNT.01)
+
+encode_start:
+
+	seterr encode_start_pgm_exit
+	setesc encode_start_pgm_exit
+
+	enter start$
+	
+	boundary$="--==========_BASIS"
+	lf$ = $0D0A$
+	qt$ = $22$
+	
+	start$ = "Mime-Version: 1.0" + lf$ + "Content-Type: multipart/mixed;" + lf$ + " boundary=" + qt$ + boundary$(3) + qt$ + lf$
+	
+encode_start_pgm_exit:
+exit
+
+encode_middle:
+
+	seterr encode_middle_pgm_exit
+	setesc encode_middle_pgm_exit
+
+	enter middle$
+	
+	boundary$="--==========_BASIS"
+	lf$ = $0D0A$
+	qt$ = $22$
+
+	middle$ = boundary$ + lf$ + "Content-Type: text/plain;" + lf$ + " charset=" + qt$ + "iso-8859-1" + qt$ + lf$ + "Content-Transfer-Encoding: 7bit" + lf$ + lf$
+
+encode_middle_pgm_exit:
+exit
+
+encode_ending:
+
+	seterr encode_ending_pgm_exit
+	setesc encode_ending_pgm_exit
+
+	enter ending$
+	
+	boundary$="--==========_BASIS"
+	lf$ = $0D0A$
+
+	ending$ = boundary$ + "--" + lf$ + lf$
+	
+encode_ending_pgm_exit:
+exit
+
+encode_subject:
+
+	seterr encode_subject_pgm_exit
+	setesc encode_subject_pgm_exit
+
+	enter subject$
+
+	rem ' encode subject line for emails to ensure diacritical characters render properly
+	rem ' expecting the form "Subject: text"
+
+
+	while 1
+		rem ' strip subject:
+		if len(subject$) <= 9 then break
+		if cvs(subject$(1,9),4)<> "SUBJECT: " then break
+		worksub$=subject$(10)
+
+		rem ' convert spaces to underscores and expand special characters
+		tmp$ = ""
+
+		for x = 1 to len(worksub$)
+			workbyte$ = worksub$(x,1),expandedWorkByte$ = hta(workbyte$)
+
+			if workbyte$=" " then
+				workbyte$="_"
+			fi
+			if expandedWorkByte$ > "7F" then
+				workbyte$ = "=" + expandedWorkbyte$
+			fi		
+
+			tmp$ = tmp$ +workbyte$	
+
+		next x
+
+		worksub$ = tmp$
+
+		subject$ = "Subject: =?iso-8859-1?Q?" + worksub$ + "?="
+
+		break
+	wend
+
+encode_subject_pgm_exit:
+exit
+
+end

@@ -1,0 +1,215 @@
+rem  update TMM03 with data from the End User system for Advantage and Announcements
+
+
+class public EuMarCommUpdater
+    
+    field private BBjString dbUrl!
+
+
+    method public EuMarCommUpdater(BBjString dbUrl!)
+
+        seterr emcuError
+            #dbUrl! = dbUrl!
+
+            methodret
+            
+        emcuError:
+            throw "An error occurred constructing the EuMarCommUpdater. Error: " + str(err) + " (" + errmes(-1) + ")", err
+
+    methodend
+
+    method public void updateMarComm(BBjTemplatedString snmeu!)
+
+        seterr openError
+
+        Declare BBjTemplatedString tmm03Row!
+
+        chan = SQLUNT
+        SQLOPEN(chan)#dbUrl!
+        
+        tmm03Row! = #getExistingRow(snmeu!.getFieldAsString("End_User_Nbr"), chan)
+
+        if tmm03Row! = null() then
+            rem insert
+            if snmeu!.getFieldAsString("ADVANTAGE") = "Y" or snmeu!.getFieldAsString("ANNOUNCEMENTS") = "Y" then 
+                rem ' only insert if at least one of these is Y
+                #insertNewRow(snmeu!, chan)
+            fi
+        else
+            rem update
+            #updateExistingRow(snmeu!, chan)
+        fi
+        
+        SQLCLOSE(chan)
+
+        methodret
+
+        openError:
+            throw "Error updating TMM03 in EuMarCommUpdater.src on line " + str(tcb(5)) + "Error: " + str(err) + " (" + errmes(-1) + ")", err
+
+    methodend
+
+    method private BBjTemplatedString getExistingRow(BBjString endUserNbr!, BBjNumber sqlChan)
+
+        seterr getExistingRowError
+
+        Declare BBjTemplatedString tmm03!
+
+        rem is there an existing record
+
+        sql$ = "SELECT * FROM TMM03 WHERE END_USER_NBR = '" + endUserNbr! + "'"
+
+        SQLPREP(sqlChan)sql$
+        SQLEXEC(sqlChan)
+        temp$ = SQLFETCH(sqlChan,err=noResults)
+        tmm03! = BBjAPI().makeTemplatedString(SQLTMPL(sqlChan))
+        tmm03!.setString(temp$)
+
+        methodret tmm03!
+
+        noResults:
+            if err = 2 then
+                methodret null()
+	    fi
+	    
+        getExistingRowError:
+            throw "Error fetching existing row from TMM03 in EuMarCommUpdater.src on line " + str(tcb(5)) + "Error: " + str(err) + " (" + errmes(1) + ")", err
+            
+    methodend
+
+
+    method private void insertNewRow(BBjTemplatedString snmeu!, BBjNumber sqlChan)
+
+        seterr insertNewRowError
+
+        USE java.lang.String
+        DECLARE String contact!
+
+        rem find the next sequence
+        sql$="SELECT MAX(SEQUENCE_NBR) as MaxSeq FROM TMM03 WHERE FIRM_ID = '" + snmeu!.getFieldAsString("FIRM_ID") + "' AND CUSTOMER_NBR = '" + snmeu!.getFieldAsString("CUSTOMER_NBR") + "'"
+        SQLPREP(sqlChan)sql$
+        SQLEXEC(sqlChan)
+        maxSeq$=SQLFETCH(sqlChan)
+        if cvs(maxSeq$,3)="" then
+            nextSeq$="000"
+        else
+            nextSeq$ = str(num(maxSeq$) + 1 :"000")
+        fi
+
+        rem build an insert statement
+        sql$="INSERT INTO TMM03 (FIRM_ID, CUSTOMER_NBR, TM_NUMBER, "
+        sql$=sql$+"SEQUENCE_NBR, CONTACT_NAME, PRIMARY_CONTACT, "
+        sql$=sql$+"AP_CONTACT, USE_FIRM_ADDR, SEND_LIT, "
+        sql$=sql$+"SAM_CONTACT, ANNOUNCEMENTS, E_MAIL, "
+        sql$=sql$+"END_USER_NBR) "
+        
+        sqlvalues$="VALUES('" + snmeu!.getFieldAsString("FIRM_ID") + "', "
+        sqlvalues$=sqlvalues$ + "'" + snmeu!.getFieldAsString("CUSTOMER_NBR") + "', "
+        sqlvalues$=sqlvalues$ + "'000000', "
+        sqlvalues$=sqlvalues$ + "'" + nextSeq$ + "', "
+        
+        if cvs(snmeu!.getFieldAsString("CONTACT"),3)="" then
+            contact! = new String(snmeu!.getFieldAsString("COMPANY_NAME"))
+        else
+            contact! = new String(snmeu!.getFieldAsString("CONTACT"))
+        fi
+        if contact!.length() > 30 then
+            contact! = contact!.substring(0,30)
+        fi
+        contact! = contact!.replace("'", "''")
+
+        sqlvalues$=sqlvalues$ + "'" + contact! + "', "
+        sqlvalues$=sqlvalues$ + "'N', 'N', 'N', "
+        
+        if snmeu!.getFieldAsString("ADVANTAGE")="Y" THEN
+            advantage$="E"
+        else
+            advantage$="N"
+        fi
+        sqlvalues$=sqlvalues$ + "'" + advantage$ + "', "
+        sqlvalues$=sqlvalues$ + "'N', "
+
+        announcements$ = cvs(snmeu!.getFieldAsString("ANNOUNCEMENTS"),4)
+        if announcements$ = "YES" or announcements$ = "Y" then
+            announcements$="Y"
+        else
+            announcements$="N"
+        fi
+        sqlvalues$=sqlvalues$ + "'" + announcements$ + "', "
+        sqlvalues$=sqlvalues$ + "'" + snmeu!.getFieldAsString("EMAIL_ADDRESS") + "', "
+        sqlvalues$=sqlvalues$ + "'" + snmeu!.getFieldAsString("END_USER_NBR") + "')"
+
+        sql$=sql$+sqlvalues$
+
+        rem insert
+        SQLPREP(sqlChan)sql$
+        DIM A$:SQLTMPL(sqlChan,IND=1)
+        SQLEXEC(sqlChan)
+        A$=SQLFETCH(sqlChan,IND=1)
+
+        if A.ROWS_AFFECTED<>1 then
+            throw "The wrong number of rows were inserted (" + str(a.rows_affected) + ") in TMM03 in EuMarCommUpdater.src on line " + str(tcb(5)) + "Error: " + str(err) + " (" + errmes(1) + ")", 255
+	fi
+	
+        methodret
+
+        insertNewRowError:
+            throw "Error inserting new row in TMM03 in EuMarUpdater.src on line " + str(tcb(5)) + "Error: " + str(err) + " (" + errmes(1) + ")", err
+
+    methodend
+
+    method private void updateExistingRow(BBjTemplatedString snmeu!, BBjNumber sqlChan)
+
+        seterr updateExistingRowError
+
+        DECLARE String contact!
+
+        rem build the update statement
+        sql$ = "UPDATE TMM03 "
+
+        rem ' contact
+        if cvs(snmeu!.getFieldAsString("CONTACT"),3)="" then
+            contact! = new String(snmeu!.getFieldAsString("COMPANY_NAME"))
+        else
+            contact! = new String(snmeu!.getFieldAsString("CONTACT"))
+        fi
+        if contact!.length() > 30 then
+            contact! = contact!.substring(0,30)
+        fi
+        contact! = contact!.replace("'", "''")
+        sql$ = sql$ + "SET CONTACT_NAME = '" + contact! + "', "
+
+        rem ' advantage
+        if snmeu!.getFieldAsString("ADVANTAGE")="Y" THEN
+            advantage$="E"
+        else
+            advantage$="N"
+        fi
+        sql$ = sql$ + "SEND_LIT = '" + advantage$ + "', "
+
+        rem ' announcements and email
+        sql$ = sql$ + "ANNOUNCEMENTS = '" + snmeu!.getFieldAsString("ANNOUNCEMENTS") + "', "
+        sql$ = sql$ + "E_MAIL = '" + snmeu!.getFieldAsString("EMAIL_ADDRESS") + "' "
+
+        rem ' where clause
+        sql$ = sql$ + "WHERE END_USER_NBR = '" + snmeu!.getFieldAsString("END_USER_NBR") + "'"
+
+        rem update
+        SQLPREP(sqlChan)sql$
+        DIM A$:SQLTMPL(sqlChan,IND=1)
+        SQLEXEC(sqlChan)
+        A$=SQLFETCH(sqlChan,IND=1)
+
+        if A.ROWS_AFFECTED<>1 then
+            throw "The wrong number of rows were updated (" + str(a.rows_affected) + ") in TMM03 in EuMarCommUpdater.src on line " + str(tcb(5)) + "Error: " + str(err) + " (" + errmes(1) + ")", 255
+	fi
+
+        methodret
+
+        updateExistingRowError:
+            throw "Error updating row in TMM03 in EuMarUpdater.src on line " + str(tcb(5)) + "Error: " + str(err) + " (" + errmes(1) + ")", err
+
+    methodend
+
+classend
+

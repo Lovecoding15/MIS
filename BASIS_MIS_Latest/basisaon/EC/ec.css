@@ -1,0 +1,627 @@
+/* Base URL for fonts */
+/* Color Mixins */
+/* Icon Font Mixins */
+/* Regular Fonts */
+/* A more interesting regular font */
+@font-face {
+  font-family: BloggerSans;
+  src: url('/files/fonts/BloggerSans-Bold.woff') format('woff'), url('/files/fonts/BloggerSans-Bold.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+@font-face {
+  font-family: BloggerSans;
+  src: url('/files/fonts/BloggerSans-Medium.woff') format('woff'), url('/files/fonts/BloggerSans-Medium.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: BloggerSans;
+  src: url('/files/fonts/BloggerSans-Regular.woff') format('woff'), url('/files/fonts/BloggerSans-Regular.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: BloggerSans;
+  src: url('/files/fonts/BloggerSans-Light.woff') format('woff'), url('/files/fonts/BloggerSans-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+/*  Condensed Fonts */
+/* Good all-around condensed font, used in place of RobotoCondensed due to its smaller file size */
+@font-face {
+  font-family: Akrobat;
+  src: url('/files/fonts/Akrobat-ExtraBold.woff2') format('woff2'), url('/files/fonts/Akrobat-ExtraBold.woff') format('woff'), url('/files/fonts/Akrobat-ExtraBold.otf') format("opentype");
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: Akrobat;
+  src: url('/files/fonts/Akrobat-Bold.woff2') format('woff2'), url('/files/fonts/Akrobat-Bold.woff') format('woff'), url('/files/fonts/Akrobat-Bold.otf') format("opentype");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: Akrobat;
+  src: url('/files/fonts/Akrobat-SemiBold.woff2') format('woff2'), url('/files/fonts/Akrobat-SemiBold') format('woff'), url('/files/fonts/Akrobat-SemiBold.otf') format("opentype");
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: Akrobat;
+  src: url('/files/fonts/Akrobat-Regular.woff2') format('woff2'), url('/files/fonts/Akrobat-Regular.woff') format('woff'), url('/files/fonts/Akrobat-Regular.otf') format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: Akrobat;
+  src: url('/files/fonts/Akrobat-Light.woff2') format('woff2'), url('/files/fonts/Akrobat-Light.woff') format('woff'), url('/files/fonts/Akrobat-Light.otf') format("opentype");
+  font-weight: 300;
+  font-style: normal;
+}
+/*  Title Fonts */
+/* Bold serif font, used in TechCon for titles and headers */
+@font-face {
+  font-family: PTSerif;
+  src: url('/files/fonts/PT_Serif-Web-Bold.woff2') format('woff2'), url('/files/fonts/PT_Serif-Web-Bold.woff') format('woff'), url('/files/fonts/PT_Serif-Web-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: PTSerif;
+  src: url('/files/fonts/PT_Serif-Web-Regular.woff2') format('woff2'), url('/files/fonts/PT_Serif-Web-Regular.woff') format('woff'), url('/files/fonts/PT_Serif-Web-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: NotoSerif;
+  src: url('/files/fonts/notoserif-semicondensedsemibold.woff2') format('woff2'), url('/files/fonts/notoserif-semicondensedsemibold.woff') format('woff'), url('/files/fonts/notoserif-semicondensedsemibold.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+/* Icon Font */
+@font-face {
+  font-family: 'Material Icons';
+  src: url('/files/fonts/MaterialIcons-Regular.woff2') format('woff2'), url('/files/fonts/MaterialIcons-Regular.woff') format('woff'), url('/files/fonts/MaterialIcons-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+}
+/* All controls base definition */
+.BBjControl,
+.BBjMsgBox-message {
+  font-family: BloggerSans, "Lucida Grande", Lucida, Verdana, sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 15px !important;
+  outline-color: transparent !important;
+}
+/* All top-level windows */
+.BBjTopLevelWindow {
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  margin: 20px 5px 5px 5px !important;
+  border: 1px solid #c7ccd1 !important;
+  border-radius: 0 0 6px 6px !important;
+}
+/* All buttons */
+.BBjButton,
+.BBjMsgBox-button {
+  font-family: Akrobat, BloggerSans, "Lucida Grande", Lucida, Verdana, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: #3a5978;
+  /* Download buttons icon */
+  /* Launch buttons icon */
+}
+.BBjButton[class*=" download"],
+.BBjMsgBox-button[class*=" download"] {
+  padding-left: 10px !important;
+}
+.BBjButton[class*=" download"]::before,
+.BBjMsgBox-button[class*=" download"]::before {
+  content: "\e2c4";
+  font-family: "Material Icons" !important;
+  font-size: 18px !important;
+  padding-top: 2px;
+  float: left;
+  /*position: absolute;
+	top: 3px;
+	left: 5px;*/
+  color: #55595e !important;
+}
+.BBjButton[class*=" download"] .html-face,
+.BBjMsgBox-button[class*=" download"] .html-face {
+  display: inline-block;
+  padding-top: 2px;
+}
+.BBjButton[class*=" launch"],
+.BBjMsgBox-button[class*=" launch"] {
+  padding-left: 10px !important;
+}
+.BBjButton[class*=" launch"]::before,
+.BBjMsgBox-button[class*=" launch"]::before {
+  content: "\e0b2";
+  font-family: "Material Icons" !important;
+  font-size: 18px !important;
+  padding-top: 2px;
+  float: left;
+  /*position: absolute;
+	top: 3px;
+	left: 5px;*/
+  color: #55595e !important;
+}
+.BBjButton[class*=" launch"] .html-face,
+.BBjMsgBox-button[class*=" launch"] .html-face {
+  display: inline-block;
+  padding-top: 2px;
+}
+.BBjMsgBox-button {
+  min-width: 75px;
+  padding-top: 4px;
+  font-size: 15px !important;
+}
+/* All static text */
+.BBjStaticText,
+.BBjMsgBox-message {
+  color: #55595e;
+}
+/* Editboxes with placeholders */
+.BBjEditBox {
+  color: #56738f;
+  font-family: monospace !important;
+  font-weight: 500 !important;
+  padding-left: 4px;
+  text-shadow: none !important;
+  /* Remove the text's drop shadow for all states */
+  /* Placeholder text for EditBoxes */
+}
+.BBjEditBox:active,
+.BBjEditBox:hover,
+.BBjEditBox:active {
+  text-shadow: none !important;
+}
+.BBjEditBox::placeholder {
+  font-weight: 300 !important;
+  color: #bfbfbf !important;
+}
+/* The title for each window and message boxes */
+.headertext,
+.headerText2,
+.headerText3,
+.headerText4,
+.headerText5,
+.BBjMsgBox-title {
+  font-family: NotoSerif, BloggerSans, "Lucida Grande", Lucida, Verdana, sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 18px !important;
+  letter-spacing: 0.5px;
+  color: #f5faff !important;
+  background: #1d73c9 !important;
+  text-shadow: 0 0 2px #3a5978 !important;
+}
+.headertext:not(.BBjMsgBox-title),
+.headerText2:not(.BBjMsgBox-title),
+.headerText3:not(.BBjMsgBox-title),
+.headerText4:not(.BBjMsgBox-title),
+.headerText5:not(.BBjMsgBox-title),
+.BBjMsgBox-title:not(.BBjMsgBox-title) {
+  left: 0 !important;
+  top: 0 !important;
+  border-bottom: 1px solid #3a5978 !important;
+  line-height: 28px !important;
+  width: 790px !important;
+}
+/* Groupboxes and their borders/legends */
+.BBjGroupBox {
+  border-color: #c7ccd1 !important;
+  border-radius: 3.1px !important;
+}
+.BBjGroupBox legend {
+  font-family: Akrobat, BloggerSans !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  margin-left: 5px;
+  color: #1d73c9 !important;
+}
+/* Timer countdown progress bar */
+.BBjProgressBar {
+  background-color: #fbb451 !important;
+}
+.BBjProgressBar .BBjProgressBar-text {
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+  padding-top: 1px !important;
+}
+/* Grid controls */
+.BBjGrid .BBjGrid-columnHeaderCell {
+  font-weight: 700;
+  line-height: 24px;
+  background: #e0e6eb !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.75);
+}
+.BBjGrid .BBjGrid-mainGridCell {
+  line-height: 19px;
+}
+.BBjGrid .BBjGrid-mainGridCell:active {
+  background: #63a6e9 !important;
+}
+.BBjGrid .BBjGrid-mainGridCell.bbj-selected {
+  color: #f5faff !important;
+  background: #1d73c9 !important;
+}
+.BBjGrid .BBjGrid-mainGridCell.bbj-selected:active {
+  background: #16599c !important;
+}
+/* List boxes */
+.BBjListBox-item {
+  padding-top: 5px;
+}
+.BBjListBox-item:active {
+  background: #63a6e9 !important;
+}
+.BBjListBox-item.bbj-selected {
+  color: #f5faff !important;
+  background: #1d73c9 !important;
+}
+.BBjListBox-item.bbj-selected:active {
+  background: #16599c !important;
+}
+/* Message Box tweaks */
+.BBjMsgBox .BBjMsgBox-title,
+.BBjMsgBox .dialogMiddleCenter {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.BBjMsgBox .dialogTopCenterInner {
+  margin-top: -2px;
+}
+.BBjMsgBox > div > table {
+  box-shadow: 0 0 40px #bfbfbf !important;
+}
+/* Busy Indicator */
+.BBjWindowManager-busyIndicator {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 2px solid rgba(25, 102, 179, 0.75) !important;
+  box-shadow: 0 0 40px #bfbfbf !important;
+  padding: 0 20px 20px 20px !important;
+  color: #3a5978;
+  /* Do NOT use the BloggerSans font, or it causes resizing problems for the BUIIndicator */
+  font-family: Arial, sans-serif !important;
+}
+/* Input controls */
+/* ====================================================================================================== */
+.BBjEditBox,
+.bbj-password,
+.BBjInputE,
+.BBjInputN,
+.BBjInputD,
+.BBjCEdit,
+.BBjCEdit.bbj-bordered,
+.BBjListBox,
+.BBjListEdit,
+.BBjListButton,
+.BBjTree,
+.BBjHtmlEdit,
+.BBjHtmlView {
+  color: #56738f !important;
+  background-color: #fbfcfd !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-color: #d1d9e0 !important;
+  border-radius: 2px;
+  transition: all .2s ease;
+}
+.BBjEditBox:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.bbj-password:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjInputE:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjInputN:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjInputD:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjCEdit:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjCEdit.bbj-bordered:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjListBox:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjListEdit:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjListButton:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjTree:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjHtmlEdit:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjHtmlView:not(.bbj-disabled).bbj-focused:not(.bbj-readonly),
+.BBjEditBox:not(.bbj-disabled):focus:not(.bbj-readonly),
+.bbj-password:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjInputE:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjInputN:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjInputD:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjCEdit:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjCEdit.bbj-bordered:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjListBox:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjListEdit:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjListButton:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjTree:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjHtmlEdit:not(.bbj-disabled):focus:not(.bbj-readonly),
+.BBjHtmlView:not(.bbj-disabled):focus:not(.bbj-readonly) {
+  border-color: #2eb845 !important;
+  box-shadow: 0 0 1px #2eb845 !important;
+  background-color: #fcfdfc !important;
+  text-shadow: none !important;
+}
+.BBjEditBox:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.bbj-password:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjInputE:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjInputN:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjInputD:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjCEdit:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjCEdit.bbj-bordered:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjListBox:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjListEdit:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjListButton:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjTree:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjHtmlEdit:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjHtmlView:not(.bbj-disabled).bbj-focused:not(.bbj-readonly):hover,
+.BBjEditBox:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.bbj-password:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjInputE:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjInputN:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjInputD:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjCEdit:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjCEdit.bbj-bordered:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjListBox:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjListEdit:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjListButton:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjTree:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjHtmlEdit:not(.bbj-disabled):focus:not(.bbj-readonly):hover,
+.BBjHtmlView:not(.bbj-disabled):focus:not(.bbj-readonly):hover {
+  background-color: #f7fafc !important;
+}
+.BBjEditBox:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.bbj-password:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjInputE:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjInputN:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjInputD:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjCEdit:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjCEdit.bbj-bordered:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjListBox:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjListEdit:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjListButton:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjTree:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjHtmlEdit:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused),
+.BBjHtmlView:not(.bbj-disabled):hover:not(.bbj-readonly):not(.bbj-focused) {
+  border-color: #6199d1 !important;
+  background-color: #f7fafc !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+.BBjEditBox:not(.bbj-disabled):active:not(.bbj-readonly),
+.bbj-password:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjInputE:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjInputN:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjInputD:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjCEdit:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjCEdit.bbj-bordered:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjListBox:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjListEdit:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjListButton:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjTree:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjHtmlEdit:not(.bbj-disabled):active:not(.bbj-readonly),
+.BBjHtmlView:not(.bbj-disabled):active:not(.bbj-readonly) {
+  border-color: #2eb845 !important;
+  box-shadow: 0 0 1px #2eb845 !important;
+  background-color: #fcfdfc !important;
+  text-shadow: none !important;
+}
+.BBjEditBox.bbj-disabled,
+.bbj-password.bbj-disabled,
+.BBjInputE.bbj-disabled,
+.BBjInputN.bbj-disabled,
+.BBjInputD.bbj-disabled,
+.BBjCEdit.bbj-disabled,
+.BBjCEdit.bbj-bordered.bbj-disabled,
+.BBjListBox.bbj-disabled,
+.BBjListEdit.bbj-disabled,
+.BBjListButton.bbj-disabled,
+.BBjTree.bbj-disabled,
+.BBjHtmlEdit.bbj-disabled,
+.BBjHtmlView.bbj-disabled,
+.BBjEditBox.bbj-readonly,
+.bbj-password.bbj-readonly,
+.BBjInputE.bbj-readonly,
+.BBjInputN.bbj-readonly,
+.BBjInputD.bbj-readonly,
+.BBjCEdit.bbj-readonly,
+.BBjCEdit.bbj-bordered.bbj-readonly,
+.BBjListBox.bbj-readonly,
+.BBjListEdit.bbj-readonly,
+.BBjListButton.bbj-readonly,
+.BBjTree.bbj-readonly,
+.BBjHtmlEdit.bbj-readonly,
+.BBjHtmlView.bbj-readonly {
+  background: #d5d9dd !important;
+  border-color: #8f99a3 !important;
+  color: rgba(89, 89, 89, 0.9) !important;
+}
+/* Button controls */
+/* ====================================================================================================== */
+.BBjButton,
+.BBjButton.bbj-default,
+.BBjToolButton,
+.BBjMenuButton,
+.BBjListButton:not(.bbj-native),
+.BBjChooser-button,
+.BBjMsgBox-button,
+.BBjUserAuthentication-button,
+.BBjTabCtrl .scrollRight,
+.BBjTabCtrl .scrollLeft,
+.BBjTabCtrl .scrollUp,
+.BBjTabCtrl .scrollDown,
+.terminatedMessage a#reloadApplication {
+  transition: all 0.15s ease-out !important;
+  font-family: Akrobat, BloggerSans, "Lucida Grande", Lucida, Verdana, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  text-shadow: none !important;
+  color: #3a5978;
+  border: 1px solid #98b2cd !important;
+  background: #f5fafe !important;
+  border-radius: 4px !important;
+  text-decoration: none;
+  box-shadow: none !important;
+}
+.BBjButton:not(.bbj-disabled):focus,
+.BBjButton.bbj-default:not(.bbj-disabled):focus,
+.BBjToolButton:not(.bbj-disabled):focus,
+.BBjMenuButton:not(.bbj-disabled):focus,
+.BBjListButton:not(.bbj-native):not(.bbj-disabled):focus,
+.BBjChooser-button:not(.bbj-disabled):focus,
+.BBjMsgBox-button:not(.bbj-disabled):focus,
+.BBjUserAuthentication-button:not(.bbj-disabled):focus,
+.BBjTabCtrl .scrollRight:not(.bbj-disabled):focus,
+.BBjTabCtrl .scrollLeft:not(.bbj-disabled):focus,
+.BBjTabCtrl .scrollUp:not(.bbj-disabled):focus,
+.BBjTabCtrl .scrollDown:not(.bbj-disabled):focus,
+.terminatedMessage a#reloadApplication:not(.bbj-disabled):focus,
+.BBjButton:not(.bbj-disabled).bbj-focused,
+.BBjButton.bbj-default:not(.bbj-disabled).bbj-focused,
+.BBjToolButton:not(.bbj-disabled).bbj-focused,
+.BBjMenuButton:not(.bbj-disabled).bbj-focused,
+.BBjListButton:not(.bbj-native):not(.bbj-disabled).bbj-focused,
+.BBjChooser-button:not(.bbj-disabled).bbj-focused,
+.BBjMsgBox-button:not(.bbj-disabled).bbj-focused,
+.BBjUserAuthentication-button:not(.bbj-disabled).bbj-focused,
+.BBjTabCtrl .scrollRight:not(.bbj-disabled).bbj-focused,
+.BBjTabCtrl .scrollLeft:not(.bbj-disabled).bbj-focused,
+.BBjTabCtrl .scrollUp:not(.bbj-disabled).bbj-focused,
+.BBjTabCtrl .scrollDown:not(.bbj-disabled).bbj-focused,
+.terminatedMessage a#reloadApplication:not(.bbj-disabled).bbj-focused {
+  border-color: #2eb845 !important;
+  background: #f5fafe !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+.BBjButton:not(.bbj-disabled):hover,
+.BBjButton.bbj-default:not(.bbj-disabled):hover,
+.BBjToolButton:not(.bbj-disabled):hover,
+.BBjMenuButton:not(.bbj-disabled):hover,
+.BBjListButton:not(.bbj-native):not(.bbj-disabled):hover,
+.BBjChooser-button:not(.bbj-disabled):hover,
+.BBjMsgBox-button:not(.bbj-disabled):hover,
+.BBjUserAuthentication-button:not(.bbj-disabled):hover,
+.BBjTabCtrl .scrollRight:not(.bbj-disabled):hover,
+.BBjTabCtrl .scrollLeft:not(.bbj-disabled):hover,
+.BBjTabCtrl .scrollUp:not(.bbj-disabled):hover,
+.BBjTabCtrl .scrollDown:not(.bbj-disabled):hover,
+.terminatedMessage a#reloadApplication:not(.bbj-disabled):hover {
+  color: #4b739b !important;
+  border: 1px solid #6199d1 !important;
+  background: #ecf5fe !important;
+  text-shadow: none !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.75) !important;
+}
+.BBjButton:not(.bbj-disabled):active,
+.BBjButton.bbj-default:not(.bbj-disabled):active,
+.BBjToolButton:not(.bbj-disabled):active,
+.BBjMenuButton:not(.bbj-disabled):active,
+.BBjListButton:not(.bbj-native):not(.bbj-disabled):active,
+.BBjChooser-button:not(.bbj-disabled):active,
+.BBjMsgBox-button:not(.bbj-disabled):active,
+.BBjUserAuthentication-button:not(.bbj-disabled):active,
+.BBjTabCtrl .scrollRight:not(.bbj-disabled):active,
+.BBjTabCtrl .scrollLeft:not(.bbj-disabled):active,
+.BBjTabCtrl .scrollUp:not(.bbj-disabled):active,
+.BBjTabCtrl .scrollDown:not(.bbj-disabled):active,
+.terminatedMessage a#reloadApplication:not(.bbj-disabled):active,
+.BBjButton:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjButton.bbj-default:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjToolButton:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjMenuButton:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjListButton:not(.bbj-native):not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjChooser-button:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjMsgBox-button:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjUserAuthentication-button:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjTabCtrl .scrollRight:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjTabCtrl .scrollLeft:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjTabCtrl .scrollUp:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjTabCtrl .scrollDown:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.terminatedMessage a#reloadApplication:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjButton:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjButton.bbj-default:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjToolButton:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjMenuButton:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjListButton:not(.bbj-native):not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjChooser-button:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjMsgBox-button:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjUserAuthentication-button:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjTabCtrl .scrollRight:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjTabCtrl .scrollLeft:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjTabCtrl .scrollUp:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjTabCtrl .scrollDown:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.terminatedMessage a#reloadApplication:not(.bbj-disabled).gwt-PushButton-down-hovering,
+.BBjButton:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjButton.bbj-default:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjToolButton:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjMenuButton:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjListButton:not(.bbj-native):not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjChooser-button:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjMsgBox-button:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjUserAuthentication-button:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjTabCtrl .scrollRight:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjTabCtrl .scrollLeft:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjTabCtrl .scrollUp:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.BBjTabCtrl .scrollDown:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering,
+.terminatedMessage a#reloadApplication:not(.bbj-disabled).BBjMenuButton-dropdown-down-hovering {
+  color: #f5faff !important;
+  border: 1px solid #1966b3 !important;
+  background: #1d73c9 !important;
+  text-shadow: none !important;
+  box-shadow: inset 0 0 5px #084c91 !important;
+}
+.BBjButton.bbj-default {
+  border: 1px solid #6199d1 !important;
+  background: #ecf5fe !important;
+}
+.BBjButton.bbj-default:not(.bbj-disabled):hover {
+  border: 1px solid #4d8ccb !important;
+  background: #d3e8fd !important;
+}
+.BBjButton.bbj-default:not(.bbj-disabled):active,
+.BBjControl.BBjButton:not(.bbj-disabled).gwt-PushButton-down,
+.BBjControl.BBjButton:not(.bbj-disabled).gwt-PushButton-down-hovering {
+  border: 1px solid #1966b3 !important;
+  background: #1d73c9 !important;
+}
+/* HtmlView Control for the reCAPTCHA */
+.BBjHtmlView.reCaptcha:not(.bbj-disabled):not(.bbj-readonly),
+.BBjHtmlView.reCaptcha:not(.bbj-disabled):not(.bbj-readonly):hover,
+.BBjHtmlView.reCaptcha:not(.bbj-disabled):not(.bbj-readonly):focus,
+.BBjHtmlView.reCaptcha.bbj-focused:not(.bbj-disabled):not(.bbj-readonly),
+.BBjHtmlView.reCaptcha.bbj-focused:not(.bbj-disabled):not(.bbj-readonly):hover {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+/* Reload the BUI application link */
+/* =============================================================== */
+.terminatedMessage a#reloadApplication {
+  text-align: center !important;
+  padding: 8px 0 !important;
+  width: 280px !important;
+  position: absolute;
+  top: 25px;
+  left: calc(50% - 140px);
+  font-size: 22px !important;
+}

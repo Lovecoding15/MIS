@@ -1,0 +1,798 @@
+REM Query Resource Library
+
+REM section prefixes
+REM GS general support routine
+REM EW enumerate_sysgui_forms
+REM EC enumerate_sysgui_child_windows
+REM EI enumerate_sysgui_controls
+REM ER enumerate_res_forms
+REM ED enumerate_res_child_windows
+REM EJ enumerate_res_controls
+
+
+REM --- Begin - (EW) enumerate windows library function------
+
+enumerate_sysgui_forms:
+	SETESC EW_escape_handler
+	SETERR EW_unexpected_error_handler
+
+Enter EW_sysgui_chan, EW_window_list$, EW_status, EW_error_message$
+
+REM set initial status
+	EW_status = 0, EW_error_message$ = $$
+	EW_window_list$ = $$, EW_sysgui_chan$ = $$
+	EW_done=0, EW_loop_good = 0
+
+REM check for valid sysgui
+	EW_sysgui_chan$ = fid(EW_sysgui_chan,err=EW_sysgui_error)
+	If LEN(EW_sysgui_chan$)=0 or EW_sysgui_chan$(1,1)<>"X" Then Goto EW_sysgui_error
+
+
+REM loop the windows
+	EW_temp$="context:u(2)"
+	Dim EW_context$:EW_temp$
+	Gosub GS_create_templates
+	EW_context=WINFIRST(EW_sysgui_chan,err=EW_no_windows)
+
+	While !(EW_done)
+
+		REM an error 31 may result here for windows that
+		REM are very complex with many controls
+		GS_window$=WININFO(EW_sysgui_chan,EW_context)
+		
+		REM extract the name
+		EW_window_list$=EW_window_list$ + GS_window.name$ + $00$
+		EW_window_list$=EW_window_list$ + STR(EW_context) + $00$
+		EW_window_list$=EW_window_list$ + HTA(GS_window.emask$)+ $00$
+		EW_window_list$=EW_window_list$ + HTA(GS_window.flags$) + $0A$
+
+		EW_context=WINNEXT(EW_sysgui_chan,EW_context,err=EW_loop_error)
+		Continue
+		
+		EW_loop_error:
+			If Err=2 Then
+:				EW_done=1,EW_loop_good = 1
+:			Else
+:				EW_done=1,EW_loop_good = 0;
+:				If EW_error_message$="" Then
+:					EW_error_message$="An error " + str(err) + " occurred on WINNEXT()."
+
+	Wend
+
+EW_status = EW_loop_good
+
+Exit
+
+Rem Error exits
+
+EW_sysgui_error:
+	EW_status = 0
+	EW_error_message$="Invalid or no sysgui channel specified."
+	Exit
+
+EW_no_windows:
+	EW_status = 0
+	EW_error_message$="No windows opened."
+	Exit
+
+EW_unexpected_error_handler:
+	REM any partial EW_window_list$ is left intact
+	EW_status = 0
+	EW_error_message$="An error " + str(err) + " (" +errmes(err) + " (tcb(10)=" + str(tcb(10)) +") occurred."
+	Exit
+
+EW_escape_handler:
+	Return
+
+END
+
+REM --- End - (EW) enumerate windows library function------
+
+
+
+
+
+
+
+
+REM --- Begin - (EC) enumerate child windows library function------
+
+enumerate_sysgui_child_windows:
+	SETESC EC_escape_handler
+	SETERR EC_unexpected_error_handler
+
+Enter EC_sysgui_chan, EC_context, EC_window_list$, EC_status, EC_error_message$
+
+REM set initial status
+	EC_status = 0, EC_error_message$ = $$
+	EC_window_list$ = $$, EC_sysgui_chan$ = $$
+	EC_Stack$ = $$, EC_parent_stack$ = $$
+
+REM check for valid sysgui
+	EC_sysgui_chan$ = fid(EC_sysgui_chan,err=EC_sysgui_error)
+	If LEN(EC_sysgui_chan$)=0 or EC_sysgui_chan$(1,1)<>"X" Then Goto EC_sysgui_error
+
+REM check for valid top level window context
+	EC_Context$=BIN(EC_Context,2,Err=EC_context_error)
+	EC_window_data$=WININFO(EC_sysgui_chan,EC_context,err=EC_context_error)
+
+
+
+REM Look for the children
+	Gosub GS_create_templates
+	Gosub GS_set_constants
+
+	EC_start = 1
+	EC_done = 0
+
+	While !(EC_done)
+		EC_type=ASC(EC_window_data$(EC_start + 1,1))
+
+		REM we do not follow the menu pointer in top level windows
+		REM we are only interested in finding children
+
+		Switch EC_TYPE
+			Case GS_top_level_window
+				GS_window$=EC_window_data$(EC_start)
+				EC_next = GS_window.child
+				EC_current_context = GS_window.con_id
+				EC_current_parent$=""
+				Break
+			Case  GS_child_window_border
+			Case GS_child_window_noborder
+				GS_child_window$=EC_window_data$(EC_start)
+				EC_window_list$=EC_window_list$ + GS_child_window.name$ + $00$
+				EC_genealogy$=EC_current_parent$ + "." +Str(GS_child_window.id)
+				If EC_genealogy$(1,1)="." Then EC_genealogy$=EC_genealogy$(2)
+				EC_window_list$=EC_window_list$ + EC_genealogy$ + $00$
+				EC_window_list$=EC_window_list$ + Str(GS_child_window.con_id) + $00$
+				EC_window_list$=EC_window_list$ + HTA(GS_child_window.emask$) + $00$
+				EC_window_list$=EC_window_list$ + HTA(GS_child_window.flags$) + $0A$
+				EC_next = GS_child_window.sibling
+				REM is there a child branch?
+				If GS_child_window.child <> 0 Then
+:					EC_next = GS_child_window.child;
+:					EC_old_context = EC_current_context;
+:					EC_current_context = GS_child_window.con_id;
+:					EC_old_parent$=EC_current_parent$;
+:					EC_current_parent$=EC_genealogy$;
+:					IF GS_child_window.sibling <> 0 Then
+:						EC_stack$=EC_stack$+Str(GS_child_window.sibling:"#####0")+Str(EC_old_context:"#####0");
+:						EC_parent_stack$=EC_parent_stack$ + $00$ + EC_old_parent$
+
+				Break
+			Case Default
+				GS_control$ = EC_window_data$(EC_start)
+				EC_next = GS_control.sibling
+				Break
+		Swend
+		
+		If EC_next <> 0 Then
+:			EC_start = EC_next + 1
+:		Else
+:			If Len(EC_stack$)<> 0 Then
+:				EC_next = Num(EC_stack$(Len(EC_stack$)-11,6));
+:				EC_current_context = Num(EC_stack$(Len(EC_Stack$)-5,6));
+:				EC_stack$ = EC_stack$(1,LEN(EC_stack$)-12);
+:				GPos = Pos($00$=EC_parent_stack$,-1);
+:				EC_Current_parent$=CVS(CVS(EC_parent_stack$(GPos),16),3);
+:				EC_parent_stack$=EC_parent_stack$(1,GPos-1);
+:				EC_start = EC_next + 1
+:			Else
+:				EC_done = 1
+
+		Gosub GS_clear_templates
+	Wend
+
+REM set status and go
+	EC_status = 1
+	Exit
+
+End
+
+Rem Error exits
+
+EC_sysgui_error:
+	EC_status = 0
+	EC_error_message$="Invalid or no sysgui channel specified."
+	Exit
+
+EC_context_error:
+	EC_status = 0
+	EC_error_message$="Invalid context specified. An error " + str(err) + "occurred."
+	Exit
+
+EC_unexpected_error_handler:
+	REM any partial EC_window_list$ is left intact
+	EC_status = 0
+	EC_error_message$="An error " + str(err) + " (" +errmes(err) + " (tcb(10)=" + str(tcb(10)) +") occurred."
+	Exit
+
+EC_escape_handler:
+	Return
+
+END
+
+REM --- End - (EC) enumerate child windows library function------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+REM --- Begin - (EI) enumerate controls library function------
+
+enumerate_sysgui_controls:
+	SETESC EI_escape_handler
+	SETERR EI_unexpected_error_handler
+
+Enter EI_sysgui_chan, EI_context, EI_control_list$, EI_status, EI_error_message$
+
+REM set initial status
+	EI_status = 0, EI_error_message$ = $$
+	EI_control_list$ = $$, EI_sysgui_chan$ = $$
+	EI_stack$ = $$, EI_parent_stack$ = $$
+	EC_current_context = 0
+
+REM check for valid sysgui
+	EI_sysgui_chan$ = fid(EI_sysgui_chan,err=EI_sysgui_error)
+	If LEN(EI_sysgui_chan$)=0 or EI_sysgui_chan$(1,1)<>"X" Then Goto EI_sysgui_error
+
+REM check for valid top level window context
+	EI_Context$=BIN(EI_Context,2,Err=EI_context_error)
+	EI_window_data$=WININFO(EI_sysgui_chan,EI_context,err=EI_context_error)
+
+REM Look for the controls
+	Gosub GS_create_templates
+	Gosub GS_set_constants
+
+	EI_start = 1
+	EI_done = 0
+
+	While EI_done=0
+		EI_type=ASC(EI_window_data$(EI_start + 1,1))
+
+		Switch EI_TYPE
+			Case GS_top_level_window
+				GS_window$=EI_window_data$(EI_start)
+				EI_next = GS_window.child
+				EI_current_parent$=""
+				REM is there a menu?
+				If GS_window.menuoff <> 0 THen
+:					EI_next = GS_window.menuoff;
+:					If GS_window.child <> 0 Then
+:						EI_stack$=EI_stack$+Str(GS_window.child:"#####0");
+:						EI_parent_stack$=EI_parent_stack$ + $00$ + EI_current_parent$
+				Break
+			Case GS_child_window_border
+			Case GS_child_window_noborder
+				GS_child_window$=EI_window_data$(EI_start)
+				EI_next = GS_child_window.sibling
+				REM is there a child branch?
+				If GS_child_window.child <> 0 Then
+:					EI_next = GS_child_window.child;
+:					EI_old_parent$=EI_current_parent$;
+:					EI_current_parent$=EI_Current_parent$ + "." + Str(GS_child_window.id);
+:					If GS_child_window.sibling <> 0 Then
+:						EI_stack$=EI_stack$+Str(GS_child_window.sibling:"#####0");
+:						EI_parent_stack$=EI_parent_stack$ + $00$ + EI_old_parent$
+				Break
+			Case GS_menu_item
+			Case GS_checkable_menu_item
+				GS_menu$=EI_window_data$(EI_start)
+				EI_control_list$=EI_control_list$ + Str(GS_menu.type) + $00$
+				EI_this_genealogy$=EI_current_parent$
+				If Len(EI_This_genealogy$)>0 Then
+:					If EI_This_genealogy$(1,1) = "." Then
+:						EI_this_genealogy$=EI_This_genealogy$(2)
+				EI_control_list$=EI_control_list$ + Str(EI_This_genealogy$) + $00$
+				EI_control_list$=EI_control_list$ + GS_menu.name$ + $00$
+				EI_control_list$=EI_control_list$ + Str(GS_menu.id) + $00$
+				EI_control_list$=EI_control_list$ + "0" + $00$; REM there is no x
+				EI_control_list$=EI_control_list$ + "0" + $00$; REM there is no y
+				EI_control_list$=EI_control_list$ + "0" + $00$; REM there is no w
+				EI_control_list$=EI_control_list$ + "0" + $0A$; REM there is no h
+				EI_next = GS_menu.siblingmenu
+				REM is there a sub menu
+				IF GS_menu.submenu <> 0 Then
+:					EI_next = GS_menu.submenu;
+:					IF GS_menu.siblingmenu <> 0 Then
+:						EI_stack$=EI_stack$+str(GS_menu.siblingmenu:"#####0");
+:						EI_parent_stack$=EI_parent_stack$ + $00$ + EI_Current_parent$
+				Break
+			Case Default
+				GS_control$ = EI_window_data$(EI_start)
+				EI_control_list$=EI_control_list$ + Str(GS_control.type) + $00$
+				EI_this_genealogy$=EI_current_parent$
+				If Len(EI_This_genealogy$)>0 Then
+:					If EI_This_genealogy$(1,1) = "." Then
+:						EI_this_genealogy$=EI_This_genealogy$(2)
+				EI_control_list$=EI_control_list$ + Str(EI_This_genealogy$) + $00$
+				EI_control_list$=EI_control_list$ + GS_control.name$ + $00$
+				EI_control_list$=EI_control_list$ + Str(GS_control.id) + $00$
+				EI_control_list$=EI_control_list$ + Str(GS_control.x) + $00$
+				EI_control_list$=EI_control_list$ + Str(GS_control.y) + $00$
+				EI_control_list$=EI_control_list$ + Str(GS_control.w) + $00$
+				EI_control_list$=EI_control_list$ + Str(GS_control.h) + $0A$
+				EI_next = GS_control.sibling
+				Break
+		Swend
+		
+		If EI_next <> 0 Then
+:			EI_start = EI_next + 1
+:		Else
+:			If Len(EI_stack$)<> 0 Then
+:				EI_next = Num(EI_stack$(Len(EI_stack$)-5,6));
+:				EI_stack$ = EI_stack$(1,LEN(EI_stack$)-6);
+:				PPos=Pos($00$=EI_parent_stack$,-1);
+:				EI_current_parent$=CVS(CVS(EI_parent_stack$(PPos),16),3);
+:				EI_parent_stack$=EI_parent_stack$(1,PPos-1);
+:				EI_start = EI_next + 1
+:			Else
+:				EI_done = 1
+
+		Gosub GS_clear_templates
+	Wend
+
+REM set status and go
+	EI_status = 1
+	Exit
+
+End
+
+Rem Error exits
+
+EI_sysgui_error:
+	EI_status = 0
+	EI_error_message$="Invalid or no sysgui channel specified."
+	Exit
+
+EI_context_error:
+	EI_status = 0
+	EI_error_message$="Invalid context specified. An error " + str(err) + "occurred."
+	Exit
+
+EI_unexpected_error_handler:
+	REM any partial EI_window_list$ is left intact
+	EI_status = 0
+	EI_error_message$="An error " + str(err) + " (" +errmes(err) + " (tcb(10)=" + str(tcb(10)) +") occurred."
+	Exit
+
+EI_escape_handler:
+	Return
+
+END
+
+REM --- End - (EI) enumerate controls library function------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+REM --- Begin - (ER) enumerate resources library function------
+
+enumerate_res_forms:
+	SETESC ER_escape_handler
+	SETERR ER_unexpected_error_handler
+
+Enter ER_resource_handle, ER_resource_list$, ER_status, ER_error_message$
+
+REM set initial status
+	ER_status = 0, ER_error_message$ = $$
+	ER_resource_list$ = $$, ER_done=0, ER_loop_good = 0
+
+REM loop the resources
+	ER_temp$="Id:u(2),class:u(1),type:u(1)"
+	Dim ER_resource$:ER_temp$
+	Gosub GS_create_templates
+	ER_resource$=RESFIRST(ER_resource_handle,err=ER_no_resources)
+
+	While !(ER_done)
+		REM is it a top level window?
+		If ER_resource.class = 0 And ER_resource.type = 1 Then
+:			GS_window$=RESINFO(ER_resource_handle,ER_resource$);
+:			ER_resource_list$=ER_resource_list$ + GS_window.Name$ + $00$ + STR(ER_resource.id) + $00$;
+:			ER_resource_list$=ER_resource_list$ + HTA(GS_window.emask$) + $00$ + HTA(GS_window.flags$) + $0A$
+
+		REM an Error 31 can result on the RESINFO Function if the resource is very
+		REM complex with lots of resources
+
+		ER_Resource$=ResNext(ER_resource_handle,ER_resource$,err=ER_loop_error)
+		Continue
+		
+		ER_loop_error:
+			If Err=2 Then
+:				ER_done=1,ER_loop_good = 1
+:			Else
+:				ER_done=1,ER_loop_good = 0;
+:				If ER_error_message$="" Then
+:					ER_error_message$="An error " + str(err) + " occurred on RESNEXT()."
+
+	Wend
+
+ER_status = ER_loop_good
+
+Exit
+
+Rem Error exits
+
+ER_no_resources:
+	ER_status = 0
+	ER_error_message$="A an error " + str(err) + " occurred on the RESFIRST() operation."
+	Exit
+
+ER_unexpected_error_handler:
+	REM any partial ER_resource_list$ is left intact
+	ER_status = 0
+	ER_error_message$="An error " + str(err) + " (" +errmes(err) + " (tcb(10)=" + str(tcb(10)) +") occurred."
+	Exit
+
+ER_escape_handler:
+	Return
+
+END
+
+REM --- End - (ER) enumerate resources library function------
+
+
+
+
+
+
+
+
+
+
+
+REM --- Begin - (ED) enumerate child resources library function------
+
+enumerate_res_child_windows:
+	SETESC ED_escape_handler
+	SETERR ED_unexpected_error_handler
+
+Enter ED_reshandle, ED_resource_id, ED_child_list$, ED_status, ED_error_message$
+
+REM set initial status
+	ED_status = 0, ED_error_message$ = $$
+	ED_child_list$ = $$, ED_stack$ = $$
+	ED_parent_stack$ = $$
+
+REM check for valid top level resource
+	ED_res_str$=BIN(ED_resource_id,2,Err=ED_reshandle_error)
+	REM must be a top level resource
+	ED_res_str$=ED_res_str$ + $0001$
+	ED_resource_data$=RESINFO(ED_reshandle,ED_res_str$,err=ED_resinfo_error)
+
+REM Look for the children
+	Gosub GS_create_templates
+	Gosub GS_set_constants
+
+	ED_start = 1
+	ED_done = 0
+
+	While ED_done=0
+		ED_type=ASC(ED_resource_data$(ED_start + 1,1))
+
+		REM we do not follow the menu pointer in top level windows
+		REM we are only interested in finding children
+
+		Switch ED_TYPE
+			Case GS_top_level_window
+				GS_window$=ED_resource_data$(ED_start)
+				ED_next = GS_window.child
+				ED_current_parent$=Str(GS_window.id)
+				Break
+			Case  GS_child_window_border
+			Case GS_child_window_noborder
+				GS_child_window$=ED_resource_data$(ED_start)
+				ED_child_list$=ED_child_list$ + GS_child_window.name$ + $00$
+				ED_child_list$=ED_child_list$ + ED_current_parent$ + "." + Str(GS_child_window.id) + $00$
+				ED_child_list$=ED_child_list$ + "-1"+ $00$
+				ED_child_list$=ED_child_list$ + HTA(GS_child_window.emask$) + $00$
+				ED_child_list$=ED_child_list$ + HTA(GS_child_window.flags$) + $0A$
+				ED_next = GS_child_window.sibling
+				REM is there a child branch?
+				If GS_child_window.child <> 0 Then
+:					ED_next = GS_child_window.child;
+:					ED_old_parent$ = ED_current_parent$;
+:					ED_current_parent$=ED_current_parent$ + "." + Str(GS_child_window.id);
+:					IF GS_child_window.sibling <> 0 Then
+:						ED_stack$=ED_stack$+Str(GS_child_window.sibling:"#####0");
+:						ED_parent_stack$ = ED_parent_stack$ + $00$ + ED_old_parent$
+				Break
+			Case Default
+				GS_control$ = ED_resource_data$(ED_start)
+				ED_next = GS_control.sibling
+				Break
+		Swend
+		
+		If ED_next <> 0 Then
+:			ED_start = ED_next + 1
+:		Else
+:			If Len(ED_stack$)<> 0 Then
+:				ED_next = Num(ED_stack$(Len(ED_stack$)-5,6));
+:				ED_stack$ = ED_stack$(1,LEN(ED_stack$)-6);
+:				ED_Bpos = pos($00$=ED_parent_stack$,-1);
+:				ED_Current_parent$=ED_parent_stack$(ED_BPos+1);
+:				ED_parent_stack$=ED_parent_stack$(1,ED_BPos-1);
+:				ED_start = ED_next + 1
+:			Else
+:				ED_done = 1
+
+		Gosub GS_clear_templates
+	Wend
+
+REM set status and go
+	ED_status = 1
+	Exit
+
+End
+
+Rem Error exits
+
+ED_resinfo_error:
+	ED_status = 0
+	ED_error_message$="An error " + str(err) + " occurred on the RESINFO() operation."
+	Exit
+
+ED_reshandle_error:
+	ED_status = 0
+	ED_error_message$="An error " + str(err) + "occurred attempting to use the pass reshandle."
+	Exit
+
+ED_unexpected_error_handler:
+	REM any partial ED_child_list$ is left intact
+	ED_status = 0
+	ED_error_message$="An error " + str(err) + " (" +errmes(err) + " (tcb(10)=" + str(tcb(10)) +") occurred."
+	Exit
+
+ED_escape_handler:
+	Return
+
+END
+
+REM --- End - (ED) enumerate child resources library function------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+REM --- Begin - (EJ) enumerate controls library function------
+
+enumerate_res_controls:
+	SETESC EJ_escape_handler
+	SETERR EJ_unexpected_error_handler
+
+Enter EJ_resource_handle, EJ_resource_id, EJ_control_list$, EJ_status, EJ_error_message$
+
+REM set initial status
+	EJ_status = 0, EJ_error_message$ = $$
+	EJ_control_list$ = $$, EJ_stack$ = $$
+	EJ_parent_stack$ = $$
+	EJ_current_windowid = 0
+
+REM check for valid top level resource
+	EJ_res_str$=BIN(EJ_resource_id,2,Err=EJ_reshandle_error)
+	REM must be a top level resource
+	EJ_res_str$=EJ_res_str$ + $0001$
+	EJ_resource_data$=RESINFO(EJ_resource_handle,EJ_res_str$,err=EJ_resinfo_error)
+
+REM Look for the controls
+	Gosub GS_create_templates
+	Gosub GS_set_constants
+
+	EJ_start = 1
+	EJ_done = 0
+
+	While EJ_done=0
+		EJ_type=ASC(EJ_resource_data$(EJ_start + 1,1))
+
+		Switch EJ_TYPE
+			Case GS_top_level_window
+				GS_window$=EJ_resource_data$(EJ_start)
+				EJ_next = GS_window.child
+				EJ_current_windowid$ = str(GS_window.id)
+				REM is there a menu?
+				If GS_window.menuoff <> 0 Then
+:					EJ_next = GS_window.menuoff;
+:					If GS_window.child <> 0 Then
+:						EJ_stack$=EJ_stack$+Str(GS_window.child:"#####0");
+:						EJ_parent_stack$=EJ_parent_stack$ + $00$ + EJ_current_windowid$
+				Break
+			Case GS_child_window_border
+			Case GS_child_window_noborder
+				GS_child_window$=EJ_resource_data$(EJ_start)
+				EJ_next = GS_child_window.sibling
+				REM is there a child branch?
+				If GS_child_window.child <> 0 Then
+:						EJ_Next = GS_child_window.child;
+:						EJ_old_current_windowid$ = EJ_current_windowid$;
+:						EJ_current_windowid$=EJ_current_windowid$ + "." + str(GS_child_window.id);
+:						If GS_child_window.sibling <> 0 Then
+:							EJ_stack$=EJ_stack$+Str(GS_child_window.sibling:"#####0");
+:							EJ_parent_stack$=EJ_parent_stack$ + $00$ + EJ_old_current_windowid$
+				Break
+			Case GS_menu_item
+			Case GS_checkable_menu_item
+				GS_menu$=EJ_resource_data$(EJ_start)
+				EJ_control_list$=EJ_control_list$ + Str(GS_menu.type) + $00$
+				EJ_control_list$=EJ_control_list$ + EJ_current_windowid$ + $00$
+				EJ_control_list$=EJ_control_list$ + GS_menu.name$ + $00$
+				EJ_control_list$=EJ_control_list$ + Str(GS_menu.id) + $00$
+				EJ_control_list$=EJ_control_list$ + "0" + $00$; REM there is no x
+				EJ_control_list$=EJ_control_list$ + "0" + $00$; REM there is no y
+				EJ_control_list$=EJ_control_list$ + "0" + $00$; REM there is no w
+				EJ_control_list$=EJ_control_list$ + "0" + $0A$; REM there is no h
+				EJ_next = GS_menu.siblingmenu
+				REM is there a sub menu
+				IF GS_menu.submenu <> 0 Then
+:					EJ_next = GS_menu.submenu;
+:					IF GS_menu.siblingmenu <> 0 Then
+:						EJ_stack$=EJ_stack$+str(GS_menu.siblingmenu:"#####0");
+:						EJ_parent_stack$=EJ_parent_stack$ + $00$ + EJ_current_windowid$
+				Break
+			Case Default
+				GS_control$ = EJ_resource_data$(EJ_start)
+				EJ_control_list$=EJ_control_list$ + Str(GS_control.type) + $00$
+				EJ_control_list$=EJ_control_list$ + EJ_current_windowid$ + $00$
+				EJ_control_list$=EJ_control_list$ + GS_control.name$ + $00$
+				EJ_control_list$=EJ_control_list$ + Str(GS_control.id) + $00$
+				EJ_control_list$=EJ_control_list$ + Str(GS_control.x) + $00$
+				EJ_control_list$=EJ_control_list$ + Str(GS_control.y) + $00$
+				EJ_control_list$=EJ_control_list$ + Str(GS_control.w) + $00$
+				EJ_control_list$=EJ_control_list$ + Str(GS_control.h) + $0A$
+				EJ_next = GS_control.sibling
+				Break
+		Swend
+		
+		If EJ_next <> 0 Then
+:			EJ_start = EJ_next + 1
+:		Else
+:			If Len(EJ_stack$)<> 0 Then
+:				EJ_next = Num(EJ_stack$(Len(EJ_stack$)-5,6));
+:				EJ_stack$ = EJ_stack$(1,LEN(EJ_stack$)-6);
+:				EJ_Bpos = pos($00$=EJ_parent_stack$,-1);
+:				EJ_current_windowid$=EJ_parent_stack$(EJ_Bpos+1);
+:				EJ_parent_stack$=EJ_parent_stack$(1,EJ_Bpos-1);
+:				EJ_start = EJ_next + 1
+:			Else
+:				EJ_done = 1
+
+		Gosub GS_clear_templates
+	Wend
+
+REM set status and go
+	EJ_status = 1
+	Exit
+
+End
+
+Rem Error exits
+
+EJ_resinfo_error:
+	EJ_status = 0
+	EJ_error_message$="An error " + str(err) + " occurred on the RESINFO() operation."
+	Exit
+
+EJ_reshandle_error:
+	EJ_status = 0
+	EJ_error_message$="An error " + str(err) + "occurred attempting to use the pass reshandle."
+	Exit
+
+EJ_unexpected_error_handler:
+	REM any partial EJ_window_list$ is left intact
+	EJ_status = 0
+	EJ_error_message$="An error " + str(err) + " (" +errmes(err) + " (tcb(10)=" + str(tcb(10)) +") occurred."
+	Exit
+
+EJ_escape_handler:
+	Return
+
+END
+
+REM --- End - (EJ) enumerate controls library function------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Rem ---Begin (GS) General Support Routines-------------------
+
+GS_create_templates:
+	Dim GS_window$:"class:u(1),type:u(1),emask:u(4),flags:u(4),con_id:u(2),id:u(2),x:u(2),y:u(2),w:u(2),h:u(2),menuoff:u(2),child:u(2),name:c(10*=0),title:c(10*=0)"
+	Dim GS_child_window$:"class:u(1),type:u(1),emask:u(4),flags:u(4),con_id:u(2),id:u(2),x:u(2),y:u(2),w:u(2),h:u(2),child:u(2),sibling:u(2),name:c(10*=0),title:c(10*=0)"
+	Dim GS_control$:"class:u(1),type:u(1),flags:u(4),id:u(2),x:u(2),y:u(2),w:u(2),h:u(2),reserved:u(2),sibling:u(2),name:c(10*=0),title:c(10*=0)"
+	Dim GS_menu$:"class:u(1),type:u(1),flags:u(4),id:u(2),accelkey:u(2),submenu:u(2),siblingmenu:u(2),name:c(10*=0),title:c(10*=0)"
+Return
+
+GS_clear_templates:
+	Dim GS_reset$(40," ")
+	GS_reset$=GS_reset$+$0000$
+	GS_window$ = GS_reset$
+	GS_child_window$ = GS_reset$
+	GS_control$ = GS_reset$
+	GS_menu$ = GS_reset$
+Return
+
+GS_set_constants:
+	GS_top_level_window = 1
+	GS_child_window_border = 2
+	GS_child_window_noborder = 7
+	GS_push_button = 11
+	GS_radio_button = 12
+	GS_check_box = 13
+	GS_Horz_scroll_bar = 14
+	GS_Vert_scroll_bar = 15
+	GS_edit = 16
+	GS_static_text = 17
+	GS_listbox = 18
+	GS_listbutton = 19
+	GS_list_edit = 20
+	GS_group_box = 21
+	GS_custom_edit = 22
+	GS_menu_item = 100
+	GS_checkable_menu_item = 101
+	GS_status_bar = 102
+	GS_tool_button = 103
+	GS_inpute = 104
+	GS_inputn = 105
+	GS_tab = 106
+	GS_grid = 107
+RETURN
+
+
+Rem ---End (GS) General Support Routines-------------------
+
+
+
+REM --- End of library----------------------------
+
+End
+
+
+
+

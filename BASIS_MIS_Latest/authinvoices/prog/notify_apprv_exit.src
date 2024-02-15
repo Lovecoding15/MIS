@@ -1,0 +1,340 @@
+rem --- send email on close of the Payment Selection form
+rem --- shutting down, do we need to send notice email?
+
+setesc std_error
+seterr std_error
+
+enter firm_id$, user$, gridInvoices!
+
+rem --- Open/Lock files
+files=3,begfile=1,endfile=files
+dim files$[files],options$[files],chans$[files],templates$[files]
+files$[1]="APM_APPROVERS"; files$[2]="ADM_USER"; files$[3]="APM_INVAPPROVAL"
+options$[1]="OTA";options$[2]="OTA";options$[3]="OTA"
+call stbl("+DIR_SYP")+"bac_open_tables.bbj",
+:	begfile,
+:	endfile,
+:	files$[all],
+:	options$[all],
+:	chans$[all],
+:	templates$[all],
+:	table_chans$[all],
+:	batch,
+:	status$
+
+dim apm_approvers$:templates$[1]
+apm_approvers = num(chans$[1])
+dim adm_user$:templates$[2]
+adm_user = num(chans$[2])
+dim apm_invapproval$:templates$[3]
+apm_invapproval = num(chans$[3])
+
+while 1
+	rem --- is the current user the reviewer, or an approver
+	found=0
+	read record(apm_approvers,key=firm_id$ + user$,dom=*next)apm_approvers$; found=1
+	if !found then
+		rem --- not the reviewer, or an approver
+		break
+	endif
+	if apm_approvers.prelim_approval$ = "Y" then
+		rem --- it's the reviewer
+		usertype$ = "R"
+	else
+		if apm_approvers.check_signer$ = "Y" then
+			rem --- it's an approver
+			usertype$ = "A"
+		else
+			rem --- not the reviewer, or an approver
+			break
+		endif
+	endif
+
+	rem --- set the cc$ and to$ addresses
+	read record(adm_user,key=apm_approvers.user_id$)adm_user$
+	rem -- for both usertype$ the current user will be a cc
+	cc$=cvs(adm_user.email_address$,3)
+	
+	rem --- set the to$ and complete the cc$
+	to$ = ""
+	read record(apm_approvers,key=firm_id$,dom=*next)apm_approvers$
+	while 1
+		read record(apm_approvers,end = *break)apm_approvers$
+
+		rem --- bypass the current user
+		if  apm_approvers.user_id$ = user$ then continue
+
+		if apm_approvers.check_signer$ = "Y" then
+			rem --- an approver
+			read record(adm_user, key=apm_approvers.user_id$)adm_user$
+			if usertype$ = "R" then
+				if len(to$) = 0 then
+					to$ = adm_user.email_address$
+				else
+					to$ = to$ + ", " + adm_user.email_address$
+				endif
+			else
+				if len(cc$) = 0 then
+					cc$ = adm_user.email_address$
+				else
+					cc$ = cc$ + ", " + adm_user.email_address$
+				endif
+			endif
+		else
+			if apm_approvers.prelim_approval$ = "Y" then
+				rem --- a reviewer
+				read record(adm_user, key=apm_approvers.user_id$)adm_user$
+				if usertype$ = "A" then
+					if len(to$) = 0 then
+						to$ = adm_user.email_address$
+					else
+						to$ = cc$ + ", " + adm_user.email_address$
+					endif
+				endif
+			else
+				rem --- not an approver or a reviewer
+				read record(adm_user, key=apm_approvers.user_id$)adm_user$
+				if len(cc$) = 0 then
+					cc$ = adm_user.email_address$
+				else
+					cc$ = cc$ + ", " + adm_user.email_address$
+				endif
+			endif
+		endif
+	wend
+
+	if usertype$ = "R" then 
+		subject$ = "Accounts Payable Invoices Awaiting Approval."
+	else
+		subject$ = "Accounts Payable Invoices Approval Status."
+	endif
+
+	from$ = "customer-service@basis.com"
+	bcc$ = ""
+
+	msgtxt$ = "<html><body>" + $0A$
+	if usertype$="R" then
+		msgtxt$ = msgtxt$ + "There are Accounts Payable invoices awaiting your approval. Please log into Barista Addon and review the following invoices: <br><br>" + $0A$ 
+	else
+		msgtxt$ = msgtxt$ + "Approver " + cvs(user$,3) + " has exited the Payment Selection Form. <br><br>" + $0A$
+		msgtxt$ = msgtxt$ + "The status of Accounts Payable Invoices is as follows: <br><br>" + $0A$
+	endif
+
+	
+	rem --- walk the grid
+	numrows = gridInvoices!.getNumRows()
+	threshhold = num(stbl("AUTHTHRESHHOLD"))
+
+	if numrows > 0 then
+		
+		approved_invoices=0
+		partially_approved=0
+		reviewed_but_not_approved=0
+		not_reviewed=0
+		approved_invoices$=""
+		partially_approved$=""
+		reviewed_but_not_approved$=""
+		not_reviewed$=""
+
+		rem ' retireve the vendor total in this grid
+		vendor_ids$ = stbl("psVendors")
+		vendor_totals$ = stbl("psVendorTotals")
+
+		for row = 0 to numrows-1
+
+
+			vendor_id$ = gridInvoices!.getCellText(row,3)
+			vendor_name$ = gridInvoices!.getCellText(row,4)
+			ap_inv_no$ = gridInvoices!.getCellText(row,5)
+			inv_amt  = num(gridInvoices!.getCellText(row,9))
+			selected = gridInvoices!.getCellState(row,0)	
+
+			rem --- not selected means that it still requires some approvals
+		
+			gosub get_approval_status	
+
+			vidPos = pos(vendor_id$=vendor_ids$,6)
+			pointer = ((int(vidPos/6) + 1) *10) -9
+			thisVendor_total = num(vendor_totals$(pointer,10))
+
+			if reviewed = 0 and approved = 0 then
+				not_reviewed = not_reviewed + 1
+				line$ = "<tr><td>" + ap_inv_no$ + "</td>" + $0A$
+				line$ = line$ + "<td>" + vendor_id$ + "</td>" + $0A$
+				line$ = line$ + "<td>" + vendor_name$ + "</td>" + $0A$
+				line$ = line$ + "<td align=right>" + cvs(str(inv_amt:"###,##0.00"),3) + "</td></tr>" + $0A$
+				not_reviewed$ = not_reviewed$ + line$
+			else
+				if reviewed = 1 and approved = 0 then
+					reviewed_but_not_approved = reviewed_but_not_approved + 1
+					line$ = "<tr><td>" + ap_inv_no$ + "</td>" + $0A$
+					line$ = line$ + "<td>" + vendor_id$ + "</td>" + $0A$
+					line$ = line$ + "<td>" + vendor_name$ + "</td>" + $0A$
+					line$ = line$ + "<td align=right>" + cvs(str(inv_amt:"###,##0.00"),3) + "</td></tr>" + $0A$
+					reviewed_but_not_approved$ = reviewed_but_not_approved$ + line$
+				else
+					if reviewed = 1 and approved = 1 and thisVendor_total < threshhold then
+						approved_invoices = approved_invoices +1
+						line$ = "<tr><td>" + ap_inv_no$ + "</td>" + $0A$
+						line$ = line$ + "<td>" + vendor_id$ + "</td>" + $0A$
+						line$ = line$ + "<td>" + vendor_name$ + "</td>" + $0A$
+						line$ = line$ + "<td align=right>" + cvs(str(inv_amt:"###,##0.00"),3) + "</td></tr>" + $0A$
+						approved_invoices$ = approved_invoices$ + line$
+					else
+						if reviewed =1 and approved = 1 and thisVendor_total >= threshhold then
+							partially_approved = partially_approved + 1
+							line$ = "<tr><td>" + ap_inv_no$ + "</td>" + $0A$
+							line$ = line$ + "<td>" + vendor_id$ + "</td>" + $0A$
+							line$ = line$ + "<td>" + vendor_name$ + "</td>" + $0A$
+							line$ = line$ + "<td align=right>" + cvs(str(inv_amt:"###,##0.00"),3)  + "</td><td>requires second approval.</td></tr>" + $0A$
+							partially_approved$ = partially_approved$ + line$
+						else
+							if reviewed = 1 and approved > 1 then
+								approved_invoices = approved_invoices + 1
+								line$ = "<tr><td>" + ap_inv_no$ + "</td>" + $0A$
+								line$ = line$ + "<td>" + vendor_id$ + "</td>" + $0A$
+								line$ = line$ + "<td>" + vendor_name$ + "</td>" + $0A$
+								line$ = line$ + "<td align=right>" + cvs(str(inv_amt:"###,##0.00"),3) + "</td></tr>" + $0A$
+								approved_invoices$ = approved_invoices$ + line$
+							endif
+						endif
+					endif
+				endif
+			endif
+		next row
+	else
+		rem --- no invoices, jump out
+		break
+	endif
+
+	msg$ = "Invoices not reviewed: " +str(not_reviewed) + $0A$
+	msg$ = msg$ +"Invoices that have been reviewed, but not completely approved: " + str(reviewed_but_not_approved + partially_approved) + $0A$
+	msg$ = msg$ +"Invoices approved and ready: " + str(approved_invoices) + $0A$ + $0A$
+
+	if usertype$="R" then
+		rem --- user is the reviewer
+		msgtxt$ = msgtxt$ + "<table border=1>" + reviewed_but_not_approved$ + partially_approved$ + "</table>" + $0A$
+	else
+		rem --- user is an approver
+		if len(not_reviewed$) <> 0 then msgtxt$ = msgtxt$ + "These invoices have not been reviewed: <br>" + $0A$ + "<table border=1>" + not_reviewed$ + "</table><br>" +$0A$
+		if len(reviewed_but_not_approved$) <> 0 then msgtxt$ = msgtxt$ + "These invoices have been reviewed, but have no approvals: <br>" + $0A$ + "<table border=1>" + reviewed_but_not_approved$ + "</table><br>" + $0A$
+		if len(partially_approved$) <> 0 then msgtxt$ = msgtxt$ + "These invoices have been reviewed and have one approval, but require another approval: <br>" + $0A$ + "<table border=1>" + partially_approved$ + "</table><br>" + $0A$
+		if len(approved_invoices$) <> 0 then msgtxt$ = msgtxt$ + "These invoices have been fully approved and are ready for payment: <br>" + $0A$ + "<table border=1>" + approved_invoices$ + "</table><br>" + $0A$
+	endif		
+	msgtxt$ = msgtxt$ + "</body></html>"
+
+	if usertype$ = "R" and not_reviewed<>0 then
+		rem --- report it and go, all invoices must be reviewed prior to emailing the approvers
+		msg$ = msg$ + "There are still invoices awaiting your review."
+		msg_id$="GENERIC_OK"
+		dim msg_tokens$[1]
+		msg_tokens$[1]=msg$
+		gosub disp_message
+		
+	else
+		if usertype$ = "R" and not_reviewed = 0 and reviewed_but_not_approved = 0 and partially_approved = 0 then
+			rem --- report it and go, all invoices have been approved
+			msg$ = msg$ + "All invoices have been approved and are ready for payment."
+			msg_id$="GENERIC_OK"
+			dim msg_tokens$[1]
+			msg_tokens$[1]=msg$
+			gosub disp_message
+		else
+			if usertype$ = "R" then
+				rem ---- give them a choice
+				msg_id$="APM_SEND_NOTICE"
+				dim msg_tokens$[1]
+				msg_tokens$[1]=msg$
+				gosub disp_message
+			
+				if cvs(msg_opt$,3) = "Y" then
+					call "sendEmailHtml.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+				endif
+			else
+				rem --- usertype$="A" and approver, send the email
+				call "sendEmailHtml.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+			endif
+		endif
+	endif
+
+	break
+wend
+
+exit
+
+rem ==========================================================================
+get_approval_status: rem --- Check Approval Status of an invoice
+rem ==========================================================================
+
+	read record(apm_invapproval, key=firm_id$ + vendor_id$ + ap_inv_no$,dom=*next)apm_invapproval$
+	
+	rem --- values to be set
+	approval_list$="Invoice: " + cvs(ap_inv_no$,3) + "  from " + cvs(vendor_name$,3) + " for " + cvs(str(inv_amt:"$###,##0.00"),3) + $0A$
+	reviewed=0
+	approved=0
+	sequence_num = -1
+	approved_by$ = ""
+
+	while 1
+		read record(apm_invapproval,end=*break)apm_invapproval$
+		if firm_id$ + vendor_id$ + ap_inv_no$ <> apm_invapproval.firm_id$ + apm_invapproval.vendor_id$ + apm_invapproval.ap_inv_no$ then break
+		sequence_num = num(apm_invapproval.sequence_num$)
+		if apm_invapproval.approval_type$ = "R" then
+			reviewed=1
+			approval_list$ = approval_list$ + "Reviewed by: " + cvs(apm_invapproval.user_id$,3) + " "
+			approval_list$ = approval_list$ + cvs(apm_invapproval.name$,3) + " "
+			ts$ = cvs(apm_invapproval.appv_timestamp$,3)
+			ts$ = ts$(5,2) + "/" + ts$(7,2) + "/" + ts$(1,4) + ts$(9)
+			approval_list$ = approval_list$ + ts$ + $0A$
+		else
+			if apm_invapproval.approval_type$ = "S" then
+				approved = approved + 1
+				approved_by$ = apm_invapproval.user_id$
+				approval_list$ = approval_list$ + "Approved by: " + cvs(apm_invapproval.user_id$,3) + " "
+				approval_list$ = approval_list$ + cvs(apm_invapproval.name$,3) + " "
+				ts$ = cvs(apm_invapproval.appv_timestamp$,3)
+				ts$ = ts$(5,2) + "/" + ts$(7,2) + "/" + ts$(1,4) + ts$(9)
+				approval_list$ = approval_list$ + ts$ + $0A$
+			endif
+		endif
+	wend
+
+return
+
+disp_message:rem --- Display Message Dialog
+
+	call stbl("+DIR_SYP")+"bac_message.bbj",
+:		msg_id$,
+:		msg_tokens$[all],
+:		msg_opt$,
+:		rd_table_chans$[all]
+
+	return
+
+std_error: rem --- Standard error handler (01Apr2006)
+
+	err_text$=""
+	if tcb(5)<>0 and pgm(-1)=pgm(-2) err_text$=pgm(tcb(5),err=*next)
+	call stbl("+DIR_SYP")+"bac_error.bbj",err=std_error_exit,pgm(-2),str(tcb(5)),str(err),err_text$,err_act$
+	if pos("EXIT"=err_act$) goto std_error_exit
+	if pos("ESCAPE"=err_act$) seterr 0;setesc 0
+	if pos("RETRY"=err_act$) retry
+
+std_error_exit:
+
+	master_user$=cvs(stbl("+MASTER_USER",err=std_error_release),2)
+	sysinfo_template$=stbl("+SYSINFO_TPL",err=std_error_release)
+	dim sysinfo$:sysinfo_template$
+	sysinfo$=stbl("+SYSINFO",err=std_error_release)
+	if cvs(sysinfo.user_id$,2)=master_user$ escape
+
+std_error_release:
+
+	status=999
+	if pgm(-1)<>pgm(-2) exit
+
+	release
+
+std_exit: rem --- Standard program end (01Mar2006)
+
+	release

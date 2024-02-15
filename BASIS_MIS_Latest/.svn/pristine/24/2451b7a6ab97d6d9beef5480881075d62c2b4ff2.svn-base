@@ -1,0 +1,429 @@
+rem ' sign_invoice.bbj
+rem ' requires the SSCP signamus
+rem ' only run via command line from job_queue.bbx
+
+rem ' block
+rem ' goto pgm_exit
+
+seterr err_exit
+msg$=""
+path$="/mnt/data/basisaon/holding/"
+dsrv$=stbl("DATA_SERVER")
+chdir path$
+
+errlog=unt
+open(errlog,mode="O_APPEND")"/mnt/data/basisaon/aon/tmp/sign_invoice_err.log"
+rem ' write(errlog)date(0:"%Y%Mz%Dz %Hz%mz%sz") + " enter sign_invoice"
+
+rem ' USE and DECLARE for the new Signamus Signing service - no longer used
+rem ' USE ::SignamusClient.bbj::SignamusClient
+rem ' DECLARE SignamusClient signer!
+
+procfile$="processing.txt"
+tmpfile$=procfile$
+now$=date(0:"%Hz%mz")
+gosub get_file_text
+if len(file_text$)>3 then
+  then$=file_text$(1,4)
+  h1=num(now$(1,2),err=*next)
+  m1=num(now$(3,2),err=*next)
+  h2=num(then$(1,2),err=*next)
+  m2=num(then$(3,2),err=*next)
+  if h1=0 and h2>0 then h1=24
+  t1=h1*60+m1
+  t2=h2*60+m2
+  elapsed=t1-t2
+  if elapsed<10 and elapsed>0 then goto pgm_exit
+  msg$="Signing process encountered a previous process in "+pgm(-2)
+fi
+
+eraseSuccess = 0
+erase procfile$,err=*next; eraseSuccess = 1
+if eraseSuccess = 0 and err<> 12 then write(errlog)date(0:"%Y%Mz%Dz %Hz%mz%sz") + " " + path$ + procfile$ + " erase error: " + str(err) + " line: " + str(tcb(5)) + " " + errmes(-1)
+string procfile$
+procchan=unt
+open(procchan)dsrv$+path$+procfile$
+print (procchan)now$
+
+if firm$="" then firm$="02"
+if invoice$<>"" then 
+  invoice_list$=invoice$+$0a$
+else
+  dchan=unt
+  open(dchan,err=*endif)dsrv$+path$
+  while 1
+  readrecord(dchan,siz=2048,err=*break)thing$ 
+  p1=pos("_original.pdf"=thing$)
+  if p1<8 then continue
+  invoice_list$=invoice_list$+thing$(p1-7,7)+$0a$
+  wend
+  close(dchan,err=*next)
+fi
+if invoice_list$<>"" then invoice_list$=ssort(invoice_list$,8)
+
+while pos($0a$=invoice_list$)
+
+  rem ' extract the invoice number
+  p1=pos($0a$=invoice_list$)
+  invoice$=invoice_list$(1,p1-1)
+  invoice_list$=invoice_list$(p1+1)
+
+  rem 'Skip it if there's no email file - noplace to send it
+  tmpfile$=invoice$+"_email.txt"
+  gosub get_file_text
+  if file_text$="" then continue
+
+  rem ' stash the email text  
+  emsg$=file_text$
+
+  pdffile$=invoice$+"_original.pdf"
+  signed_pdffile$=invoice$+".pdf"
+
+  rem 'Skip it if there's already a signed pdf
+  tmpfile$=signed_pdffile$
+  gosub get_file_text
+  if file_text$<>"" then continue
+
+  rem ' now ensure we have an empty file to received the signed pdf
+  rem ' creating the file now prevents premissions issues which
+  rem ' occur if the file is defined by java in SignamusClient.bbj
+  fileExists = 0
+  tmpchn=unt
+  open(tmpchn,err=*next)path$ + signed_pdffile$; fileExists=1
+  if fileExists then
+  	close(tmpchn)
+  else
+  	string path$ + signed_pdffile$
+  fi
+
+  rem ' is a report file required
+  reportFileRequired = 0
+  reportfile$=invoice$+"_ver.pdf"
+  tmpchn=unt
+  open(tmpchn,err=*next)path$+reportfile$; reportFileRequired = 1
+  close(tmp,err=*next)
+
+  rem ' check for a zero balance invoice which will not be signed
+  rem ' this check is no longer need as 0f 5/2017 and return to domestice process
+  SignInvoice = 1
+  rem ' zerofile$ = invoice$ + "_zerobal.txt"
+  rem ' zerochn = unt
+  rem ' open(zerochn, err=*next) path$ + zerofile$; SignInvoice = 0; reportFileRequired = 0
+  rem ' close(zerochn, err=*next)
+  rem ' if SignInvoice = 0 then
+  rem '	copycmd$ = "cp " + path$ + pdffile$ + " " + path$ + signed_pdffile$
+  rem ' 	a = scall(copycmd$)
+  rem ' fi
+ 
+  rem ' **************************************************************
+  rem ' original signing server went out of business 
+  rem ' bypass the old method and replace with the domestic
+  rem ' signing proces
+  rem ' **************************************************************
+
+  goto bypass_tag
+
+
+  rem 'Check for pdf ver 1.4 file, create if not there, skip if exists, may be in
+  rem ' signing process by another session
+  tmpfile$=invoice$+"_v14.pdf"
+  pdf_v14$=tmpfile$
+  rem 'if msg$ not blank, this is a retry, so erase it and keep going
+  if msg$<>"" then erase pdf_v14$,err=*next
+  gosub get_file_text
+  if file_text$<>"" continue
+
+  com$="/usr/bin/gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -sOutputFile="+path$+pdf_v14$+" -c save pop -f "+path$+pdffile$
+  gc=scall(com$)
+  if gc then 
+    erase pdf_v14$,err=*next
+    continue
+  else 
+    gosub get_file_text
+    if file_text$="" then continue ;rem 'failed some other way?
+  fi
+
+  tmpfile$=invoice$+"_ver.pdf"
+  reportfile$=""
+  gosub get_file_text
+  if sz>=0 then reportfile$=invoice$+"_ver.pdf"
+
+  print (procchan)invoice$
+
+  rem ' com$="/mnt/data/bbj/bin/bbj -tIO -CPesign /mnt/data/basisaon/aon/bas/GlobalEsign.bbj - "+pdf_v14$+" "+signed_pdffile$+" "+reportfile$
+  com$ = "/usr/java/latest/bin/java -jar /mnt/data/basisaon/aon/bas/globalesign.jar " +pdf_v14$+" "+signed_pdffile$+" "+reportfile$
+  
+  rc=scall(com$)
+
+  rem 'always erase this so it won't be skipped next time if it fails
+  erase pdf_v14$,err=*next
+
+  rem 'if one fails, quit, try again later
+  if rc = 0 then break
+
+  rem ' **************************************************************
+  rem ' original signing server went out of business 
+  rem ' bypass the old method and replace with the domestic
+  rem ' signing proces
+  rem ' **************************************************************
+
+  bypass_tag:
+
+  rem ' **************************************************************
+  rem ' domestic signing replaced with new Signamus Authentidate service
+  rem ' 01/2011 skip domestic signing
+  rem '
+  rem ' 05/2017 Went back to the domesitc signing process with
+  rem ' SignBASISPDFA4, leaving Signamus
+  rem ' **************************************************************
+
+  goto bypass_domestic_signing
+  
+  rem ' we are no longer signing BSG invoices
+  
+  pwd$=dir("")
+  chdir("/basisaon")
+  jv$=" SignBASISPDFA4"
+  com$="/usr/java/latest/bin/java -classpath "+chr(34)+"/basisaon:/basisaon/itext-1.3.jar"+chr(34)+jv$+" "+path$+pdffile$+" "+path$+signed_pdffile$
+  a=scall(com$)
+  chdir(pwd$)
+
+  rem ' with this signing process there is no report file
+  reportfile$=""
+  reportFileRequired = 0
+
+  rem ' end domestic signing
+
+  rem ' **************************************************************
+  rem ' domestic signing replaced with new Signamus Authentidate service
+  rem ' 01/2011 skip domestic signing
+  rem '
+  rem ' 05/2017 Went back to the domesitc signing process with
+  rem ' SignBASISPDFA4, leaving Signamus
+  rem ' **************************************************************
+
+  bypass_domestic_signing:
+  
+  goto bypass_signamus_process
+  
+  rem ' **************************************************************
+  rem ' new Signamus signing service process put in place 01/2011
+  rem ' **************************************************************
+
+  if SignInvoice then
+	  signer! = new SignamusClient(path$ + pdffile$)  
+	  resultCode = signer!.sign()
+	  if resultCode <> 0 then
+		gosub email_signing_failure
+		continue
+	  fi
+  fi
+
+  bypass_signamus_process:
+  
+  rem ' move pdffile$ to signed_pdffile$
+  tmpfile$=pdffile$
+  gosub get_file_text
+  signed=unt
+  open(signed)signed_pdffile$
+  write(signed)file_text$
+  close(signed)
+  
+  reportFileRequired = 0
+  rem ' archive invoice and verification report
+  if reportFileRequired then
+	call "archive_invoice.bbj",firm$,signed_pdffile$,invoice$,reportfile$
+  else
+	call "archive_invoice.bbj",firm$,signed_pdffile$,invoice$
+  fi
+
+  rem 'base64 encode to email
+  rem ' converted to email.bbj, no longer need to encode the file
+  rem ' call "PDF.01","",signed_pdffile$,"X"
+  tmpfile$=signed_pdffile$
+  gosub get_file_text
+  pdf$=file_text$
+
+  rem ' we are getting some verification reports which fail to encode
+  rem ' suspect a timing problem, add 11/21/2011
+  rem ' wait 8
+
+  rem ' base64 encode the report file to email if needed
+  rpt$ =""
+  if reportFileRequired then 
+  
+  	rem ' no longer required as of 5/2017
+
+	rem ' make a copy of the report file
+	rem ' this was added 12/08/2011 to address the problem of the verification report not encoding
+	p = pos("_ver"=reportfile$)
+	cp_reportfile$ = reportfile$(1,p-1) + "_enc" + reportfile$(p+4)
+	a=scall("cp "+reportfile$+" "+cp_reportfile$)
+
+  	rem ' converted to email.bbj, no longer need to encode the file
+  	rem ' call "PDF.01","",cp_reportfile$,"X"
+  	tmpfile$=cp_reportfile$
+	gosub get_file_text
+ 	rpt$=file_text$
+  fi
+
+  rem ' prep the email
+  rem ' convert to sendEmail.src
+  
+  tmpfile$=invoice$+"_email.txt"
+  
+  rem ' erase tmpfile$,err=*next
+  rem ' string tmpfile$
+  rem ' txtchan=unt
+  rem ' open(txtchan)tmpfile$
+
+  rem ' p=pos("<invoice>"=emsg$)
+  rem ' if p then print(txtchan)emsg$(1,p-1),pdf$;emsg$=emsg$(p+9)
+
+  rem ' p=pos("<report>"=emsg$)
+  rem ' if p then print(txtchan)emsg$(1,p-1),rpt$;emsg$=emsg$(p+8)
+  
+  rem ' extract from, to, cc, subject and message body from emsg$
+
+  rem ' to$
+  p=pos("To: "=emsg$)
+  if p then 
+  	emsg$ = emsg$(p+4)
+  	p=pos($0a$=emsg$)
+  	to$ = cvs(emsg$(1,p-1),3),emsg$=emsg$(p+1)
+  else
+  	to$="customer-service@basis.cloud"
+  endif
+
+  rem ' from$
+  p=pos("From: "=emsg$)
+  if p then 
+  	emsg$ = emsg$(p+6)
+  	p=pos($0a$=emsg$)
+  	from$ = cvs(emsg$(1,p-1),3),emsg$=emsg$(p+1)
+  else
+  	from$="customer-service@basis.cloud"
+  endif
+
+  rem ' subject$
+  p=pos("Subject: "=emsg$)
+  if p then 
+  	emsg$ = emsg$(p+9)
+  	p=pos($0a$=emsg$)
+  	subject$ = cvs(emsg$(1,p-1),3),emsg$=emsg$(p+1)
+  else
+  	subject$="problem with email file"
+  endif
+
+  rem ' cc$
+  p=pos("Cc: "=emsg$)
+  if p then 
+  	emsg$ = emsg$(p+4)
+  	p=pos($0a$=emsg$)
+  	cc$ = cvs(emsg$(1,p-1),3),emsg$=emsg$(p+1)
+  else
+  	cc$="customer-service@basis.cloud"
+  endif
+
+  rem ' for testing a follow up, removed when satified
+  bcc$ = ""
+  bcc$ = "kurt.e.williams@comcast.net"
+  
+  rem ' message body msgtxt$
+  p=pos($0A0A$=emsg$)
+  if p then 
+  	emsg$ = emsg$(p+2)
+  	p=pos("--==========_BASIS" = emsg$)
+  	msgtxt$ = emsg$(1,p-1)
+  else
+  	msgtxt$="There was a problem building the text of the email."
+  endif
+  
+  files$ = path$ + signed_pdffile$ 
+  rem ' if pos("<report>"=emsg$) then files$ = files$ + " | " + path$ + reportfile$
+
+  rem ' debug
+  rem ' to$ = "kurt.e.williams@comcast.net"
+  rem ' cc$ = "kw5121151@gmail.com"
+  rem ' bcc$ = ""
+  
+  call "sendEmail.src",from$,to$, cc$, bcc$, subject$, msgtxt$, files$
+  
+  rem ' print(txtchan)emsg$
+  rem ' CLOSE (txtchan,ERR=*next)
+  rem ' unix send mail is no longer used
+  rem ' A=SCALL("/usr/lib/send mail -t < "+tmpfile$)
+  
+  ERASE tmpfile$,ERR=*next
+  erase pdffile$,err=*next
+  erase reportfile$,err=*next
+  erase cp_reportfile$,err=*next
+  erase signed_pdffile$,err=*next
+  erase invoice$+"_ver.pdf",err=*next
+  erase invoice$+"_zerobal.txt",err=*next
+  
+wend
+
+close(procchan,err=*next)
+erase procfile$,err=*next
+if rc then msg$="System call failure return code: RC = "+str(rc)+" in "+pgm(-2)
+if msg$<>"" then goto err_exit
+
+pgm_exit:
+release
+
+err_exit:
+	write(errlog)date(0:"%Y%Mz%Dz %Hz%mz%sz") + " error: " + str(err) + " line: " + str(tcb(5)) + " " + errmes(-1)
+
+	sendto$ = "mis@basis.cloud"
+	sendfrom$ = "customer-service@basis.cloud"
+	sendcc$ = ""
+	sendbcc$ = ""
+	
+	subject$ = "Invoice signing problem"
+	
+	if msg$="" then msg$="error " + str(err) + " " + errmes(-1) + " in " + str(tcb(5)) + " of " + pgm(-2) + " see tail of /mnt/data/basisaon/aon/tmp/sign_invoice_err.log"
+	if invoice$ <> "" then msg$ = msg$ + $0a$ + "Invoice: " + invoice$
+
+	call "sendEmail.src", sendfrom$, sendto$, sendcc$, sendbcc$, subject$, msg$, ""
+	
+	goto pgm_exit
+
+get_file_text:
+tmp=unt
+file_text$="",sz=-1
+open(tmp,err=close_tmp)dsrv$+path$+tmpfile$
+f$=fin(tmp),sz=dec(f$(1,4))
+if sz then readrecord(tmp,siz=sz)file_text$
+close_tmp:
+close(tmp,err=*next)
+return
+
+rem ' send email message on signing failure
+email_signing_failure:
+	
+	sendto$ = "mis@basis.cloud"
+	sendfrom$ = "customer-service@basis.cloud"
+	sendcc$ = ""
+	sendbcc$ = ""
+	
+	subject$ = "Invoice signing problem"
+	
+	pmsg$ = "Result Code: " + str(resultCode) + $0A$
+	pmsg$ =	pmsg$ + "error number: " + str(signer!.getErrorNumber()) + $0A$
+	pmsg$ = pmsg$ + "error message: " + signer!.getErrorMessage() + $0A$
+	pmsg$ = pmsg$ + "error line number: " + str(signer!.getErrorLineNumber()) + $0A$
+        pmsg$ = pmsg$ + "full pdf name: " + signer!.getPdf() + $0A$
+        pmsg$ = pmsg$ + "original pdf name: " + signer!.getPdfName() + $0A$
+	pmsg$ = pmsg$ + "signed pdf name: " + signer!.getSignedPdfName() + $0A$
+	pmsg$ = pmsg$ + "file directory: " + signer!.getDirectory() + $0A$
+	pmsg$ = pmsg$ + "invoice number: " + signer!.getInvoiceNumber() + $0A$
+	pmsg$ = pmsg$ + "verification required: " + str(signer!.getVerificationRequired()) + $0A$
+	pmsg$ = pmsg$ + "verification pdf file: " + signer!.getVerificationPdfName() + $0A$    
+	write(errlog)date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0a$ + pmsg$
+		
+	call "sendEmail.src", sendfrom$, sendto$, sendcc$, sendbcc$, subject$, pmsg$, ""
+	
+	
+return
+

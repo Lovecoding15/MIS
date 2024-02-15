@@ -1,0 +1,156 @@
+0010 REM "SNM - Serial No Maintenance (Menu Processing)"
+0020 REM "Program SNC.MA"
+0022 REM "+-----------------------------------------------------------+"
+0024 REM "| ADD+ON Software, Inc. Advantage/V Version 6.0.2 - 01Jan96 |"
+0026 REM "|      Copyright (c) 1996 Open Systems Holdings Corp.       |"
+0028 REM "|                  All Rights Reserved                      |"
+0030 REM "+-----------------------------------------------------------+"
+0031 REM "MAS * DCF * WA# 208 * BASIS
+0032 REM "MAS * JCM * Called for inquiry
+0040 REM 
+0042 REM "BASIS modified to display SAM/Developer contract info 
+0050 SETERR 9000
+0055 SETESC 9000
+0090 ENTER SN$
+0100 REM " --- Open/Lock Files"
+0105 LET FILES=12
+0110 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0115 LET FILES$[1]="SYS-01",FILES$[2]="SNM-01",FILES$[3]="SNM-02"
+0130 LET FILES$[4]="CSM-01",FILES$[5]="CSM-02",FILES$[6]="CSM-03"
+0140 LET FILES$[7]="CSM-04",FILES$[8]="CSM-05",FILES$[9]="CSM-06"
+0145 LET FILES$[10]="TMM-01",FILES$[11]="ARM-01",FILES$[12]="SMC-01"
+0150 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0155 IF STATUS>0 THEN GOTO 9900
+0160 LET SYS01_DEV=CHANNELS[1],SNM01_DEV=CHANNELS[2],SNM02_DEV=CHANNELS[3]
+0175 LET CSM01_DEV=CHANNELS[4],CSM02_DEV=CHANNELS[5],CSM03_DEV=CHANNELS[6]
+0180 LET CSM04_DEV=CHANNELS[7],CSM05_DEV=CHANNELS[8],CSM06_DEV=CHANNELS[9]
+0190 LET TMM01_DEV=CHANNELS[10],ARM01_DEV=CHANNELS[11],SMC01_DEV=CHANNELS[12]
+0200 REM " --- IOLIST's"
+0210 call "templates.pgm::SNM01"
+0220 call "templates.pgm::SNM02"
+0230 call "templates.pgm::SMC01"
+0260 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0310 ARM01E: IOLIST X0$,X1$
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0420 LET N0$=F0$(16,2),MAXROW=15
+0500 REM " --- Initializations"
+1200 REM " --- Find record"
+1210 LET snm01.serial_nbr$=SN$
+1220 READ record (SNM01_DEV,KEY=snm01.serial_nbr$,DOM=9900)SNM01$
+1230 READ record (SNM02_DEV,KEY=snm01.serial_nbr$,DOM=*next)SNM02$
+1240 odbc_lbl$=fill(5),odbc_rw$="",p=pos(snm02.odbc_rw$="RW"),m$="#####"
+1250 if p then odbc_rw$="Read Only",odbc_lbl$="ODBC:"
+1260 if p>1 then odbc_rw$="Read/Write"
+1270 users$=str(snm02.users1:m$)+" "+snm02.lic_property1$+" "+str(snm02.users2:m$)+" "+snm02.lic_property2$
+1280 if cvs(users$,3)="" then users$=str(snm01.users:m$)
+1500 REM " --- Background"
+1520 PRINT 'SB',@(2,0),"Serial Nbr:",@(47),"Users:",@(1,1),"Description:",@(46,1),"Active:"
+1530 PRINT @(5,2),"Product:",@(43),"Sale Date:",@(4,3),"Platform:",@(4,4),"OS Level:",@(45,3),"Port ID:",
+1540 PRINT @(4,5),"Revision:",@(0,6),"License Type:",@(8,7),odbc_lbl$,
+1545 PRINT @(44,4),"Contract:",@(46,5),"Annual:",@(46,6),"Expire:",
+1550 PRINT @(4,8),"Customer:",@(5,9),"Comment:",'SF'
+1700 REM " --- Display record"
+1720 GOSUB 5000
+1740 GOTO 4000
+4000 REM " --- Continue
+4005 PRINT @(15,10),"<Enter> To Continue <F3>=Features",
+4010 LET V0$="S",V1$="CE",V2$="",V3$="",V4$="",V0=1,V1=50,V2=10
+4020 GOSUB 7000
+4030 IF V3=3 THEN GOTO 4200
+4040 CALL "SYC.WD",NAME$
+4050 GOTO 9900
+4200 CALL "SYC.WA",0,52,12,20,10,"",WNAME$
+4210 CALL "TAOSSET::PARAM","(BBX)snvf_1.bbx",snm01.serial_nbr$
+4230 CALL "SYC.WD",WNAME$
+4240 GOTO 4000
+5000 REM " --- Display"
+5001 let sndesc$ = snm01.serial_desc$ + fill(30," "), sndesc$=sndesc$(1,30)
+5002 PRINT @(14,0),snm01.serial_nbr$,@(54,0),cvs(users$,35),@(14,1),sndesc$,@(54,1),snm01.active_flag$,
+5005 GOSUB 5100; GOSUB GET_CONTR_INFO
+5010 PRINT @(14,2),snm01.product$,@(18),PROD_DESC$,@(54),FNB$(snm01.orig_sale_date$)
+5020 PRINT @(14,3),snm01.platform$,@(18),PLAT_DESC$,@(54),snm01.port_id$
+5030 PRINT @(14,4),snm01.os_level$,@(18),OSLVL_DESC$,@(40),TYPE$,@(54),CONTRACT$
+5040 PRINT @(14,5),snm01.product_rev$,@(18),PRREV_DESC$,@(54),ANNUAL$
+5050 PRINT @(14,6),snm01.license_type$,@(18),LTYPE_DESC$,@(54),EXPIRE$
+5060 PRINT @(14,7),odbc_rw$
+5070 PRINT @(14,8),snm01.customer_nbr$,"  ",X1$(1,30),
+5080 PRINT @(14,9),snm01.comment$
+5090 RETURN 
+5100 REM " --- Get descriptions"
+5110 dim PROD_DESC$(20),PLAT_DESC$(20),OSLVL_DESC$(20),PRREV_DESC$(20),LTYPE_DESC$(20),X1$(325)
+5130 FIND (CSM01_DEV,KEY=N0$+snm01.product$,DOM=5131)*,PROD_DESC$(1)
+5140 FIND (CSM02_DEV,KEY=N0$+snm01.platform$,DOM=5141)*,PLAT_DESC$(1)
+5150 FIND (CSM03_DEV,KEY=N0$+snm01.os_level$,DOM=5151)*,OSLVL_DESC$(1)
+5160 FIND (CSM04_DEV,KEY=N0$+snm01.product_rev$,DOM=5161)*,PRREV_DESC$(1)
+5170 FIND (CSM05_DEV,KEY=N0$+snm01.license_type$,DOM=5171)*,LTYPE_DESC$(1)
+5180 rem FIND (CSM06_DEV,KEY=N0$+snm01.media_type$,DOM=5181)*,MEDIA_DESC$
+5185 FIND (ARM01_DEV,KEY=N0$+snm01.customer_nbr$,DOM=5186)IOL=ARM01E
+5190 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNS$(Q$)=CVS(Q$,3)
+8090 DEF FNDESC$(Q$)=CVS(Q$,32)
+8145 REM " --- FNYY21_YY$ Un-Convert 21st Century 2-Char Year to 2-Char Year"
+8150 DEF FNYY21_YY$(Q1$)
+8155 LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+8160 RETURN Q1$
+8165 FNEND
+8170 REM " --- FNYY_YEAR Convert 2-Char Year to 21st Century Numeric Year"
+8175 DEF FNYY_YEAR(Q1$)
+8180 LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+8185 RETURN Q
+8190 FNEND
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9800 REM " --- Display Parameter record error"
+9810 LET LINE_ERR$=LST(PGM(TCB(5)))
+9820 CALL "SYC.YA",LINE_ERR$,N2$,ERR
+9900 REM " --- END
+9910 FOR I=1 TO FILES
+9920 CLOSE (CHANNELS[I],ERR=9921)
+9930 NEXT I
+9950 EXIT 
+9999 END
+11000 GET_CONTR_INFO: 
+11010 LET CONTRACT$=CVS(snm01.contract$,1+2)
+11030 DIM ANNUAL$(8),EXPIRE$(8),TYPE$(3)
+11040 FIND RECORD(SMC01_DEV,KEY=CONTRACT$,DOM=CONTR_DONE)smc01$
+11050 LET ANNUAL$(1)=smc01.ANNUAL_DT$(5,2)+"/"+smc01.ANNUAL_DT$(7,2)+"/"+smc01.ANNUAL_DT$(3,2)
+11060 LET EXPIRE$(1)=smc01.EXPIRE_ON_DT$(5,2)+"/"+smc01.EXPIRE_ON_DT$(7,2)+"/"+smc01.EXPIRE_ON_DT$(3,2)
+11070 LET TYPE$=smc01.CONTR_TYPE$
+11090 CONTR_DONE: 
+11100 RETURN 

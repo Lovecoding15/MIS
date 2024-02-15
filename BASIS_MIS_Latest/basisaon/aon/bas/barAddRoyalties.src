@@ -1,0 +1,203 @@
+rem ' barAddRoyalties.src
+rem ' query the Barista Addon Revenue accounts for use in calculating royalties
+
+seterr error_routine
+
+use ::SQLProperties.bbj::SQLProperties
+
+declare BBjStoredProcedureData sp!
+declare SQLProperties props!
+declare BBjRecordSet retRs!
+declare BBjRecordData retData!
+declare BBjRecordSet rs!
+declare BBjRecordData data!
+
+
+rem ' Get the infomation object for the Stored Procedure
+sp! = BBjAPI().getFileSystem().getStoredProcedureData()
+
+
+rem ' Get the IN and IN/OUT parameters used by the procedure
+fromDate$ = sp!.getParameter("FROM_DATE")
+toDate$ = sp!.getParameter("TO_DATE")
+
+
+if len(fromDate$) = 10 then
+	rem ' strip dashes or slashes
+	while pos("-" = fromDate$)
+		ppos = pos("-" = fromDate$)
+		fromDate$ = fromDate$(1, ppos - 1) + fromDate$(ppos + 1)
+	wend
+	while pos("/" = fromDate$)
+		ppos = pos("/" = fromDate$)
+		fromDate$ = fromDate$(1, ppos - 1) + fromDate$(ppos + 1)
+	wend
+fi
+if len(fromDate$) <> 8 then
+	retRs! = BBJAPI().createMemoryRecordSet("USAGE_NOTE:C(255)")
+	usageNote$ = "Parameters should be a valid date in the form of YYYYMMDD or YYYY-MM-DD or YYYY/MM/DD."
+	retData! = retRs!.getEmptyRecordData()    
+	retData!.setFieldValue("USAGE_NOTE",usageNote$)
+	retRs!.insert(retData!)
+	sp!.setRecordSet(retRs!)
+	goto done
+fi
+
+if len(toDate$) = 10 then
+	rem ' strip dashes or slashes
+	while pos("-" = toDate$)
+		ppos = pos("-" = toDate$)
+		toDate$ = toDate$(1, ppos - 1) + toDate$(ppos + 1)
+	wend
+	while pos("/" = toDate$)
+		ppos = pos("/" = toDate$)
+		toDate$ = toDate$(1, ppos - 1) + toDate$(ppos + 1)
+	wend
+fi
+if len(toDate$) <> 8 then
+	retRs! = BBJAPI().createMemoryRecordSet("USAGE_NOTE:C(255)")
+	usageNote$ = "Parameters should be a valid date in the form of YYYYMMDD or YYYY-MM-DD or YYYY/MM/DD."
+	retData! = retRs!.getEmptyRecordData()    
+	retData!.setFieldValue("USAGE_NOTE",usageNote$)
+	retRs!.insert(retData!)
+	sp!.setRecordSet(retRs!)
+	goto done
+fi
+
+props! = new SQLProperties()
+sqlConnect$ = props!.getDBConnectForDatabase("AddonDB")
+
+rem ' build sql$
+sql$ = "SELECT t1.firm_id, t1.GL_ACCOUNT, t1.GL_ACCT_DESC, "
+sql$ = sql$ + "t2.TRNS_DATE, t2.REFERENCE_01, t2.REFERENCE_02, t2.REFERENCE_03, t2.TRANS_AMT * (-1) AS AMOUNT "
+sql$ = sql$ + "FROM GLM_ACCT t1 "
+sql$ = sql$ + "INNER JOIN GLT_TRANSDETAIL t2 "
+sql$ = sql$ + "ON t1.firm_id = t2.firm_id AND t1.GL_ACCOUNT = t2.GL_ACCOUNT "
+sql$ = sql$ + "WHERE t1.FIRM_ID = '01' AND t2.TRNS_DATE >= '" + fromDate$ + "' AND t2.TRNS_DATE <= '" + toDate$ + "' "
+acctlist = unt
+open(acctlist)"barAddRevAccounts.txt"
+sql$ = sql$ + " AND ("
+while 1
+	read (acctlist, end=*break)acctnbr$
+	if len(acctnbr$) = 0 then continue
+	if sql$(len(sql$),1) = "'" then
+		sql$ = sql$ + " OR t1.GL_ACCOUNT = '" + acctnbr$ + "'"
+	else
+		sql$ = sql$ + "GL_ACCOUNT = '" + acctnbr$ + "'"
+	fi
+wend
+sql$ = sql$ + ")"
+
+retRs! = BBJAPI().createMemoryRecordSet("FIRM_ID:C(2),GL_ACCOUNT:C(8),GL_ACCT_DESC:C(35),TRNS_DATE:C(8),REFERENCE_01:C(10),REFERENCE_02:C(10),REFERENCE_03:C(10),CUSTOMER_NBR:C(6),CUSTOMER_NAME:C(30),INVOICE_NBR:C(7),INVOICE_DATE:C(8),INV_LINE_NBR:C(3),PAID_AMT:N(10),UNPAID_AMT:N(10),UNVERIFIED_AMT:N(10)")
+
+rem ' execute query	
+rs! = BBjAPI().createSQLRecordSet(sqlConnect$,"",sql$)
+
+if rs!.isEmpty() then
+	rem ' return an empty record set
+	sp!.setRecordSet(retRs!)
+else
+	rem ' open AR Masterfile to retrieve customer numbers
+	call "ec_open::ARM01"
+
+	rem ' open open invoice header file and detail file
+	call "ec_open::ART01"
+	call "ec_open::ART11"
+	
+	while 1
+	        data! = rs!.getCurrentRecordData()
+	        
+	        retData! = retRs!.getEmptyRecordData()    
+
+		customerNbr$ = cvs(data!.getFieldValue("REFERENCE_01"),3)
+		firm_id$ = data!.getFieldValue("FIRM_ID")
+		
+		if len(customerNbr$) = 6 then
+			read record(arm01, key= firm_id$ + customerNbr$)arm01$
+			unverified = 0
+			gosub check_invoice_paid
+		else
+			dim arm01$:fattr(arm01$)
+			unverified = 1
+		fi
+
+		gl_account$ = data!.getFieldValue("GL_ACCOUNT")
+		gl_account$ = gl_account$(1,4) + "-" + gl_account$(5,3)
+		
+		retData!.setFieldValue("FIRM_ID", firm_id$)
+		retData!.setFieldValue("GL_ACCOUNT", gl_account$)
+		retData!.setFieldValue("GL_ACCT_DESC", data!.getFieldValue("GL_ACCT_DESC"))
+		retData!.setFieldValue("TRNS_DATE", data!.getFieldValue("TRNS_DATE"))
+		retData!.setFieldValue("REFERENCE_01", data!.getFieldValue("REFERENCE_01"))
+		retData!.setFieldValue("REFERENCE_02", data!.getFieldValue("REFERENCE_02"))
+		retData!.setFieldValue("REFERENCE_03", data!.getFieldValue("REFERENCE_03"))
+		retData!.setFieldValue("CUSTOMER_NBR", arm01.customer_nbr$)
+		retData!.setFieldValue("CUSTOMER_NAME", arm01.cust_name$)
+		if unverified then
+			retData!.setFieldValue("PAID_AMT", "0.00")
+			retData!.setFieldValue("UNPAID_AMT", "0.00")
+			retData!.setFieldValue("UNVERIFIED_AMT", str(num(data!.getFieldValue("AMOUNT")):"#####0.00"))
+		else
+			retData!.setFieldValue("INVOICE_NBR", data!.getFieldValue("REFERENCE_02"))
+			call "expCompDate.src", art01.invoice_date$, invoice_date$
+			retData!.setFieldValue("INVOICE_DATE", invoice_date$)
+			retData!.setFieldValue("INV_LINE_NBR", data!.getFieldValue("REFERENCE_03"))
+			
+			if invpaid then
+				retData!.setFieldValue("PAID_AMT", str(num(data!.getFieldValue("AMOUNT")):"#####0.00"))
+				retData!.setFieldValue("UNPAID_AMT", "0.00")
+				retData!.setFieldValue("UNVERIFIED_AMT", "0.00")
+
+			else
+				retData!.setFieldValue("PAID_AMT", "0.00")
+				retData!.setFieldValue("UNPAID_AMT", str(num(data!.getFieldValue("AMOUNT")):"#####0.00"))
+				retData!.setFieldValue("UNVERIFIED_AMT", "0.00")
+			fi
+		fi
+		retRs!.insert(retData!)
+		
+		rs!.next(err=*break)
+	wend
+
+	sp!.setRecordSet(retRs!)	        
+	
+	close(arm01)
+	close(art01)
+	close(art11)
+fi
+
+rs!.close()
+
+done:
+	end
+
+
+check_invoice_paid:
+	invoice_nbr$ = cvs(data!.getFieldValue("REFERENCE_02"),3)
+	read record(art01, key = firm_id$ + "  " + customerNbr$ + invoice_nbr$ + "00")art01$
+	balance = art01.invoice_amt
+	
+	read record(art11, key = firm_id$ + "  " + customerNbr$ + invoice_nbr$, dom = *next)art11$
+	while 1
+		read record(art11, end = * break)art11$
+		if art11.ar_inv_nbr$ <> invoice_nbr$ then break
+		if cvs(art11.ar_tran_code$,3)="" then continue
+		balance = balance + art11.trans_amt + art11.adj_disc_amt
+	wend
+	
+	if balance = 0 then 
+		invpaid = 1
+	else
+		invpaid = 0
+	fi
+return
+
+error_routine:
+	retRs! = BBJAPI().createMemoryRecordSet("USAGE_NOTE:C(255)")
+	usageNote$ = "An error " + str(err) + " occurred on line: " + str(tcb(5)) + " Description: " + errmes(-1) + " " + msg$
+	if len(usageNote$) > 255 then usageNote$ = usageNote$(1,255)
+	retData! = retRs!.getEmptyRecordData()    
+	retData!.setFieldValue("USAGE_NOTE",usageNote$)
+	retRs!.insert(retData!)
+	sp!.setRecordSet(retRs!)
+	end

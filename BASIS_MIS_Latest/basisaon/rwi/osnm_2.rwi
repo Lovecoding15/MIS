@@ -1,0 +1,25 @@
+display/form="MAS_HEAD" firm_name=""
+    screen_desc="Maintain OSAS Serial # Exchange";
+
+u$="sjohnso gparra  thines  sportwo ";
+if pos(info(3,2)=u$)=0 then
+	{pause/message="Access to this program is restricted.";
+	exit;}
+repeat
+{
+get_serial:
+prompt for/form="osnm_2" oem_sn_cancel.sn_old;
+
+if ctl(2) then break;
+
+find/noerror oem_sn_cancel;
+if available(oem_sn_cancel)=0 then
+    {
+    pause/message="Serial Number not found.  Please re-enter.";
+    goto get_serial;
+    }
+
+prompt for/form="osnm_2" oem_sn_cancel/except=(sn_old);
+
+if ctl()<>6 then update oem_sn_cancel;
+}

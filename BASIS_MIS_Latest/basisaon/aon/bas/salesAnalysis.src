@@ -1,0 +1,366 @@
+rem ' sproc for Laurence's data gathering for price increase analysis September, 2011
+
+begin
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+
+rem ' Declare some variables ahead of time
+declare File file!
+declare FileInputStream fis!
+declare BufferedInputStream bis!
+declare Properties props!
+declare StringBuffer sqlBuilder!
+declare BBjString ourDbUrl!
+
+declare BBjStoredProcedureData sp!
+declare BBjRecordSet rs!
+declare BBjRecordData data!
+declare BBjRecordSet rs1!
+declare BBjRecordData data1!
+declare BBjString typeOfSale!
+declare BBjVector typeOfSaleList!
+declare BBjRecordSet retRs!
+declare BBjRecordData retData!
+
+rem ' locate the properties file
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+		
+sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+ourDbUrl! = sqlBuilder!.toString()
+
+rem ' Get the infomation object for the Stored Procedure
+sp! = BBjAPI().getFileSystem().getStoredProcedureData()
+
+rem ' Get the IN and IN/OUT parameters used by the procedure
+startdate$ = sp!.getParameter("STARTDATE")
+enddate$ = sp!.getParameter("ENDDATE")
+custNbr$ = cvs(sp!.getParameter("CUSTNBR"),3)
+firm_id$ = cvs(sp!.getParameter("FIRMID"),3)
+
+if custNbr$ <> "" then
+	while len(custNbr$) < 6
+		custNbr$ = "0" + custNbr$
+	wend
+fi
+
+rem ' get list of TYPE_OF_SALE in question
+sql$ = "SELECT count(*) as count, t3.type_of_sale FROM ART03 t1 "
+sql$ = sql$ + "INNER JOIN ART13 t2 ON t1.firm_id = t2.firm_id AND t1.ar_type = t2.ar_type AND t1.customer_nbr = t2.customer_nbr and t1.ar_inv_nbr = t2.ar_inv_nbr "
+sql$ = sql$ + "INNER JOIN ART73 t3 ON t2.firm_id = t3.firm_id AND t2.ar_type = t3.ar_type AND t2.customer_nbr = t3.customer_nbr and t2.ar_inv_nbr = t3.ar_inv_nbr and t2.line_number = t3.line_number "
+sql$ = sql$ + "where t1.firm_id = '" + firm_id$ + "' and "
+if cvs(custNbr$,3) = "" then
+	sql$ = sql$ + "t1.invoice_date >= '" + startdate$ + "' and t1.invoice_date <= '" + enddate$ + "' and t2.line_code = 'S' and t2.ext_price <> 0 "
+else
+	sql$ = sql$ + " t1.customer_nbr = '" + custNbr$ + "' and t1.invoice_date >= '" + startdate$ + "' and t1.invoice_date <= '" + enddate$ + "' and t2.line_code = 'S' and t2.ext_price <> 0 "
+fi
+sql$ = sql$ + "group by t3.type_of_sale "
+sql$ = sql$ + "order by t3.type_of_sale "
+
+rem ' get the record set
+rs! = BBjAPI().createSQLRecordSet(ourDbUrl!,"",sql$)
+
+if rs!.isEmpty() then
+
+	rem ' we are done
+	rem ' return the empty record set
+	sp!.setRecordSet(rs!)
+
+else	
+	
+	rem ' get a vector to hold a list of sales types
+	typeOfSaleList! = BBjAPI().makeVector()
+
+	rem ' build list of TYPE_OF_SALE codes
+	rs!.first()
+
+	while 1
+		data! = rs!.getCurrentRecordData()
+		typeOfSale$ = data!.getFieldValue("TYPE_OF_SALE")
+
+		typeOfSaleList!.addItem(typeOfSale$)
+
+		rs!.next(err=*break)
+	wend
+
+	rs!.close()
+
+	rem ' get our work table ready
+	rem ' get a sql channel open
+	sqlchan = sqlunt
+	sqlopen(sqlchan)ourDbUrl!
+	tempTable$ = "SA" + date(0:"%Y%Mz%Dz%Hz%mz%sz")
+	rem ' rem create the work table
+	sql$ = "CREATE TABLE " + tempTable$ + " ("
+	sql$ = sql$ + "ID CHAR(10) PRIMARY KEY, "
+	sql$ = sql$ + "TYPE_OF_SALE CHAR(3), "
+	sql$ = sql$ + "TIER VARCHAR(18), "
+	sql$ = sql$ + "USERS NUMERIC(6), "
+	sql$ = sql$ + "SFUSERS NUMERIC(6), "
+	sql$ = sql$ + "EFUSERS NUMERIC(6), "
+	sql$ = sql$ + "PRICE NUMERIC(10), "
+	sql$ = sql$ + "LISTPRICE NUMERIC(10)) VKEYED"
+	sqlprep(sqlchan)sql$
+	sqlexec(sqlchan)
+
+	saleTypeCount = typeOfSaleList!.size()
+	id = 1
+
+	rem ' load the tier arrays
+	dim tier_low[4]
+	dim tier_high[4]
+	dim tier_name$[4]
+	tier_low[0] = 0, tier_high[0] = 10, tier_name$[0] = "Tier 1,    1 -  10"
+	tier_low[1] = 11, tier_high[1] = 25, tier_name$[1] = "Tier 2,   11 -  25"
+	tier_low[2] = 26, tier_high[2] = 50, tier_name$[2] = "Tier 3,   26 -  50"
+	tier_low[3] = 51, tier_high[3] = 999, tier_name$[3] = "Tier 4,   51 - 999"
+	tier_low[4] = 100, tier_high[4] = 10000, tier_name$[4] = "Tier 5, 1000 - Up"
+
+	rem ' the sql channel to do the inserts
+	sql$ = "INSERT INTO " + tempTable$ + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+	sqlprep(sqlchan)sql$
+
+	call "ec_open::SNT01"
+	call "ec_open::SNM01"
+	call "ec_open::ART83"
+
+	for x = 0 to saleTypeCount - 1
+
+		typeOfSale$ = cast(BBjString, typeOfSaleList!.getItem(x))
+
+		rem ' old query
+		rem ' sql$ = "SELECT t3.type_of_sale, t2.item_number, t3.lic_property1, t3.users, t3.lic_property2, t3.users2, t4.serial_nbr, date(t1.invoice_date, '%Mz%Dz%Yz') as invoice_date, t1.disc_code, t2.ext_price as sales  FROM ART03 t1 "
+		rem ' sql$ = sql$ + "INNER JOIN ART13 t2 ON t1.firm_id = t2.firm_id AND t1.ar_type = t2.ar_type AND t1.customer_nbr = t2.customer_nbr and t1.ar_inv_nbr = t2.ar_inv_nbr "
+		rem ' sql$ = sql$ + "INNER JOIN ART73 t3 ON t2.firm_id = t3.firm_id AND t2.ar_type = t3.ar_type AND t2.customer_nbr = t3.customer_nbr and t2.ar_inv_nbr = t3.ar_inv_nbr and t2.line_number = t3.line_number "
+		rem ' sql$ = sql$ + "INNER JOIN ART83 t4 ON t2.firm_id = t4.firm_id AND t2.ar_type = t4.ar_type AND t2.customer_nbr = t4.customer_nbr and t2.ar_inv_nbr = t4.ar_inv_nbr and t2.line_number = t4.line_number "
+		rem ' sql$ = sql$ + "where t1.firm_id = '" + firm_id$ + "' and "
+		rem ' if cvs(custNbr$,3) = "" then
+		rem ' 	sql$ = sql$ + "t1.invoice_date >= '" + startdate$ + "' and t1.invoice_date <= '" + enddate$ + "' and t2.line_code = 'S' AND t2.ext_price <> 0 AND t4.action <> 'D' and t3.type_of_sale = '" + typeOfSale$ + "' "
+		rem ' else
+		rem ' 	sql$ = sql$ + "t1.customer_nbr = '" +custNbr$ + "' and t1.invoice_date >= '" + startdate$ + "' and t1.invoice_date <= '" + enddate$ + "' and t2.line_code = 'S' AND t2.ext_price <> 0 AND t4.action <> 'D' and t3.type_of_sale = '" + typeOfSale$ + "' "
+		rem ' fi
+		rem ' sql$ = sql$ + "order by t3.type_of_sale, t2.item_number"
+
+		sql$ = "SELECT t1.customer_nbr, t1.ar_inv_nbr, t2.line_number, t3.type_of_sale, t2.item_number, t3.lic_property1, t3.users, t3.lic_property2, t3.users2, date(t1.invoice_date, '%Mz%Dz%Yz') as invoice_date, t1.disc_code, t2.ext_price as sales  FROM ART03 t1 "
+		sql$ = sql$ + "INNER JOIN ART13 t2 ON t1.firm_id = t2.firm_id AND t1.ar_type = t2.ar_type AND t1.customer_nbr = t2.customer_nbr and t1.ar_inv_nbr = t2.ar_inv_nbr "
+		sql$ = sql$ + "INNER JOIN ART73 t3 ON t2.firm_id = t3.firm_id AND t2.ar_type = t3.ar_type AND t2.customer_nbr = t3.customer_nbr and t2.ar_inv_nbr = t3.ar_inv_nbr and t2.line_number = t3.line_number "
+		sql$ = sql$ + "where t1.firm_id = '" + firm_id$ + "' and "
+		if cvs(custNbr$,3) = "" then
+			sql$ = sql$ + "t1.invoice_date >= '" + startdate$ + "' and t1.invoice_date <= '" + enddate$ + "' and t2.line_code = 'S' AND t2.ext_price <> 0 AND t3.type_of_sale = '" + typeOfSale$ + "' "
+		else
+			sql$ = sql$ + "t1.customer_nbr = '" +custNbr$ + "' and t1.invoice_date >= '" + startdate$ + "' and t1.invoice_date <= '" + enddate$ + "' and t2.line_code = 'S' AND t2.ext_price <> 0 AND t3.type_of_sale = '" + typeOfSale$ + "' "
+		fi
+		sql$ = sql$ + "order by t3.type_of_sale, t2.item_number"
+
+		rs! = BBjAPI().createSQLRecordSet(ourDbUrl!,"",sql$)
+
+		if rs!.isEmpty() then continue
+
+		rs!.first()
+
+		while 1
+			data! = rs!.getCurrentRecordData()
+
+			rem ' get the serial number data	
+			art83key$ = "01  " + data!.getFieldValue("CUSTOMER_NBR") + data!.getFieldValue("AR_INV_NBR") + data!.getFieldValue("LINE_NUMBER")
+			read record(art83, key = art83key$, dom=*next)art83$
+			serial_nbr$ = ""
+			sn_multiplier = 0
+			while 1
+				read record(art83, end=*break)art83$
+				if pos(art83key$ = art83$) <> 1 then break
+				serial_nbr$ = art83.serial_nbr$
+				sn_multiplier = sn_multiplier + 1
+			wend
+			if sn_multiplier = 0 then sn_multiplier = 1
+			if sn_multiplier > 1 then serial_nbr$ = ""
+		
+			rem ' sql$ = "SELECT serial_nbr FROM ART83 where firm_id = '" + firm_id$ + "' and customer_nbr = '" + data!.getFieldValue("CUSTOMER_NBR") + "' and "
+			rem ' sql$ = sql$ + "ar_inv_nbr = '" + data!.getFieldValue("AR_INV_NBR") + "' and "
+			rem ' sql$ = sql$ + " line_number = '" + data!.getFieldValue("LINE_NUMBER") +"' and action <> 'D'"
+			rem ' rs1! = BBjAPI().createSQLRecordSet(ourDbUrl!,"",sql$)
+			
+			id$ = str(id:"0000000000")
+			type_of_sale$ = data!.getFieldValue("TYPE_OF_SALE")
+
+			rem ' evaluate the serial number query results
+			rem ' if rs1!.isEmpty() then
+			rem ' 	serial_nbr$ = ""
+			rem ' 	sn_multiplier = 1
+			rem ' else
+			rem ' 	if rs1!.getRecordCount() = 1 then
+			rem ' 		rs1!.first()
+			rem ' 		data1! = rs1!.getCurrentRecordData()
+			rem ' 		serial_nbr$ = data1!.getFieldValue("SERIAL_NBR")
+			rem ' 		sn_multiplier = 1
+			rem ' 	else
+			rem ' 		serial_nbr$ = ""
+			rem ' 		sn_multiplier = rs1!.getRecordCount()
+			rem ' 	fi
+			rem ' fi
+			rem ' rs1!.close()
+
+			rem ' set the price tier for the transaction
+			tier$ = ""; snFound = 0
+			read record(snm01, key = serial_nbr$, dom=*next)snm01$; snFound = 1
+			if snFound then
+				tierUsers = snm01.users
+			else
+				rem ' serial number not found
+				tierUsers = num(data!.getFieldValue("USERS")) + num(data!.getFieldValue("USERS2"))
+			fi
+			for y = 0 to 4
+				if tier_low[y] <= abs(tierUsers) and tier_high[y] >= abs(tierUsers) then
+					tier$ = tier_name$[y]
+					break
+				fi
+			next y
+			if tier$ = "" then tier$ = tier_name$[0]
+			
+			firstdate$ = data!.getFieldValue("INVOICE_DATE")		
+			trans_date$ = fnd$(firstdate$)
+
+			rem ' normalize the users
+			users = 0
+			sfusers = 0
+			efusers = 0
+
+			if typeOfSale$ = "ADD" then
+				if serial_nbr$ <> "" then
+					read record(snt01, key = serial_nbr$ + trans_date$, dom= *next)snt01$
+					while 1
+						read record(snt01, end=*break)snt01$
+						if snt01.serial_nbr$ <> serial_nbr$ then break
+						if snt01.trans_date$ <> trans_date$ then break
+						if snt01.type_of_sale$ = type_of_sale$ then
+							users = snt01.users
+							break
+						fi		
+					wend
+				else
+					users = num(data!.getFieldValue("USERS")) + num(data!.getFieldValue("USERS2"))
+				fi
+			else
+				rem ' all other sale types use the users on the transaction directly
+				licprop1$ = data!.getFieldValue("LIC_PROPERTY1")
+				licprop2$ = data!.getFieldValue("LIC_PROPERTY2")
+				if licprop1$ = "SF" then
+					sfusers = sfusers + num(data!.getFieldValue("USERS"))
+				else
+					if licprop1$ = "EF" then
+						efusers = efusers + num(data!.getFieldValue("USERS"))
+					fi
+				fi
+				if licprop2$ = "SF" then
+					sfusers = sfusers + num(data!.getFieldValue("USERS2"))
+				else
+					if licprop2$ = "EF" then
+						efusers = efusers + num(data!.getFieldValue("USERS2"))
+					fi
+				fi
+				sfusers = sfusers * sn_multiplier
+				efusers = efusers * sn_multiplier
+				users = sfusers + efusers
+			fi
+
+
+			price = num(data!.getFieldValue("SALES"))
+			listprice = 0
+
+			rem ' calculate list price
+			if typeOfSale$ <> "RIF" then
+				disc_code$ = cvs(data!.getFieldValue("DISC_CODE"),3)
+				if disc_code$ = "" then
+					listprice = price
+				else
+					disc = num(disc_code$)/100
+					listprice = price/(1-disc)
+				fi	
+			else
+				listprice = price
+			fi
+
+			sqlexec(sqlchan)id$, type_of_sale$, tier$, users, sfusers, efusers, price, listprice
+			id = id +1
+
+			rs!.next(err=*break)
+		wend
+
+		rs!.close()
+
+	next x
+
+	close(snt01)
+	close(snm01)
+	sqlclose(sqlchan)
+
+	rem ' retrieve the return data
+	sql$ = "SELECT type_of_sale, tier, sum(users) as total_users, sum(sfusers) as total_sfusers, sum(efusers) as total_efusers, sum(price) as total_sales, sum(listprice) as total_list, count(*) as num_of_sales "
+	sql$ = sql$ + "FROM " + tempTable$ + " group by type_of_sale, tier order by type_of_sale, tier"
+	sqlopen(sqlchan)ourDbUrl!
+	sqlprep(sqlchan)sql$
+	rem ' get the template
+	dataTemplate$ = sqltmpl(sqlchan)
+	dim returnData$:dataTemplate$
+	sqlexec(sqlchan)
+	rs! = BBJAPI().createMemoryRecordSet(dataTemplate$)
+	while 1
+		returnData$ = sqlfetch(sqlchan, err=*break)
+		if cvs(returnData.type_of_sale$,3) <> "" then
+			data! = rs!.getEmptyRecordData()
+			data!.setFieldValue("TYPE_OF_SALE",returnData.type_of_sale$)
+			data!.setFieldValue("TIER",returnData.tier$)
+			data!.setFieldValue("TOTAL_USERS",returnData.total_users$)
+			data!.setFieldValue("TOTAL_SFUSERS",returnData.total_sfusers$)
+			data!.setFieldValue("TOTAL_EFUSERS",returnData.total_efusers$)
+			data!.setFieldValue("TOTAL_SALES",returnData.total_sales$)
+			data!.setFieldValue("TOTAL_LIST",returnData.total_list$)
+			data!.setFieldValue("NUM_OF_SALES",returnData.num_of_sales$)
+			rs!.insert(data!)
+		fi
+
+	wend
+	sp!.setRecordSet(rs!)
+	sqlclose(sqlchan)
+	
+	rem ' clean up the temporary table
+	sqlopen(sqlchan)ourDbUrl!
+	sqlprep(sqlchan)"DROP TABLE " + tempTable$
+	rem ' sqlexec(sqlchan, err=*next)
+	sqlexec(sqlchan)
+	sqlclose(sqlchan)
+
+fi
+
+done:
+	end
+
+rem ' date functions
+DEF FND$(Q$)=CHR(FNYY_YEAR(Q$(5,2))+32)+CHR(NUM(Q$(1,2))+32)+CHR(NUM(Q$(3,2))+32)
+REM " --- FNYY_YEAR Convert 2-Char Year to 21st Century Numeric Year"
+DEF FNYY_YEAR(Q1$)
+LET Q=NUM(FNYY21_YY$(Q1$)); IF Q<50 THEN LET Q=Q+100
+RETURN Q
+FNEND
+REM " --- FNYY21_YY$ Un-Convert 21st Century 2-Char Year to 2-Char Year"
+DEF FNYY21_YY$(Q1$)
+LET Q3$=" 01234567890123456789",Q1$(1,1)=Q3$(POS(Q1$(1,1)=" 0123456789ABCDEFGHIJ"))
+RETURN Q1$
+FNEND
+DEF FNunpackDate$(Q1$)=FNA$(Q1$(1),Q1$)+FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)
+DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")

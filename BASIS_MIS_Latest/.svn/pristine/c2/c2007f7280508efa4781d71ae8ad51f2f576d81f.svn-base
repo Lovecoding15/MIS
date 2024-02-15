@@ -1,0 +1,74 @@
+rem ' check for ARM-04 being open
+
+seterr err_routine
+
+enter
+
+use ::SQLProperties.bbj::SQLProperties
+
+declare SQLProperties props!
+declare BBjAPI ourAPI!
+declare BBjAdmin ourAdmin!
+declare BBjVector files!
+declare BBjOpenFileInfo file!
+
+ourAPI! = BBjAPI()
+
+rem ' get admin user name and password
+props! = new SQLProperties()
+user$ = props!.getProperty("sqlURL.user") 
+pwd$ = props!.getPassword()
+
+ourAdmin! = ourAPI!.getAdmin(user$, pwd$)
+files! = ourAdmin!.getOpenFileInfos()
+
+
+if files!.size() then
+	for index = 0 to files!.size() - 1
+	
+		file! = cast(BBjOpenFileInfo, files!.getItem(index))
+		
+		if pos("ARM-04" = file!.getFilename()) then
+			msgtxt$ = msgtxt$ + file!.getFilename() + " " + file!.getUser() + $0A$
+		fi
+		
+	next index
+fi
+
+if msgtxt$ = "" then msgtxt$ = "ARM-04 not open by any users."
+
+rem ' send the email
+from$="customer-service@basis.cloud"
+subject$="ARM-04 open check"
+to$="kurt.e.williams@comcast.net"
+cc$=""
+bcc$ = ""
+file$ = ""
+
+msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+exit
+
+err_routine:
+
+	error_message$ = "An Error " + str(err) + " occurred in arm04Open.src at line number " + str(tcb(5)) + ". The error message is: " + errmes(-1)
+
+	from$ = "customer-service@basis.cloud"
+	subject$ = "Error in arm04Open.src"
+	to$ = "kurt.e.williams@comcast.net"
+	
+	cc$ = ""
+	bcc$ = ""
+	file$ = ""
+	
+	msgtxt$ = error_message$
+	msgtxt$ = msgtxt$ + $0A$ + $0A$ + "Timestamp: " + date(0:"%Y%Mz%Dz %Hz%mz%sz") + $0A$ + "sent via sendEmail.src" + $0A$
+	
+	call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+	exit
+
+
+			

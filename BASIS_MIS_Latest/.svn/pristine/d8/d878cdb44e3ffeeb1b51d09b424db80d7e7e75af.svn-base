@@ -1,0 +1,210 @@
+0010 REM "SNM - Serial No Maintenance (Change Customer)"
+0020 REM "Program SNM.MH" 
+0050 SETERR 9000
+0055 SETESC 9000
+0070 BEGIN 
+0100 REM " --- Open/Lock Files"
+0105 LET FILES=12
+0110 DIM FILES$[FILES],OPTIONS$[FILES],CHANNELS[FILES]
+0115 LET FILES$[1]="SYS-01",FILES$[2]="SNM-01",FILES$[3]="SNM-04"
+0120 LET FILES$[4]="SNT-01",FILES$[5]="ARM-01",FILES$[6]="SMC-01"
+0130 LET FILES$[7]="CSM-01",FILES$[8]="CSM-02",FILES$[9]="CSM-03"
+0140 LET FILES$[10]="CSM-04",FILES$[11]="CSM-05",FILES$[12]="CSM-06"
+0150 CALL "SYC.DA",1,1,FILES,FILES$[ALL],OPTIONS$[ALL],CHANNELS[ALL],BATCH,STATUS
+0155 IF STATUS>0 THEN GOTO 9900
+0160 LET SYS01_DEV=CHANNELS[1],SNM01_DEV=CHANNELS[2],SNM04_DEV=CHANNELS[3]
+0165 LET SNT01_DEV=CHANNELS[4],ARM01_DEV=CHANNELS[5],SMC01_DEV=CHANNELS[6]
+0170 LET CSM01_DEV=CHANNELS[7],CSM02_DEV=CHANNELS[8],CSM03_DEV=CHANNELS[9]
+0175 LET CSM04_DEV=CHANNELS[10],CSM05_DEV=CHANNELS[11],CSM06_DEV=CHANNELS[12]
+0200 REM " --- IOLIST's"
+0210 SNM01: IOLIST A0$(1),A1$(1),A2$(1),A3$(1),A4$(1),A[ALL]
+0260 SYS01T: IOLIST X$,F0$,X$,X$,X$,F4$,F5$
+0310 ARM01E: IOLIST X0$,X1$
+0400 REM " --- Parameters"
+0410 FIND (SYS01_DEV,KEY="T"+FID(0),DOM=9800)IOL=SYS01T
+0415 LET N0$=F0$(16,2),L0=6
+0500 REM " --- Initializations"
+0515 DIM A0$(20),A1$(60),A2$(18),A3$(35),A4$(60),A[2],X1$(325)
+0700 REM " --- Background"
+0710 CALL "SYC.WC",1,0,80,0,0,L0-1,0
+0720 PRINT 'SB',@(2,3),"Serial Nbr:",@(55),"Current Users: ",@(1,4),"Description:",'SF',@(0,L0),'CE',
+0730 PRINT 'SB',@(9,6),"Product: ",@(61),"Active?: ",@(8,7),"Platform: ",@(52),"Orig. Sales Date: ",@(8,8),"OS Level: ",@(61),"Port ID: ",
+0740 PRINT @(0,9),"Product Revision: ",@(4,10),"License Type: ",@(6,11),"Media Type: ",
+0750 PRINT @(52,9),"      SAM Active? ",@(52,10),"    Contract Nbr: ",@(52,11),"Next Annual Date: ",@(53,12),"Expiration Date: ",
+0760 PRINT @(12,14),"Firm: ",@(8,15),"Customer: ",@(2,20),"Comment: ",'SF'
+0900 REM " --- Position File"
+0990 READ (SNM01_DEV,KEY="",DOM=1000)
+1000 REM " --- Serial number"
+1015 LET V2$="",V2$=KEY(SNM01_DEV,END=1030)
+1030 LET V0$="S",V1$="KCE^",V3$="",V4$="",V0=20,V1=14,V2=3
+1040 LET V4$="Enter A Valid Serial Number ("+V4$+"<F3>=Lookup)"
+1045 GOSUB 7000
+1050 ON V3 GOTO 1080,1080,1000,1055,9900
+1055 CALL "SYC.LS",V$
+1060 IF V$="" THEN GOTO 1000
+1080 IF V$="" THEN GOTO 0900
+1090 GOTO 1200
+1200 REM " --- Find record"
+1210 LET A0$(1)=V$
+1220 READ (SNM01_DEV,KEY=A0$,DOM=1040)IOL=SNM01
+1230 FIRM$=A3$(16,2),CUST$=A3$(5,6),COMMENT$=A4$
+1240 OLDFIRM$=A3$(16,2),OLDCUST$=A3$(5,6),OLDCOMMENT$=A4$
+1250 if n0$="02" and firm$<>n0$ then edit=0 else edit=1
+1260 FIND (ARM01_DEV,KEY=A3$(16,2)+A3$(5,6),DOM=1300)IOL=ARM01E
+1300 REM " --- Display record"
+1310 GOSUB 5000
+1350 if edit=0 then goto 1000
+2800 REM " --- Firm"
+2810 if n0$="02" then goto 2900
+2820 LET V0$="M",V1$="CE",V2$=FIRM$,V3$="00",V0=2,V1=18,V2=14,I0=0
+2830 LET V4$="Enter the Firm ID (01=BAS 02=BSG)"
+2840 GOSUB 7000 
+2850 IF POS(V$="0102",2)=0 THEN GOTO 2800
+2870 LET FIRM$=V$
+2890 GOTO 3900
+2900 REM " --- Customer"
+2920 LET V0$="M",V1$="CE",V2$=CUST$,V3$="000000",V0=6,V1=18,V2=15,I0=1
+2930 LET V4$="Enter the Customer"
+2940 GOSUB 7000
+2950 ON V3 GOTO 2960,2960,2960,2960,3900
+2960 FIND (ARM01_DEV,KEY=FIRM$+V$,DOM=2900)IOL=ARM01E
+2970 LET CUST$=V$
+2980 PRINT @(V1,V2),CUST$
+2985 GOSUB DISPLAY_NAME
+2990 GOTO 3900
+3000 REM " --- Comment"
+3020 LET V0$="S",V1$="CE",V2$=COMMENT$,V3$="",V0=60,V1=11,V2=20
+3030 LET V4$="Enter the Comment"
+3040 GOSUB 7000
+3080 LET COMMENT$=V$
+3090 GOTO 3900
+3900 REM " --- Next field"
+3905 IF V3=4 THEN GOTO 3990
+3910 IF V3<>2 THEN GOTO 3940
+3920 IF I0>0 THEN LET I0=I0-1
+3930 GOTO 3950
+3940 LET I0=I0+1
+3960 ON I0 GOTO 2800,2900,3000,3990
+3990 LET I0=0
+4000 REM " --- Correct?"
+4005 FIND (ARM01_DEV,KEY=FIRM$+CUST$,DOM=4010)IOL=ARM01E; GOTO 4020
+4010 LET FIRM$=OLDFIRM$,CUST$=OLDCUST$,COMMENT$=OLDCOMMENT$
+4020 GOSUB 5000
+4030 CALL "SYC.YN",1,"Is The Above Information Correct (<F4>=Cancel)",2,V$,V3
+4040 IF V3=4 THEN GOTO 9900
+4090 ON POS(V$="YN") GOTO 4000,4100,2800
+4100 REM " --- Write"
+4110 IF OLDFIRM$=FIRM$ AND OLDCUST$=CUST$ AND OLDCOMMENT$=COMMENT$ THEN GOTO 1000
+4120 EXTRACT (SNM01_DEV,KEY=A0$,DOM=1040)IOL=SNM01
+4130 LET A3$(16,2)=FIRM$,A3$(5,6)=CUST$,A4$(1)=COMMENT$
+4150 WRITE (SNM01_DEV,KEY=A0$)IOL=SNM01
+4155 rem '----move the contract as well
+4157 contractMoved = 0
+4160 if cvs(a3$(18,6),3) <> "" then 
+4162 EXTRACT record (SMC01_DEV,KEY=A3$(18,6))smc01$
+4163 gosub lookupSAMContact
+4164 smc01.firm_id$ = firm$, smc01.customer_nbr$ = cust$, smc01.e_mail$ = newEmailAddress$
+4166 write record(SMC01_DEV, key = smc01.contract$)smc01$
+4168 contract_moved = 1
+4170 fi
+4172 if contract_moved then
+4173 msg$ = "The serial number and the assocated contract have been moved to " + firm$ + cust$ + ". The email address on the contract has been changed to " + newEmailAddress$
+4174 else
+4175 msg$ = "The serial number has been moved to " + firm$ + cust$ + "."
+4176 fi
+4177 resp = msgbox(msg$,0,"Ownership Change")
+4178 print 'cf',
+4179 contract_moved = 0
+4190 GOTO 1000
+5000 REM " --- Display"
+5010 FIND (CSM01_DEV,KEY=N0$+A2$(1,3),DOM=5011)*,PROD_DESC$
+5020 FIND (CSM02_DEV,KEY=N0$+A2$(4,3),DOM=5021)*,PLAT_DESC$
+5030 FIND (CSM03_DEV,KEY=N0$+A2$(7,3),DOM=5031)*,OSLVL_DESC$
+5040 FIND (CSM04_DEV,KEY=N0$+A2$(10,3),DOM=5041)*,PRREV_DESC$
+5050 FIND (CSM05_DEV,KEY=N0$+A2$(13,3),DOM=5051)*,LTYPE_DESC$
+5060 FIND (CSM06_DEV,KEY=N0$+A2$(16,3),DOM=5061)*,MEDIA_DESC$
+5065 PRINT 'SF',@(14,3),A0$,@(70,3),A[0]:"####",@(14,4),FNDESC$(A1$),
+5070 PRINT @(18,6),A2$(1,3),@(22),PROD_DESC$,@(70),A3$(1,1)
+5075 PRINT @(18,7),A2$(4,3),@(22),PLAT_DESC$,@(70),FNB4$(A3$(2,3))
+5080 PRINT @(18,8),A2$(7,3),@(22),OSLVL_DESC$,@(70),A3$(11,5)
+5100 PRINT @(18,9),A2$(10,3),@(22),PRREV_DESC$
+5110 PRINT @(18,10),A2$(13,3),@(22),LTYPE_DESC$
+5120 PRINT @(18,11),A2$(16,3),@(22),MEDIA_DESC$
+5130 PRINT 'SF',@(18,14),FIRM$,@(18,15),CUST$
+5140 GOSUB DISPLAY_NAME
+5150 PRINT @(11,20),COMMENT$,'SB'
+5160 LET CONTRACT$=CVS(A3$(18,6),1+2)
+5170 IF CONTRACT$<>"" THEN LET SAM_ACTIVE$=A3$(24,1)
+5180 IF SAM_ACTIVE$=" " THEN LET SAM_ACTIVE$="Y"
+5190 call "templates.pgm::smc01"
+5200 IF CONTRACT$<>"" THEN FIND RECORD(SMC01_DEV,KEY=CONTRACT$,DOM=5201)smc01$
+5210 IF CONTRACT$<>"" THEN PRINT 'SF',@(52,10),smc01.CONTR_TYPE$,@(70,10),smc01.CONTRACT$,@(70,11),smc01.ANNUAL_DT$(5,2),"/",smc01.ANNUAL_DT$(7,2),"/",smc01.ANNUAL_DT$(1,4),@(70,12),smc01.EXPIRE_ON_DT$(5,2),"/",smc01.EXPIRE_ON_DT$(7,2),"/",smc01.EXPIRE_ON_DT$(1,4),'SB',
+5220 IF smc01.CONTR_TYPE$="SM1" THEN PRINT @(70,9),SAM_ACTIVE$
+5290 RETURN 
+5500 REM " --- Display Customer"
+5505 DISPLAY_NAME: 
+5530 PRINT @(18,16),X1$(1,30)
+5540 RETURN 
+7000 REM " --- Standard Input Routine (15May95)"
+7010 CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+7020 IF V3=999 THEN GOTO 7200
+7030 IF V3=127 THEN GOTO 7100
+7090 RETURN 
+7100 REM " --- Escape During Input"
+7110 CALL "SYC.ES",ERR=7200,PGM(-2),TCB(8),E$,E2,V3
+7120 IF V3<>127 THEN GOTO 7000
+7130 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+7200 REM " --- Error During Input"
+7210 ESCAPE
+7290 GOTO 7000
+8000 REM " --- Functions"
+8010 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8080 DEF FNP$(Q$)=CVS(Q$,2)
+8090 DEF FNDESC$(Q$)=CVS(Q$,32)
+8200 REM " --- FNF$ AlphaNumeric Masking Function"
+8210 DEF FNF$(Q1$,Q2$)
+8220 IF Q2$="" THEN LET Q2$=FILL(LEN(Q1$),"0")
+8230 RETURN STR(-NUM(Q1$,ERR=ALPHA_FNF):Q2$,ERR=ALPHA_FNF)
+8240 ALPHA_FNF: 
+9000 REM " --- Standard Error Routine (15May95)"
+9010 IF ERR=127 THEN GOTO 9300
+9020 CALL "SYC.EA",ERR=9090,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+9030 IF E1=1 THEN GOTO 9100
+9040 IF E1=3 THEN GOTO 9200
+9080 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9090 ESCAPE
+9100 REM " --- Retry"
+9190 RETRY
+9200 REM " --- Return"
+9290 GOTO 9900
+9300 REM " --- Standard Escape Routine"
+9310 CALL "SYC.ES",ERR=9350,PGM(-2),TCB(8),E$,E2,V3
+9320 IF V3<>127 THEN GOTO 9390
+9330 PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+9350 ESCAPE
+9390 RETURN 
+9900 RUN "SYS.AA"
+9999 END
+14500 REM Date with 4 digit year
+14505 DEF FNA4$(Q$,Q2$)=STR(((ASC(Q$)-32)+1900)*POS(" "<>Q2$(2,1)):"0000")
+14510 DEF FNB4$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA4$(Q1$(1),Q1$)
+14600 lookupSAMContact:
+14610 if tmm03 = 0 then call "ec_open::tmm03"
+14620 newEmailAddress$ = "customer-service@basis.cloud", mainAddress$ = "", samAddress$ = ""
+14630 read record(tmm03, key = firm$ + cust$, dom=*next)tmm03$
+14640 while 1
+14650   read record(tmm03,end = * break)tmm03$
+14655   if pos(firm$ + cust$ = tmm03$) <> 1 then break
+14660   if tmm03.primary_contact$ = "Y" then mainAddress$ = cvs(tmm03.e_mail$,3)
+14670   if tmm03.sam_contact$ = "Y" then samAddress$ = cvs(tmm03.e_mail$,3)
+14680 wend
+14690 if cvs(samAddress$,3) <> "" then 
+14700   newEmailAddress$ = samAddress$
+14710 else
+14720   if cvs(mainAddress$,3) <> "" then
+14730       newEmailAddress$ = mailAddress$
+14740   fi
+14750 fi
+14760 return
+

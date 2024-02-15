@@ -1,0 +1,86 @@
+0010 REM "arxrebuild.pgm - Cross-Reference Rebuild"
+0060 BEGIN
+0090 SETERR 9000
+0100 REM " --- Open/Lock Files"
+0110 call "ec_open::ARM01"
+0120 call "ec_open::ARM02"
+0130 call "ec_open::ARM04A"
+0140 FID$=FID(arm04a,ERR=9000),PATHNAME$=FID$(9)
+0150 CLOSE (arm04a,ERR=*next)
+0160 INITFILE PATHNAME$,ERR=9000
+0170 call "ec_open::ARM04A"
+0180 LET ARM04=arm04a
+0200 REM " --- IOLists
+0210 ARM01A: IOLIST A0$,A1$
+0220 ARM02A: IOLIST B0$,B1$
+0230 ARM04A: IOLIST C0$
+0240 ARM04B: IOLIST C0$
+0250 ARM04C: IOLIST C0$
+0260 ARM04D: IOLIST C0$
+0270 ARM04E: IOLIST C0$
+0280 ARM04F: IOLIST C0$
+0300 ARM04G: IOLIST C0$
+0310 ARM04H: IOLIST C0$
+0320 ARM04J: IOLIST C0$
+0330 ARM04K: IOLIST C0$
+0340 ARM04L: IOLIST C0$
+0350 ARM04M: IOLIST C0$
+0360 ARM04N: IOLIST C0$
+0500 REM " --- Init Data
+0520 DIM A[10],B[15]
+1000 REM " --- Customer Master Xrefs"
+1010 READ (ARM01,END=4000)IOL=ARM01A
+1020 IF A1$="" THEN GOTO 2000
+1040 LET C0$=A0$(1,2)+"L"+A1$(112,10)+A0$(3)
+1050 WRITE (ARM04,KEY=C0$)IOL=ARM04L; REM "Phone #"
+1055 LET C0$=A0$(1,2)+"A"+A1$(146,10)+A0$(3)
+1060 WRITE (ARM04,KEY=C0$)IOL=ARM04A; REM "Alternate Sequence"
+1065 LET C0$=A0$(1,2)+"E"+A1$(103,9)+A0$(3)
+1070 WRITE (ARM04,KEY=C0$)IOL=ARM04E; REM "Zip"
+1075 LET C0$=A0$(1,2)+"D"+A1$(228,10)+A0$(3)
+1080 WRITE (ARM04,KEY=C0$)IOL=ARM04D; REM "Contact Name"
+1082 LET C0$=A0$(1,2)+"M"+A1$(248,9)+A0$(3)
+1085 WRITE (ARM04,KEY=C0$)IOL=ARM04M; REM "D&B Number "
+1090 LET C0$=A0$(1,2)+"N"+A1$(257,8)+A0$(3)
+1095 WRITE (ARM04,KEY=C0$)IOL=ARM04N; REM "SIC Code"
+2000 REM " --- Customer Detail Xrefs"
+2005 FIND (ARM02,KEY=A0$+"  ",DOM=3900)IOL=ARM02A
+2010 IF B1$="" THEN GOTO 3900
+2025 LET C0$=B0$(1,2)+"B"+B1$(1,3)+B0$(3,6)
+2030 WRITE (ARM04,KEY=C0$)IOL=ARM04B; REM "Salesperson"
+2035 LET C0$=B0$(1,2)+"C"+B1$(21,3)+B0$(3,6)
+2040 WRITE (ARM04,KEY=C0$)IOL=ARM04C; REM "Territory"
+2045 LET C0$=B0$(1,2)+"F"+B1$(4,2)+B0$(3,6)
+2050 WRITE (ARM04,KEY=C0$)IOL=ARM04F; REM "Terms Code"
+2055 LET C0$=B0$(1,2)+"G"+B1$(6,2)+B0$(3,6)
+2060 WRITE (ARM04,KEY=C0$)IOL=ARM04G; REM "Sale Discount"
+2065 LET C0$=B0$(1,2)+"H"+B1$(8,2)+B0$(3,6)
+2070 WRITE (ARM04,KEY=C0$)IOL=ARM04H; REM "Distribution"
+2075 LET C0$=B0$(1,2)+"J"+B1$(24,4)+B0$(3,6)
+2080 WRITE (ARM04,KEY=C0$)IOL=ARM04J; REM "Pricing"
+2085 LET C0$=B0$(1,2)+"K"+B1$(32,2)+B0$(3,6)
+2090 WRITE (ARM04,KEY=C0$)IOL=ARM04K; REM "Tax"
+3900 REM " --- Loop back for next record"
+3990 GOTO 1000
+4000 REM " --- End
+4010 chmod_result = scall("chmod 666 /mnt/data/basisaon/aon/ADATA/ARM-04")
+4011 if chmod_result then
+4012 msg$="Chmod failed on ARX Rebuild Program"
+4013 else
+4014 goto 9900
+4015 endif
+
+9000 REM " --- Standard Error Routine (15May95)"
+9010 subj$="AR xref error (ARM-04)"
+9020 if msg$="" then msg$="Error "+str(err) + " " + errmes(-1) + " in "+str(tcb(5))+" of "+pgm(-2)
+9520 to$="jaya@basis.cloud",from$="customer-service@basis.cloud"
+9530 cc$ = "", bcc$ = ""
+9540 call "sendEmail.src", from$, to$, cc$, bcc$, subj$, msg$, ""
+9545 endif
+9900 REM
+9910 close(arm04,err=*next)
+9920 close(arm01,err=*next)
+9930 close(arm02,err=*next)
+9940 run "buildSN_Stats.src"
+9999 release
+

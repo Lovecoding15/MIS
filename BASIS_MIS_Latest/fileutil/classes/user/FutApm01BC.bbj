@@ -1,0 +1,774 @@
+rem package FUT.user
+
+use ::base/FutApm01BCT.bbj::FutApm01BCT
+
+use ::DataSourceConnection.bbj::DataSourceConnection
+
+use com.basiscomponents.bc.BusinessComponent
+use com.basiscomponents.db.DataRow
+use com.basiscomponents.db.ResultSet
+use com.basiscomponents.db.ResultSetListener
+use com.basiscomponents.db.fieldconverter.ConversionRuleSet
+
+use java.util.Collection
+use java.util.HashMap
+use java.util.Iterator
+
+rem -- Other USE statements for related business classes
+
+
+rem /**
+rem  * FutApm01BC.bbj::FutApm01BC<br>
+rem  * Barista Business Component Class for FUT_APM01<br>
+rem  * A business component is a named collection of business elements, including other business components, if applicable.<br>
+rem  * It is the glue between the data source(s) used to get and store the elements and the application interface.
+rem  * <p>
+rem  * @author The Barista Team
+rem  * @version 1.0
+rem  */
+class public FutApm01BC extends FutApm01BCT
+
+    rem /**
+    rem  * Gets the data source connection with its persistence provider.<br>
+    rem  * Sets the data source name (e.g. table), key column(s), field scopes and attributes.
+    rem  */
+    method public FutApm01BC()
+        #super!()
+        #init()
+    methodend
+
+    rem /**
+    rem  * Constructor taking an existing data source connection for use by this instance.<br>
+    rem  * Sets the data source name, key columns, field scopes and attributes.
+    rem  *
+    rem  * @param dsConnect!  the data source connection
+    rem  */
+    method public FutApm01BC(DataSourceConnection dsConnect!)
+        #super!()
+        #init()
+        #super!(dsConnect!)
+    methodend
+
+
+    rem -- Class methods
+
+    rem /**
+    rem  * Class initialization
+    rem  */
+    rem @Override
+    method public void init()
+        #super!.init()
+    methodend
+
+    rem /**
+    rem  * @return The current field selection scope(s)
+    rem  */
+    rem @Override
+    method public String getScope()
+        methodret #super!.getScope()
+    methodend
+
+    rem /**
+    rem  * Sets the field selection scope(s).<br>
+    rem  * No scope or an invalid scope will result in all fields being retrieved.<br>
+    rem  * Multiple scope codes may be passed at once. All fields in the given scope(s) will be retrieved.<br>
+    rem  * This method sets the working result set to NULL.
+    rem  *
+    rem  * @param scope!  the scope(s) to set
+    rem  */
+    rem @Override
+    method public void setScope(String scope!)
+        #super!.setScope(scope!)
+    methodend
+
+    rem /**
+    rem  * Gets map of field selection scopes.<br>
+    rem  * Each scope code has a vector of field names.
+    rem  *
+    rem  * @return Hashmap of currently defined scopes and their fields
+    rem  */
+    rem @Override
+    method public HashMap getScopes()
+        methodret #super!.getScopes()
+    methodend
+
+    rem /**
+    rem  * @return A vector of the currently defined scopes
+    rem  */
+    rem @Override
+    method public BBjVector getScopesList()
+        methodret #super!.getScopesList()
+    methodend
+
+    rem /**
+    rem  * Gets a list of the defined fieldnames for a given scope.
+    rem  *
+    rem  * @param scope!  the scope(s)
+    rem  * @return A vector of field names for the given scope(s)
+    rem  */
+    rem @Override
+    method public BBjVector getScopeFieldList(String scope!)
+        methodret #super!.getScopeFieldList(scope!)
+    methodend
+
+    rem /**
+    rem  * Sets the scopes for the current data source.<br>
+    rem  * Use setScopes() to set the default scopes for the data source name.
+    rem  *
+    rem  * @param scopes!  Hashmap of scopes and their field list
+    rem  * @see #setScopes()
+    rem  */
+    rem @Override
+    method public void setScopes(HashMap scopes!)
+        #super!.setScopes(scopes!)
+    methodend
+
+    rem /**
+    rem  * Set predefined scopes.<br>
+    rem  * By default, creates:<ul>
+    rem  * <li>Scope D (Default) with all column names.
+    rem  * <li>Scope B (Basic Information), e.g. ID + Description.
+    rem  * <li>Scope L (Linked Information) to other business classes.</ul>
+    rem  */
+    rem @Override
+    method public void setScopes()
+        #super!.setScopes()
+    methodend
+
+    rem /**
+    rem  * @return an empty data row with attributes for all fields
+    rem  */
+    rem @Override
+    method public DataRow getMasterAttributesRecord()
+        methodret #super!.getMasterAttributesRecord()
+    methodend
+
+    rem /**
+    rem  * Replace/update master attributes record
+    rem  *
+    rem  * @param attrs!  Data row containing the attributes for all fields
+    rem  */
+    rem @Override
+    method public void setMasterAttributes(DataRow attrs!)
+        #super!.setMasterAttributes(attrs!)
+    methodend
+
+    rem /**
+    rem  * @return an empty data row with current working attributes for fields being used
+    rem  */
+    rem @Override
+    method public DataRow getAttributesRecord()
+        methodret #super!.getAttributesRecord()
+    methodend
+
+    rem /**
+    rem  * Replace/update working attributes record
+    rem  *
+    rem  * @param attrs!  Data row containing the attributes for fields being used
+    rem  */
+    rem @Override
+    method public void setAttributes(DataRow attrs!)
+        #super!.setAttributes(attrs!)
+    methodend
+
+    rem /**
+    rem  * @return current working result set of error data rows
+    rem  */
+    rem @Override
+    method public ResultSet getErrorRS()
+        methodret #super!.getErrorRS()
+    methodend
+
+    rem /**
+    rem  * Replace/update working result set of error data rows
+    rem  *
+    rem  * @param errorRS!  Result set of error data rows
+    rem  */
+    rem @Override
+    method public void setErrorRS(ResultSet errorRS!)
+        #super!.setErrorRS(errorRS!)
+    methodend
+
+    rem /**
+    rem  * Adds an error to the working error result set.
+    rem  *
+    rem  * @param fieldname$  affected field name (or blank)
+    rem  * @param type$  one of INFO, WARNING or ERROR
+    rem  * @param message$  the message text
+    rem  */
+    rem @Override
+    method public void addError(BBjString fieldname$, BBjString type$, BBjString message$)
+        #super!.addError(fieldname$, type$, message$)
+    methodend
+
+    rem /**
+    rem  * Gets a data row of fields (the values are not used) which are allowed for filtering.<br>
+    rem  * The default implementation just returns the attributes record.
+    rem  *
+    rem  * @return the data row with fields allowed for filtering
+    rem  * @see #getAttributesRecord()
+    rem  */
+    rem @Override
+    method public DataRow getAllowedFilter()
+        methodret #super!.getAllowedFilter()
+    methodend
+
+    rem /**
+    rem  * @return current working data row
+    rem  */
+    rem @Override
+    method public DataRow getDataRow()
+        methodret #super!.getDataRow()
+    methodend
+
+    rem /**
+    rem  * @param dr!  replacement for the current working data row
+    rem  */
+    rem @Override
+    method public void setDataRow(DataRow dr!)
+        #super!.setDataRow(dr!)
+    methodend
+
+    rem /**
+    rem  * @return vector of key columns
+    rem  */
+    rem @Override
+    method public BBjVector getKeyColumns()
+        methodret #super!.getKeyColumns()
+    methodend
+
+    rem /**
+    rem  * @param vector of key columns
+    rem  */
+    rem @Override
+    method public void setKeyColumns(BBjVector keyColumns!)
+        #super!.setKeyColumns(keyColumns!)
+    methodend
+
+    rem /**
+    rem  * Adds the given column name to the vector of key columns, if not already present
+    rem  *
+    rem  * @param name of the key column
+    rem  */
+    rem @Override
+    method public void addKeyColumn(String name!)
+        #super!.addKeyColumn(name!)
+    methodend
+
+    rem /**
+    rem  * Clears the vector of key columns
+    rem  */
+    rem @Override
+    method public void clearKeyColumns()
+        #super!.clearKeyColumns()
+    methodend
+
+    rem /**
+    rem  * By default:<br>
+    rem  *   Sets predefined master attributes for all columns.<br>
+    rem  *   Flags primary key column(s) with EDITABLE=2.<br>
+    rem  *   Sets attributes for any linked (aka joined) columns.
+    rem  */
+    rem @Override
+    method public void setAttributes()
+        rem declare DataRow attrs!
+
+        rem initializes the master attributes, i.e. all attributes for all columns
+        #super!.setAttributes()
+        rem attrs! = #super!.getMasterAttributesRecord()
+
+        rem Set ResultSet (aka Table) attributes
+        rem attrs!.setAttribute("<Attribute>", "<value>")
+        rem ...
+
+        rem Set field attributes
+        rem attrs!.setFieldAttribute("<COLUMN_NAME>", "<Attribute>", "<value>")
+        rem ...
+
+        rem #super!.setMasterAttributes(attrs!)
+    methodend
+
+    rem /**
+    rem  * Validates a data row before it can be written.<br>
+    rem  * This method is also used internally by the write method.
+    rem  *
+    rem  * @param dr!  the data row to be validated
+    rem  * @return a result set with validation messages (an empty result set means no validation errors).
+    rem  * Each data row in the message result set has the following fields:<ul>
+    rem  * <li>FIELD_NAME: The name of the validated field
+    rem  * <li>TYPE: INFO, WARNING or ERROR
+    rem  * <li>MESSAGE: The validation message</ul>
+    rem  * @see #write(DataRow)
+    rem  */
+    rem @Override
+    method public ResultSet validateWrite(DataRow dr!)
+        rem declare DataRow attrs!
+
+        #super!.validateWrite(dr!); rem inits error result set and checks for empty data row
+
+        rem Check required fields, nullability, dependencies and other field-wise validations
+        rem attrs! = #super!.getAttributesRecord()
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "EDITABLE"); rem 0=non-editable, 1=editable, 2=key field
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_BLNK")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MAXL")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MAXR")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MAXV")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MINL")
+        rem attrs!.getFieldAttribute("<COLUMN_NAME>", "DD_ATTR_MINV")
+        rem #super!.addError("<COLUMN_NAME>", "INFO|WARNING|ERROR", "<message>")
+
+        methodret #super!.getErrorRS()
+    methodend
+
+    rem /**
+    rem  * Updates the data source using a given data row.
+    rem  *
+    rem  * @param dr!  the affected data row
+    rem  * @return the data row after writing (e.g. may contain auto-generated or computed values)
+    rem  * @throws Exceptions occuring while updating, incl. validation errors, in which case the passed data row is left unchanged
+    rem  * @see #validateWrite(DataRow)
+    rem  */
+    rem @Override
+    method public DataRow write(DataRow dr!)
+        seterr writeErr
+
+        methodret #super!.write(dr!)
+
+        writeErr:
+        throw errmes(-1), err
+    methodend
+
+    rem /**
+    rem  * Validates a data row before it can be removed.<br>
+    rem  * This method is also used internally by the remove method.<br>
+    rem  *
+    rem  * @param dr!  the data row to be validated
+    rem  * @return a result set with validation messages (an empty result set means no validation errors).
+    rem  * Each data row in the result set has the following fields:<ul>
+    rem  * <li>FIELD_NAME: The name of the validated field
+    rem  * <li>TYPE: INFO, WARNING or ERROR
+    rem  * <li>MESSAGE: The validation message</ul>
+    rem  * @see #remove(DataRow)
+    rem  */
+    rem @Override
+    method public ResultSet validateRemove(DataRow dr!)
+        #super!.validateRemove(dr!); rem inits error result set and checks for empty data row
+
+        rem Check required fields and removability, e.g dependencies
+        rem #super!.addError("<COLUMN_NAME>", "INFO|WARNING|ERROR", "<message>")
+
+        methodret #super!.getErrorRS()
+    methodend
+
+    rem /**
+    rem  * Removes a given data row from the data source after successful removal validation.<br>
+    rem  * The current working data row is set to NULL upon susccessful removal.
+    rem  *
+    rem  * @param dr!  the data row to be removed
+    rem  * @throws Exceptions occurring during removal
+    rem  * @see #validateRemove(DataRow)
+    rem  */
+    rem @Override
+    method public void remove(DataRow dr!)
+        seterr removeErr
+
+        #super!.remove(dr!)
+        methodret
+
+        removeErr:
+        throw errmes(-1), err
+    methodend
+
+    rem /**
+    rem  * ResultSetListener method to intervene during retrieval.<br>
+    rem  * Can be used, for example, to convert fields or to set the DataRow to NULL to indicate it should be skipped.
+    rem  *
+    rem  * @param p_dr!  Current data row fetched from result set
+    rem  * @return the data row with converted values or NULL to indicate it should be skipped
+    rem  * @see #registerResultSetListener(ResultSetListener)
+    rem  */
+    rem @Override
+    method public DataRow processRow(DataRow p_dr!)
+        methodret #super!.processRow(p_dr!)
+    methodend
+
+    rem /**
+    rem  * This method "computes" a column expression, possibly using other columns.<br>
+    rem  * Global variables in the form [<stblname>] will be resolved.
+    rem  *
+    rem  * @param temp_data$  Original value (as string)
+    rem  * @param attr_calc$  Calculation definition
+    rem  * @param dr!         Data row, in case other fields are involved
+    rem  * @param attr_dtyp$  Current field's Barista data type to steer whether neval() or seval() is applied
+    rem  */
+    rem @Override
+    method public BBjString applyCalc(BBjString temp_data$, BBjString attr_calc$, DataRow dr!, BBjString attr_dtyp$)
+        methodret #super!.applyCalc(temp_data$, attr_calc$, dr!, attr_dtyp$)
+    methodend
+
+    rem /**
+    rem  * This method applies a custom expression to convert a column's value.
+    rem  *
+    rem  * @param temp_data$  Value to be expanded or compressed
+    rem  * @param eval_type$  Evaluation type ("DEXP" or "DCOM"), or empty string for simple n/seval
+    rem  * @param eval_str$   Expand or Compress Code, or n/seval argument, if no evaluation type
+    rem  * @return evaluated string result
+    rem  */
+    rem @Override
+    method public BBjString applyEval(BBjString temp_data$, BBjString eval_type$, BBjString eval_str$)
+        methodret #super!.applyEval(temp_data$, eval_type$, eval_str$)
+    methodend
+
+    rem /**
+    rem  * @return current working retrieval filter as data row
+    rem  */
+    rem @Override
+    method public DataRow getFilter()
+        methodret #super!.getFilter()
+    methodend
+
+    rem /**
+    rem  * Sets the working filter for the search result.<br>
+    rem  * If the filter is set, it will be used during retrieval.
+    rem  * This method sets the working result set to NULL.
+    rem  *
+    rem  * @param filter!  a data row including field names and values on which to filter. Filters are <u>AND</u> combined.
+    rem  * @see #retrieve()
+    rem  */
+    rem @Override
+    method public void setFilter(DataRow filter!)
+        #super!.setFilter(filter!)
+    methodend
+
+    rem /**
+    rem  * Gets the current field selection as a set of fields contained in a vector.
+    rem  *
+    rem  * @return Vector containing the field names
+    rem  */
+    rem @Override
+    method public BBjVector getFieldSelection()
+        methodret #super!.getFieldSelection()
+    methodend
+
+    rem /**
+    rem  * Sets the working field selection to a custom set of fields contained in a vector.<br>
+    rem  * Field selections are in addition to any scope fields.
+    rem  * This method sets the working result set to NULL.
+    rem  *
+    rem  * @param fieldSelection!  a vector containing the field names
+    rem  * @see #retrieve()
+    rem  */
+    rem @Override
+    method public void setFieldSelection(BBjVector fieldSelection!)
+        #super!.setFieldSelection(fieldSelection!)
+    methodend
+
+    rem /**
+    rem  * Sets the working field selection to a custom set of fields contained in a data row.<br>
+    rem  * Field selections are in addition to any scope fields.
+    rem  * This method sets the working result set to NULL.
+    rem  *
+    rem  * @param fieldSelection!  a data row containing the field names (only the field names are used)
+    rem  * @see #retrieve()
+    rem  */
+    rem @Override
+    method public void setFieldSelection(DataRow fieldSelection!)
+        #super!.setFieldSelection(fieldSelection!)
+    methodend
+
+    rem /**
+    rem  * Sets the working field selection to a custom set of fields contained in a collection object.<br>
+    rem  * Field selections are in addition to any scope fields.
+    rem  * This method sets the working result set to NULL.
+    rem  *
+    rem  * @param fieldSelection!  a string collection containing the field names
+    rem  * @see #retrieve()
+    rem  */
+    rem @Override
+    method public void setFieldSelection(Collection fieldSelection!)
+        #super!.setFieldSelection(fieldSelection!)
+    methodend
+
+    rem /**
+    rem  * Registers a result set listener for custom row handling during retrieval.
+    rem  * @param rsListener!  Result set listener to use during retrieval
+    rem  * @see processRow(DataRow)
+    rem  */
+    rem @Override
+    method public void registerResultSetListener(ResultSetListener rsListener!)
+        #super!.registerResultSetListener(rsListener!)
+    methodend
+
+    rem /**
+    rem  * Retrieves a set of data rows.<br>
+    rem  * If the working scope and/or field selection is/are set, it/they will be used to retrieve the desired fields.
+    rem  * If the working filter is set, this will be applied to filter the results.
+    rem  * Note: Using retrieve() to load attributes requires at least one data row exists in the data source.
+    rem  *
+    rem  * @return a result set of data row objects (may be empty)
+    rem  * @throws Exception that may occur during retrieval
+    rem  * @see retrieveAttributes()
+    rem  */
+    rem @Override
+    method public ResultSet retrieve()
+        seterr retrieveErr
+
+        methodret #super!.retrieve()
+
+        retrieveErr:
+        throw errmes(-1), err
+    methodend
+
+    rem /**
+    rem  * Retrieves a subset of data rows from the working result set (e.g. for pagination).<br>
+    rem  * If the working result set is NULL, then a retrieval using the current working variables is attempted first.
+    rem  *
+    rem  * @param first!  the 0-based index in the working result set for the first element in the subset
+    rem  * @param last!  the 0-based index in the working result set for the last element in the subset
+    rem  * @return a result set of data rows (may be empty)
+    rem  * @throws Exception that may occur during retrieval
+    rem  * @see #retrieve()
+    rem  */
+    rem @Override
+    method public ResultSet retrieve(int first!, int last!)
+        seterr retrieveErr2
+
+        methodret #super!.retrieve(first!, last!)
+
+        retrieveErr2:
+        throw errmes(-1), err
+    methodend
+
+    rem /**
+    rem  * Retrieves a single data row for a given map of key values.<br>
+    rem  * The map of key columns and their values are used to set the working filter.
+    rem  *
+    rem  * @param keyMap!  map of key column name/value pairs
+    rem  * @return a single data row (may be empty)
+    rem  * @throws Exception when the key map is empty
+    rem  * @throws Exception when a column in the key map is not in the list of valid key columns
+    rem  * @throws Exceptions that may occur during retrieval
+    rem  * @see #retrieve()
+    rem  */
+    rem @Override
+    method public DataRow retrieve(HashMap keyMap!)
+        seterr retrieveErr3
+
+        methodret #super!.retrieve(keyMap!)
+
+        retrieveErr3:
+        throw errmes(-1), err
+    methodend
+
+    rem /**
+    rem  * Gets an optionally predefined data row, including all data row and field attributes.<br>
+    rem  * This method can be used to set default values for a new data row.<br>
+    rem  * If NULL is passed, then a new (empty) data row is returned.<br>
+    rem  * This method sets the working data row to this one.
+    rem  *
+    rem  * @param predefined!  the data row with predefined fields and attributes
+    rem  * @return the initialized data row
+    rem  */
+    rem @Override
+    method public DataRow getNewObjectTemplate(DataRow predefined!)
+        declare DataRow dr!
+
+        dr! = #super!.getNewObjectTemplate(predefined!)
+
+        methodret dr!
+    methodend
+
+    rem /**
+    rem  * @return name of this business component
+    rem  */
+    rem @Override
+    method public String toString()
+        methodret "FutApm01BC"
+    methodend
+
+    rem /**
+    rem  * @return ConversionRuleSet hashmap of column conversion helper objects
+    rem  */
+    rem @Override
+    method public ConversionRuleSet getConvRuleSet()
+        methodret #super!.getConvRuleSet()
+    methodend
+
+    rem /**
+    rem  * @param convRuleSet!  ConversionRuleSet hashmap of column conversion helper objects
+    rem  */
+    rem @Override
+    method public void setConvRuleSet(ConversionRuleSet convRuleSet!)
+        #super!.setConvRuleSet(convRuleSet!)
+    methodend
+
+    rem /**
+    rem  * @return Data source connection used by this business component
+    rem  */
+    rem @Override
+    method public DataSourceConnection getDSConnect()
+        methodret #super!.getDSConnect()
+    methodend
+
+    rem /**
+    rem  * @param dsConnect!  Data source connection used by this business component
+    rem  */
+    rem @Override
+    method public void setDSConnect(DataSourceConnection dsConnect!)
+        #super!.setDSConnect(dsConnect!)
+    methodend
+
+    rem /**
+    rem  * @return Data source name used by this business component
+    rem  */
+    rem @Override
+    method public BBjString getDSName()
+        methodret #super!.getDSName()
+    methodend
+
+    rem /**
+    rem  * @param dsName$  Data source name used by this business component
+    rem  */
+    rem @Override
+    method public void setDSName(BBjString dsName$)
+        #super!.setDSName(dsName$)
+    methodend
+
+    rem /**
+    rem  * @return Current working joins map
+    rem  */
+    rem @Override
+    method public HashMap getJoinsMap()
+        methodret #super!.getJoinsMap()
+    methodend
+
+    rem /**
+    rem  * @param joinsMap!  Hashmap of join definitions
+    rem  */
+    rem @Override
+    method public void setJoinsMap(HashMap joinsMap!)
+        #super!.setJoinsMap(joinsMap!)
+    methodend
+
+    rem /**
+    rem  * @return Current working result set of data rows
+    rem  */
+    rem @Override
+    method public ResultSet getResultSet()
+        methodret #super!.getResultSet()
+    methodend
+
+    rem /**
+    rem  * @param rs!  New working result set
+    rem  */
+    rem @Override
+    method public void setResultSet(ResultSet rs!)
+        #super!.setResultSet(rs!)
+    methodend
+
+    rem /**
+    rem  * @return Vector of columns needing custom row handling during retrieval
+    rem  */
+    rem @Override
+    method public BBjVector getProcRowCols()
+        methodret #super!.getProcRowCols()
+    methodend
+
+    rem /**
+    rem  * @param procRowCols!  Vector of columns needing custom row handling during retrieval
+    rem  */
+    rem @Override
+    method public void setProcRowCols(BBjVector procRowCols!)
+        #super!.setProcRowCols(procRowCols!)
+    methodend
+
+    rem /**
+    rem  * @return Maximum number of rows to be retrieved
+    rem  */
+    rem @Override
+    method public BBjNumber getMaxRows()
+        methodret #super!.getMaxRows()
+    methodend
+
+    rem /**
+    rem  * @param maxRows  Maximum number of rows to be retrieved
+    rem  */
+    rem @Override
+    method public void setMaxRows(BBjNumber maxRows)
+        #super!.setMaxRows(maxRows)
+    methodend
+
+    rem /**
+    rem  * Find the relative position of a substring in a string of fixed sized segments.<br>
+    rem  * Example: Find "MNO" in "ABCDEFMNOXYZ" with a fixed segment size of 3 would return 3.
+    rem  * @param tmp0$  Search substring
+    rem  * @param tmp1$  String to search
+    rem  * @param tmp1%  String segment size (POS() step value)
+    rem  * @return Relative position of search substring in complete string
+    rem  */
+    method public BBjNumber getStrPos(BBjString tmp0$, BBjString tmp1$, BBjInt tmp1%)
+        methodret int((pos(tmp0$=tmp1$,tmp1%) + tmp1% - 1) / tmp1%)
+    methodend
+
+    rem /**
+    rem  * @return BC of list value/description pairs or filtered lookup records
+    rem  */
+    rem @Override
+    method public BusinessComponent getLookup(String colName!, DataRow dr!)
+        methodret #super!.getLookup(colName!, dr!)
+    methodend
+
+    rem /**
+    rem  * @return result set of list value/description pairs or filtered lookup records
+    rem  */
+    rem @Override
+    method public ResultSet getLookupData(String colName!, DataRow dr!)
+        methodret #super!.getLookupData(colName!, dr!)
+    methodend
+
+    rem /**
+    rem  * Resolves the image path and retrieves the image data from the data source.<br>
+    rem  * The given column must have a field attribute DD_ATTR_STYP set to "I".
+    rem  *
+    rem  * @param colName!  Column name containing the image path
+    rem  * @param dr!       Data row containing image path value for the given column
+    rem  * @return BASE64 wrapped string representing the image data, otherwise an empty string
+    rem  */
+    rem @Override
+    method public String getImageData(String colName!, DataRow dr!)
+        methodret #super!.getImageData(colName!, dr!)
+    methodend
+
+
+    rem -- Generic field validators
+    rem -- Uses #super!.getDataRow() to get the current working data row,
+    rem -- so setDataRow(DataRow) beforehand, if manipulated externally.
+
+    rem /**
+    rem  * Validate field value found in the current working data row
+    rem  * @param colName!  Name of column to validate
+    rem  * @return Indicator whether the field passed validation or not
+    rem  */
+    rem @Override
+    method public BBjNumber validateField(String colName!)
+        methodret #super!.validateField(colName!)
+    methodend
+
+    rem /**
+    rem  * Validate a value for a field
+    rem  * @param colName!  Name of column to validate
+    rem  * @param val!  Value to validate
+    rem  * @return Indicator whether the value is valid for the field or not
+    rem  */
+    rem @Override
+    method public BBjNumber validateField(String colName!, Object val!)
+        methodret #super!.validateField(colName!, val!)
+    methodend
+
+
+classend
+
+
+rem Provide for getting an instance of this class dynamically per CALL "+BCName$+".bbj::getInstance", bc!
+rem Alternative: bc! = eval("new ::"+BCName$+".bbj::"+BCName$+"()")
+getInstance: enter bc!; bc! = new FutApm01BC(); exit

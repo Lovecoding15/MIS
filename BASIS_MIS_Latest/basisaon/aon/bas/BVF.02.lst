@@ -1,0 +1,252 @@
+REM " Program BVF.02 - vendor features maintenance
+SETESC err_trap
+SETERR err_trap
+ENTER are83$
+
+LET FILES=2,F=0
+DIM FILES[FILES]
+LET are93=UNT,FILES[F]=are93,F=F+1
+OPEN (are93)"ARE-93"
+LET arm40=UNT,FILES[F]=arm40,F=F+1
+OPEN (arm40)"ARM-40"
+LET snt04=UNT,FILES[F]=snt04,F=F+1
+OPEN (snt04)"SNT-04"
+call "templates.pgm::are93"
+call "templates.pgm::arm40"
+call "templates.pgm::snt04"
+
+f_rev$="1.0  "
+m$="####0"
+mlen=len(m$)
+main_list$="",F_COUNT=0,k$=are83.firm_id$+are83.customer_nbr$
+read(arm40,key=k$,dom=*next)
+while 1
+  readrecord(arm40,end=*break)arm40$
+  if pos(k$=arm40$)<>1 then break
+  main_list$=main_list$+arm40.feature$(1,20)+" "+f_rev$+str(0:m$)+str(0:m$)+$0a$
+  f_count=f_count+1
+wend
+
+if f_count=0 then goto end_program
+
+k$=are83.serial_nbr$
+read(snt04,key=k$,dom=*next)
+while 1
+  readrecord(snt04,end=*break)snt04$
+  if pos(k$=snt04$)<>1 then break
+  p=pos(cvs(snt04.feature$,3)=main_list$)
+  if p=0 then continue
+  main_list$(p+21,5)=cvs(snt04.feature_rev$,3)
+  main_list$(p+26,mlen)=str(snt04.users:m$)
+  main_list$(p+31,mlen)=str(snt04.users:m$)
+wend
+
+are93_list$=""
+k$=are83.firm_id$+are83.ar_type$+are83.customer_nbr$+are83.order_number$+are83.line_number$+are83.license_seq$+are83.sequence_nbr$
+k93len=len(k$)+3
+read(are93,key=k$,dom=*next)
+while 1
+  k93$=key(are93,end=*break)
+  k93len=len(k93$)
+  if pos(k$=k93$)<>1 then break
+  readrecord(are93,key=k93$)are93$
+  p=pos(cvs(are93.feature$,3)=main_list$)
+  if p=0 then continue
+  main_list$(p+21,5)=cvs(are93.feature_rev$,3)
+  main_list$(p+31,mlen)=str(are93.users:m$)
+  are93_list$=are93_list$+k93$+cvs(are93.feature$,3)+$0a$
+wend
+
+selection$=""
+
+build_list:
+temp_list$=main_list$
+WIDTH=40,HEIGHT=15,WIN_X=10,WIN_Y=3,title$=are83.serial_nbr$+"         Users"
+DIM HEADING$(WIDTH-2),FOOTING$(WIDTH-2)
+HEADING$(2)="Feature"+fill(14)+"Rev    Cur  New"
+FOOTING$(2)="Enter=Edit  F4=End  PgUp  PgDn"
+CALL "SYC.WA",0,WIDTH,HEIGHT,WIN_X,WIN_Y,TITLE$,NAME$
+PAGES=INT(f_COUNT*2/HEIGHT)+2,MAX_ROW=HEIGHT-6
+DIM LLIST$[PAGES,MAX_ROW,5],MORE$[PAGES,MAX_ROW,2]
+PRINT @(0,0),'SB','BR',HEADING$,@(0,HEIGHT-4),FOOTING$,'ER','SF',
+X1=1,XMODE=5
+page=1
+while 1
+  P=POS($0A$=temp_list$)
+  IF P=0 THEN 
+    selection$="|EOF"
+    GOSUB DISPLAY_PAGE
+    break
+  fi
+  X$=temp_list$(1,P-1),temp_list$=temp_list$(P+1)
+  IF x1>=MAX_ROW THEN GOSUB DISPLAY_PAGE
+  LET LLIST$[PAGE,X1,1]=" "+X$,LLIST$[PAGE,X1,2]=X$(1,30),X1=X1+1
+wend
+
+DISPLAY_LIST_END: 
+CALL "SYC.WD",NAME$
+seq_list$=""
+while 1
+  p=pos($0a$=are93_list$)
+  if p=0 then break
+  temp$=are93_list$(1,p-1)
+  are93_list$=are93_list$(p+1)
+  if len(temp$)<k93len then continue
+  k93$=temp$(1,k93len)
+  temp$=temp$(k93len+1)
+  p=pos(temp$=main_list$)
+  if p=0 then continue
+  cusr=num(main_list$(p+26,mlen))
+  nusr=num(main_list$(p+31,mlen))
+  main_list$(p,20)=fill(20)
+  if nusr=cusr then 
+    remove(are93,key=k93$)
+    continue
+  fi
+  readrecord(are93,key=k93$,dom=*continue)are93$
+  are93.users=nusr
+  are93.feature_rev$=main_list$(p+21,5)
+  are93$=field(are93$)
+  writerecord(are93,key=k93$)are93$
+  seq_list$=seq_list$+are93.feature_nbr$+$0a$
+wend
+while 1
+  p=pos($0a$=main_list$)
+  if p=0 then break
+  temp$=main_list$(1,p-1)
+  main_list$=main_list$(p+1)
+  if cvs(temp$(1,20),3)="" then continue
+  cusr=num(temp$(27,mlen))
+  nusr=num(temp$(32,mlen))
+  if nusr=cusr then continue
+  dim are93$:fattr(are93$)
+  are93.users=nusr
+  are93.feature_rev$=temp$(22,5)
+  are93$(1,26)=are83$(1,26)
+  are93.feature$=temp$(1,20)
+  are93.available$=fill(dec(FATTR(are93$,"available")(10,2)))
+  nbr=1
+  while 2 
+    seq$=str(nbr:"000")
+    p=pos(seq$=seq_list$)
+    if p=0 then break
+    nbr=nbr+1
+  wend
+  if nbr>999 then break
+  are93.feature_nbr$=seq$
+  are93$=field(are93$)
+  writerecord(are93,key=are93$(1,k93len))are93$
+  seq_list$=seq_list$+are93.feature_nbr$+$0a$
+wend
+
+goto end_program
+
+are93_delete:
+SETESC err_trap
+SETERR err_trap
+ENTER are83$
+name$="",aname$=""
+LET FILES=0,F=0
+DIM FILES[FILES]
+LET are93=UNT,FILES[F]=are93
+OPEN (are93)"ARE-93"
+k$=are83.firm_id$+are83.ar_type$+are83.customer_nbr$+are83.order_number$+are83.line_number$+are83.license_seq$
+rem +are83.sequence_nbr$
+read(are93,key=k$,dom=*next)
+while 1
+  k93$=key(are93,end=*break)
+  if pos(k$=k93$)<>1 then break
+  remove(are93,key=k93$)
+wend
+
+goto end_program
+
+DISPLAY_PAGE: 
+CALL "SYC.SA",XMODE,LLIST$[ALL],MORE$[ALL],SELECTION$,PAGE,MAX_ROW,NAME$,HEIGHT,WIDTH,FKEY
+IF FKEY=4 THEN EXITTO DISPLAY_LIST_END
+IF FKEY=-16 THEN LET PAGE=PAGE+1
+IF FKEY=0 THEN exitto EDIT_INFO
+LET X1=1,XMODE=5
+RETURN
+
+EDIT_INFO: 
+LET p1=pos(SELECTION$=main_list$)
+if p1=0 then selection$="";goto build_list
+K$=main_list$(p1)
+p=pos($0a$=k$)
+if p=0 then goto build_list
+k$=k$(1,p-1)
+LET WIDTH=36,HEIGHT=5,WIN_X=12,WIN_Y=18,TITLE$=cvs(k$(1,20),3)
+CALL "SYC.WA",0,WIDTH,HEIGHT,WIN_X,WIN_Y,TITLE$,ANAME$
+PRINT 'CS','SB',@(0,1),"Rev:       Cur:       New:",
+PRINT 'SF',@(5,1),k$(22,5),@(16,1),k$(27,mlen),@(27,1),k$(32,mlen),
+BEGIN_EDIT: 
+goto users
+Revision: 
+LET V0$="S",V1$="C",V2$=k$(22,5),V3$="",V0=5,V1=5,V2=1
+LET V4$="Enter the feature revision"
+GOSUB L7000
+IF V3=2 THEN GOTO revision
+IF V3=4 THEN GOTO END_EDIT
+k$(22,5)=V$
+users: 
+LET V0$="N",V1$="CE",V2$=cvs(k$(32,mlen),3),V3$=M$,V0=mlen,V1=27,V2=1
+LET V4$="TOTAL users <F2>=Revision"
+GOSUB L7000
+IF V3=2 THEN GOTO revision
+IF V3=4 THEN GOTO END_EDIT 
+k$(32,mlen)=str(V:m$)
+END_EDIT: 
+LET V0$="S",V1$="C^",V2$="Y",V3$="",V4$="Correct (Y/N)? <F4>=Cancel",V0=1,V1=36,V2=2
+GOSUB L7000
+IF V3=4 THEN GOTO EDIT_INFO_END
+PRINT @(0,V2),'CL',
+LET OPTION$=V$
+ON POS(V$="YN") GOTO END_EDIT,UPDATE_list,users
+UPDATE_list: 
+main_list$(p1,len(k$))=k$
+EDIT_INFO_END: 
+CALL "SYC.WD",ANAME$
+CALL "SYC.WD",NAME$
+goto build_list
+
+L7000: REM 7000 " --- Standard Input Routine (15May95)"
+CALL "SYC.IA",V0$,V1$,V2$,V3$,V4$,PGM(-2),V0,V1,V2,V$,V,V3,DISPLAY_LEN
+IF V3=999 THEN GOTO L7090
+IF V3=127 THEN GOTO L7050
+RETURN 
+L7050: REM " --- Escape During Input"
+CALL "SYC.ES",ERR=L7090,PGM(-2),TCB(8),E$,E2,V3
+IF V3<>127 THEN GOTO L7000
+PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+L7090: REM " --- Error During Input"
+ESCAPE
+GOTO L7000
+
+err_trap:
+rem " --- Standard Error Routine (15May95)"
+IF ERR=127 THEN GOTO esc_trap
+CALL "SYC.EA",ERR=escape_now,EXIT_CTRL,PGM(-2),ERR,TCB(5),E$,E1,E2
+IF E1=1 THEN retry
+IF E1=3 THEN 
+  SETERR err_trap
+  GOTO end_program
+fi
+PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+escape_now: ESCAPE
+RETRY
+SETERR err_trap
+GOTO end_program
+esc_trap: rem  " --- Standard Escape Routine"
+CALL "SYC.ES",ERR=9340,PGM(-2),TCB(8),E$,E2,V3
+IF V3<>127 THEN return
+PRINT @(0,E2),'CL','CURSOR'("ON"),E$,'LF'
+ESCAPE
+RETURN
+END_PROGRAM: 
+if name$<>"" then CALL "SYC.WD",NAME$
+if aname$<>"" then CALL "SYC.WD",ANAME$
+FOR F=0 TO FILES
+CLOSE (FILE[F],ERR=*NEXT)
+NEXT F
+exit

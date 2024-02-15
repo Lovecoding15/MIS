@@ -1,0 +1,138 @@
+REM /**
+REM  * TransactionBuilderTest.src
+REM  * @author kwilliams
+REM  * test the TransactionBuilder class
+REM  */
+
+use ::BasisPriceEngine.src::PriceElement
+use ::TransactionBuilder.src::TransactionBuilder
+use ::SerialNumber.src::SerialNumber
+
+canadian! = 1
+tb! = new TransactionBuilder(canadian!)
+
+sn! = new SerialNumber("BAS", "ALL", "166", "NXT", "STD", "01", "001022")
+sn!.addNewUserPropsCounts("EF", 5)
+priceElements! = tb!.priceNewSerialNumber(sn!)
+print 'LF',"BASALL166NXTSTD EF 5 Canadian"
+print str(priceElements!.size()) + " Price Elements ",;input " (S)ummary/(D)etail ", type$
+for i = 0 to priceElements!.size() - 1
+    pel! = cast(PriceElement, priceElements!.getItem(i))
+    if type$ = "s" then
+        print pel!.getProductCode() + pel!.getTypeOfSale() + ", " + str(pel!.getListPrice()) + ", " + str(pel!.getDiscountedPrice())
+    else
+        print pel!.toString()
+        input *
+    endif
+next i
+
+sn! = new SerialNumber("PR5", "AIX", "014", "020", "STD", "01", "001022")
+sn!.setNewUsers(5)
+priceElements! = tb!.priceNewSerialNumber(sn!)
+print 'LF',"PR5AIX014020STD Users 5 Canadian"
+print str(priceElements!.size()) + " Price Elements ",;input " (S)ummary/(D)etail ", type$
+for i = 0 to priceElements!.size() - 1
+    pel! = cast(PriceElement, priceElements!.getItem(i))
+    if type$ = "s" then
+        print pel!.getProductCode() + pel!.getTypeOfSale() + ", " + str(pel!.getListPrice()) + ", " + str(pel!.getDiscountedPrice())
+    else
+        print pel!.toString()
+        input *
+    endif
+next i
+
+sn! = new SerialNumber("BAS", "ALL", "166", "15X", "STD", "01", "007514")
+sn!.addNewUserPropsCounts("EF", 10)
+sn!.addNewUserPropsCounts("SF", 2)
+tb!.setCanadian(0)
+priceElements! = tb!.priceNewSerialNumberSplitSAM(sn!, 0)
+print 'LF',"BASALL16615XSTD EF 10, SF 2 USD"
+print str(priceElements!.size()) + " Price Elements ",;input " (S)ummary/(D)etail ", type$
+for i = 0 to priceElements!.size() - 1
+    pel! = cast(PriceElement, priceElements!.getItem(i))
+    if type$ = "s" then
+        print pel!.getProductCode() + pel!.getTypeOfSale() + ", " + str(pel!.getListPrice()) + ", " + str(pel!.getDiscountedPrice())
+    else
+        print pel!.toString()
+        input *
+    endif
+next i
+
+sn! = new SerialNumber("DS5", "AIX", "014", "020", "STD", "01", "001022")
+sn!.setNewUsers(11)
+tb!.setCanadian(1)
+priceElements! = tb!.priceNewSerialNumber(sn!)
+print 'LF',"DS5AIX014020STD Users 11 Canadian"
+print str(priceElements!.size()) + " Price Elements ",;input " (S)ummary/(D)etail ", type$
+for i = 0 to priceElements!.size() - 1
+    pel! = cast(PriceElement, priceElements!.getItem(i))
+    if type$ = "s" then
+        print pel!.getProductCode() + pel!.getTypeOfSale() + ", " + str(pel!.getListPrice()) + ", " + str(pel!.getDiscountedPrice())
+    else
+        print pel!.toString()
+        input *
+    endif
+next i
+
+sn! = new SerialNumber("BAS", "ALL", "166", "NXT", "RN1", "01", "001022")
+sn!.addNewUserPropsCounts("EF", 5)
+priceElements! = tb!.priceNewSerialNumber(sn!)
+print 'LF',"BASALL166NXTRN1 Users 5 Canadian"
+print str(priceElements!.size()) + " Price Elements ",;input " (S)ummary/(D)etail ", type$
+for i = 0 to priceElements!.size() - 1
+    pel! = cast(PriceElement, priceElements!.getItem(i))
+    if type$ = "s" then
+        print pel!.getProductCode() + pel!.getTypeOfSale() + ", " + str(pel!.getListPrice()) + ", " + str(pel!.getDiscountedPrice())
+    else
+        print pel!.toString()
+        input *
+    endif
+next i
+
+sn! = new SerialNumber("BAS", "ALL", "166", "NXT", "KIT", "01", "001022")
+sn!.addNewUserPropsCounts("EF", 10)
+sn!.addNewUserPropsCounts("SF", 2)
+priceElements! = tb!.priceNewSerialNumber(sn!)
+print 'LF',"BASALL166NXTKIT Users (EF) 10 Canadian"
+print str(priceElements!.size()) + " Price Elements ",;input " (S)ummary/(D)etail ", type$
+for i = 0 to priceElements!.size() - 1
+    pel! = cast(PriceElement, priceElements!.getItem(i))
+    if type$ = "s" then
+        print pel!.getProductCode() + pel!.getTypeOfSale() + ", " + str(pel!.getListPrice()) + ", " + str(pel!.getDiscountedPrice())
+    else
+        print pel!.toString()
+        input *
+    endif
+next i
+
+sn! = new SerialNumber("BAS", "ALL", "166", "NXT", "NFR", "01", "001022")
+sn!.addNewUserPropsCounts("EF", 15)
+sn!.addNewUserPropsCounts("SF", 2)
+priceElements! = tb!.priceNewSerialNumber(sn!)
+print 'LF',"BASALL166NXTNFR Users (EF) 15 Canadian"
+print str(priceElements!.size()) + " Price Elements ",;input " (S)ummary/(D)etail ", type$
+for i = 0 to priceElements!.size() - 1
+    pel! = cast(PriceElement, priceElements!.getItem(i))
+    if type$ = "s" then
+        print pel!.getProductCode() + pel!.getTypeOfSale() + ", " + str(pel!.getListPrice()) + ", " + str(pel!.getDiscountedPrice())
+    else
+        print pel!.toString()
+        input *
+    endif
+next i
+
+sn! = new SerialNumber("BBX610985")
+priceElements! = tb!.calcSamBuyback(sn!)
+print 'LF',"SAM Buyback BBX6100985 Canadian"
+print str(priceElements!.size()) + " Price Elements ",;input " (S)ummary/(D)etail ", type$
+for i = 0 to priceElements!.size() - 1
+    pel! = cast(PriceElement, priceElements!.getItem(i))
+    if type$ = "s" then
+        print pel!.getProductCode() + pel!.getTypeOfSale() + ", " + str(pel!.getListPrice()) + ", " + str(pel!.getDiscountedPrice())
+    else
+        print pel!.toString()
+        input *
+    endif
+next i
+
+end

@@ -1,0 +1,260 @@
+seterr pgm_exit
+enter firm$,trans_type$,lic_type$,old_users[all],new_users[all],old_lprop$[all],new_lprop$[all],old_rev$,sam_type$,on_sam,disc_pct,splevel,price,samprice
+
+rem ' priceLog = unt, tab$ = $09$
+rem ' open(priceLog, mode="O_APPEND")"/mnt/data/basisaon/aon/tmp/priceLog.tab"
+rem ' write (priceLog)date(0:"%Y%Mz %Dz%H%mz%sz") +" Entering price.pgm: " + tab$ + "firm" + tab$ + "trans_type" + tab$ + "lic_type" + tab$ + "old_users[0]" + tab$ + "old_users[1]" + tab$ + "old_users[2]" + tab$ + "new_users[0]" + tab$ + "new_users[1]" + tab$ + "new_users[2]" + tab$ + "old_lprop$[0]" + tab$ + "old_lprop$[1]" + tab$ + "old_lprop$[2]" + tab$ + "new_lprop$[0]" + tab$ + "new_lprop$[1]" + tab$ + "new_lprop$[2]" + tab$ + "old_rev" + tab$ + "sam_type" + tab$ + "on_sam" + tab$ + "disc_pct" + tab$ + "splevel" + tab$ + "price" + tab$ + "samprice" + tab$ + "list" + tab$ + "samlist"
+rem ' write (priceLog)date(0:"%Y%Mz %Dz%H%mz%sz") +" Entering price.pgm: " + tab$ + firm$ + tab$ + trans_type$ + tab$ + lic_type$ + tab$ + str(old_users[0]) + tab$ + str(old_users[1]) + tab$ + str(old_users[2]) + tab$ + str(new_users[0]) + tab$ + str(new_users[1]) + tab$ + str(new_users[2]) + tab$ + old_lprop$[0] + tab$ + old_lprop$[1] + tab$ + old_lprop$[2] + tab$ + new_lprop$[0] + tab$ + new_lprop$[1] + tab$ + new_lprop$[2] + tab$ + old_rev$ + tab$ + sam_type$ + tab$ + str(on_sam) + tab$ + str(disc_pct) + tab$ + str(splevel) + tab$ + str(price) + tab$ + str(samprice)
+rem ' close(priceLog)
+
+rem ' this is a temporary change put in to deal Accu-Med being given different discounts for Standard User SAM and Extended User SAM
+rem ' discount for the second half of 2014 on Extended users SAM is 52%, discount on Standard users SAM is the normal discount
+rem ' reviving this change to handle special price tables for Marriott and Tanager
+rem ' ---change start---
+customer$ = ""
+if len(firm$) = 8 then
+	customer$ = firm$(3,6)
+	rem ' must be Marriott 002786 or Tanager 008450
+	if customer$ <> "002786" and customer$ <> "008450" then customer$ = ""
+	firm$ = firm$(1,2)
+fi
+rem ' ---change end---
+
+dummy$=stbl("!CLEAR","LISTPRICE",err=*next)
+dummy$=stbl("!CLEAR","SAMLIST",err=*next)
+props=1; rem ' props=2
+price=-1,samprice=0
+
+rem 'updates on SAM are free
+if pos("U"=trans_type$)=1 and on_sam then price=0;goto pgm_exit
+ec_open$="ec_open"
+call ec_open$+"::CSM04"
+
+rem ' are we using the canadian table, the Marriott table or standard table
+	canadian_table$ = ""
+	canadian_table$ = stbl("CANADIAN_TABLE",err=*next)
+	if cvs(canadian_table$,3) <> "" then canadian_table = 1 else canadian_table = 0
+	if canadian_table then
+	    call "ec_open::CSM10_CANADA"
+	    csm10 = csm10_canada
+	    dim csm10$:fattr(csm10_canada$)
+	else
+		rem ' are we using the Marriott Price table
+		if customer$ = "002786" or customer$ = "008450" then
+			call "ec_open::CSM10_MARRIOTT"
+			csm10 = csm10_marriott
+			dim csm10$:fattr(csm10_marriott$)
+		else
+			call ec_open$+"::CSM10"
+		endif
+	endif
+
+samflag=(on_sam<>0)+(sam_type$<>"")+(pos(lic_type$="KITRN1NFR",3)<>0)
+
+dim old_list[props],new_list[props]
+new$="",old$=""
+tot_new_users=0
+tot_old_users=0
+for loop=0 to props
+ new$=new$+pad(new_lprop$[loop],3)+str(new_users[loop]:"####0")
+ old$=old$+pad(old_lprop$[loop],3)+str(old_users[loop]:"####0")
+ tot_new_users=tot_new_users+new_users[loop]
+ tot_old_users=tot_old_users+old_users[loop]
+next loop
+
+rem 'sort out properties and users to Standard and Extended match
+new$=ssort(new$,8)
+old$=ssort(old$,8)
+userchange=(new$<>old$ and pos(trans_type$="NEW,UPD,TRD,UG4,PLX")=0)
+for loop=props to 0 step -1
+ old_lprop$[loop]=old$(1,3)
+ new_lprop$[loop]=new$(1,3)
+ old_users[loop]=num(old$(4,5))
+ new_users[loop]=num(new$(4,5))
+ new$=new$(9)
+ old$=old$(9)
+next loop
+
+user_increase=tot_new_users-tot_old_users
+samtrans=pos("S"=trans_type$)=1 
+ulevel=tot_new_users-tot_old_users; rem ' ADD w/o SAM
+if (userchange and samflag) or samtrans then ulevel=tot_new_users
+if pos(trans_type$="ADDNEWRNW")=0 and samtrans=0 then ulevel=min(tot_new_users,tot_old_users)
+if ulevel<1 then ulevel=1
+if user_increase<0 then oldlvl=tot_old_users else oldlvl=ulevel
+
+percent=1
+temp_user=1
+list_price=0
+getprice=1+userchange
+rem 'get new list price, then for add/change user trans, get old list price
+while getprice
+ for loop=0 to props
+  pr$=cvs(new_lprop$[loop],3),lvl=ulevel
+  if getprice>1 then pr$=cvs(old_lprop$[loop],3),lvl=oldlvl
+  if pr$="" then continue
+  if len(pr$)<3 then pr$="B"+pr$+fill(3)
+  k10$=firm$+pr$(1,3)+"NEW"
+  gosub get_price
+  if getprice>1 then old_list[loop]=temp_price else new_list[loop]=temp_price
+ next loop
+ getprice=getprice-1
+wend
+
+samcalc=1
+if samtrans=0 and userchange=0 then samcalc=0
+if userchange and on_sam=0 then samcalc=0
+trnlist$=trans_type$
+if trans_type$<>sam_type$ and samcalc then trnlist$=trnlist$+sam_type$
+price=0
+precision 3
+percent=1-disc_pct/100
+while trnlist$<>""
+trn$=trnlist$(1,3)
+trnlist$=trnlist$(4)
+
+for loop=0 to props
+  temp_user=new_users[loop],lvl=ulevel
+  if pos(trn$="UPD,UNC,PLX,UG4") and user_increase>=0 then temp_user=old_users[loop],lvl=oldlvl
+  pr$=cvs(new_lprop$[loop],3)
+  if len(pr$)<3 then 
+    if lic_type$(1,1)="K" then
+      pr$="K"+pr$+fill(3)
+    else
+      pr$="B"+pr$+fill(3)
+    endif
+  endif
+  k10$=firm$+pr$(1,3)+trn$
+  list_price=new_list[loop]
+  if pos(" "=k10$)=0 and temp_user then 
+    gosub get_price
+    if trn$=sam_type$ then 
+      rem ' debuggin
+      rem ' print trn$," ", k10$," ",temp_user," samprice: ",samprice," temp_price: ",temp_price
+      rem ' input "cr to continue: ",*
+      samprice=samprice+temp_price*(temp_price>0) 
+      samlist=samlist+holdprice
+    else 
+      rem ' debuggin
+      rem ' print trn$," ", k10$," ",temp_user," price: ",price," temp_price: ",temp_price
+      rem ' input "cr to continue: ",*
+      price=price+temp_price*(temp_price>0) 
+      prodlist=prodlist+holdprice
+    fi
+  fi
+  if userchange=0 or (on_sam=0 and samtrans) then continue
+  rem 'Subtract old price from new for add/change users
+  pr$=cvs(old_lprop$[loop],3)
+  if len(pr$)<3 then 
+    if lic_type$(1,1)="K" then
+      pr$="K"+pr$+fill(3)
+    else
+      pr$="B"+pr$+fill(3)
+    endif
+  endif
+  k10$=firm$+pr$(1,3)+trn$,lvl=oldlvl
+  list_price=old_list[loop]
+  temp_user=old_users[loop] 
+  if pos(" "=k10$)=0 and temp_user then 
+    gosub get_price
+    if trn$=sam_type$ then
+      rem ' debuggin
+      rem ' print trn$," ", k10$," ",temp_user," samprice: ",samprice," temp_price: ",temp_price
+      rem ' input "cr to continue: ",*
+      samprice=samprice-temp_price*(temp_price>0) 
+      samlist=samlist-holdprice
+    else 
+      rem ' debuggin
+      rem ' print trn$," ", k10$," ",temp_user," price: ",price," temp_price: ",temp_price
+      rem ' input "cr to continue: ",*
+      price=price-temp_price*(temp_price>0) 
+      prodlist=prodlist-holdprice
+    fi
+  fi
+next loop
+rem ' debuggin
+rem ' print trn$," price: ",price," prodlist: ",prodlist," samprice: ",samprice," samlist: ",samlist
+rem ' input "cr to continue: ",*
+wend
+
+price=max(0,price)
+dummy$=stbl("LISTPRICE",str(prodlist))
+dummy$=stbl("SAMLIST",str(samlist))
+rem samprice=max(0,samprice)
+
+rem ' debugging
+rem ' if info(3,2)="kwilliam" then
+rem '      print "Price ",price
+rem '      print "List price ",prodlist
+rem '      print "SAM ",samprice
+rem '      print "SAM list ",samlist
+rem '      input xx$
+rem ' fi
+
+PGM_EXIT: 
+close(csm10,err=*next)
+close(csm04,err=*next)
+
+rem ' priceLog = unt, tab$ = $09$
+rem ' open(priceLog, mode="O_APPEND")"/mnt/data/basisaon/aon/tmp/priceLog.tab"
+rem ' debugList$ = ""; debugList$ = stbl("LISTPRICE",err=*next)
+rem ' debugSAMList$ = ""; debugSAMList$ = stbl("SAMLIST",err=*next)
+rem ' write (priceLog)date(0:"%Y%Mz%Dz %H%mz%sz"),"Exiting price.pgm",firm$,trans_type$,lic_type$,old_users[all],new_users[all],old_lprop$[all],new_lprop$[all],old_rev$,sam_type$,on_sam,disc_pct,splevel,price,samprice,"*****",debugList$,debugSAMList$
+rem ' write (priceLog)date(0:"%Y%Mz %Dz%H%mz%sz") +" Exiting price.pgm:  " + tab$ + firm$ + tab$ + trans_type$ + tab$ + lic_type$ + tab$ + str(old_users[0]) + tab$ + str(old_users[1]) + tab$ + str(old_users[2]) + tab$ + str(new_users[0]) + tab$ + str(new_users[1]) + tab$ + str(new_users[2]) + tab$ + old_lprop$[0] + tab$ + old_lprop$[1] + tab$ + old_lprop$[2] + tab$ + new_lprop$[0] + tab$ + new_lprop$[1] + tab$ + new_lprop$[2] + tab$ + old_rev$ + tab$ + sam_type$ + tab$ + str(on_sam) + tab$ + str(disc_pct) + tab$ + str(splevel) + tab$ + str(price) + tab$ + str(samprice) + tab$ + debugList$ + tab$ + debugSAMList$
+rem ' close(priceLog)
+
+EXIT
+
+get_price: 
+LET temp_price=-1,digits=2,holdprice=0
+precision digits
+rem 'Special price level splevel overrides ulevel (and price_method if>9999)
+t1=lvl
+rem ' 7/15/2009 removed the user_increase portion of this test
+rem ' if splevel and user_increase>=0 then t1=splevel
+if splevel then t1=splevel
+
+rem 'look in lic+trans table first
+klic$=k10$(1,2)+lic_type$+k10$(6,3)
+
+retry:
+found=0
+readrecord(CSM10,KEY=klic$,DOM=*next)csm10$;found=1
+if found and csm10.price_method$<>"F" and list_price=0 then found=0
+if found=0 then readrecord(CSM10,KEY=k10$,DOM=*next)csm10$;found=1
+if found=0 then return
+discount$=csm10.disc_flag$
+method$=csm10.price_method$
+altkey$=cvs(csm10.alt_key$,3)
+if altkey$<>"" then readrecord(CSM10,KEY=k10$(1,2)+altkey$,DOM=*next)csm10$
+
+rem 'F=fixed price from this table, P=fixed percent of list from this table
+if method$<>"V" or splevel>9999 then
+  g=0
+  while temp_price<0 
+    g=g+1
+    if g>10 then break
+    IF t1<csm10.min_users[g] or t1>csm10.max_users[g] THEN continue
+    if method$="P" and splevel<10000 then LET temp_price=list_price*csm10.price[g]/100 else LET temp_price=csm10.price[g]
+  wend
+fi
+
+rem 'V=variable % depending on revision
+if method$="V" and splevel<10000 then
+  found=0
+  readrecord(CSM04,KEY=firm$+old_rev$,DOM=*next)csm04$;found=1
+  if found=0 then return
+  temp_price=list_price*csm04.upgrade_perc/100
+fi
+
+if temp_price<0 and t1=splevel and t1<>lvl then t1=lvl;goto retry
+if temp_price>0 then 
+  temp_price=temp_price*temp_user,holdprice=temp_price
+  if discount$="Y" then 
+    precision 3
+    temp_price=temp_price*percent
+  fi
+fi
+precision digits
+temp_price = round(temp_price)
+return

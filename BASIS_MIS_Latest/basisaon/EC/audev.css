@@ -1,0 +1,48 @@
+.top-frame{
+display: flex;
+flex-direction: column;
+justify-content: center;
+height: 100%;
+align-items: center;
+}
+
+.staticText-Window{
+display: flex;
+width: 100%;
+justify-content: space-around;
+}
+
+.renew-Window{
+display: flex;
+width: 100%;
+justify-content: space-around;
+}
+
+.button-Window{
+display: flex;
+flex-direction: column;
+justify-content: space-evenly;
+}
+
+.options-Window{
+display: flex;
+flex-direction: row;
+width: 100%;
+justify-content: space-evenly;
+}
+
+bbj-list{
+width: 120px;
+height: 200px;
+}
+
+bbj-list::part(container) .container_label{
+font-weight: bold;
+}
+
+.app-window{
+display: flex;
+flex-direction: column;
+gap: 20px;
+
+}

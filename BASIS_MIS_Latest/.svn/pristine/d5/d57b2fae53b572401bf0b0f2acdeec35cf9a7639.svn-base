@@ -1,0 +1,140 @@
+[Program]
+Creation Date=2007-10-11
+Creation Time=15:54:41
+Last Build Date=2007-10-25
+Last Build Time=15:05:06
+Precision=2
+Program Name=E:/work/email_search
+Remarks=Yes
+Resource File=email_search.arc
+Show Forms=All
+
+[EOJ]
+rem ' -----------------------------------------------------------------
+rem ' EOJ
+rem ' -----------------------------------------------------------------
+err_exit:
+if info(3,2)="thines" then escape
+pgm_exit:
+while len(chan$)>2
+  close(num(chan$(1,3)),err=*next)
+  chan$=chan$(4)
+wend
+if gb__forms and gb__sysgui then
+  for gb__temp=1 to gb__forms
+  print (gb__sysgui)'context'(gb__form_context[gb__temp]),'destroy'(0)
+  next gb__temp
+fi
+print (gb__sysgui)'context'(old_context),'focus'(0),'flush'
+close (gb__sysgui)
+resclose(gb__handle,err=*next)
+exit
+
+[Init]
+rem ' -----------------------------------------------------------------
+rem ' Init
+rem ' -----------------------------------------------------------------
+seterr err_exit
+setesc err_exit
+sysgui!=bbjapi().getSysGui()
+if (info(3,6)="0" and info(0,0)="Windows XP" and info(1,1)>="1.4.2")
+:  or (info(3,6)<>"0" and
+:  bbjapi().getThinClient(err=*next).getClientOSName(err=*next)="Windows XP" and
+:  bbjapi().getThinClient(err=*next).getClientJavaVersion(err=*next)>="1.4.2")
+:  then bbjapi().getSysGui().setLookAndFeel("WindowsXPLookAndFeel")
+
+l=0
+while l<2
+  p=pos($0a$=gb__arg$)
+  if p=0 then break
+  if l=0 then old_context=num(gb__arg$(1,3))
+  if l=1 then x=num(gb__arg$(1,4))+25,y=num(gb__arg$(5,4))+60
+  l=l+1,gb__arg$=gb__arg$(p+1)
+wend
+chan$=""
+call "ec_open::emxref"
+chan$=chan$+str(emxref:"000")
+call "ec_open::tmm01"
+chan$=chan$+str(tmm01:"000")
+gb__context = fngb__window("101")
+win_id_email_search$=fngb__win_id$(gb__win.email_search)
+DIM win_email_search$:fngb__template$(win_id_email_search$)
+email_in_id=NUM(FATTR(win_email_search$,"email_in","ID"))
+print (gb__sysgui)'context'(gb__context),'move'(0,x,y),
+:'enable'(0),'show'(0),'focus'(0),'raise','focus'(email_in_id)
+win_id_email_search$=fngb__win_id$(gb__win.email_search)
+win_email_search$ = fngb__get_screen$(win_id_email_search$,win_email_search$)
+lbox_id=NUM(FATTR(win_email_search$,"email_lbox","ID"))
+
+prep_routine:
+rem 'to avoid compiler error
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_WIN_CLOSE)]
+goto pgm_exit
+
+[Event Win=101 ID=100 Code=l0 <LIST_CLICK> (W101_C100_LIST_CLICK)]
+rem ' Click in list box
+gosub show_cust
+
+[Event Win=101 ID=200 Code=B <PUSH_BUTTON> (W101_C200_PUSH_BUTTON)]
+rem ' Push button operated
+
+gb__arg$=""
+exitto pgm_exit
+
+[Event Win=101 ID=205 Code=B <PUSH_BUTTON> (W101_C205_PUSH_BUTTON)]
+rem ' Push button operated
+gb__arg$=k$
+exitto pgm_exit
+
+[Event Win=101 ID=90 Code=e <EDIT_CHANGE> (W101_C90_EDIT_CHANGE)]
+rem ' Edit control was modified
+
+email$=ctrl(gb__sysgui,email_in_id,1)
+email$=cvs(email$,11)
+if email$="" then return
+
+k$=""
+lbox$=""
+read(emxref,key=email$,dom=*next)
+while 1
+  readrecord(emxref,end=*break)emxref$
+  if pos(email$=cvs(emxref.email$,3))<>1 then break
+  k$=cvs(emxref.email$,3)+" ["+emxref.firm_id$+emxref.customer_nbr$+emxref.tm_number$
+  if pos(k$=lbox$)=0 then lbox$=lbox$+k$+"]"+$0a$
+wend
+lbox$=lbox$+$ff$+"0"
+win_email_search.email_lbox$=lbox$
+win_email_search$ = fngb__put_fields$(win_id_email_search$,win_email_search$,"email_lbox")
+
+[Event Win=101 ID=90 Code=f0 <LOST_FOCUS> (W101_C90_LOST_FOCUS)]
+rem ' Control lost focus
+gosub show_cust
+
+
+[Function (show_cust)]
+rem ' -----------------------------------------------------------------
+rem ' show_cust
+rem ' -----------------------------------------------------------------
+
+show_cust:
+email$=ctrl(gb__sysgui,lbox_id,1)
+lbox$=CTRL(gb__sysgui,lbox_id,7)
+index=DEC(CTRL(gb__sysgui,lbox_id,2))
+p=pos($ff$=lbox$)-1
+if p<1 then p=len(lbox$)
+lbox$=lbox$(1,p)+$ff$+str(index)
+p=pos(" ["=email$)
+if p then k$=email$(p+2,14), email$=email$(1,p-1)
+ok=0
+readrecord(tmm01,key=k$,dom=*next)tmm01$;ok=1
+if ok=0 then return
+win_email_search.email_in$=email$
+win_email_search.email_lbox$=lbox$
+win_email_search.firm$=k$(1,2)
+win_email_search.cust_id$=k$(3,6)+" "+k$(9,6)
+win_email_search.cust_name$=tmm01.cont_firm$
+win_email_search$ = fngb__put_screen$(win_id_email_search$,win_email_search$)
+return
+

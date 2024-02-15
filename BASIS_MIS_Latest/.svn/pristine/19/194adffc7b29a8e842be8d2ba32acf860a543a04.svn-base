@@ -1,0 +1,62 @@
+
+// <bsg_mnu>  June 1998 - teh
+
+gosub bbterm;
+trash=scall("addon "+bbterm$); 
+/*
+trash$=stbl("COMPANY","BSG");
+repeat
+{
+set display term();
+choose/title="@BASIS International\Sofware GmbH"
+	/traditional
+	/drop
+	/black
+	/help="ENTER CHOICE" // ((#F6)=end)"
+	a from
+	"MAS90 Session"
+	"P4inq Session"
+	"P4edit Session"
+	"411 Session"
+	"Fast Customer Maintenance"
+	"Exit" ;
+switch a
+	{
+	case 0: trash=scall("mas90 "+bbterm$); 
+	case 1: call/window "(BBX)serm_mnu.bbx";
+	case 2: call/window "(BBX)serm_4.bbx";
+	case 3: trash=scall("411BSG "+bbterm$);
+	case 4: call/window "(BBX)411m_7bsg.bbx";
+	case 5: goto exit_now;
+	}
+}
+*/
+exit_now:
+if user$="thines" then exit; 
+else exit/release;
+
+subroutine bbterm
+{
+user$=info(3,2); user$=cvs(user$,2);
+bbterm$="";
+if pos(user$="hschmitz awale fspitzb") then 
+	{
+	v=0;
+	getvar: 
+	env$=info(4,v,err=getvar_end);
+	p=pos("BBTERM="=env$); 
+	if p<>1 then {v=v+1; goto getvar;}
+	if len(env$)>7 then bbterm$=env$(8);
+	getvar_end:
+	}
+if user$="gparra" then bbterm$="T55"; 
+if user$="swaufle" then bbterm$="T5C"; 
+if user$="plewis" then bbterm$="T5P"; 
+if user$="gcorcor" then bbterm$="T57"; 
+if user$="kpeterl" then bbterm$="T58"; 
+if user$="jelliot" then bbterm$="T5A"; 
+if user$="jrose" then bbterm$="T5T"; 
+if bbterm$="" then bbterm$="T50";
+}
+ 
+//

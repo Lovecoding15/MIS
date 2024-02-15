@@ -1,0 +1,104 @@
+// Daily media production report  <aonserr_16>
+
+style=1;                      
+terminal_device$=term();      
+device_name$=terminal_device$;
+screen_desc$="MEDIA PRODUCTION REPORT";
+
+firm$="01";
+terminal$="T"+term();
+find/noerror sys01t using terminal$;
+if available(sys01t) then 
+	{firm$=sys01t.firm_id;
+	device_name$=sys01t.printer_id;}
+display/form="MAS_HEAD" screen_desc=screen_desc$ 
+firm_name="" printer="PRINTER "+device_name$;
+
+do_form:
+block
+{ 
+prompt for
+	/notitle
+	/prompt="ENTER ORDER DATE TO REPORT (MMDDYY) "
+	/black
+	rdt$;
+call/nowindow "(BBX)aondate.bbx",rdt$,in_date$,"P";
+if in_date$="" then goto do_form;
+call/nowindow "(BBX)aondate.bbx",in_date$,rdt$,"U";
+// rdt$=rdt$(1,2)+"/"+rdt$(3,2)+"/"+rdt$(5,2);
+
+#include (LIBRARY)syverinp.h
+}
+if ctl()=6 then exit;
+
+pause/message "PREPARING REPORT";
+
+if style=2 then set display/compress device_name$;
+else set display device_name$;
+
+create temporary table lbllist
+	prog char(2)
+	rv char(10)
+    	port char(5)
+    	media char(3)
+	qty num(4)
+	unique ("lblkey",prog,rv,port,media);
+
+display/header "  RUN DATE:",date(0:"%Mz/%Dz/%Y"), "BASIS International Ltd."/col=28, "PAGE: "+str(page())/col=68;
+display/header "ORDER DATE:",rdt$,"Media Production Report"/col=28,"TIME: "+date(0:"%Hz:%mz")/col=68;
+display/header "";
+
+for each are73 where media_sets<>0 and firm_id=firm$
+{
+find are03 using are73$(1,17)+"000";
+if are03.invoice_date<>in_date$ or are03.ord_inv_flag<>"O" then continue;
+if are73.media_type="CDR" then 
+	{ lbllist.prog=" "; lbllist.rv=" ";
+	lbllist.port="N/A"; lbllist.media=are73.media_type;
+	mqty=are73.media_sets;
+	gosub updt_table;
+	continue;
+	}
+find are13 using are73$(1,20);
+lbllist.prog="P5"; 
+if pos("4"=are13.item_number(1,3)) then lbllist.prog="P4";
+if pos("OD"=are13.item_number(1,3)) then lbllist.prog="  ";
+if pos("TA"=are13.item_number(1,3)) then lbllist.prog="  ";
+lbllist.rv="??"; lbllist.port="??";lbllist.media=are73.media_type;
+find/noerror csm04 using are13.firm_id+are13.item_number(10,3);
+if available(csm04) then {tmp$=cvs(csm04.description,3);
+			 p=pos(" "=tmp$);
+			 if p then lbllist.rv=tmp$(1,p-1);
+			 else lbllist.rv=tmp$;
+			 }
+find/noerror csm03 using are13.firm_id+are13.item_number(7,3);
+if available(csm03) then lbllist.port=csm03.port_id(1,4);
+mqty=are73.media_sets;
+gosub updt_table;
+}
+
+for each are13 where pos("MEDIA CD"=item_number) and firm_id=firm$
+{
+find are03 using are13$(1,17)+"000";
+if are03.invoice_date<>in_date$ or are03.ord_inv_flag<>"O" then continue;
+lbllist.prog=" "; lbllist.rv=" ";
+lbllist.port="N/A"; lbllist.media="CDR";
+mqty=are13.qty_ordered;
+gosub updt_table;
+}
+
+for each lbllist
+{
+display/margin=5 port+prog/title="Port" rv/title="Rev" media/title="Media" qty/title="Qty";
+}
+
+#include (LIBRARY)syseldev.h
+
+subroutine updt_table
+{
+find/noerror lbllist;
+if available(lbllist) then {lbllist.qty=lbllist.qty+mqty;
+	update lbllist;}
+else {lbllist.qty=mqty; insert lbllist;}
+}
+//

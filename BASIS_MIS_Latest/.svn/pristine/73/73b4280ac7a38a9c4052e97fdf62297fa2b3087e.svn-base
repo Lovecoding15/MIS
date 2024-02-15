@@ -1,0 +1,103 @@
+window.title=Gérez les données de vos clients
+download.temp.explain=Télécharger un fichier client pour le compléter et le transférer.
+download.temp.group.label=Télécharger un fichier modèle
+upload.explain=Transférer votre fichier avec les numéros de série de vos clients dans le système.
+upload.file=Transférer le fichier
+upload.group.label=Transférer un fichier de donnée client
+download.eu.data.explain=Télécharger le fichier contenant les numéros de série de vos clients.
+download.file.label=Télécharger fichier
+download.eu.group.label=Télécharger fichier client
+done.label=Retour
+select.type.group.label=Selectionnez le type de fichier
+tab.delimited.label=Texte séparé par des tab
+vkeyed.label=VKeyed
+progress.cnt.label=Compteur de progrès:
+vkeyed.standalone.label=VKeyed dans une application autonome 
+menu.file=Fichier
+menu.exit=Fermer
+menu.edit=Edition
+menu.edit.eu.data=Edition des données client
+menu.actions=Actions
+menu.download.temp=Télécharger fichier template
+menu.tab.delim.text=Fichier séparer par des tab
+menu.vkeyed=Fichier VKeyed
+menu.vkeyed.with.app=VKeyed dans une application autonome
+menu.download.existing.eu=Télécharger Download Existing End User Data
+menu.upload.eu.data=Transférer un fichier de donnée client
+
+no.eu.title=Pas de clients
+
+no.eu.message=Il n’y a pas de client a inclure dans ce fichier
+
+file.ready.title=Fichier prêt
+
+file.ready.msg={0} enregistrement enregistré dans le fichier {1}
+
+no.ser.nbr.title=Pas de numéro de série
+
+no.ser.nbr.msg=Aucun numéro de série à inclure n'a été trouvé 
+
+ser.nbr.ready.msg={0} enregistrement sauvegardé dans le fichier {1}.
+
+no.company.name=Aucune donnée pour le champs 'Société'.
+
+no.country=Pas de pays ou le pays est invalide {0}.	
+
+no.state=Attention\: Régions ({0}) invalide. Enregistrement ne comporte pas de région.
+
+no.basis.prod=Attention\: Produit BASIS ({0}) invalid. Enregistrement ne comporte pas de produit BASIS.
+
+no.industry=Attention\: Secteur ({0}) invalid. L'enregistrment comporte le secteur 'autre'.
+
+wrong.serial.nbr=Ce numéro de série apartient à un autre client.
+
+serial.nbr.not.there=Ce numéro de série n'est pas dans le fichier.
+
+upl.comp.title=Mise à jour completée.
+
+upl.comp.count={0} enregistrement transmis.
+
+invalid.cust.count={0} numéro de série non validé car utilisateur invalide.
+
+invalid.serial.nbr.count={0} uploaded serial numbers skipped because the serial number is invalid.
+
+data.validation.count={0} numéro de série invalide.
+
+updated.count={0} enregistrement client mis à jour.
+
+file.not.found.msg=Fichier doit être de type STRING ou VKEYED et doit être nomé {0} et doit se terminer par .tab, .vky ou ne pas avoir d'extention.Le fichier peut également faire parti de la paire de fichier {1} ou {2} d'une application autonome.
+
+file.not.found.title=Fichier pas trouvé
+
+string.file.proc.msg=Fichier STRING {0}, en lecture.
+
+vkeyed.file.proc.msg=Fichier VKEYED {0}, lecteur de {1} enregistrement.
+
+bad.filetype.msg=Fichier doit être un fichier STRING ou VKEYED.
+
+bad.filetype.title=Type de fichier invalide
+
+download.prompt=Sauvegarder en tant que
+
+file.transfer.abort=Transfert fichier anuler ou erreur transfert.
+
+file.transfer.abort.title=Transfert annulé
+
+upload.file.prompt=Sélectionnez le fichier à transférer 
+
+upload.another.file=Voulez vous transférer un autre fichier?
+
+upload.another.file.title=Autre fichier
+
+exception.file.notice=Un fichier zip contenant toute les exceptions ainsi que les fichier log de la mise \u00E0 jour sera t\u00E9l\u00E9charg\u00E9.
+
+
+not.available.inBrowser.msg=Les fonctions du t\u00E9lechargement/upload ne sont disponibles que dans l'outil b-commerce en mode de d\u00E9marrage standalone.
+
+not.available.inBrowser.title=Ne pas disponible
+
+singlefile.download.warning=Remarque\: Ce fichier ne contient que les num\u00E9ros de s\u00E9rie pas attach\u00E9s \u00E0 une adresse d'un utilisateur final.
+
+singlefile.download.title=Uniquement les num\u00E9ros de s\u00E9rie pas attach\u00E9s
+
+no.email.address=Warning\: Requested Advantage or Announcements or both for\: {0} but no email address provided. Advantage and Announcements set to No. 

@@ -1,0 +1,34 @@
+//  menu for OEM serial number history  <osn_mnu>
+
+repeat
+	{
+	display/form="MAS_HEAD" firm_name=""
+		screen_desc="OEM Serial Number History";
+
+choose/title="@Select Function"
+	/traditional
+	/drop
+	/black
+	a from
+	"Build OEM Spread Sheet File From ALG File"
+	"Serial Number Search - ALG File"
+	"Serial Number Search - AKG File"
+	"Search by Date Range - AKG File"
+	"Maintain OSAS Serial Number Exchange"
+	"End";
+if ctl()=2 then exit;
+	
+switch a
+	{
+	case 0: call/window "(BBX)aon_oem1.bbx";
+	case 1: call/window "(BBX)aon_oem2.bbx";
+	case 2: call/window "(BBX)osnr_1.bbx";
+	case 3: call/window "(BBX)osnr_2.bbx";
+        case 4: call/window "(BBX)osnm_2.bbx";
+	case 5: goto exit_now;
+	}
+}
+exit_now:
+	exit;
+
+//

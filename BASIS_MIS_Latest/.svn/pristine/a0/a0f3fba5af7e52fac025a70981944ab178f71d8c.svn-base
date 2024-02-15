@@ -1,0 +1,70 @@
+0010 REM "Select SAM Renewal invoices to be credited"
+0020 REM "Program sam_credit_select.bbj
+0030 REM "Based on BCS.01"
+0080 begin 
+0090 SETERR err_rtn
+0100 today_jul=jul(0,0,0)
+0110 day$=date(today:"%Ds")
+0120 if cvs(day$,4)<>"WED" then goto end_pgm
+0300 REM " --- Open/Lock Files"
+0310 call "ec_open::ART01"
+0320 call "ec_open::ART11"
+0340 call "ec_open::ART03"
+0700 credit_sam$=stbl("TEMP")+"credit_sam.dat"
+0710 erase credit_sam$,err=*next
+0720 mkeyed credit_sam$,[0:1:15],[0:9:7],0,100
+0800 cr_sam=unt
+0810 open(cr_sam)credit_sam$
+0820 dim samrec$:"firm:c(2),cust:c(6),invoice:c(7),credit:c(1),avail:c(80*)"
+1000 rem " --- Position Invoice History"
+1010 read(art03,key="",dom=*next)
+1100 while 1
+1110   read record(art03,end=*break)art03$
+1120   if art03.firm_id$<>"01" then break
+1130   if cvs(art03.ar_po_number$,7)<>"SAM RENEW" and cvs(art03.ar_po_number$,7)<>"RNT RENEW" and cvs(art03.ar_po_number$,7)<>"DVK RENEW" then continue
+1150   read record(art01,key=art03.firm_id$+"  "+art03.customer_nbr$+art03.ar_inv_nbr$+"00",dom=*continue)art01$
+1160   due_date$=fnb4$(art01.due_date$),invoice_date$=fnb4$(art01.invoice_date$)
+1170   due_jul=jul(num(due_date$(7,4)),num(due_date$(1,2)),num(due_date$(4,2)))
+1180   if art01.late_notice$="1" or today_jul<due_jul+30 then continue
+1190   rem ' if today_jul>due_jul+90 then continue ---- removed this check on 6/28/2012 kew
+1200   total_pay=0
+1210   READ (ART11,KEY=art03.firm_id$+"  "+art03.customer_nbr$+art01.ar_inv_nbr$,DOM=*next)
+1230   while 2
+1240     read record(art11,end=*break)art11$
+1250     if art01.firm_id$+"  "+art01.customer_nbr$+art01.ar_inv_nbr$<>art11.firm_id$+"  "+art11.customer_nbr$+art11.ar_inv_nbr$ then break
+1280     total_pay=total_pay+art11.trans_amt+art11.adj_disc_amt
+1310   wend
+1320   if art01.invoice_amt+total_pay<=0 or (abs(total_pay)>0 and abs(total_pay)<art01.invoice_amt) then continue
+1420   samrec.firm$=art03.firm_id$
+1430   samrec.cust$=art03.customer_nbr$
+1440   samrec.invoice$=art03.ar_inv_nbr$
+1450   samrec.credit$="Y"
+1460   samrec.avail$=fill(80)
+1470   samrec$=field(samrec$)
+1480   write record(cr_sam)samrec$
+1490 wend
+5000 end_pgm:
+5010 if cvs(credit_sam$,3) <> "" then a=scall("chmod 666 "+credit_sam$)
+5090 release
+8000 REM " --- Functions
+8010 REM Date with 4 digit year
+8020 DEF FNA$(Q$,Q2$)=STR(MOD((ASC(Q$)-32)*POS(" "<>Q2$(2,1)),100):"00")
+8030 DEF FNA4$(Q$,Q2$)=STR(((ASC(Q$)-32)+1900)*POS(" "<>Q2$(2,1)):"0000")
+8040 DEF FNB4$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA4$(Q1$(1),Q1$)
+9000 err_rtn:
+9010 subj$="Auto Credit Memo Selection Error"
+9020 msg$="Error "+str(err)+" in "+str(tcb(5))+" of "+pgm(-2)
+9510 to$="mis@basis.cloud",from$="customer-service@basis.cloud"
+9530 clock$=date(0:"%Hz%mz%sz")
+9540 hdr$="To: "+to$+$0A$+"From: "+from$+$0A$+"Subject: "+Subj$+$0A$+$0A$
+9550 hdr$=hdr$+msg$+$0a$
+9560 tmpfile$=stbl("TEMP")+clock$+"cr_sam.txt"
+9570 erase tmpfile$,err=*next
+9580 string tmpfile$
+9590 tmp=unt
+9600 open(tmp)tmpfile$
+9610 writerecord(tmp)hdr$
+9620 close(tmp)
+9630 A=SCALL("/usr/lib/sendmail -t < "+tmpfile$)
+9640 erase tmpfile$,err=*next
+9690 goto end_pgm

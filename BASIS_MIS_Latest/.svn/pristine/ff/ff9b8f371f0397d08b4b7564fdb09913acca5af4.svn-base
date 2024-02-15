@@ -1,0 +1,47 @@
+# Sample ResourceBundle properties file
+
+window.title=Credit Card Verification Data
+
+verification.address=Credit Card Address\:
+
+verification.code=Card ID Number\:
+
+save.button=Save
+
+verificationCode.shortCue=3 or 4 digit code printed on the credit card. (Required)
+
+verificationAddress.shortCue=Address presented to the credit card processor for verification. (Required)
+
+validationError.title=Validation Error
+
+noAddress.message=An address is required for verification with the credit card processor.
+
+noAddress2.message=An address is required for verification with the credit card processor for the second credit card.
+
+badCVV2.message=The card id number is required.
+
+badCVV22.message=The card id number is required for the second credit card.
+
+whatsThis.title=What's This
+
+verificationAddress.message=The street address and postal code used for verification with the credit card processor against the street address recorded on the account. Most issuing banks require a street address for address verification and as a result PO Box numbers may fail. If your credit card address is a PO Box and it fails the address check, try putting just the box number on the line with no other text. If that also fails contact BASIS Customer Service. 
+
+verificationCode.message=The card id number is the 3 or 4 digit number printed on the face of the card or on the signature strip. It is sometimes called the CVV2 number or the card security code.
+
+verification.zipCode=Postal Code\:
+
+verificationZipCode.shoreCue=Zip Code presented to the credit card processor for verification.
+
+noZipCode.message=A postal code is required for verification with the credit card processor.
+
+noZipCode2.message=A postal code is required for verification with the credit card processor for the second credit card.
+
+cancel.button=Cancel
+
+cancel.message=Do you want to abort the credit card process?
+
+cancel.title=Abort Credit Card
+
+theBox.title=Credit Card Verification Data
+
+theBox.title2=Credit Card Verification Data Second Card

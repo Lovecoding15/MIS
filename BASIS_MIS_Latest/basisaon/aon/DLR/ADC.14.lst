@@ -1,0 +1,225 @@
+0010 REM "ADC - MAS Administrator Date/Time Called Utility"
+0020 REM "Program: ADC.14"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0050 ENTER MODE,TO$[ALL],FRO$[ALL],ERR_FLAG
+0060 LET PREC=PRC
+0070 PRECISION 8
+0090 SETERR 9800
+0100 REM "+-----------------------------------------------------------+
+0105 REM "| Documentation Block                                       |
+0110 REM "|                                                           |
+0115 REM "| MODE=0=Format Mode - Return a date & time formatted as    |
+0120 REM "|        requested.  Dates-3,6,8 character format & Times   |
+0130 REM "|        as HH:MM(24hour clock), HH.DD (24hour & Decimal of |
+0135 REM "|        an hour), HH:MMxm (Hour & Minute using 12hour clock|
+0140 REM "|        If no date/time is supplied, NOW is returned       |
+0145 REM "| MODE=1=Difference Mode - Return days, hours and minutes of|
+0150 REM "|        difference between two dates & times in a requested|
+0155 REM "|        format                                             |
+0160 REM "| MODE=2=Future/Past Date Mode Returns a future/past date/  |
+0165 REM "|        time when provided with a base date/time and a     |
+0170 REM "|        days/hours/minutes in(de)crement.                  |
+0175 REM "| MODE=3=External Calculation Mode - Return a numeric value |
+0180 REM "|        for a date.time that represents a continum date    |
+0185 REM "|        value as provided by the BBx JUL() function and    |
+0190 REM "|        a decimal value for the increment of a day.        |
+0195 REM "|                                                           |
+0200 REM "| CALL/ENTER List Documentation                             |
+0205 REM "|   TO$[0]=Date One=Mode 0=Null for NOW or Unformatted Date |
+0210 REM "|                   Mode 1=First Date                       |
+0215 REM "|                   Mode 2=Base Date                        |
+0220 REM "|                   Mode 3=Date to be formatted             |
+0222 REM "|                                                           |
+0225 REM "|      [1]=Date Return Format=0=6 Character YYDDMM          |
+0230 REM "|                             1=3 Char Packed YMD Tbred     |
+0235 REM "|                             2=3 Character Packed YMD BBx  |
+0240 REM "|                             3=8 Character CCYYMMDD        |
+0245 REM "|                             4=6 Char MMDDYY               |
+0250 REM "|                             5=8 Char MMDDCCYY             |
+0252 REM "|                                                           |
+0255 REM "|      [2]=Date Two=Mode 0=Null                             |
+0260 REM "|                   Mode 1=Second Date                      |
+0265 REM "|                   Mode 2=Null                             |
+0270 REM "|                   Mode 3=Null                             |
+0272 REM "|                                                           |
+0275 REM "|      [3]=Days Increment=Mode 0=Null                       |
+0280 REM "|                         Mode 1=Positive or Negative Days  |
+0285 REM "|                         increment                         |
+0290 REM "|                         Mode 2=Same as Mode 1             |
+0295 REM "|                         Mode 3=Null                       |
+0297 REM "|                                                           |
+0300 REM "|      [4]=Time Increment=Mode 0=Null                       |
+0305 REM "|                         Mode 1=Positive or Negative Time  |
+0310 REM "|                         increment in hrs:min or hrs.deciml|
+0315 REM "|                         Mode 2=Same as Mode 1             |
+0320 REM "|                         Mode 3=Null                       |
+0322 REM "|                                                           |
+0325 REM "|      [5]=Time Return Format=0=HH:MM 24 Hour Clock         |
+0330 REM "|                             1=HH:MMxm = 12 Hour Clock     |
+0331 REM "|                             2=TIM Format HH.Decimal 24hr  |
+0332 REM "|                                                           |
+0333 REM "|      [6]=First Time=Mode 0=Null for NOW or Unformatted    |
+0335 REM "|                            Time                           |
+0336 REM "|                          1=First Time                     |
+0337 REM "|                          2=Base Time                      |
+0338 REM "|                          3=Time To Be Formatted           |
+0339 REM "|                                                           |
+0340 REM "|      [7]=Second Time=Mode=0=Null                          |
+0341 REM "|                           1=Second Time                   |
+0342 REM "|                           2=Null                          |
+0343 REM "|                           3=Null                          |
+0344 REM "|                                                           |
+0345 REM "|  FRO$[0]=Formatted Return Date=Mode 0=Requested Date      |
+0350 REM "|                                Mode 1=Null                |
+0355 REM "|                                Mode 2=Future/Past Date    |
+0360 REM "|                                Mode 3=Same as Mode 0      |
+0362 REM "|                                                           |
+0365 REM "|      [1]=Formatted Return Time=Mode 0=Requested Time      |
+0370 REM "|                               =Mode 1=Diff in HHHHH.MM    |
+0375 REM "|                               =Mode 2=Future/Past Time    |
+0380 REM "|                               =Mode 3=Null                |
+0382 REM "|                                                           |
+0385 REM "|      [2]=Difference Days      =Mode 0=Null                |
+0390 REM "|                               =Mode 1=Days between dates  |
+0395 REM "|                               =Mode 2=Null                |
+0397 REM "|                               =Mode 3=Null                |
+0400 REM "|                                                           |
+0401 REM "|      [3]=Day Of Week=Mode 0=DOW of Requested Date         |
+0402 REM "|                      Mode 1=Null                          |
+0403 REM "|                      Mode 2=DOW of Future/Past Date       |
+0404 REM "|                      Mode 3=DOW of Requested Date         |
+0405 REM "|                                                           |
+0407 REM "|      [4]=BBx JUL() Numeric + Tbred NDT()/DTN() Fraction   |
+0410 REM "|                               =Mode 0 to 2 = Null         |
+0415 REM "|                               =Mode 3=Numeric xxxxxxx.xxxx|
+0485 REM "|                                                           |
+0490 REM "|End of Documentation Block                                 |
+0495 REM "+-----------------------------------------------------------+
+0500 REM "Initialize"
+0510 LET TD$=DAY,TD$=TD$(1,2)+TD$(4,2)+TD$(7,2)
+0520 LET TT$=STR(TIM)
+0540 IF FNP$(TO$[6])="" THEN LET TIME$=STR(TIM:"00.00"),TO$[6]=TIME$
+0550 IF FNP$(TO$[7])="" THEN LET TO$[7]=TIME$
+0800 REM "Set Initial Values"
+0805 FOR FLAG=0 TO 2 STEP 2
+0810 IF FNP$(TO$[FLAG])="" THEN LET DATE$=TD$; GOTO 0885
+0820 IF LEN(FNP$(TO$[FLAG]))=3 THEN LET DATE$=FNC$(TO$[FLAG]); GOTO 0885
+0830 IF LEN(FNP$(TO$[FLAG]))=6 THEN IF NUM(TO$[FLAG](1,2))<=12 THEN LET DATE$=TO$[FLAG]; GOTO 0885 ELSE LET DATE$=TO$[FLAG](3,4)+TO$[FLAG](1,2); GOTO 0885
+0835 IF LEN(FNP$(TO$[FLAG]))=8 AND POS("/"=TO$[FLAG])=0 THEN IF NUM(TO$[FLAG](1,2))>12 THEN LET DATE$=TO$[FLAG](5,4)+TO$[FLAG](3,2); GOTO 0885 ELSE LET DATE$=TO$[FLAG](1,4)+TO$[FLAG](7,2); GOTO 0885
+0840 IF LEN(FNP$(TO$[FLAG]))=8 AND POS("/"=TO$[FLAG])>0 THEN LET DATE$=TO$[FLAG](1,2)+TO$[FLAG](4,2)+TO$[FLAG](7,2); GOTO 0885
+0880 IF FLAG=0 AND MODE>0 AND MODE<3 THEN EXITTO 9800
+0885 GOSUB 5000
+0890 IF FLAG=0 THEN LET DAY1=NUMTIME ELSE LET DAY2=NUMTIME
+0895 NEXT FLAG
+0900 ON MODE GOTO 1000,1500,2000,2500
+1000 REM "Format Date/Time"
+1010 LET TIME$=FNW$(STR(DAY1)),DAYNUM1=DAY1
+1040 GOSUB 3500
+1050 LET FRO$[0]=DATE$,FRO$[3]=DYWEEK$
+1060 GOSUB 3700
+1070 LET FRO$[1]=TIME$
+1090 GOTO 4000
+1500 REM "Find Difference"
+1510 IF FNP$(TO$[0])="" OR FNP$(TO$[2])="" THEN LET ERR_FLAG=1; GOTO 4000
+1530 LET FRO$[2]=STR(INT(DAY2-DAY1))
+1540 LET TIME$=TO$[6]; GOSUB 5200; LET MINS1=MINUTES
+1550 LET TIME$=TO$[7]; GOSUB 5200; LET MINS2=MINUTES
+1560 LET DIFFMINS=INT(MINS2-MINS1)
+1570 LET TIME$=STR(INT(DIFFMINS/60):"00"),TIME$=TIME$+STR(FPT(DIFFMINS/60)*60:"00")
+1580 GOSUB 3700; LET FRO$[1]=TIME$
+1590 GOTO 4000
+2000 REM "Future/Past Date"
+2010 IF FNP$(TO$[0])="" THEN LET ERR_FLAG=1; GOTO 4000
+2020 IF LEN(FNP$(TO$[0]))=3 THEN LET DATE$=FNC$(TO$[0]); GOTO 2050
+2030 IF LEN(FNP$(TO$[0]))=6 THEN LET DATE$=TO$[0](3,4)+TO$[0](1,2)
+2040 IF LEN(FNP$(TO$[0]))=8 THEN LET DATE$=TO$[0](5,4)+TO$[0](3,2)
+2050 IF FNP$(TO$[6])="" THEN LET ERR_FLAG=1; GOTO 4000
+2060 LET TIME$=TO$[6]; GOSUB 5200; LET MINS1=MINUTES
+2070 LET TIME$=TO$[4]; GOSUB 5200; LET MINS2=MINUTES
+2080 LET DAYNUM1=NUM(FNH$(DATE$)),DAYNUM1=DAYNUM1+NUM(TO$[3])
+2090 LET MINUTES=MINS1+MINS2
+2100 IF MINUTES>1440 THEN LET DAYNUM1=DAYNUM1+1,MINUTES=1440-MINUTES
+2110 IF MINUTES<0 THEN LET DAYNUM1=DAYNUM1-1,MINUTES=1440+(MINS1+MINS2)
+2120 LET DATE$=FNY$(STR(DAYNUM))
+2130 LET TIME$=STR(INT(MINUTES/60):"00")+STR(FPT(MINUTES/60)*60:"00")
+2140 GOSUB 3500; LET FRO$[0]=DATE$
+2150 GOSUB 3700; LET FRO$[1]=TIME$
+2160 LET FRO$[3]=FNV$(STR(DAYNUM1))
+2190 GOTO 4000
+3000 REM "Set Decimal Date"
+3010 IF FNP$(TO$[0])="" THEN LET ERR_FLAG=1; GOTO 4000
+3020 LET TIME$=TO$[6]; GOSUB 5200
+3030 IF POS("LEV"=SYS)=0 THEN LET DAYNUM=NUM(FNZ$(DATE$+TIME$)); GOTO 3050
+3040 REM LET DAYNUM=NUM(FNZ$(DATE$,STR(MINUTES)))
+3050 LET FRO$[4]=STR(DAY1)
+3060 LET FRO$[3]=FNV$(STR(DAY1))
+3090 GOTO 4000
+3500 REM "Format Date"
+3505 IF DATE$="" THEN LET ERR_FLAG=1; GOTO 4000
+3510 IF TO$[1]="0" OR TO$[1]="" THEN LET DATE$=FNR$(STR(DAYNUM1))
+3520 IF TO$[1]="1" THEN LET DATE$=FND$(FNY$(STR(DAYNUM1)))
+3530 IF TO$[1]="3" THEN LET DATE$=FNS$(STR(DAYNUM1))
+3540 IF TO$[1]="4" THEN LET DATE$=FNV$(STR(DAYNUM1))
+3550 IF TO$[1]="5" THEN LET DATE$=FNT$(STR(DAYNUM1))
+3560 LET DYWEEK$=FNU$(FNV$(STR(DAYNUM1)))
+3590 RETURN 
+3700 REM "Format Time"
+3710 LET PREFIX$="AM"
+3720 IF TO$[5]="0" OR TO$[5]="" THEN GOTO 3790
+3730 IF TO$[5]="2" THEN LET TIME$=TIME$(1,2)+STR(NUM(TIME$(3,2))/60); GOTO 3790
+3750 IF NUM(TIME$(1,2))>12 THEN LET TIME$(1,2)=STR(NUM(TIME$(1,2))-12:"00"),PREFIX$="PM"
+3760 LET TIME$=TIME$+PREFIX$
+3790 RETURN 
+4000 REM "Exit Program"
+4090 GOTO 9900
+5100 REM "Convert Dates"
+5110 IF FLAG=0 THEN LET TIME$=TO$[6] ELSE LET TIME$=TO$[7]
+5120 IF POS(":"=TIME$)>0 THEN EXITTO 9800; REM "Punctuation In Time Not Allowed"
+5130 IF POS("."=TIME$)=0 THEN LET DATE$=DATE$+TIME$; GOTO 5170
+5140 LET DATE$=DATE$+TIME$(1,POS("."=TIME$)-1)+STR(INT(NUM(TIME$(POS("."=TIME$)))*60):"00"); GOTO 5170
+5145 IF LEN(TIME$)<4 THEN LET TIME$=TIME$+"0000",TIME$=TIME$(1,4)
+5150 IF NUM(TIME$(1,2),ERR=9800)>23 THEN EXITTO 9800; REM "Invalid Time Format"
+5155 IF NUM(TIME$(3,2),ERR=9800)>12 THEN EXITTO 9800; REM "Invalid Time Format"
+5170 LET NUMTIME=NUM(FNZ$(DATE$))
+5190 RETURN 
+5200 REM "Convert Time"
+5210 IF POS("."=TIME$)=0 THEN LET MINUTES=NUM(TIME$(1,2))*60+NUM(TIME$(3,2)); GOTO 5290
+5220 LET TIME$=TIME$(1,POS("."=TIME$)-1)+STR(NUM(TIME$(POS("."=TIME$)))*60:"00")
+5230 LET MINUTES=NUM(TIME$(1,2))*60+NUM(TIME$(3,2))
+5290 RETURN 
+8000 REM "FUNCTIONS"
+8010 DEF FNA$(Q$,Q2$)=STR((ASC(Q$)-32)*POS(" "<>Q2$(2,1)):"00")
+8020 DEF FNB$(Q1$)=FNA$(Q1$(2),Q1$)+"/"+FNA$(Q1$(3),Q1$)+"/"+FNA$(Q1$(1),Q1$)
+8030 DEF FNC$(Q1$)=FNA$(Q1$(2),Q1$)+FNA$(Q1$(3),Q1$)+FNA$(Q1$(1),Q1$)
+8040 DEF FND$(Q$)=CHR(NUM(Q$(5,2))+32)+CHR(NUM(Q$(1,2))+32)+CHR(NUM(Q$(3,2))+32)
+8050 DEF FNE$(Q$)=STR(INT(TIM):"00")+":"+STR(FPT(TIM)*60:"00")
+8060 DEF FNF$(Q$,Q1$)=STR(-NUM(Q$):Q1$)
+8070 DEF FNG$(Q$)=STR(ASC(Q$)-32*POS(" "<>Q$):"000")
+8080 DEF FNH$(Q$)=STR(JUL(NUM(Q$(5,2)),NUM(Q$(1,2)),NUM(Q$(3,2))))
+8085 DEF FNI$(Q$)=DATE(JUL(NUM(Q$(5,2)),NUM(Q$(1,2)),NUM(Q$(3,2))):"%Dl")
+8090 DEF FNP$(Q$)=CVS(Q$,2); REM "Strip Trailing Spaces
+8100 DEF FNL$(Q$)=CVS(Q$,8); REM "Lower Case
+8110 DEF FNU$(Q$)=CVS(Q$,4); REM "Upper Case
+8120 DEF FNQ$(Q$)=CVS(Q$,1); REM "Strip Leading Spaces
+8130 DEF FNR$(Q$)=DATE(INT(NUM(Q$)):"%Yz%Mz%Dz")
+8140 DEF FNS$(Q$)=DATE(INT(NUM(Q$)):"%Y%Mz%Dz")
+8150 DEF FNT$(Q$)=DATE(INT(NUM(Q$)):"%Mz%Dz%Y")
+8155 DEF FNV$(Q$)=DATE(INT(NUM(Q$)):"%Ds")
+8160 DEF FNW$(Q$)=DATE(INT(NUM(Q$)),(FPT(NUM(Q$))*1440)/60:"%Hz%mz")
+8180 DEF FNY$(Q$)=DATE(NUM(Q$):"%Mz%Dz%Yz")
+8185 DEF FNZ$(Q$)=STR(JUL(NUM(Q$(5,2)),NUM(Q$(1,2)),NUM(Q$(3,2))))+STR(((NUM(Q$(7,2))*60)+NUM(Q$(9,2)))/1440)
+9800 REM "--- Set Err Flag"
+9810 LET ERR_FLAG=ERR
+9820 IF ERR_FLAG=0 THEN LET ERR_FLAG=1
+9830 PRINT "ERR=",ERR," LINE=",TCB(5); ESCAPE
+9900 REM "--- Exit"
+9920 PRECISION PREC
+9990 EXIT 
+9999 REM "END"
+10670 LET FRO$[1]=TIME$
+60000 REM "MAS:+ON - 07/07/94 12:24 "
+60001 REM "MAS:+ON - 07/08/94 10:12 "

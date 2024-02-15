@@ -1,0 +1,85 @@
+// <osnr_1> OEM Serial number inquiry
+
+new_sn: display/form="MAS_HEAD" firm_name=""
+screen_desc="OEM Serial Number Lookup"; 
+osn$="";
+prompt for /prompt="Enter Serial Number:"/len=12/imask="XXXNNNNNNNNN"
+	/help="Enter=exit"/drop osn$;
+if ctl(2) or cvs(osn$,3)="" then exit;
+
+pause/message "Searching for "+osn$;
+srcsn$=osn$+fill(12);srcsn$=srcsn$(1,12);
+if pos(" "=srcsn$)>9 then srcsn$=srcsn$+"0001";
+create temporary table temphist like oemhistory;
+find/noerror oemhistory using srcsn$;
+
+if available(oemhistory) then
+{
+sncount=num(oemhistory.last_tran);
+gosub add_table;
+choose_tran:
+help$="Serial#: "+osn$+"  ((#F43)=View/Edit  (#F2)=End)";
+title$="@Tran|Date      |Item Num|Rev  |Prod Type|Key or Auth# |Actv|CurU|NewU|Lic#";
+if sncount>1 then help$=str(sncount)+" Transactions for "+help$;
+choose/record/rewind/nobreak
+	/title=title$ /rows=15/drop/colchar="|"
+	/gosub=format_line /display=line$ /help=help$
+	temphist where pos(osn$=serial_num)=1;
+if ctl(2) then goto new_sn; 
+if ctlval=43 then 
+	{call/window "(BBX)osnm_1.bbx",temphist;update temphist;if temphist.active_flag="D" then goto new_sn;}
+goto choose_tran; 
+}
+
+else
+{
+find/next/noerror oemhistory using osn$;
+if available(oemhistory)=0 or pos(osn$=oemhistory.serial_num)<>1 
+	then { pause/message=osn$+" Not found";goto new_sn;}
+gosub add_table;
+choose/record /rewind /black 
+	/title="@Serial#  |#Trans|  Dated               "
+	/rows=15/drop/colchar="|"/nobreak/gosub=format_line
+	/display=cvs(serial_num,2)+"| "+str(num(last_tran):"###0")
+		+" |"+dt$+"-"+lastdt$
+	/help="Select serial number ((#F2)=End)"
+	temphist where tran="0001";
+if ctl(2) or available(temphist)=0 then goto new_sn;
+osn$=serial_num;
+sncount=num(last_tran);
+goto choose_tran; 
+}
+
+subroutine format_line
+{
+dt$=temphist.date_tran(5,2)+"/"+temphist.date_tran(7,2)+"/"+temphist.date_tran(1,4);
+type$=temphist.prod_type;
+switch type$
+	{
+	case "N": type$=type$+"-Normal  ";
+	case "D": type$=type$+"-DlrDemo ";
+	case "U": type$=type$+"-UsrDemo ";
+	case "P": type$=type$+"-Upgrade ";
+	case "R": type$=type$+"-Update  ";
+	default: type$=type$+"-        ";
+	}
+if sale_type="R" then type$=type$(1,1)+"-Readonly";
+line$=tran+"|"+dt$+"|"+cvs(item_num,2)+"|"+rev_level+"|"+type$
+	+"|"+key_auth+"| "+active_flag+"  |"+str(cur_user:"###0")+"|"
+	+str(new_user:"###0")+"|"+str(lic_count:"###0");
+find/noerror oemhistory using temphist.serial_num+temphist.last_tran;
+if available(oemhistory) then
+lastdt$=oemhistory.date_tran(5,2)+"/"+oemhistory.date_tran(7,2)+"/"+oemhistory.date_tran(1,4);
+}
+
+subroutine add_table
+{
+repeat 	{
+	temphist$=oemhistory$;
+	insert temphist;
+	find/next/noerror oemhistory;
+	if available(oemhistory)=0 or pos(osn$=oemhistory.serial_num)<>1
+		then break;
+	}
+}
+//

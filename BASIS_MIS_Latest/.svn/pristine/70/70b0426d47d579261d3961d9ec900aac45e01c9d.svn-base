@@ -1,0 +1,115 @@
+01_EN: {    INVOICE NUMBER:}
+01_DE: {      RECHNUNG NR.:}
+01_FR: {    NO. DE FACTURE:}
+01_IT: {  No.DELLA FATTURA:}
+
+02_EN: {I N V O I C E}
+02_DE: {R E C H N U N G}
+02_FR: {F A C T U R E}
+02_IT: {F A T T U R A}
+
+03_EN: {      INVOICE DATE:}
+03_DE: {    RECHNUNGSDATUM:}
+03_FR: {DATE DE LA FACTURE:}
+03_IT: {DATA DELLA FATTURA:}
+
+04_EN: {              PAGE:}
+04_DE: {             SEITE:}
+04_FR: {              PAGE:}
+04_IT: {            PAGINA:}
+
+05_EN: {      ORDER NUMBER:}
+05_DE: {     AUFTRAGNUMMER:}
+05_FR: {    NUMERO D'ORDRE:}
+05_IT: {NUMERO DELL`ORDINE:}
+
+09_EN: {        ORDER DATE:}
+09_DE: {       LIEFERDATUM:}
+09_FR: { DATE DE LIVRAISON:}
+09_IT: {  DATA DI CONSEGNA:}
+
+06_EN: {       CUSTOMER NO:}
+06_DE: {        KUNDEN NR.:}
+06_FR: {     NO. DE COMPTE:}
+06_IT: {    CODICE CLIENTE:}
+
+07_EN: {  CUSTOMER P.O.  |   SHIP VIA    |   DISCOUNT            |   TERMS}
+07_DE: {  BESTELL NR.    | VERSAND PER   | EINSCHL. RABATT       | ZAHLBAR}
+07_FR: { NO. DE COMMANDE | LIVRAISON PAR | REMISE                | PAYABLE EN}
+07_IT: { NO. DELL`ORDINE |TIPO DI CONSEGNA| SCONTO               |PAGAMENTO ENTRO}
+
+08_EN: {  ORDER          | PRODUCT                               |  PRICE   |  TOTAL}
+08_DE: {  MENGE          | PRODUKT                               | E.-PREIS |  TOTAL}
+08_FR: {  QUANTITE       | PRODUIT                               |PRIX ACHAT|  TOTAL}
+08_IT: {  QUANTITÀ       | PRODOTTO                       |PREZZO D`ACQUISTO|  TOTALE}
+
+10_EN: {TOTAL NET:}
+10_DE: {GESAMT NETTO:}
+10_FR: {TOTAL NET:}
+10_IT: {TOTALE NETTO:}
+
+11_EN: {           FREIGHT:}
+11_DE: {FRACHT:}
+11_FR: {FRAIS DE TRANSPORT:}
+11_IT: {SPEDIZIONE:}
+
+F3_DE: {<tax>% UST.:}
+
+12_EN: {INVOICE TOTAL:}
+12_DE: {GESAMTBETRAG:}
+12_FR: {MONTANT TOTAL:}
+12_IT: {TOTALE FATTURA:}
+
+13_EN: {Continued}
+13_DE: {Übertrag} 
+13_FR: {Page suivante}
+13_IT: {Pagina successiva}
+
+14_EN: {Copy }
+14_DE: {Kopie }
+14_FR: {Copie }
+14_IT: {Copie }
+
+15_EN: {Coverage through: }
+15_DE: {Laufzeit bis: }
+15_FR: {Délai de validité jusqu'au: } 
+15_IT: {Valido fino a: }
+
+16_EN: {Number of users: }
+16_DE: {Anzahl User: }
+16_FR: {Nombre utilisateur: }
+16_IT: {Numero di utenti: }
+
+17_EN: {Serial number}
+17_DE: {Seriennummer}
+17_FR: {Numéro de série}
+17_IT: {Numero di serie} 
+
+18_EN: {New }
+18_DE: {Neue }
+18_FR: {Nouveau }
+18_IT: {Nuovo }
+
+19_EN: {Deactivated Serial number}
+19_DE: {Deaktivierte Seriennummer}
+19_FR: {Numéro de série désactivé}
+19_IT: {Numero di serie disattivato}
+
+EN:
+{This invoice is in accordance of the German tax
+law under the procedure of the VAT reverses charge
+system. (Transfer of the VAT tax debtor on the 
+bill-recipient).}
+DE:
+{Für alle EU-Staaten ausserhalb Deutschland gilt: 
+Die Umsatzsteuerschuldnerschaft aus dieser Rechnung 
+geht auf den Leistungsempfänger gem. den gesetzlichen 
+Regelungen (Reverses-Charge Verfahren) über.}
+FR:
+{La qualité de débiteur de la TVA relevant de la 
+présente facture est transférée au bénéficiaire 
+de la prestation, conformément aux règlements 
+légaux (procédure « reverses charges »).}
+IT:
+{Questa fattura é sotto accordo alla legge fiscale della Germania
+L`IVA è a carico del beneficiario (procedura "reverse charges").}

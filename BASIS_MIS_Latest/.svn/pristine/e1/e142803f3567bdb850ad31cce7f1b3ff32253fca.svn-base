@@ -1,0 +1,48 @@
+window.title=BASIS b-Commerce System - Information client
+advantage.label=Envoyer Advantage-Magazine
+announcements.label=devrait recevoir les anonces Marketing BASIS
+save.button=Sauvegarder 
+skip.button=Passer
+comp.name.label=Société:
+contact.name.label=Contact
+addr.one.label=Adresse ligne 1:
+addr.two.label=Adresse ligne 2:
+addr.three.label=Adresse ligne 3:
+city.label=Ville:
+state.label=Région
+postal.code.label=Code postale:
+country.label=Pays:
+email.address.label=E-Mail:
+phone.number.label=Téléphone:
+industry.label=Secteur:
+other.desc.label=Autre / Description:
+basis.prod.used.label=Produit BASIS utilisé:
+app.module.used.label=Module utilisé:
+select.user.label=Selectionnez un client existant\:
+end.user.nbr.label=Numéro client:
+ref.nbr.label=Référence \#\:
+req.label=Requis
+toggle.button=Trier la liste dans un ordre différent
+toggle.button.tooltip=Cliquez ici pour changer l'ordre de sélection des enregistrements entre alphanumérique et numérique
+menu.file=Fichier
+
+menu.exit=Fermer
+
+loadUser.inform=Vous avez sélectionné un enregistrement client existant dans le système. Si vous éditez cet enregistrement les changements seront répercutés pour tous les produits BASIS liés à cet enregistrement (Edit). Quoi qu’il en soit, vous pouvez créer un nouvel utilisateur(Nouveau).
+
+loadUser.title=Données clients
+
+edit=Edition
+
+new=Nouveau
+
+cancel=Annuler
+
+loadUser.inform.existing=Ce numéro de série {0} est lié à ce client {1}. Si vous changer cet enregistrement les modifications seront  répercutées à tous les produit BASIS associé a cet enregistrement (Edition). Quoi qu’il en soit, vous pouvez relier ce numéro de série à un nouvel enregistrement en utilisant ces données comme modèle(Nouveau).
+
+required.fields=Certains champs sont manquant. Ces champs sont marqués avec un label rouge ‘Requis’. Veuillez les corriger avant de pouvoir sauvegarder.
+
+required.fields.title=Champs requis manquant
+
+
+contact.phone.label=T\u00E9l\u00E9phone Interlocuteur\:

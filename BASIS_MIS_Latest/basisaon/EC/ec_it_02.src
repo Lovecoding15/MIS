@@ -1,0 +1,5 @@
+begin
+pass$="02"+$0a$+"EN"+$0a$
+call "ec.bbj",pass$
+release
+

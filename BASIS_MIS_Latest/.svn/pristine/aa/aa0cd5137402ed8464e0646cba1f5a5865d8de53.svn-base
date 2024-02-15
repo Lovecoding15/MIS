@@ -1,0 +1,284 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2012-07-6
+Last Build Time=10:57:51
+Precision=99
+Program Name=ordersReadyForEmail
+Remarks=Yes
+Resource File=ordersReadyForEmail.arc
+Show Forms=All
+
+[Init]
+rem ' init routines
+
+declare BBjSysGui sysgui!
+declare BBjTopLevelWindow ourWindow!
+declare BBjListBox notReady!
+declare BBjListBox ready!
+declare BBjVector selections!
+
+sysgui! = BBjAPI().getSysGui()
+ourWindow! = cast(BBjTopLevelWindow, sysgui!.getWindow(gb__win.OrderEmailSelect))
+notReady! = cast(BBjListBox, ourWindow!.getControl("ordersNotReady"))
+ready! = cast(BBjListBox, ourWindow!.getControl("ordersReadyForEmail"))
+
+call "ec_open::ARE03"
+call "ec_open::ARM01"
+
+gosub loadLists
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+goto exitRtn
+
+[Event Win=101 ID=104 Code=B <PUSH_BUTTON> (W101_C104_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' move the selected orders to the ready to email list
+
+selections! = notReady!.getSelectedIndices()
+
+if selections!.size() > 0 then
+
+    for x = 0 to selections!.size() - 1
+
+        item$ = notReady!.getItemAt(cast(BBjInt, selections!.getItem(x)))
+
+        reckey$ = "01  "
+        p = pos("  " = item$)
+        item$ = item$(p + 2)
+        p = pos("  " = item$)
+        order$ = item$(1, p - 1)        
+        item$ = item$(p + 2)
+        p = pos("  " = item$)
+        customer_nbr$ = item$(1, p - 1)
+        reckey$ = reckey$ + customer_nbr$ + order$ +  "000"
+
+        extract record(are03, key = reckey$, dom = *continue)are03$
+
+        are03.ord_prt_flag$ = "Y"
+        are03.ord_lock$ = "N"
+        are03$ = field(are03$)
+
+        write record(are03, key = reckey$)are03$
+
+    next x
+
+fi
+
+gosub loadLists
+
+[Event Win=101 ID=105 Code=B <PUSH_BUTTON> (W101_C105_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+selections! = notReady!.getAllItems()
+
+if selections!.size() > 0 then
+
+    for x = 0 to selections!.size() - 1
+
+        item$ = cast(BBjString, selections!.getItem(x))
+
+        reckey$ = "01  "
+        p = pos("  " = item$)
+        item$ = item$(p + 2)
+        p = pos("  " = item$)
+        order$ = item$(1, p - 1)
+        item$ = item$(p + 2)
+        p = pos("  " = item$)
+        customer_nbr$ = item$(1, p - 1)
+        reckey$ = reckey$ + customer_nbr$ + order$ +  "000"
+
+        extract record(are03, key = reckey$, dom = *continue)are03$
+
+        are03.ord_prt_flag$ = "Y"
+        are03.ord_lock$ = "N"
+        are03$ = field(are03$)
+
+        write record(are03, key = reckey$)are03$
+
+    next x
+
+fi
+
+gosub loadLists
+
+[Event Win=101 ID=106 Code=B <PUSH_BUTTON> (W101_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+selections! = ready!.getAllItems()
+
+if selections!.size() > 0 then
+
+    for x = 0 to selections!.size() - 1
+
+        item$ = cast(BBjString, selections!.getItem(x))
+
+        reckey$ = "01  "
+        p = pos("  " = item$)
+        item$ = item$(p + 2)
+        p = pos("  " = item$)
+        order$ = item$(1, p - 1)
+        item$ = item$(p + 2)
+        p = pos("  " = item$)
+        customer_nbr$ = item$(1, p - 1)
+        reckey$ = reckey$ + customer_nbr$ + order$ +  "000"
+
+        extract record(are03, key = reckey$, dom = *continue)are03$
+
+        are03.ord_prt_flag$ = "N"
+        are03$ = field(are03$)
+
+        write record(are03, key = reckey$)are03$
+
+    next x
+
+fi
+
+gosub loadLists
+
+[Event Win=101 ID=107 Code=B <PUSH_BUTTON> (W101_C107_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+selections! = ready!.getSelectedIndices()
+
+if selections!.size() > 0 then
+
+    for x = 0 to selections!.size() - 1
+
+        item$ = ready!.getItemAt(cast(BBjInt, selections!.getItem(x)))
+
+        reckey$ = "01  "
+        p = pos("  " = item$)
+        item$ = item$(p + 2)
+        p = pos("  " = item$)
+        order$ = item$(1, p - 1)
+        item$ = item$(p + 2)
+        p = pos("  " = item$)
+        customer_nbr$ = item$(1, p - 1)
+        reckey$ = reckey$ + customer_nbr$ + order$ +  "000"
+
+        extract record(are03, key = reckey$, dom = *continue)are03$
+
+        are03.ord_prt_flag$ = "N"
+        are03$ = field(are03$)
+
+        write record(are03, key = reckey$)are03$
+
+    next x
+
+fi
+
+gosub loadLists
+
+[Event Win=101 ID=108 Code=B <PUSH_BUTTON> (W101_C108_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+goto exitRtn
+
+exit
+
+
+[Function (exitRtn)]
+rem ' -----------------------------------------------------------------
+rem ' exitRtn
+rem ' -----------------------------------------------------------------
+
+exitRtn:
+
+close(are03, err=*next)
+close(arm01, err=*next)
+
+goto gb__eoj
+
+return
+
+[Function (loadLists)]
+rem ' -----------------------------------------------------------------
+rem ' loadLists
+rem ' -----------------------------------------------------------------
+
+loadLists:
+
+notReady!.removeAllItems()
+notReady$ = ""
+
+ready!.removeAllItems()
+ready$ = ""
+
+read record(are03, key = "", dom = *next)are03$
+
+while 1
+    read record(are03, end = *break)are03$
+
+    if are03.firm_id$ <> "01" then break
+
+    rem ' exclude orders not yet invoice
+    if are03.ord_inv_flag$ <> "I" then continue
+    
+    rem ' exclude void orders
+    if are03.invoice_type$ = "V" then continue
+
+    order$ = are03.order_number$
+    invoice$ = are03.ar_inv_nbr$
+    if cvs(invoice$,3) = "" then invoice$ = "not inv"
+    customer_nbr$ = are03.customer_nbr$
+
+    read record(arm01, key = are03.firm_id$ + are03.customer_nbr$)arm01$
+    customer$ = arm01.cust_name$ + fill(30, " ")
+    customer$ = customer$(1,30)
+
+    item$ = invoice$ + "  " + order$ + "  " + customer_nbr$ + "  " + customer$
+    rem ' item$ length will be 56
+
+    if are03.ord_prt_flag$ = "Y" then
+        ready$ = ready$ + item$
+    else
+        notReady$ = notReady$ + item$
+    fi
+
+wend
+
+if len(ready$) <> 0 then
+    rem ' sort it by invoice number
+    ready$ = ssort(ready$, 56)
+    
+    rem ' load the items
+    while len(ready$)
+        item$ = ready$(1,56)
+        ready$ = ready$(57)
+        ready!.addItem(item$)
+    wend
+fi
+  
+if len(notReady$) <> 0 then
+    rem ' sort it by invoice number
+    notReady$ = ssort(notReady$, 56)
+
+    rem ' load the items
+    while len(notReady$)
+        item$ = notReady$(1,56)
+        notReady$ = notReady$(57)
+        notReady!.addItem(item$)
+    wend
+fi
+
+return
+

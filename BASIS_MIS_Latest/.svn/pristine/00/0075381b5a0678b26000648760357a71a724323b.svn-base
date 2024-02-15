@@ -1,0 +1,20 @@
+0010 REM "ADC - Return Data Path For Module - Native, v6.0"
+0020 REM "Program: ADC.12"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0050 SETERR 9900
+0060 ENTER MODULE$,DATAPATH$,ERRFLAG
+0100 REM "---- Open/Lock Files"
+0110 LET SYM04_DEV=UNT; OPEN (SYM04_DEV,ERR=9900)"SYM-04"
+0410 DIM PATH$(100); FIND (SYM04_DEV,KEY=MODULE$,DOM=9900)*,*,PATH$(1)
+0800 REM " --- Functions"
+1020 LET DATAPATH$=FNP$(PATH$(1,50))
+4190 GOTO 9900
+8120 DEF FNP$(Q$)=CVS(Q$,2)
+9900 REM "---- Exit"
+9920 CLOSE (SYM04_DEV,ERR=9921)
+9990 EXIT 
+9999 END

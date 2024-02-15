@@ -1,0 +1,22 @@
+// Barista Application Framework - Application Synchronization File
+// Proprietary Information. BASIS International Ltd. All rights reserved.
+ACOMP=01007514;BASIS International, LTD
+SYS=FILEUTIL;Copyright: BASIS AddOn 6.0 Back Door File Utilities^
+DIR=/mnt/data/aon_prod/apps/fileutil/
+MENU=fileutil
+APROD=FUT;AddOn 6.0 Filie Utility;;;fileutil;/mnt/data/aon_prod/apps/fileutil/prop/;ENU
+STBL=SET FILEUTIL=/mnt/data/basisaon/aon/ADATA/
+STBL=SET FILEUTIL_LIB=/mnt/data/aon_prod/apps/fileutil/lib/
+STBL=SET FILEUTIL_PROG=/mnt/data/aon_prod/apps/fileutil/prog/
+STBL=SET FILEUTIL_PROP=/mnt/data/aon_prod/apps/fileutil/prop/
+CFG=+FILEUTIL=/mnt/data/basisaon/aon/ADATA/
+CFG=+FILEUTIL_PROG=/mnt/data/basisaon/fileutil/prog/
+LANG=ENU
+DBDD=/mnt/data/basisaon/aon/BBDICT/
+DCOMP=01007514
+DAPP=FUT
+DPFX=FUT_
+SQLDB=
+IMPSRC=DD
+DSTBL=DATA;FILEUTIL;
+

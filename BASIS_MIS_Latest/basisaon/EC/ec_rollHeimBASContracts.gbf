@@ -1,0 +1,623 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2022-06-29
+Last Build Time=12:22:38
+Precision=99
+Program Name=ec_rollHeimBASContracts
+Remarks=Yes
+Resource File=ec_rollHeimBASContracts.arc
+Show Forms=All
+
+[Init]
+rem ' start up
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+USE java.util.Enumeration
+
+declare File file!
+declare FileInputStream fis!
+declare BufferedInputStream bis!
+declare Properties props!
+declare StringBuffer sqlBuilder!
+declare BBjString ourDbUrl!
+declare Enumeration keys!
+
+declare BBjTopLevelWindow ourWindow!
+declare BBjStaticText expirationDate!
+declare BBjStaticText rollTo!
+declare BBjListBox leftSide!
+declare BBjListBox rightSide!
+declare BBjListButton expireDates!
+declare BBjButton rollDates!
+declare BBjButton selectSome!
+declare BBjButton selectAll!
+declare BBjButton deselectSome!
+declare BBjButton deselectAll!
+
+declare BBjVector selectedIndices!
+declare BBjVector serialNbrList!
+
+declare BBjRecordSet rs!
+declare BBjRecordData data!
+
+declare BBjControl aControl!
+
+rem ' get the db connect string
+rem ' locate the properties file
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+		
+sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+ourDbUrl! = sqlBuilder!.toString()
+
+bis!.close()
+fis!.close()
+
+firm_id$ = gb__arg.firm_id$
+customer_nbr$ = gb__arg.customer_nbr$
+user_code$ = gb__arg.user_code$
+x = num(gb__arg.screenx$)
+y = num(gb__arg.screeny$)
+lang$ = gb__arg.lang$
+cred_hold$ = gb__arg.cred_hold$
+
+gosub openFiles
+
+rem ' this function is limited to BSG customer HeimBAS 020005
+if customer_nbr$ <> "020005" then
+    gosub closeFiles
+    goto gb__eoj
+endif
+
+gosub setUpDates
+
+ourWindow! = cast(BBjTopLevelWindow, BBjAPI().getSysGui().getWindow(gb__win.rollExpirationDates))
+
+gosub prepTranslation
+
+rem ' load expiration date list box
+expireDates! = cast(BBjListButton, ourWindow!.getControl("expireDates"))
+expireDates!.removeAllItems()
+if gotPast then expireDates!.addItem(date(julPast:"%Y-%Mz-%Dz"))
+expireDates!.addItem(date(julNext:"%Y-%Mz-%Dz"))
+expireDates!.addItem(date(julTwo:"%Y-%Mz-%Dz"))
+expireDates!.addItem(date(julThree:"%Y-%Mz-%Dz"))
+expireDates!.addItem(date(julFour:"%Y-%Mz-%Dz"))
+expireDates!.selectIndex(0)
+
+selectSome! = cast(BBjButton, ourWindow!.getControl("selectSome"))
+selectAll! = cast(BBjButton, ourWindow!.getControl("selectAll"))
+deselectSome! = cast(BBjButton, ourWindow!.getControl("deselectSome"))
+deselectAll! = cast(BBjButton, ourWindow!.getControl("deselectAll"))
+rollDates! = cast(BBjButton, ourWindow!.getControl("rollDates"))
+gosub enableDisableButtons
+
+expirationDate! = cast(BBjStaticText, ourWindow!.getControl("expirationDate"))
+rollTo! = cast(BBjStaticText, ourWindow!.getControl("rollTo"))
+gosub setListBoxLabels
+
+leftSide! = cast(BBjListBox, ourWindow!.getControl("leftSide"))
+rightSide! = cast(BBjListBox, ourWindow!.getControl("rightSide"))
+leftSide!.removeAllItems()
+rightSide!.removeAllItems()
+
+gosub loadLeftSide
+
+gosub prepWindow
+ourWindow!.setVisible(1)
+
+
+[Event Win=101 ID=102 Code=B <PUSH_BUTTON> (W101_C102_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' move the selections to the right
+selectedIndices! = leftSide!.getSelectedIndices()
+
+count =  selectedIndices!.size()
+
+rem ' move from the left to the right
+if count > 0 then
+    for x = 0 to count - 1
+        index = selectedIndices!.getItem(x)
+        moveSN$ = leftSide!.getItemAt(index)
+        rightSide!.addItem(moveSN$)
+    next x
+
+    rem ' romove the selected items from the left sode
+    rem ' process from highest to lowest to preserve the index numbers
+    for x = count -1  to 0 step -1
+        index = selectedIndices!.getItem(x)
+        leftSide!.removeItemAt(index)
+    next x
+endif
+
+[Event Win=101 ID=103 Code=B <PUSH_BUTTON> (W101_C103_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' move everything on the left to the right
+count = leftSide!.getItemCount()
+
+rem ' move from the left to the right
+if count > 0 then
+    for x = 0 to count - 1
+        moveSN$ = leftSide!.getItemAt(x)
+        rightSide!.addItem(moveSN$)
+    next x
+
+    leftSide!.removeAllItems()
+endif
+
+[Event Win=101 ID=104 Code=B <PUSH_BUTTON> (W101_C104_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' move all on the right to the left
+count = rightSide!.getItemCount()
+
+if count > 0 then
+    gosub loadLeftSide
+endif
+
+[Event Win=101 ID=106 Code=B <PUSH_BUTTON> (W101_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' move the selections to the left
+selectedIndices! = rightSide!.getSelectedIndices()
+
+count =  selectedIndices!.size()
+
+rem ' move from the right to the left
+if count > 0 then
+    for x = 0 to count - 1
+        index = selectedIndices!.getItem(x)
+        moveSN$ = rightSide!.getItemAt(index)
+
+        rem ' insert back on the left in proper order
+        cnt = leftSide!.getItemCount()
+        if cnt > 0 then
+            added = 0
+            for y = 0 to cnt - 1
+                checkSN$ = leftSide!.getItemAt(y)
+                if checkSN$ > moveSN$ then
+                    leftSide!.insertItemAt(y, moveSN$)
+                    added = 1
+                    break
+                endif
+            next y
+            rem ' if if has not been added add it to the end
+            if !added leftSide!.addItem(moveSN$)
+        else
+            leftSide!.addItem(moveSN$)
+        endif
+    next x
+
+    rem ' romove the selected items from the right sode
+    rem ' process from highest to lowest to preserve the index numbers
+    for x = count - 1  to 0 step -1
+        index = selectedIndices!.getItem(x)
+        rightSide!.removeItemAt(index)
+    next x
+endif
+
+[Event Win=101 ID=108 Code=B <PUSH_BUTTON> (W101_C108_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+rem ' how many serial numbers to process
+count = rightSide!.getItemCount()
+
+if count > 0 then
+    rem ' get the list
+    serialNbrList! = rightSide!.getAllItems()
+
+    rem ' set the new expiration date
+    expirationDate$ = expireDates!.getItemAt(selectedDateIndex)
+    aYear = num(expirationDate$(1,4))
+    aMonth = num(expirationDate$(6,2))
+    aDay = num(expirationDate$(9,2))
+    aYear = aYear + 1
+    newDate$ = str(aYear) + str(aMonth:"00") + str(aDay:"00")
+    newExpireDate$ = newDate$(5,2) + "/" + newDate$(7,2) + "/" + newDate$(1,4)
+ 
+    rollCount = 0
+    emailText$ = user_code$ + " rolled the following serial numbers: " + $0A$
+
+    for x = 0 to serialNbrList!.size() - 1
+	serialNbr$ = cast(BBjString, serialNbrList!.getItem(x))
+	
+        rollCount = rollCount + 1
+        emailText$ = emailText$ + cvs(serialNbr$,3) + $0A$
+
+        read record(snm01, key = serialNbr$)snm01$
+	
+	extract record(smc01, key = snm01.contract$)smc01$
+	
+	smc01.expire_on_dt$ = newDate$
+	smc01.annual_dt$ = newDate$
+
+	smc01$ = field(smc01$)
+	write record(smc01)smc01$
+
+        rem ' write the serial number comment
+        seq=1
+        com$="expire rolled to " + newExpireDate$ + " on " + DATE(0:"%Mz/%Dz/%Y") + " by " + user_code$
+        if len(com$)>48 then let com$=com$(1,48)
+        read (snm04,key=serialNbr$,dom=*next)
+
+        while seq<100
+            read record (snm04,END=*break)snm04$
+            if snm04.serial_nbr$ = serialNbr$ then 
+                let seq=num(snm04.comments_seq$)+1
+                continue
+            endif
+            let snm04.serial_nbr$ = serialNbr$
+            let snm04.comments_seq$=str(seq:"00")
+            let snm04.cmt_line$=com$
+            let snm04$=field(snm04$)
+            write record (snm04,key=snm04$(1,22))snm04$
+            break
+            wend
+    
+    next x
+
+    gosub loadLeftSide
+
+    if messageBoxTitle$ <> "" then
+        title$ = messageBoxTitle$
+    else
+        title$ = "Roll Complete"
+    endif
+
+    if messageText$ <> "" then
+        msg$ = str(rollCount) + " " + messageText$
+    else
+        msg$ = str(rollCount) + " serial numbers have been rolled to the new expiration date."
+    endif
+    trash = msgbox(msg$, 0, title$)
+
+    rem ' send a notificateion email
+    
+    from$ = "customer-service@basis.cloud"
+    subject$ = "HeimBAS serial number roll"
+    file$ = ""
+    to$ = "kurt.e.williams@comcast.net, nspence@basis.cloud, swald@basis.cloud"
+    cc$ = ""
+    bcc$ = ""
+    msgtxt$ = emailText$
+    call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+endif
+
+[Event Win=101 ID=109 Code=B <PUSH_BUTTON> (W101_C109_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub closeFiles
+goto gb__eoj
+
+[Event Win=101 ID=110 Code=N2:19 <LIST_SELECT> (W101_C110_LIST_SELECT)]
+rem ' Notify Event - List Control - List Selection (2)
+rem ' gb__event! = cast(BBjListSelectEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub setListBoxLabels
+gosub enableDisableButtons
+gosub loadleftSide
+
+
+[Function (closeFiles)]
+rem ' -----------------------------------------------------------------
+rem ' closeFiles
+rem ' -----------------------------------------------------------------
+
+closeFiles:
+
+close(smc01)
+close(snm04)
+close(snm01)
+
+return
+
+[Function (enableDisableButtons)]
+rem ' -----------------------------------------------------------------
+rem ' enableDisableButtons
+rem ' -----------------------------------------------------------------
+
+enableDisableButtons:
+
+selectedDateIndex = expireDates!.getSelectedIndex()
+expirationDate$ = expireDates!.getItemAt(selectedDateIndex)
+
+edYear = num(expirationDate$(1,4))
+edMonth = num(expirationDate$(6,2))
+edDay = num(expirationDate$(9,2))
+
+julEd = jul(edYear, edMonth, edDay)
+
+if abs(julToday - julEd ) <= 45 then
+    selectSome!.setEnabled(1)
+    selectAll!.setEnabled(1)
+    deselectSome!.setEnabled(1)
+    deselectAll!.setEnabled(1)
+    if cred_hold$ <> "Y" then
+        rollDates!.setEnabled(1)
+    else
+        rollDates!.setEnabled(0)
+    endif
+else
+    selectSome!.setEnabled(0)
+    selectAll!.setEnabled(0)
+    deselectSome!.setEnabled(0)
+    deselectAll!.setEnabled(0)
+    rollDates!.setEnabled(0)
+endif
+
+return
+
+[Function (loadLeftSide)]
+rem ' -----------------------------------------------------------------
+rem ' loadLeftSide
+rem ' -----------------------------------------------------------------
+
+loadLeftSide:
+
+rem ' clean out the left and right side
+leftSide!.removeAllItems()
+rightSide!.removeAllItems()
+
+selectedDateIndex = expireDates!.getSelectedIndex()
+expirationDate$ = expireDates!.getItemAt(selectedDateIndex)
+
+rem ' remove dashes
+expirationDate$ = expirationDate$(1,4) + expirationDate$(6,2) + expirationDate$(9,2)
+
+sql$ = "CALL HEIMBAS_QUERY('" + expirationDate$ + "')"
+
+rs! = BBjAPI().createSQLRecordSet(ourDbUrl!,"",sql$)
+
+if rs!.isEmpty() then
+    leftSide!.addItem("No serial numbers")
+else
+    rs!.first()
+
+    while 1
+        data! = rs!.getCurrentRecordData()
+        serialNbr$ = data!.getFieldValue("SERIAL_NBR")
+        leftSide!.addItem(serialNbr$)
+        rs!.next(err=*break)
+    wend
+endif
+
+return
+
+[Function (openFiles)]
+rem ' -----------------------------------------------------------------
+rem ' openFiles
+rem ' -----------------------------------------------------------------
+
+openFiles:
+
+call "ec_open::SMC01"; rem ' SAM and RENTAL contract file
+call "ec_open::SNM04"; rem ' serial number comment file
+call "ec_open::SNM01"; rem ' serial number file
+
+return
+
+[Function (prepTranslation)]
+rem ' -----------------------------------------------------------------
+rem ' prepTranslation
+rem ' -----------------------------------------------------------------
+
+prepTranslation:
+
+rem ' locate ec_rollHeimBASContracts.properties file
+sqlprops=unt
+open(sqlprops)"ec_rollHeimBASContracts.properties"
+sqlprops$=fid(sqlprops)
+sqlprops$=sqlprops$(9)
+close(sqlprops)
+
+rem ' load the properties object with the properties
+file!= new java.io.File(sqlprops$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new Properties()
+props!.load(bis!)
+keys! = cast(Enumeration, props!.keys())
+
+while keys!.hasMoreElements()
+    theKey$ = cast(BBjString, keys!.nextElement())
+
+    rem ' skip if not this language
+    keyLang$ = theKey$(1,2)
+    if (keyLang$ <> lang$) then continue
+    
+    theText$ = cast(BBjString, props!.getProperty(theKey$))
+    contName$ = cvs(theKey$(4),3)
+
+    if contName$ = "windowTitle" then
+        ourWindow!.setTitle(theText$)
+        continue
+    endif
+
+    if contName$ = "expiring" then
+        expiringLabel$ = theText$
+        continue
+    endif
+
+    if contName$ = "rollTo" then
+        rollToLabel$ = theText$
+        continue
+    endif
+
+    if contName$ = "messageboxTitle" then
+        messageBoxTitle$ = theText$
+        continue
+    endif
+
+    if contName$ = "messageText" then
+        messageText$ = theText$
+        continue
+    endif
+
+    aControl! = ourWindow!.getControl(contName$)
+    aControl!.setText(theText$)
+    
+wend
+
+return
+
+[Function (prepWindow)]
+rem ' -----------------------------------------------------------------
+rem ' prepWindow
+rem ' -----------------------------------------------------------------
+
+prepWindow:
+
+rem ' locate the window
+ourWindow!.setLocation(x,y)
+
+rem ' this is where we would get the translations from the properties file and
+rem ' apply them to the form
+
+return
+
+[Function (setListBoxLabels)]
+rem ' -----------------------------------------------------------------
+rem ' setListBoxLabels
+rem ' -----------------------------------------------------------------
+
+setListBoxLabels:
+
+selectedDateIndex = expireDates!.getSelectedIndex()
+expirationDate$ = expireDates!.getItemAt(selectedDateIndex)
+
+if expiringLabel$ <> "" then
+    expirationDate!.setText(expiringLabel$ + " " + expirationDate$)
+else
+    expirationDate!.setText("Expiring: " + expirationDate$)
+endif
+
+aYear = num(expirationDate$(1,4))
+aMonth = num(expirationDate$(6,2))
+aDay = num(expirationDate$(9,2))
+aYear = aYear + 1
+julRollTo = jul(aYear, aMonth, aDay)
+
+if rollToLabel$ <> "" then
+    rollTo!.setText(rollToLabel$ + " " + date(julRollTo:"%Y-%Mz-%Dz"))
+else
+    rollTo!.setText("Roll To: " + date(julRollTo:"%Y-%Mz-%Dz"))
+endif
+
+return
+
+[Function (setUpDates)]
+rem ' -----------------------------------------------------------------
+rem ' setUpDates
+rem ' -----------------------------------------------------------------
+
+setUpDates:
+
+julToday = jul(0,0,0)
+nowYear = num(date(julToday:"%Y"))
+nowMonth = num(date(julToday:"%M"))
+nowDay = num(date(julToday:"%D"))
+
+rem ' find the next expire date
+nextDay = 15
+nextYear = nowYear
+if mod(nowMonth,3) = 0 and nowDay <= 15 then
+    nextMonth = nowMonth
+else 
+    if mod(nowMonth,3) = 0 and nowDay > 15 then
+        nextMonth = nowMonth + 3
+    else
+        if mod(nowMonth,3) = 1 then
+            nextMonth = nowMonth + 2
+        else
+            if mod(nowMonth,3) = 2 then
+                nextMonth = nowMonth + 1
+            endif
+        endif
+    endif
+endif
+if nextMonth > 12 then
+    nextYear = nextYear + 1
+    nextMonth = nextMonth - 12
+endif
+julNext = jul(nextYear, nextMonth, nextDay)
+
+rem ' next get the 3 succeeding expiry dates
+twoMonth = nextMonth + 3
+twoYear = nextYear
+twoDay = 15
+if twoMonth > 12 then
+    twoYear = nextYear + 1
+    twoMonth = twoMonth - 12
+endif
+julTwo = jul(twoYear, twoMonth, twoDay)
+
+threeMonth = twoMonth + 3
+threeYear = twoYear
+threeDay = 15
+if threeMonth > 12 then
+    threeYear = threeYear + 1
+    threeMonth = threeMonth - 12
+endif
+julThree = jul(threeYear, threeMonth, threeDay)
+
+fourMonth = threeMonth + 3
+fourYear = threeYear
+fourDay = 15
+if fourMonth > 12 then
+    fourYear = fourYear + 1
+    fourMonth = fourMonth - 12
+endif
+julFour = jul(fourYear, fourMonth, fourDay)
+
+rem ' do we have one in the past
+pastMonth = nextMonth - 3
+pastYear = nextYear
+if pastMonth <= 0 then 
+    pastMonth = 12
+    pastYear = pastYear - 1
+endif
+pastDay = 15
+julPast = jul(pastYear, pastMonth, pastDay)
+if julToday - julPast <= 44 then 
+    gotPast = 1
+else
+    gotPast = 0
+endif
+
+
+return
+

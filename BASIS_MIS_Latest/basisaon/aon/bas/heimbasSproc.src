@@ -1,0 +1,156 @@
+rem ' stored procedure to return a result set of HeimBAS serial number expiring 
+rem ' on a given day along with the most recent license reg date and time
+rem ' SETERR ERROR_ROUTINE
+
+USE java.io.File
+USE java.io.FileInputStream
+USE java.io.BufferedInputStream
+USE java.util.Properties
+USE java.lang.StringBuffer
+
+rem ' Declare some variables ahead of time
+declare File file!
+declare FileInputStream fis!
+declare BufferedInputStream bis!
+declare Properties props!
+declare StringBuffer sqlBuilder!
+declare BBjString ourDbUrl!
+
+declare BBjStoredProcedureData sp!
+declare BBjRecordSet rs!
+declare BBjRecordData data!
+declare BBjRecordSet retRs!
+declare BBjRecordData retData!
+
+rem ' Get the infomation object for the Stored Procedure
+sp! = BBjAPI().getFileSystem().getStoredProcedureData()
+
+rem ' Get the IN and IN/OUT parameters used by the procedure
+expire$=sp!.getParameter("EXPIRE_ON_DT")
+
+expire$ = cvs(expire$, 3)
+if cvs(expire$,4) = "ALL" then expire$ = ""
+if len(expire$) = 10 then
+	rem ' strip dashes or slashes
+	while pos("-" = expire$)
+		ppos = pos("-" = expire$)
+		expire$ = expire$(1, ppos - 1) + expire$(ppos + 1)
+	wend
+	while pos("/" = expire$)
+		ppos = pos("/" = expire$)
+		expire$ = expire$(1, ppos - 1) + expire$(ppos + 1)
+	wend
+fi
+if len(expire$) <> 8 and len(expire$) <> 0 then
+	retRs! = BBJAPI().createMemoryRecordSet("USAGE_NOTE:C(255)")
+	usageNote$ = "Parameter should be blank or 'ALL' for all serial numbers or be a valid date in the form of YYYYMMDD or YYYY-MM-DD or YYYY/MM/DD."
+	retData! = retRs!.getEmptyRecordData()    
+	retData!.setFieldValue("USAGE_NOTE",usageNote$)
+	retRs!.insert(retData!)
+	sp!.setRecordSet(retRs!)
+	goto done
+fi
+
+rem ' set up the query
+sql$ = "SELECT t1.serial_nbr, t1.license_type, t1.media_type, t1.users, t1.contract, t2.expire_on_dt, t2.contr_type "
+sql$ = sql$ + "FROM SNM01 t1 "
+sql$ = sql$ + "INNER JOIN SMC01 t2 on t1.contract = t2.contract "
+sql$ = sql$ + "where t1.customer_nbr = '020005' and t1.active_flag = 'Y' " 
+if expire$ <> "" then sql$ = sql$ + "and t2.expire_on_dt = '" + expire$ + "' "
+sql$ = sql$ + "order by t1.serial_nbr"
+
+rem ' locate the properties file
+props=unt
+open(props)"ec_sql.properties"
+props$=fid(props), props$=props$(9)
+close(props)
+
+file!= new java.io.File(props$)
+fis!=new java.io.FileInputStream(file!)
+bis!=new java.io.BufferedInputStream(fis!)
+props!=new java.util.Properties()
+props!.load(bis!)
+		
+sqlBuilder!= new StringBuffer(props!.getProperty("sqlURL.urlprefix") + props!.getProperty("sqlURL.server")+":")
+sqlBuilder!.append(props!.getProperty("sqlURL.port")+"?database=")
+sqlBuilder!.append(props!.getProperty("sqlURL.database")+"&user="+props!.getProperty("sqlURL.user")+"&password=")
+sqlBuilder!.append(props!.getProperty("sqlURL.password"))
+ourDbUrl! = sqlBuilder!.toString()
+
+retRs! = BBJAPI().createMemoryRecordSet("SERIAL_NBR:C(20),LICENSE_TYPE:C(3),VIRTUAL:C(1),USERS:N(5*=10),CONTRACT:C(6),EXPIRE_ON_DT:C(8),CONTR_TYPE:C(3),LASTLICENSE:C(10),LASTLICTIME:C(8),LASTLICEXPIRE:C(11),LASTLICPRODTYPE:C(14)")
+
+rs! = BBjAPI().createSQLRecordSet(ourDbUrl!,"",sql$)
+
+if rs!.isEmpty() then
+	rem ' return an empty record set
+	sp!.setRecordSet(retRs!)
+else
+
+	call "ec_open::SN_LICENSE"
+	
+        rs!.first()
+
+	while 1
+	        data! = rs!.getCurrentRecordData()
+
+		serial_nbr$ = data!.getFieldValue("SERIAL_NBR")
+		lic_date$ = ""
+		lic_time$ = ""
+		lic_expire$ = ""
+		lic_prod_type$ = ""
+		read(sn_license, key = serial_nbr$(1,10), dom=*next)
+		
+		while 1
+			let k$ = key(sn_license, err = *break)
+			read record(sn_license, key = k$)sn_license$
+			if cvs(serial_nbr$,3) <> cvs(sn_license.serial_num$,3) then break
+			if cvs(sn_license.date$,3) <> "" then
+				lic_date$ = sn_license.date$
+				lic_time$ = sn_license.time$
+				lic_expire$ = sn_license.expire$
+			fi
+			lic_prod_type$ = sn_license.prod_type$
+		wend
+
+		retData! = retRs!.getEmptyRecordData()    
+		
+		retData!.setFieldValue("SERIAL_NBR",serial_nbr$)
+		retData!.setFieldValue("LICENSE_TYPE", data!.getFieldValue("LICENSE_TYPE"))
+		
+		if data!.getFieldValue("MEDIA_TYPE") = "VIR" then
+			retData!.setFieldValue("VIRTUAL", "Y")
+		fi
+		
+		retData!.setFieldValue("USERS", data!.getFieldValue("USERS"))
+		retData!.setFieldValue("CONTRACT", data!.getFieldValue("CONTRACT"))
+		retData!.setFieldValue("EXPIRE_ON_DT", data!.getFieldValue("EXPIRE_ON_DT"))
+		retData!.setFieldValue("CONTR_TYPE", data!.getFieldValue("CONTR_TYPE"))
+		
+		if len(lic_date$) = 8 then lic_date$ = lic_date$(1,4) + "-" + lic_date$(5,2) + "-" + lic_date$(7,2)
+		if len(lic_time$) = 6 then lic_time$ = lic_time$(1,2) + ":" + lic_time$(3,2) + ":" + lic_time$(5,2)
+		
+		retData!.setFieldValue("LASTLICENSE", lic_date$)
+		retData!.setFieldValue("LASTLICTIME", lic_time$)
+		retData!.setFieldValue("LASTLICEXPIRE", lic_expire$)
+		retData!.setFieldValue("LASTLICPRODTYPE", lic_prod_type$)
+		retRs!.insert(retData!)
+		
+		rs!.next(err=*break)
+	wend
+	
+	sp!.setRecordSet(retRs!)
+	close(sn_license)
+fi
+
+rs!.close()	
+
+done:
+	end
+
+rem ' Error routine
+ERROR_ROUTINE:
+    SETERR done
+    msg$ = "Error #" + str(err) + " occured in " + pgm(-1) + " at line " + str(tcb(5))
+    if err = 77 then msg$ = msg$ + $0d0a$ + "SQL Err: " + sqlerr(chan)
+    java.lang.System.out.println(msg$)
+    if tcb(13) then exit else end

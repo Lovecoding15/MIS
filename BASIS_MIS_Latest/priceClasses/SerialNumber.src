@@ -1,0 +1,456 @@
+REM /** 
+REM  * SerialNumber.src
+REM  * @author kwilliams
+REM  * gathers and holds information about a BASIS serial number
+REM  */
+
+class public SerialNumber
+
+    field private BBjString serialNumber!
+    field private BBjNumber validSerialNumber!
+    field private BBjNumber active!
+    field private BBjNumber basisProductLicense!
+    
+    field private BBjTemplatedString snm01!
+    field private BBjString snm01def!
+    field private BBjNumber snm01dev!
+    
+    field private BBjTemplatedString snm02!
+    field private BBjString snm02def!
+    field private BBjNumber snm02dev!
+
+    field private BBjTemplatedString smc01!
+    field private BBjString smc01def!
+    field private BBjNumber smc01dev!
+    
+    field private BBjNumber users!
+    field private BBjVector curUserProps!
+    field private BBjVector curUserCounts!
+
+    field private BBjNumber runtime!
+    
+    field private BBjNumber newUsers!
+    field private BBjVector newUserProps!
+    field private BBjVector newUserCounts!
+    
+    field private BBjNumber backupLicense!
+    field private BBjString productionLicSerialNumber!
+    
+    field private BBjTemplatedString sn_prod_backup!
+    field private BBjString sn_prod_backupdef!
+    field private BBjNumber sn_prod_backupdev!
+    
+    method public SerialNumber(BBjString serialNumber!)
+    
+        #openfiles()
+        #gatherData(cvs(serialNumber!,3))
+        
+    methodend
+
+    method public SerialNumber(BBjString product!, BBjString platform!, BBjString osLevel!, BBjString productRev!, BBjString licenseType!, BBjString firmId!, BBjString customerNbr!)
+    
+        rem ' commonly used when creating a brand new serial number
+        #openfiles()
+        #reset()
+        #snm01! = BBjAPI().makeTemplatedString(#snm01def!)
+        #snm01!.setFieldValue("firm_id", firmId!)
+        #snm01!.setFieldValue("customer_nbr", customerNbr!)         
+        #snm01!.setFieldValue("product", product!)
+        #snm01!.setFieldValue("platform", platform!)
+        #snm01!.setFieldValue("os_level", osLevel!)
+        #snm01!.setFieldValue("product_rev", productRev!)
+        #snm01!.setFieldValue("license_type", licenseType!)
+        
+    methodend
+    
+    method public SerialNumber()
+    
+        #openfiles()
+        
+    methodend
+    
+    method private void reset()
+    
+        #serialNumber! = ""
+        #validSerialNumber! = 0
+        #active! = 0
+        #basisProductLicense! = 0
+        
+        #snm01! = BBjAPI().makeTemplatedString(#snm01def!)
+        #snm02! = BBjAPI().makeTemplatedString(#snm02def!)
+        #smc01! = BBjAPI().makeTemplatedString(#smc01def!)
+    
+        #curUserProps! = null()
+        #curUserCounts! = null()
+    
+        #runtime! = 0
+        
+        #newUserProps! = BBjAPI().makeVector()
+        #newUserCounts! = BBjAPI().makeVector()
+        
+        #backupLicense! = 0
+        #productionLicSerialNumber! = ""
+        
+    methodend
+    
+    method private void openfiles()
+        
+        call "ec_open::SNM01"
+        #snm01dev! = snm01
+        #snm01def! = fattr(snm01$)
+        #snm01! = BBjAPI().makeTemplatedString(#snm01def!)
+        
+        call "ec_open::SNM02"
+        #snm02dev! = snm02
+        #snm02def! = fattr(snm02$)
+        #snm02! = BBjAPI().makeTemplatedString(#snm02def!)
+
+        call "ec_open::SMC01"
+        #smc01dev! = smc01
+        #smc01def! = fattr(smc01$)
+        #smc01! = BBjAPI().makeTemplatedString(#smc01def!)
+        
+        call "ec_open::SN_PROD_BACKUP"
+        #sn_prod_backupdev! = sn_prod_backup
+        #sn_prod_backupdef! = fattr(sn_prod_backup$)
+        #sn_prod_backup! = BBjAPI().makeTemplatedString(#sn_prod_backupdef!)
+        
+    methodend
+
+    method private void gatherData(BBjString serialNumber!)
+    
+        #reset()
+        
+        #serialNumber! = serialNumber!
+        
+        serialNbr$ = #serialNumber! + fill(20)
+        serialNbr$ = serialNbr$(1,20)
+        
+        read record(#snm01dev!, key = serialNbr$, dom=*next)#snm01!
+
+        if cvs(#snm01!.getFieldAsString("serial_nbr"),3) = #serialNumber! then
+            #validSerialNumber! = 1
+
+            if #snm01!.getFieldAsString("active_flag") = "N" then
+                #active! = 0
+            else
+                #active! = 1
+                read record(#snm02dev!, key = serialNbr$, dom=*next)#snm02!
+                if cvs(#snm02!.getFieldAsString("serial_nbr"),3) = #serialNumber! then
+                    #basisProductLicense! = 1
+                endif
+                rem ' there are some PR5, VP5, DS5 and ODB products that have records in SNM02
+                rem ' erroneously 
+                prodCode$ = cvs(#snm01!.getFieldAsString("product"),3)
+                if prodCode$ = "PR5" or prodCode$ = "VP5" or prodCode$ = "DS5" or prodCode$ = "ODB" then
+                    #basisProductLicense! = 0
+                endif
+            endif
+        
+            if #basisProductLicense! = 1 then
+            
+                #curUserProps! = BBjAPI().makeVector()
+                #curUserCounts! = BBjAPI().makeVector()
+                
+                rem ' license properties can be EF (Extended) SF (Standard) 
+                rem ' ER (Extended runtime) or SR (Standard runtime) 
+                rem ' full and runtime users can not be mix, must be either full only
+                rem ' or runtime only
+            
+                if cvs(#snm02!.getFieldAsString("lic_property1"),3) <> "" then
+                    
+                    if cvs(#snm02!.getFieldAsString("lic_property1"),3) = "SR" or cvs(#snm02!.getFieldAsString("lic_property1"),3) = "ER" then
+                        #runtime! = 1
+                    endif
+                    
+                    #curUserProps!.addItem(cvs(#snm02!.getFieldAsString("lic_property1"),3))
+                    #curUserCounts!.addItem(#snm02!.getFieldAsNumber("users1"))
+                endif
+            
+                if cvs(#snm02!.getFieldAsString("lic_property2"),3) <> "" then
+                    #curUserProps!.addItem(cvs(#snm02!.getFieldAsString("lic_property2"),3))
+                    #curUserCounts!.addItem(#snm02!.getFieldAsNumber("users2"))
+                endif
+                
+                rem ' license property 3 currently has no data 
+                rem ' if cvs(#snm02!.getFieldAsString("lic_property3"),3) <> "" then
+                rem '    #curUserProps!.addItem(cvs(#snm02!.getFieldAsString("lic_property3"),3))
+                rem '    #curUserCounts!.addItem(#snm02!.getFieldAsNumber("users3"))
+                rem ' endif
+                
+                rem ' is this a backup license
+                read record(#sn_prod_backupdev!, knum = 2, key = serialNbr$, dom=*next)#sn_prod_backup!
+                if cvs(#sn_prod_backup!.getFieldAsString("back_serial_nbr"),3) <> "" then
+                	#backupLicense! = 1
+                	#productionLicSerialNumber! = cvs(#sn_prod_backup!.getFieldAsString("prod_serial_nbr"),3) 
+                fi
+                
+            else
+                rem ' not a BPL, use the users from the SNM-01 table
+                #users! = num(#snm01!.getFieldAsString("users"))
+                
+            endif
+        
+            rem ' get the contract record
+            read record(#smc01dev!, key = #snm01!.getFieldAsString("contract"), dom=*next)#smc01!
+            
+        endif
+        
+    methodend
+    
+    method public void setSerialNumber(BBjString serialNumber!)
+    
+        #gatherData(cvs(serialNumber!,3))
+        
+    methodend
+    
+    rem ' getters
+    
+    method public BBjString getSerialNumber()
+        
+        methodret #serialNumber!
+        
+    methodend
+
+    method public BBjNumber isValidSerialNumber()
+    
+        methodret #validSerialNumber!
+        
+    methodend
+    
+    method public BBjNumber isActive()
+    
+        methodret #active!
+        
+    methodend
+    
+    method public BBjNumber isBasisProductLicense()
+    
+        methodret #basisProductLicense!
+        
+    methodend
+    
+    method public BBjString getFirmId()
+    
+        methodret #snm01!.getFieldAsString("firm_id")
+        
+    methodend
+    
+    method public BBjString getCustomerNbr()
+    
+        methodret #snm01!.getFieldAsString("customer_nbr")
+        
+    methodend
+    
+    method public BBjString getProduct()
+    
+        methodret #snm01!.getFieldAsString("product")
+        
+    methodend
+    
+    method public BBjString getPlatform()
+    
+        methodret #snm01!.getFieldAsString("platform")
+        
+    methodend
+    
+    method public BBjString getOSLevel()
+    
+        methodret #snm01!.getFieldAsString("os_level")
+        
+    methodend
+    
+    method public BBjString getProductRev()
+    
+        methodret #snm01!.getFieldAsString("product_rev")
+        
+    methodend
+
+    method public BBjString getLicenseType()
+    
+        methodret #snm01!.getFieldAsString("license_type")
+        
+    methodend
+    
+    method public BBjNumber isVirtual()
+        
+        retvalue = 0
+        if #snm01!.getFieldAsString("media_type") = "VIR" then
+            retvalue = 1
+        endif
+        methodret retvalue
+         
+    methodend
+    
+    method public BBjString getSAMType()
+    
+        methodret cvs(#smc01!.getFieldAsString("contr_type"),3)
+        
+    methodend
+    
+    method public BBjNumber isOnSAM()
+        
+        retvalue = 0
+        if #isActive() and (#smc01!.getFieldAsString("sam_active") = "Y" or #smc01!.getFieldAsString("sam_active") = " ") and #smc01!.getFieldAsString("expire_on_dt") >= date(0,"%Y%Mz%Dz") then
+            retvalue = 1
+        endif
+        methodret retvalue
+    
+    methodend
+    
+    method public BBjString getSAMExpirationDate()
+    	
+    	retvalue$ = ""
+    	if #isOnSAM() then
+    		retvalue$ = #smc01!.getFieldAsString("expire_on_dt")
+    	endif
+    	methodret retvalue$
+    	
+    methodend
+    
+    method public BBjNumber daysSamExpired()
+        
+        rem ' returns the number of days SAM has been expired, if never on sam return 9999
+        rem ' if still on sam and not expired return 0
+        
+        retvalue = 0
+        if #isOnSAM() = 1 then
+            retvalue = 0
+        else
+            if cvs(#smc01!.getFieldAsString("expire_on_dt"),3) = "" then
+                rem ' never on sam, no sam contract
+                retvalue= 9999
+            else
+                expired$ = #smc01!.getFieldAsString("expire_on_dt")
+                expired = jul(num(expired$(1,4)), num(expired$(5,2)), num(expired$(7,2)))
+                today = jul(0, 0, 0)
+                daysexpired = today - expired
+                retvalue = daysexpired
+            endif
+        endif
+            
+        methodret retvalue
+        
+    methodend
+    
+    rem ' this is the user counts for non BPL licenses
+    method public BBjNumber getUsers()
+        
+        methodret #users!
+        
+    methodend
+    
+    rem ' these are for the user props and counts for BPL licenses
+    method public BBjVector getUserProperties()
+        
+        methodret #curUserProps!
+            
+    methodend
+    
+   method public BBjVector getUserCounts()
+        
+        methodret #curUserCounts!
+    
+    methodend
+    
+    method public BBjNumber hasSFUsers()
+    
+    	retvalue = 0
+    	if #curUserProps! <> null() and #curUserProps!.size() > 0 then
+    		for x = 0 to #curUserProps!.size() - 1
+    			userType$ = cast(BBjString, #curUserProps!.getItem(x))
+    			if userType$ = "SF" then 
+    				retvalue = 1
+    			endif
+    		next x
+    	endif
+	methodret retvalue    	
+    
+    methodend
+    
+    rem ' this is for setting new users on non BPL licenses
+    method public BBjNumber getNewUsers()
+    
+        methodret #newUsers!
+        
+    methodend
+    
+    method public void setNewUsers(BBjNumber newUsers)
+    
+        #newUsers! = newUsers
+        
+    methodend
+    
+    rem ' getters and setters for the newUserCounts and newUserProps
+    
+    method public BBjNumber addNewUserPropsCounts(BBjString userProp!, BBjInt userCount!)
+        
+        rem ' license properties can be EF (Extended) SF (Standard) 
+        rem ' ER (Extended runtime) or SR (Standard runtime) 
+        rem ' full and runtime users can not be mix, must be either full only
+        rem ' or runtime only
+
+        accepted = 0
+        if #runtime! and userProp! <> "ER" and userProp! <> "SR" then
+            accepted = 0
+        else
+            if !#runtime! and userProp! <> "EF" and userProp! <> "SF" then
+                accepted = 0
+            else
+                if #newUserProps!.size() = 0 then
+                    rem ' add first user prop/count
+                    #newUserProps!.addItem(userProp!)
+                    #newUserCounts!.addItem(userCount!)
+                    accepted = 1
+                else
+                    for x = 0 to #newUserProps!.size() - 1
+                        userP! = cast(BBjString, #newUserProps!.getItem(x))
+                        if userProp!.equals(userP!) then
+                            rem ' update existing
+                            #newUserCounts!.setItem(x, userCount!)
+                            accepted = 1
+                           break
+                        endif
+                    next x
+                  
+                    rem ' was it set? if not add it
+                    if accepted = 0 then
+                        #newUserProps!.addItem(userProp!)
+                        #newUserCounts!.addItem(userCount!)
+                        accepted = 1
+                    endif
+                endif
+            endif
+        endif
+        
+        methodret accepted
+    
+    methodend
+    
+    method public BBjVector getNewUserProperties()
+    
+        methodret #newUserProps!
+        
+    methodend
+    
+    method public BBjVector getNewUserCounts()
+    
+       methodret #newUserCounts!
+       
+    methodend
+    
+    method public BBjNumber isBackupLicense()
+
+        methodret #backupLicense!
+
+    methodend
+
+    method public BBjString getRelatedProductionLicenseSN()
+
+        methodret #productionLicSerialNumber!
+
+    methodend
+
+    
+classend
+

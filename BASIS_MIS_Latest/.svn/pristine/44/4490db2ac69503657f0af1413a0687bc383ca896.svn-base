@@ -1,0 +1,65 @@
+Table Definition Module
+FUT_ARE03 - Order/Invoice Entry Header
+Barista Application Framework.  Copyright BASIS International Ltd.
+Charset: ISO-8859-1
+
+{TableAttrs}
+ALID;CPGM;CPRO;MRES;AOPT;DESC;WINT;DTLG;DTLW;DTLD;DTLX;DKNM;ATAB;PTAB;FTYP;FIMG;HELP;IDEF;IKEY;NOTE;OPTS;PCAL;PRUN;TABG;FONT;STYL;
+{TableDefs}
+FUT_ARE03^/mnt/data/aon_prod/apps/fileutil/;^BSHO;^^^Order/Invoice Entry Header^Order/Invoice Entry Header^^^^^^^^T^^^^^^A;N;P;U;V;^^^Section 1~;Section 2~;^^^
+{TableDefsEnd}
+{ColumnAttrs}
+DVAR;DTAL;CSEQ;VTYP;ENCR;CTLI;CTLN;CTLC;DCHN;DINQ;TIND;TABG;RKEY;CPGM;CPRO;BTNS;RADG;ETYP;DESC;LABL;LABS;DTYP;STYP;CTYP;ABLC;ABLV;CDAT;COLW;CTLX;CTLY;CTLW;CTLH;DKEY;DTAB;DCOL;DKNM;IDEF;CALC;DCOM;DEXP;DFLT;DRLE;GHDR;HELP;LDAT;MINL;MAXL;MAXR;MINV;MAXV;MSKI;MSKO;MSKS;MSKT;OPTS;PADC;PADJ;PREC;PROM;PVAL;SDLG;STEP;FLPT;FONT;STYL;DLIM;
+{ColumnDefs}
+FIRM_ID^FUT_ARE03^001^C^^3001^ine_firm_id^0^^^1^^Y^^^^^FUT_FIRM_ID^Firm ID^Firm Id^Firm Id^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Firm ID^^^^^^^N^
+AR_TYPE^FUT_ARE03^002^C^^3002^ine_ar_type^0^^^2^^Y^^^^^FUT_AR_TYPE^AR Type^AR Type^AR Type^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter A/R Type (Not Used)^^^^^^^N^
+CUSTOMER_NBR^FUT_ARE03^003^C^^3003^dis_customer_nbr^0^^^3^^Y^^^F^^FUT_CUSTOMER_NBR^Customer Nbr^Customer Nbr^Customer Nbr^C^^E^^^^^^^^^[+FIRM_ID]+@^FUT_ARM01^CUST_NAME^^^^^^^^^^^^6^^^^^^^^^^^2^Enter Customer Number^^^0^^^^N^
+ORDER_NUMBER^FUT_ARE03^004^C^^3004^ine_order_number^0^^^4^^Y^^^^^FUT_ORDER_NUMBER^Order Number^Order Number^Order Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Sales Order Number^^^^^^^N^
+SEQUENCE_000^FUT_ARE03^005^C^^3005^ine_sequence_000^0^^^5^^Y^^^^^FUT_SEQUENCE_000^"000"^"000"^"000"^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter "000"^^^^^^^N^
+INVOICE_TYPE^FUT_ARE03^006^C^^3006^ine_invoice_type^0^^^6^^N^^^^^FUT_INVOICE_TYPE^Invoice Type (S/P/V)^Invoice Type (S/P/V)^Invoice Type (S/P/V)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Invoice Type (S/P/V)^^^^^^^N^
+ORD_INV_FLAG^FUT_ARE03^007^C^^3007^ine_ord_inv_flag^0^^^7^^N^^^^^FUT_ORD_INV_FLAG^Order Or Invoice (O/I)^Order Or Invoice (O/I)^Order Or Invoice (O/I)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Order Or Invoice (O/I)^^^^^^^N^
+BACKORD_FLAG^FUT_ARE03^008^C^^3008^ine_backord_flag^0^^^8^^N^^^^^FUT_BACKORD_FLAG^Backorder Flag (B)^Backorder Flag (B)^Backorder Flag (B)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Backorder Flag (B)^^^^^^^N^
+INVOICE_DATE^FUT_ARE03^009^C^^^^^^^9^^N^^^^^FUT_INVOICE_DATE^Invoice Date^Invoice Date^Invoice Date^C^1^H^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Invoice Date^^^^^^^N^
+AR_SHIP_DATE^FUT_ARE03^010^C^^^^^^^10^^N^^^^^FUT_AR_SHIP_DATE^Ship Date^Ship Date^Ship Date^C^1^H^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Ship Date^^^^^^^N^
+RESERVED_STR_1^FUT_ARE03^011^C^^3101^ine_reserved_str_1^1^^^11^1^N^^^^^FUT_RESERVED_STR^Reserved For ADD+ON Use^Reserve Str^Reserved For Add+on Use^C^^E^^^^0^^^^^^^^^^^^^^^^^^^9^^^^^^^^^^^0^Enter Reserved For ADD+ON Use^^^^^^^N^
+AR_SHIP_VIA^FUT_ARE03^012^C^^3102^ine_ar_ship_via^1^^^12^^N^^^^^FUT_AR_SHIP_VIA^Ar Ship Via^Ar Ship Via^Ar Ship Via^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^0^Enter Customer Ship Via^^^^^^^N^
+AR_INV_NBR^FUT_ARE03^013^C^^3103^ine_ar_inv_nbr^1^^^13^^N^^^^^FUT_AR_INV_NBR^A/R Invoice Number^A/R Invoice Number^A/R Invoice Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^0^Enter A/R Invoice Number^^^^^^^N^
+AR_PO_NUMBER^FUT_ARE03^014^C^^3104^ine_ar_po_number^1^^^14^^N^^^^^FUT_AR_PO_NUMBER^Ar Po Number^Ar Po Number^Ar Po Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^2^Enter Customer P.O. Number^^^^^^^N^
+SLSPSN_CODE^FUT_ARE03^015^C^^3105^ine_slspsn_code^1^^^15^^N^^^^^FUT_SLSPSN_CODE^Salesperson Code^Salesperson Code^Salesperson Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Salesperson Code^^^^^^^N^
+TERMS_CODE^FUT_ARE03^016^C^^3106^ine_terms_code^1^^^16^^N^^^^^FUT_TERMS_CODE^Terms Code^Terms Code^Terms Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Terms Code^^^^^^^N^
+DISC_CODE^FUT_ARE03^017^C^^3107^ine_disc_code^1^^^17^^N^^^^^FUT_DISC_CODE^Sales Discount Code^Sales Discount Code^Sales Discount Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Sales Discount Code^^^^^^^N^
+DIST_CODE^FUT_ARE03^018^C^^3108^ine_dist_code^1^^^18^^N^^^^^FUT_DIST_CODE^Distribution Code^Distribution Code^Distribution Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Distribution Code^^^^^^^N^
+ORD_PRT_FLAG^FUT_ARE03^019^C^^3109^ine_ord_prt_flag^1^^^19^^N^^^^^FUT_ORD_PRT_FLAG^Order/Invoice Print Flag (YNB)^Order/Invoice Print Flag (Ynb)^Order/Invoice Print Flag (Ynb)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Order/Invoice Print Flag^^^^^^^N^
+ORD_LOCK^FUT_ARE03^020^C^^3110^ine_ord_lock^1^^^20^^N^^^^^FUT_ORD_LOCK^Order Lock Flag (YNS12)^Order Lock Flag (Yns12)^Order Lock Flag (Yns12)^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Order Lock Flag (YNS12)^^^^^^^N^
+MESSAGE_CODE^FUT_ARE03^021^C^^3111^ine_message_code^1^^^21^^N^^^^^FUT_MESSAGE_CODE^Standard Message Code^Standard Message Code^Standard Message Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Standard Message Code^^^^^^^N^
+TERRITORY^FUT_ARE03^022^C^^3112^ine_territory^1^^^22^^N^^^^^FUT_TERRITORY^Territory Code^Territory Code^Territory Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Territory Code^^^^^^^N^
+LIST_PRC_CDE^FUT_ARE03^023^C^^3113^ine_list_prc_cde^1^^^23^^N^^^^^FUT_LIST_PRC_CDE^List Price Code^List Price Code^List Price Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter List Price Code^^^^^^^N^
+DATE_ORDERED^FUT_ARE03^024^C^^^^^^^24^^N^^^^^FUT_DATE_ORDERED^Date Ordered^Date Ordered^Date Ordered^C^1^H^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Date Ordered^^^^^^^N^
+TAX_CODE^FUT_ARE03^025^C^^3114^ine_tax_code^1^^^25^^N^^^^^FUT_TAX_CODE^Tax Code^Tax Code^Tax Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^2^^^^^^^^^^^0^Enter Tax Code^^^^^^^N^
+PRICING_CODE^FUT_ARE03^026^C^^3115^ine_pricing_code^1^^^26^^N^^^^^FUT_PRICING_CODE^Customer Pricing Code^Customer Pricing Code^Customer Pricing Code^C^^E^^^^^^^^^^^^^^^^^^^^^^^4^^^^^^^^^^^0^Enter Customer Pricing Code^^^^^^^N^
+AR_JOB_NBR^FUT_ARE03^027^C^^3201^ine_ar_job_nbr^2^^^27^2^N^^^^^FUT_AR_JOB_NBR^A/R Job Number^A/R Job Number^A/R Job Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^10^^^^^^^^^^^0^Enter A/R Job Number^^^^^^^N^
+ORD_TAKEN_BY^FUT_ARE03^028^C^^3202^ine_ord_taken_by^2^^^28^^N^^^^^FUT_ORD_TAKEN_BY^Order Taken By^Order Taken By^Order Taken By^C^^E^^^^^^^^^^^^^^^^^^^^^^^3^^^^^^^^^^^0^Enter Order Taken By^^^^^^^N^
+CASH_SALE^FUT_ARE03^029^C^^3203^ine_cash_sale^2^^^29^^N^^^^^FUT_CASH_SALE^Cash Sale Flag^Cash Sale Flag^Cash Sale Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Cash Sale Flag^^^^^^^N^
+REPRINT_FLAG^FUT_ARE03^030^C^^3204^ine_reprint_flag^2^^^30^^N^^^^^FUT_REPRINT_FLAG^Reprint Flag^Reprint Flag^Reprint Flag^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Reprint Flag^^^^^^^N^
+ORD_CRED_FLG^FUT_ARE03^031^C^^3205^ine_ord_cred_flg^2^^^31^^N^^^^^FUT_ORD_CRED_FLG^R=Release/C=Credit Hold^R=release/C=credit Hold^R=release/C=credit Hold^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter R=Release/C=Credit Hold^^^^^^^N^
+SHIPTO_NBR^FUT_ARE03^032^C^^3206^ine_shipto_nbr^2^^^32^^N^^^^^FUT_SHIPTO_NBR^Ship-To Number^Ship To Number^Ship To Number^C^^E^^^^^^^^^^^^^^^^^^^^^^^6^^^^^^^^^^^0^Enter Ship-To Number^^^^^^^N^
+REL_TO_SHIP^FUT_ARE03^033^C^^3207^ine_rel_to_ship^2^^^33^^N^^^^^FUT_REL_TO_SHIP^Release for Shipment^Release for Shipment^Release for Shipment^C^^E^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^0^Enter Release for Shipment^^^^^^^N^
+RESERVED_STR_2^FUT_ARE03^034^C^^3208^ine_reserved_str_2^2^^^34^^N^^^^^FUT_RESERVED_STR^Reserved For ADD+ON Use^Reserved Str^Reserved For Add+on Use^C^^E^^^^0^^^^^^^^^^^^^^^^^^^9^^^^^^^^^^^0^Enter Reserved For ADD+ON Use^^^^^^^Y^
+TAX_AMOUNT^FUT_ARE03^035^C^^3209^inn_tax_amount^2^^^35^^N^^^^^FUT_TAX_AMOUNT^Tax Amount^Tax Amount^Tax Amount^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Tax Amount^^^^^^^Y^
+FREIGHT_AMT^FUT_ARE03^036^C^^3210^inn_freight_amt^2^^^36^^N^^^^^FUT_FREIGHT_AMT^Freight Amount^Freight Amount^Freight Amount^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Freight Amount^^^^^^^Y^
+DISCOUNT_AMT^FUT_ARE03^037^C^^3211^inn_discount_amt^2^^^37^^N^^^^^FUT_DISCOUNT_AMT^Discount Amount^Discount Amount^Discount Amount^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Discount Amount^^^^^^^Y^
+COMM_PERCENT^FUT_ARE03^038^C^^3212^inn_comm_percent^2^^^38^^N^^^^^FUT_COMM_PERCENT^Commission Percent^Commission Percent^Commission Percent^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Commission Percent^^^^^^^Y^
+TAXABLE_AMT^FUT_ARE03^039^C^^3213^inn_taxable_amt^2^^^39^^N^^^^^FUT_TAXABLE_AMT^Taxable Amount^Taxable Amount^Taxable Amount^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Taxable Amount^^^^^^^Y^
+COMM_AMT^FUT_ARE03^040^C^^3214^inn_comm_amt^2^^^40^^N^^^^^FUT_COMM_AMT^Commission Amount^Commission Amount^Commission Amount^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Commission Amount^^^^^^^Y^
+TOTAL_SALES^FUT_ARE03^041^C^^3215^inn_total_sales^2^^^41^^N^^^^^FUT_TOTAL_SALES^Total Sales Amount^Total Sales Amount^Total Sales Amount^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^2^Enter Total Sales Amount^^^^^^^Y^
+TOTAL_COST^FUT_ARE03^042^C^^3216^inn_total_cost^2^^^42^^N^^^^^FUT_TOTAL_COST^Total Cost^Total Cost^Total Cost^N^^N^^^^^^^^^^^^^^^^^^^^^^^7^^^^^^^^^^^0^^^^^^^^Y^
+RESERVED_NUM_1^FUT_ARE03^043^C^^3217^inn_reserved_num_1^2^^^43^^N^^^^^FUT_RESERVED_NUM^Reserved For ADD+ON Use^Reserved For Add+on Use^Reserved For Add+on Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^Y^
+RESERVED_NUM_2^FUT_ARE03^044^C^^3218^inn_reserved_num_2^2^^^44^^N^^^^^FUT_RESERVED_NUM^Reserved For ADD+ON Use^Reserved For Add+on Use^Reserved For Add+on Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^Y^
+RESERVED_NUM_3^FUT_ARE03^045^C^^3219^inn_reserved_num_3^2^^^45^^N^^^^^FUT_RESERVED_NUM^Reserved For ADD+ON Use^Reserved For Add+on Use^Reserved For Add+on Use^N^^N^^^^^^^^^^^^^^^^^^^^^^^1^^^^^^^^^^^2^^^^^^^^Y^
+{ColumnDefsEnd}
+{KeyDefs}
+FUT_ARE03^PRIMARY^FUT_ARE03.FIRM_ID                       FUT_ARE03.AR_TYPE                       FUT_ARE03.CUSTOMER_NBR                  FUT_ARE03.ORDER_NUMBER                  FUT_ARE03.SEQUENCE_000                  ^FUT_ARE03.FIRM_ID$+FUT_ARE03.AR_TYPE$+FUT_ARE03.CUSTOMER_NBR$+FUT_ARE03.ORDER_NUMBER$+FUT_ARE03.SEQUENCE_000$^RD_REC_DATA.FIRM_ID$+RD_REC_DATA.AR_TYPE$+RD_REC_DATA.CUSTOMER_NBR$+RD_REC_DATA.ORDER_NUMBER$+RD_REC_DATA.SEQUENCE_000$^RD_REC_DATA.FIRM_ID$                    RD_REC_DATA.AR_TYPE$                    RD_REC_DATA.CUSTOMER_NBR$               RD_REC_DATA.ORDER_NUMBER$               RD_REC_DATA.SEQUENCE_000$               
+{KeyDefsEnd}
+{GridCols}
+001FUT_ARE03.FIRM_ID                       ;002FUT_ARE03.AR_TYPE                       ;003FUT_ARE03.CUSTOMER_NBR                  ;004FUT_ARE03.ORDER_NUMBER                  ;005FUT_ARE03.SEQUENCE_000                  ;006FUT_ARE03.INVOICE_TYPE                  ;007FUT_ARE03.ORD_INV_FLAG                  ;008FUT_ARE03.BACKORD_FLAG                  ;011FUT_ARE03.RESERVED_STR_1                ;012FUT_ARE03.AR_SHIP_VIA                   ;013FUT_ARE03.AR_INV_NBR                    ;014FUT_ARE03.AR_PO_NUMBER                  ;015FUT_ARE03.SLSPSN_CODE                   ;016FUT_ARE03.TERMS_CODE                    ;017FUT_ARE03.DISC_CODE                     ;018FUT_ARE03.DIST_CODE                     ;019FUT_ARE03.ORD_PRT_FLAG                  ;020FUT_ARE03.ORD_LOCK                      ;021FUT_ARE03.MESSAGE_CODE                  ;022FUT_ARE03.TERRITORY                     ;023FUT_ARE03.LIST_PRC_CDE                  ;025FUT_ARE03.TAX_CODE                      ;026FUT_ARE03.PRICING_CODE                  ;027FUT_ARE03.AR_JOB_NBR                    ;028FUT_ARE03.ORD_TAKEN_BY                  ;029FUT_ARE03.CASH_SALE                     ;030FUT_ARE03.REPRINT_FLAG                  ;031FUT_ARE03.ORD_CRED_FLG                  ;032FUT_ARE03.SHIPTO_NBR                    ;033FUT_ARE03.REL_TO_SHIP                   ;034FUT_ARE03.RESERVED_STR_2                ;035FUT_ARE03.TAX_AMOUNT                    ;036FUT_ARE03.FREIGHT_AMT                   ;037FUT_ARE03.DISCOUNT_AMT                  ;038FUT_ARE03.COMM_PERCENT                  ;039FUT_ARE03.TAXABLE_AMT                   ;040FUT_ARE03.COMM_AMT                      ;041FUT_ARE03.TOTAL_SALES                   ;042FUT_ARE03.TOTAL_COST                    ;043FUT_ARE03.RESERVED_NUM_1                ;044FUT_ARE03.RESERVED_NUM_2                ;045FUT_ARE03.RESERVED_NUM_3                ;
+{GridColsEnd}

@@ -1,0 +1,22 @@
+rem ' test the sendEmail.src interface to Email.bbj
+
+from$ = "customer-service@basis.cloud"
+to$="BASIS Customer Service <customer-service@basis.cloud>"
+cc$ = "kurt.e.williams@comcast.net"
+bcc$ = "kw5121151@gmail.com,check.williams@comcast.net"
+subject$ = "Test sendEmail.src"
+
+msgtxt$=""
+rem --- open(1)"/mnt/data/basisaon/aon/tmp/emailTestText.txt"
+rem --- f$=fin(1),sz=dec(f$(1,4))
+rem --- readrecord(1,siz=sz)msgtxt$
+rem --- close(1)
+
+msgtxt$ = "This is a test of the new sendEmail.src interface to Email.bbj."
+
+rem ' file$ = "/mnt/data/basisaon/aon/bas/sendEmail.properties | /mnt/data/basisaon/aon/tmp/0192652.pdf" ; rem ' TestLoad11.txt|/mnt/data/basisaon/aon/tmp/envVariables.csv"
+file$=""
+
+call "sendEmail.src", from$, to$, cc$, bcc$, subject$, msgtxt$, file$
+
+stop

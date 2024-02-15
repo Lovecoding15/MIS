@@ -1,0 +1,402 @@
+rem ' tests the BasisPriceEngine and the CustomerDiscount classes
+
+begin
+
+use ::BasisPriceEngine.src::PriceEngine
+use ::BasisPriceEngine.src::PriceElement
+use ::CustomerDiscount.src::CustomerDiscount
+
+tests = 0, success = 0, failure = 0
+
+canadian! = 0 
+pe! = new PriceEngine(canadian!)
+pel! = pe!.getPriceElement()
+
+rem ' -------------------------------------------------
+rem ' new BAS users with SAM
+rem '--------------------------------------------------
+
+rem ' -------------------------------------------------
+rem ' case 1
+rem ' 10 new BSF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 2
+rem ' 10 new BEF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 3
+rem ' 10 new BEF Users plus 10 new BSF users with SAM
+rem ' -------------------------------------------------
+
+gosub complex_case
+
+rem ' -------------------------------------------------
+rem ' case 4
+rem ' 25 new BSF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 5
+rem ' 50 new BSF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 6
+rem ' 999 new BSF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 7
+rem ' 9999 new BSF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 8
+rem ' 25 new BEF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 9
+rem ' 50 new BEF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 10
+rem ' 999 new BEF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 11
+rem ' 9999 new BEF Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 11a
+rem ' 15 new BSF, 10 new BEF Users with SAM
+rem ' -------------------------------------------------
+
+gosub complex_case
+
+rem ' -------------------------------------------------
+rem ' new RN1 users
+rem '--------------------------------------------------
+
+rem ' -------------------------------------------------
+rem ' case 11b
+rem ' 27 new RN1 Users
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' new ACC users with SAM
+rem '--------------------------------------------------
+
+rem ' -------------------------------------------------
+rem ' case 12
+rem ' 10 new ACC Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 13
+rem ' 25 new ACC Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 14
+rem ' 50 new ACC Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 15
+rem ' 999 new ACC Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 16
+rem ' 9999 new ACC Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' new DIS users with SAM
+rem '--------------------------------------------------
+
+rem ' -------------------------------------------------
+rem ' case 16a
+rem ' 5 new DIS Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' new MFG users with SAM
+rem '--------------------------------------------------
+
+rem ' -------------------------------------------------
+rem ' case 16b
+rem ' 5 new MFG Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' new BAR users with SAM
+rem '--------------------------------------------------
+
+rem ' -------------------------------------------------
+rem ' case 17
+rem ' 1 new BAR Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 18
+rem ' 11 new BAR Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 19
+rem ' 26 new BAR Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 20
+rem ' 51 new BAR Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' case 21
+rem ' 1000 new BAR Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+rem ' -------------------------------------------------
+rem ' new PR5 users with SAM
+rem '--------------------------------------------------
+
+rem ' -------------------------------------------------
+rem ' case 22
+rem ' 1 new PR5 Users with SAM
+rem ' -------------------------------------------------
+
+gosub simple_case
+
+print "Test completed"
+print str(tests) + " tests run, successes: " + str(success) + ", failures: " + str(failure)
+stop
+
+rem ' simple
+data "01", "case 1, 10 new BSF Users with SAM", "BSF", "NEW", 10, 0, 1700, 340, "01", "001022", 680, 136
+data "01", "case 2, 10 new BEF Users with SAM", "BEF", "NEW", 10, 0, 2700, 540, "01", "001014", 1890, 432
+
+rem ' complex two part tranactions
+data "01", "case 3, 10 new BEF Users plus 10 new BSF users with SAM", "BEF", "NEW", 10, "BSF", "NEW", 10, 0, 2475, 495, 1550, 310, "01", "001005", 2475, 495, 1550, 310
+
+rem ' simple
+data "01", "case 4, 25 new BSF Users with SAM", "BSF", "NEW", 25, 0, 3875, 775, "01", "001022", 1550, 310
+data "01", "case 5, 50 new BSF Users with SAM", "BSF", "NEW", 50, 0, 7250, 1450, "01", "001014", 5075, 1160
+data "01", "case 6, 999 new BSF Users with SAM", "BSF", "NEW", 999, 0, 134865, 26973, "01", "001005", 134865, 26973
+data "01", "case 7, 9999 new BSF Users with SAM", "BSF", "NEW", 9999, 0, 1299870, 259974, "01", "001022", 519948, 103989.6
+
+data "01", "case 8, 25 new BSF Users with SAM", "BEF", "NEW", 25, 0, 6187.5, 1237.5, "01", "001014", 4331.25, 990
+data "01", "case 9, 50 new BSF Users with SAM", "BEF", "NEW", 50, 0, 11375, 2275, "01", "001005", 11375, 2275
+data "01", "case 10, 999 new BSF Users with SAM", "BEF", "NEW", 999, 0, 202297.5, 40459.5, "01", "001022", 80919, 16183.8
+data "01", "case 11, 9999 new BSF Users with SAM", "BEF", "NEW", 9999, 0, 1924807.5, 384961.5, "01", "001014", 1347365.25, 307969.2
+
+rem ' complex two part tranactions
+data "01", "case 11a, 15 new BSF Users plus 10 new BEF users with SAM", "BSF", "NEW", 15, "BEF", "NEW", 10, 0, 2325, 465, 2475, 495, "01", "001005", 2325, 465, 2475, 495
+
+rem ' simple
+data "01", "case 11b, 27 new RN1 Users", "RN1", "NEW", 27, 0, 2511, 0, "01", "001022", 1004.4, 0
+
+data "01", "case 12, 10 new ACC Users with SAM", "ACC", "NEW", 10, 0, 7750, 1550, "01", "001014", 5425, 1240
+data "01", "case 13, 25 new ACC Users with SAM", "ACC", "NEW", 25, 0, 17750, 3550, "01", "001005", 17750, 3550
+data "01", "case 14, 50 new ACC Users with SAM", "ACC", "NEW", 50, 0, 31375, 6275, "01", "001022", 12550, 2510
+data "01", "case 15, 999 new ACC Users with SAM", "ACC", "NEW", 999, 0, 566932.5, 113386.5, "01", "001014", 396852.75, 90709.20
+data "01", "case 16, 9999 new ACC Users with SAM", "ACC", "NEW", 9999, 0, 4999500, 999900, "01", "001005", 4999500, 999900
+
+data "01", "case 16a, 5 new DIS Users with SAM", "DIS", "NEW", 5, 0, 1000, 200, "01", "001022", 400, 80
+data "01", "case 16b, 15 new MFG Users with SAM", "MFG", "NEW", 15, 0, 2925, 585, "01", "001014", 2047.5, 468
+
+data "01", "case 17, 1 new BAR Users with SAM", "BAR", "NEW", 1, 0, 200, 40, "01", "001005", 200, 40
+data "01", "case 18, 11 new BAR Users with SAM", "BAR", "NEW", 11, 0, 2035, 407, "01", "001022", 814, 162.8
+data "01", "case 19, 26 new BAR Users with SAM", "BAR", "NEW", 26, 0, 4420, 884, "01", "001014", 3094, 707.2
+data "01", "case 20, 51 new BAR Users with SAM", "BAR", "NEW", 51, 0, 7905, 1581, "01", "001005", 7905, 1581
+data "01", "case 21, 1000 new BAR Users with SAM", "BAR", "NEW", 1000, 0, 140000, 28000, "01", "001022", 56000, 11200
+
+data "01", "case 22, 1 new PR5 Users with SAM", "PR5", "NEW", 1, 0, 170, 34, "01", "001014", 119, 27.2
+
+simple_case:
+
+	dread firm$, case$, prod_code$, type_of_sale$, quantity, override, expected1, expected2, firmid$, customernbr$, discP1, discP2
+
+	cd! = new CustomerDiscount(firmID$, customerNbr$)
+	
+	rem ' a quantity one list price at the right tier level
+	if override = 0 then oride = quantity else oride = override
+	pel!.fill(firm$,prod_code$,type_of_sale$,1,oride,0)
+	pel! = pe!.getPrice(pel!)
+	qty1ListPrice = pel!.getListPrice()
+	
+	pel!.fill(firm$,prod_code$,type_of_sale$,quantity,override,0)
+	pel! = pe!.getPrice(pel!)
+	pel! = cd!.calculateDiscount(pel!)
+	
+	print ""
+	print case$
+	print "  1) Firm ID: ", pel!.getFirmID() + " Price for: " + pel!.getProductCode() + pel!.getTypeOfSale() + " Quantity: " + str(pel!.getQuantity())
+	print "     Is it dicountable: " + str(pel!.getDiscountable()) + " Was a price calculated: " + str(pel!.getPriceCalculated()) 
+	print "     Calculated List Price: " + str(pel!.getListPrice()) + " expecting: " + str(expected1)
+	print "     Dicounted Price: " + str(pel!.getDiscountedPrice()) + " expecting: " + str(discP1) 
+	print "     Discount used: "  + str(pel!.getDiscountUsed())
+	listprice = pel!.getListPrice()
+	discountedprice = pel!.getDiscountedPrice()
+	
+	rem ' now calcuate the SAM
+	pel!.fill(firm$,prod_code$,"SM1",quantity,override,qty1ListPrice)
+	pel! = pe!.getPrice(pel!)
+	pel! = cd!.calculateDiscount(pel!)
+	print "  2) Firm ID: ", pel!.getFirmID() + " Price for: " + pel!.getProductCode() + pel!.getTypeOfSale() + " Quantity: " + str(pel!.getQuantity())
+	print "     Is it dicountable: " + str(pel!.getDiscountable()) + " Was a price calculated: " + str(pel!.getPriceCalculated()) 
+	print "     Calculated List Price: " + str(pel!.getListPrice()) + " expecting: " + str(expected2) 
+	print "     Dicounted Price: " + str(pel!.getDiscountedPrice()) + " expecting: " + str(discP2)
+	print "     Discount used: "  + str(pel!.getDiscountUsed())
+	print "  3) Total Price: " + str(listprice + pel!.getListPrice()) + " expecting: " + str(expected1 + expected2)
+	print "     Discounted:  " + str(discountedPrice + pel!.getDiscountedPrice()) + " expecting: " + str(discP1 + discP2)
+	if (listprice + pel!.getListPrice()) <> (expected1 + expected2) or (discountedPrice + pel!.getDiscountedPrice()) <> (discP1 + discP2) then 
+		result$ =  "FAILURE * FAILURE * FAILURE" 
+		tests = tests + 1, failure = failure + 1
+	else 
+		result$ = "SUCCESS * SUCCESS * SUCCESS"
+		tests = tests + 1, success = success + 1
+	endif
+	print result$," "
+	input "Enter to Continue ",*
+
+return
+
+complex_case:
+
+	dread firm$, case$, prod_code1$, type_of_sale1$, quantity1, prod_code2$, type_of_sale2$, quantity2, override, expected1, expected2, expected3, expected4, firmID$, customerNbr$, discP1, discP2, discP3, discP4
+
+	cd! = new CustomerDiscount(firmID$, customerNbr$)
+	
+	override = quantity1 + quantity2
+
+	rem ' a quantity one list price at the right tier level
+	pel!.fill(firm$,prod_code1$,type_of_sale1$,1,override,0)
+	pel! = pe!.getPrice(pel!)
+	qty1ListPrice = pel!.getListPrice()
+	pel!.fill(firm$,prod_code2$,type_of_sale2$,1,override,0)
+	pel! = pe!.getPrice(pel!)
+	qty2ListPrice = pel!.getListPrice()
+
+	pel!.fill(firm$, prod_code1$, type_of_sale1$, quantity1, override, 0)
+	pel! = pe!.getPrice(pel!)
+	pel! = cd!.calculateDiscount(pel!)
+	 
+	print ""
+	print case$
+	print "  1) Firm ID: ", pel!.getFirmID() + " Price for: " + pel!.getProductCode() + pel!.getTypeOfSale() + " Quantity: " + str(pel!.getQuantity())
+	print "     Is it dicountable: " + str(pel!.getDiscountable()) + " Was a price calculated: " + str(pel!.getPriceCalculated()) 
+	print "     Calculated List Price: " + str(pel!.getListPrice()) + " expecting: " + str(expected1) 
+	print "     Dicounted Price: " + str(pel!.getDiscountedPrice()) + " expecting: " + str(discP1)
+	print "     Discount used: "  + str(pel!.getDiscountUsed())
+	accummList = pel!.getListPrice()
+	accummDiscounted = pel!.getDiscountedPrice()
+	
+	rem ' now calcuate the SAM, on the first users
+	pel!.fill(firm$, prod_code1$, "SM1", quantity1, override, qty1ListPrice)
+	pel! = pe!.getPrice(pel!)
+	pel! = cd!.calculateDiscount(pel!)
+	
+	print "  2) Firm ID: ", pel!.getFirmID() + " Price for: " + pel!.getProductCode() + pel!.getTypeOfSale() + " Quantity: " + str(pel!.getQuantity())
+	print "     Is it dicountable: " + str(pel!.getDiscountable()) + " Was a price calculated: " + str(pel!.getPriceCalculated()) 
+	print "     Calculated List Price: " + str(pel!.getListPrice()) + " expecting: " + str(expected2) 
+	print "     Dicounted Price: " + str(pel!.getDiscountedPrice()) + " expecting: " + str(discP2)
+	print "     Discount used: "  + str(pel!.getDiscountUsed())
+	accummList = accummList + pel!.getListPrice()
+	accummDiscounted = accummDiscounted + pel!.getDiscountedPrice()
+	
+	rem ' now do the second half of the transaction
+	pel!.fill(firm$, prod_code2$, type_of_sale2$, quantity2, override, 0)
+	pel! = pe!.getPrice(pel!)
+	pel! = cd!.calculateDiscount(pel!)
+	
+	print "  3) Firm ID: ", pel!.getFirmID() + " Price for: " + pel!.getProductCode() + pel!.getTypeOfSale() + " Quantity: " + str(pel!.getQuantity())
+	print "     Is it dicountable: " + str(pel!.getDiscountable()) + " Was a price calculated: " + str(pel!.getPriceCalculated()) 
+	print "     Calculated List Price: " + str(pel!.getListPrice()) + " expecting: " + str(expected3) 
+	print "     Dicounted Price: " + str(pel!.getDiscountedPrice()) + " expecting: " + str(discP3)
+	print "     Discount used: "  + str(pel!.getDiscountUsed())
+	accummList = accummList + pel!.getListPrice()
+	accummDiscounted = accummDiscounted + pel!.getDiscountedPrice()
+		
+	rem ' now calcuate the SAM, on the second users
+	pel!.fill(firm$, prod_code2$, "SM1", quantity2, override, qty2ListPrice)
+	pel! = pe!.getPrice(pel!)
+	pel! = cd!.calculateDiscount(pel!)
+	
+	print "  4) Firm ID: ", pel!.getFirmID() + " Price for: " + pel!.getProductCode() + pel!.getTypeOfSale() + " Quantity: " + str(pel!.getQuantity())
+	print "     Is it dicountable: " + str(pel!.getDiscountable()) + " Was a price calculated: " + str(pel!.getPriceCalculated()) 
+	print "     Calculated List Price: " + str(pel!.getListPrice()) + " expecting: " + str(expected4) 
+	print "     Dicounted Price: " + str(pel!.getDiscountedPrice()) + " expecting: " + str(discP4)
+	print "     Discount used: "  + str(pel!.getDiscountUsed())
+	accummList = accummList + pel!.getListPrice()
+	accummDiscounted = accummDiscounted + pel!.getDiscountedPrice()
+	
+	print "  5) Total Price: " +str(accummList) + " expecting: " + str(expected1 + expected2 + expected3 + expected4)
+	print "     Discounted:  " + str(accummDiscounted) + " expecting: " + str(discP1 + discP2 + discP3 + discP4)
+	if accummList <> (expected1 + expected2 + expected3 + expected4) or accummDiscounted <> (discP1 + discP2 + discP3 + discP4) then 
+		result$ =  "FAILURE * FAILURE * FAILURE" 
+		tests = tests + 1, failure = failure + 1
+	else 
+		result$ = "SUCCESS * SUCCESS * SUCCESS"
+		tests = tests + 1, success = success + 1
+	endif
+	print result$," "
+	input "Enter to Continue ",*
+
+return
+
+end

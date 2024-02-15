@@ -1,0 +1,33 @@
+rem /mnt/data/aon_prod/apps/fileutil/prog/
+
+tplch=unt
+barhome$="/mnt/data/aon_prod/v23/v2305/barista/"
+legacydatadir$="/mnt/data/basisaon/aon/ADATA/"
+addhome$="/mnt/data/aon_prod/v23/app_data/"
+
+open(tplch)barhome$+"sys/data/ddm_table_tpls.dat"
+
+dim sn_reg_old_url02$:"SERIAL_NBR:C(20),SEQNBR:C(4),URL:C(25),REG_DT:C(10),REG_TM:C(8),REV:C(5),USERS:C(5),SAM:C(1),SAM_EXPIRE:C(8),VIRTUAL:C(3),FIRM_ID:C(2),CUSTOMER_NBR:C(6),CUST_NAME:C(30),CONT_NAME:C(30),PHONE_NUMBER:C(14),EMAIL:C(120),END_USER_CONTACT:C(40),END_USER_EMAIL:C(60),END_USER_COMPANY_NAME:C(70),SLSPSN_CODE:C(3),SLSPSN_NAME:C(20),IP_ADDR:C(30),CITY:C(40),STATE:C(40)"
+
+fut_olddom_ch=unt
+open(fut_olddom_ch)legacydatadir$+"fut_olddom"
+read(tplch,key=PAD("FUT_OLDDOM",16))*,*,tpl$
+dim fut_olddom$:tpl$
+
+
+count=0
+
+while 1
+redim fut_olddom$
+read record (fut_olddom_ch,end=*break)fut_olddom$
+count=count+1
+
+
+
+
+
+print fut_olddom.customer_nbr$," Count:",count
+endif
+
+wend
+escape; rem done

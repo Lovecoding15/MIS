@@ -1,0 +1,11 @@
+0010 REM "ADC - Bridge - Process Printer Error"
+0020 REM "Program: ADC.EB"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0060 ENTER CONTROL
+1020 CALL "SYC.EB",CONTROL; REM "ADD+ON Software Program"
+9990 EXIT 
+9999 END

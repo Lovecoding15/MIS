@@ -1,0 +1,336 @@
+REM "BCS - Generate Credit Memo for an Invoice"
+REM "Program BCS.02"
+enter firm$,cust$,invoice$,msg$
+invoicing=msg$="INVOICE"
+msg$=""
+rem 'pass msg$ back to calling program to do msgbox with order # or error msg
+
+seterr pgm_exit
+msk$="000"
+chn$=""
+call "ec_open::ART03"
+chn$=chn$+str(art03:msk$)
+call "ec_open::ART03_CANADA"
+chn$=chn$+str(art03_canada:msk$)
+call "ec_open::ART13"
+chn$=chn$+str(art13:msk$)
+call "ec_open::ART73"
+chn$=chn$+str(art73:msk$)
+call "ec_open::ART83"
+chn$=chn$+str(art83:msk$)
+call "ec_open::ARE03"
+chn$=chn$+str(are03:msk$)
+call "ec_open::ARE13"
+chn$=chn$+str(are13:msk$)
+call "ec_open::ARE73"
+chn$=chn$+str(are73:msk$)
+call "ec_open::ARE83"
+chn$=chn$+str(are83:msk$)
+call "ec_open::ARE43"
+chn$=chn$+str(are43:msk$)
+call "ec_open::ARS10N"
+chn$=chn$+str(ars10n:msk$)
+call "ec_open::ARE04"
+chn$=chn$+str(are04:msk$)
+call "ec_open::ARE07"
+chn$=chn$+str(are07:msk$)
+call "ec_open::SMC01"
+chn$=chn$+str(smc01:msk$)
+today_jul=jul(0,0,0)
+email$=""
+make_credit_memo:
+readrecord(art03,key=firm$+"  "+cust$+invoice$+"000",dom=pgm_exit)art03$
+gosub get_order_number
+gosub do_order
+msg$="Created Order # "+order_num$
+if pos("BCS.01"=pgm(-1)) then msg$=order_num$
+if invoicing=0 or (cvs(art03.ar_po_number$,7)<>"SAM RENEW" and cvs(art03.ar_po_number$,7)<>"DVK RENEW" and cvs(art03.ar_po_number$,7)<>"RNT RENEW") or email$="" then 
+	goto pgm_exit
+fi
+
+call "ec_open::job_queue"
+chn$=chn$+str(job_queue:msk$)
+lang$="EN"
+if firm$<>"01" then
+call "ec_open::tmm01"
+chn$=chn$+str(tmm01:msk$)
+call "ec_open::country"
+chn$=chn$+str(country:msk$)
+readrecord(tmm01,key=firm$+cust$+"000000",dom=*next)tmm01$
+lang$=cvs(tmm01.lang_code$,7)
+readrecord(country,key=tmm01.country_code$,dom=*next)country$
+tmp$=cvs(country.lang_code$,7)
+if lang$="" then lang$=tmp$
+fi
+wait 1
+job_queue.firm_id$=firm$
+job_queue.customer_nbr$=cust$
+job_queue.e_mail$=email$
+job_queue.job$="CRDSAM"+date(0:"%mz%sz")
+job_queue.available$=lang$+invoice$
+writerecord(job_queue)job_queue$
+
+pgm_exit:
+if msg$="" then msg$="Error "+str(err)+" in "+str(tcb(5))
+l=len(msk$)
+while len(chn$)>=l
+  ch=num(chn$(1,l))
+  close(ch,err=*next)
+  chn$=chn$(l+1)
+wend
+exit
+
+def fndate$(julian)=chr(asc(date(julian:"%Yp"))+32)+chr(asc(date(julian:"%Mp"))+32)+chr(asc(date(julian:"%Dp"))+32)
+
+def fnlength(templ$,field_name$)
+   dim dummy$:templ$
+   length$ = fattr(dummy$,field_name$)
+   length = dec(length$(10,2))
+   return length
+fnend
+
+get_order_number:
+rem ' ARS10N - next order number
+extract record (ars10n,key=firm$+"N",tim=5,err=get_ars10n_locked)ars10n$
+order_number=ars10n.nxt_ord_nbr
+ars10n.nxt_ord_nbr=ars10n.nxt_ord_nbr + 1
+
+invoice_num$=fill(fnlength(fattr(are03$),"ar_inv_nbr"))
+if invoicing then
+  if ars10n.next_inv_nbr>9999999 then let ars10n.next_inv_nbr=1000
+  invoice_num$=str(ars10n.next_inv_nbr:"0000000")
+  ars10n.next_inv_nbr=ars10n.next_inv_nbr+1
+fi
+
+ars10n$=field(ars10n$)
+write record (ars10n,key=firm$+"N")ars10n$
+order_num$=str(order_number:"0000000")
+return
+get_ars10n_locked:
+if err=0 then wait 1; retry else goto pgm_exit
+do_order:
+rem ' ARE03 - order header
+are03.firm_id$ = art03.firm_id$
+are03.ar_type$ = "  "
+are03.customer_nbr$ = art03.customer_nbr$
+are03.order_number$ = order_num$
+are03.sequence_000$ = "000"
+are03.invoice_type$ = "S"
+are03.ord_inv_flag$ = "O"
+if invoicing then are03.ord_inv_flag$ = "I"
+are03.backord_flag$ = " "
+are03.invoice_date$ = fndate$(jul(0,0,0))
+are03.ar_ship_date$ = fndate$(jul(0,0,0)+1)
+are03.ar_ship_via$ = art03.ar_ship_via$
+are03.ar_inv_nbr$ = invoice_num$
+are03.ar_po_number$= art03.ar_po_number$
+if cvs(art03.ar_po_number$,3)="" then are03.ar_po_number$="Credit"
+if cvs(art03.ar_po_number$,7)="SAM RENEW" then are03.ar_po_number$="Credit SAM"
+if cvs(art03.ar_po_number$,7)="DVK RENEW" then are03.ar_po_number$="Credit DVK"
+if cvs(art03.ar_po_number$,7)="RNT RENEW" then are03.ar_po_number$="Credit RNT"
+are03.slspsn_code$ = art03.slspsn_code$
+are03.terms_code$ = "08"
+are03.rel_to_ship$ = "Y"
+are03.reserved_str_2$=fill(fnlength(fattr(are03$),"reserved_str_2"))
+are03.disc_code$ = art03.disc_code$
+are03.dist_code$ = art03.dist_code$
+are03.ord_prt_flag$ = "N"
+are03.ord_lock$ = "Y"; rem ' lock until all related records are updated
+rem are03.message_code$ = art03.message_code$
+are03.message_code$ = " "
+are03.territory$ = art03.territory$
+are03.list_prc_cde$ = "  "
+are03.date_ordered$ = fndate$(jul(0,0,0))
+are03.tax_code$ = art03.tax_code$
+are03.pricing_code$ = art03.pricing_code$
+are03.ar_job_nbr$ = art03.ar_job_nbr$
+are03.ord_taken_by$ = art03.ord_taken_by$
+are03.cash_sale$ = "N"
+are03.reprint_flag$ = " "
+are03.ord_cred_flg$ = " "; rem ' R=Release, C=Credit Hold
+are03.shipto_nbr$ = art03.shipto_nbr$
+are03.tax_amount = -(art03.tax_amount)
+are03.freight_amt = 0
+are03.discount_amt = 0
+are03.comm_percent = 0
+are03.taxable_amt = -(art03.taxable_amt)
+are03.comm_amt = 0
+are03.total_sales = -(art03.total_sales)
+are03.total_cost = 0
+are03_key$ = are03.firm_id$+are03.ar_type$+are03.customer_nbr$+are03.order_number$+are03.sequence_000$
+are03$ = field(are03$)
+write record (are03,key=are03_key$)are03$
+
+rem ' Canadian Invoice?
+canadaKey$ = art03.firm_id$ + art03.customer_nbr$ + art03.invoice_date$ + art03.order_number$
+exchFound = 0
+read record(art03_canada, key = canadaKey$, err=*next)art03_canada$; exchFound = 1
+if exchFound then
+	art03_canada.invoice_date$ = are03.invoice_date$
+	art03_canada.order_number$ = are03.order_number$
+	write record (art03_canada, key = art03_canada.firm_id$ + art03_canada.customer_nbr$ + art03_canada.invoice_date$ + art03_canada.order_number$)art03_canada$
+fi
+
+rem ' ARE04 - pick ticket
+are04.firm_id$ = are03.firm_id$
+are04.ord_inv_flag$ = are03.ord_inv_flag$
+are04.ar_type$ = are03.ar_type$
+are04.customer_nbr$ = are03.customer_nbr$
+are04.order_number$ = are03.order_number$
+are04_key$ = are04.firm_id$+are04.ord_inv_flag$+are04.ar_type$+are04.customer_nbr$+are04.order_number$
+are04$ = field(are04$)
+write record (are04,key=are04_key$)are04$
+rem ' ARE43 = open orders
+are43.firm_id$ = are03.firm_id$
+are43.ar_type$ = are03.ar_type$
+are43.customer_nbr$ = are03.customer_nbr$
+are43.order_number$ = are03.order_number$
+are43_key$ = are43.firm_id$+are43.ar_type$+are43.order_number$+are43.customer_nbr$
+are43$ = field(are43$)
+write record (are43,key=are43_key$)are43$
+rem ' Now loop through the detail lines 
+read(art13,key=are03.firm_id$+are03.ar_type$+are03.customer_nbr$+art03.ar_inv_nbr$,dom=*next)
+line_loop:
+read record(art13,end=finish_order)art13$
+if art13.firm_id$+art13.ar_type$+art13.customer_nbr$+art13.ar_inv_nbr$<>are03.firm_id$+are03.ar_type$+are03.customer_nbr$+art03.ar_inv_nbr$ then goto finish_order
+
+if art13.line_code$ = "M" then goto line_loop
+dim art73$:fattr(art73$)
+read record(art73,key=art13.firm_id$+art13.ar_type$+art13.customer_nbr$+art13.ar_inv_nbr$+art13.line_number$,dom=*next)art73$
+dim are13$:fattr(are13$)
+are13.firm_id$ = are03.firm_id$
+are13.ar_type$ = are03.ar_type$
+are13.customer_nbr$ = are03.customer_nbr$
+are13.order_number$ = are03.order_number$
+are13.line_number$ = art13.line_number$
+are13.line_code$ = art13.line_code$
+are13.man_price$ = art13.man_price$
+are13.product_type$ = art13.product_type$
+are13.pull_assmble$ = "P"
+are13.warehouse_id$ = art13.warehouse_id$
+are13.item_number$ = art13.item_number$
+are13.order_memo$ = art13.order_memo$
+if pos("SM"=art73.type_of_sale$) and are13.line_code$="S" then are13.order_memo$=art03.ar_inv_nbr$+art13.line_number$
+are13.est_shp_date$ = fndate$(jul(0,0,0)+1)
+are13.commit_flag$ = "Y"
+are13.pick_flag$ = " "
+are13.reserved_str_2$=art13.reserved_str_2$
+are13.unit_cost = 0
+are13.unit_price = art13.unit_price
+are13.qty_ordered = -(art13.qty_ordered)
+are13.qty_backord = 0
+are13.qty_shipped = -(art13.qty_shipped)
+are13.std_list_prc = art13.std_list_prc
+are13.ext_price = -(art13.ext_price)
+are13.taxable_amt = -(art13.taxable_amt)
+are13.disc_percent = art13.disc_percent
+are13.comm_percent = 0
+are13.comm_amt = 0
+are13.spl_comm_pct = 0
+are13.disc_cust = art13.disc_cust
+are13_key$ = are13.firm_id$+are13.ar_type$+are13.customer_nbr$+are13.order_number$+are13.line_number$
+are13$ = field(are13$)
+write record (are13,key=are13_key$)are13$
+dim are07$:fattr(are07$)
+rem ' ARE07 = open order lines (items)
+are07.firm_id$ = are13.firm_id$
+are07.warehouse_id$ = are13.warehouse_id$
+are07.item_number$ = are13.item_number$
+are07.ar_type$ = are13.ar_type$
+are07.order_number$ = are13.order_number$
+are07.line_number$ = are13.line_number$
+are07.customer_nbr$ = are13.customer_nbr$
+are07_key$ = are07.firm_id$+are07.warehouse_id$+are07.item_number$+are07.ar_type$+are07.order_number$+are07.line_number$+are07.customer_nbr$
+are07$ = field(are07$)
+write record (are07,key=are07_key$)are07$
+
+if pos(art13.firm_id$+art13.ar_type$+art13.customer_nbr$+art13.ar_inv_nbr$+art13.line_number$=art73$)<>1 then goto line_loop
+dim are73$:fattr(are73$); rem ' ARE73 - order config record
+are73.firm_id$ = are13.firm_id$
+are73.ar_type$ = are13.ar_type$
+are73.customer_nbr$ = are13.customer_nbr$
+are73.order_number$ = are13.order_number$
+are73.line_number$ = are13.line_number$
+are73.media_type$ = art73.media_type$
+are73.type_of_sale$ = art73.type_of_sale$
+if pos(art73.type_of_sale$="CON,NEW,TRD,EXC,UG4") then are73.type_of_sale$="XXX"
+are73.fixed_float$ = art73.fixed_float$
+are73.lic_property1$ = art73.lic_property1$
+are73.lic_property2$ = art73.lic_property2$
+are73.exp_type$ = art73.exp_type$
+are73.dealer_str$=fill(fnlength(fattr(are73$),"dealer_str"))
+are73.contract$=art73.contract$
+are73.media_qty = 0
+are73.users = art73.users
+are73.users2 = art73.users2
+are73_key$ = are73.firm_id$+are73.ar_type$+are73.customer_nbr$+are73.order_number$+are73.line_number$
+are73$ = field(are73$)
+write record (are73,key=are73_key$)are73$
+rem " loop thru serial nbrs
+read (art83,key=are13.firm_id$+are13.ar_type$+are13.customer_nbr$+art13.ar_inv_nbr$+are13.line_number$,dom=*next)
+serial_loop:
+dim are83$:fattr(are83$)
+read record(art83,end=line_loop)art83$
+if art83.firm_id$+art83.ar_type$+art83.customer_nbr$+art83.ar_inv_nbr$+art83.line_number$<>are13.firm_id$+are13.ar_type$+are13.customer_nbr$+art13.ar_inv_nbr$+are13.line_number$ then goto line_loop
+if art83.action$="D" then goto serial_loop
+are83.action$ = art83.action$
+if art83.action$="A" then are83.action$="D"
+are83.auth_code$ = art83.auth_code$
+are83.license_cnt = art83.license_cnt
+gosub write_are83
+if cvs(art03.ar_po_number$,7)="SAM RENEW" or cvs(art03.ar_po_number$,7)="DVK RENEW" or cvs(art03.ar_po_number$,7)="RNT RENEW" then gosub update_smc01
+goto serial_loop
+finish_order:
+gosub memo_item
+are03.ord_lock$ = "N"; rem ' unlock the order header
+are03$ = field(are03$)
+write record (are03,key=are03_key$)are03$
+return
+Write_are83:
+are83.firm_id$ = are13.firm_id$
+are83.ar_type$ = are13.ar_type$
+are83.customer_nbr$ = are13.customer_nbr$
+are83.order_number$ = are13.order_number$
+are83.line_number$ = are13.line_number$
+are83.license_seq$ = art83.license_seq$
+are83.sequence_nbr$ = art83.sequence_nbr$
+are83.snhist_flag$ = "N"
+are83.contract$ = art83.contract$
+are83.sam_active$ = art83.sam_active$
+rem if pos("SM"=art73.type_of_sale$) then are83.sam_active$ = "N"
+are83.dealer_str$=fill(fnlength(fattr(are83$),"dealer_str"))
+are83.serial_nbr$ = art83.serial_nbr$
+are83_key$ = are83.firm_id$+are83.ar_type$+are83.customer_nbr$+are83.order_number$+are83.line_number$+are83.license_seq$+are83.sequence_nbr$
+are83$ = field(are83$)
+write record (are83,key=are83_key$)are83$
+return
+memo_item:
+line_number = num(are13.line_number$) + 10
+line_number$ = str(line_number:"000")
+are13.line_number$ = str(line_number:"000")
+are13.line_code$ = "M"
+are13.product_type$ = fill(fnlength(fattr(are13$),"product_type"))
+are13.item_number$ = fill(fnlength(fattr(are13$),"item_number"))
+are13.order_memo$ = "Credit for Invoice # "+art03.ar_inv_nbr$
+are13.est_shp_date$ = fndate$(jul(0,0,0)+1)
+are13.unit_price = 0
+are13.ext_price = 0
+are13.taxable_amt = 0
+are13_key$=are13.firm_id$+are13.ar_type$+are13.customer_nbr$+are13.order_number$+are13.line_number$
+are13$ = field(are13$)
+write record (are13,key=are13_key$)are13$
+rem ' ARE07 = open order lines (items)
+are07.line_number$ = are13.line_number$
+are07_key$=are07.firm_id$+are07.warehouse_id$+are07.item_number$+are07.ar_type$+are07.order_number$+are07.line_number$+are07.customer_nbr$
+are07$ = field(are07$)
+write record (are07,key=are07_key$)are07$
+return
+update_smc01:
+readrecord(smc01,key=are83.contract$,dom=*next)smc01$
+if smc01.contract$<>are83.contract$ then return
+if email$="" then email$=cvs(smc01.e_mail$,3)
+if smc01.invoiced_flag$=" " then return
+smc01.invoiced_flag$=" "
+smc01$=field(smc01$)
+writerecord(smc01,key=smc01.contract$)smc01$
+return

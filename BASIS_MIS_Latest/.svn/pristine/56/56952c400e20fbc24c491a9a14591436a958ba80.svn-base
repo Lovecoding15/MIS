@@ -1,0 +1,21 @@
+0010 REM "ADC - ADD+ON 6.0 Bridge - Determine Period End Dates"
+0020 REM "Program: ADC.PA"
+0030 REM "+----------------------------------------------------------+"
+0031 REM "|            ADminstrator System Version 1.0.2a            |
+0032 REM "|     Copyright (C) 1994 MicroAccounting Systems, Inc.     |
+0033 REM "|                 All Rights Reserved"                     |
+0034 REM "+----------------------------------------------------------+
+0080 SETERR 9900
+0090 ENTER PER,YR,V0$,V9$,N0$
+1000 REM " --- Adjust CALL/ENTER list
+1010 LET SYS01_DEV=UNT; OPEN (SYS01_DEV)"SYS-01"
+1020 CALL "SYC.PA",SYS01_DEV,PER,YR,V0$,V9$,STATUS
+1090 IF STATUS=0 THEN GOTO 9900
+1100 REM " --- Report error"
+1110 LET NUMBER=1; DIM MESSAGE$[NUMBER]
+1120 LET TITLE=1,MESSAGE$[0]="Error "+STR(STATUS)+" in SYC.PA.  Call for support.  <CR>: "
+1130 CALL "ADC.XA",TITLE,MESSAGE$[ALL],NUMBER,-1,-1,V$,V3
+9900 REM " --- Exit"
+9910 CLOSE (SYS01_DEV,ERR=9911)
+9990 EXIT 
+9999 END

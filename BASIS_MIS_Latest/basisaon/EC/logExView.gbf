@@ -1,0 +1,253 @@
+[Program]
+Creation Date=2006-01-11
+Creation Time=14:59:55
+Event Set=LEGACY
+Generator Program=gb_func
+Last Build Date=2017-08-25
+Last Build Time=17:26:29
+Precision=99
+Program Name=c:/zwork/basis/svncloud/basisaon/ec/logExView
+Remarks=Yes
+Resource File=logExView.arc
+Show Forms=All
+
+[Init]
+rem ' init
+
+serial_nbr$ = cvs(gb__arg$,3)
+
+gosub buildObjectReferences
+
+serialNumber!.setText(serial_nbr$)
+emailEdit!.focus()
+
+call "ec_open::LOGEXTRACT"
+gosub buildLogExList
+
+
+[Event Win=101 ID=0 Code=X <WIN_CLOSE> (W101_C0_WIN_CLOSE)]
+rem ' Window Closed
+rem ' gb__event! = cast(BBjCloseEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__window! = gb__event!.getControl()
+
+gosub emailEditChanged
+
+close(logextract, err = *next)
+goto gb__eoj
+
+[Event Win=101 ID=100 Code=N14:107 <GRID_CLICK_ANY> (W101_C100_GRID_CLICK)]
+rem ' Notify Event - Grid - Grid Mouse Down/Up (14)
+rem ' gb__event! = cast(BBjGridSelectColumnEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+rem ' isSelected! = gb__event!.isOnSelectedCell()
+rem ' gridHeader! = gb__event!.getGridHeader()
+rem ' 0=UP 1 = DOWN
+rem ' down = gb__event!.isDown()
+
+selectedCell! = loggrid!.getSelectedCell()
+newSelectedRow = selectedCell!.getRow()
+
+if newSelectedRow <> SelectedRow then
+    gosub emailEditChanged
+    loggrid!.setSelectedCell(newSelectedRow,0)
+    gosub rowSelected
+fi
+
+[Event Win=101 ID=103 Code=f1 <GOT_FOCUS> (W101_C103_GOT_FOCUS)]
+rem ' Control got focus
+rem ' gb__event! = cast(BBjGainedFocusEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+emailEdit!.focus()
+
+[Event Win=101 ID=105 Code=B <PUSH_BUTTON> (W101_C105_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+gosub emailEditChanged
+
+close(logextract, err = *next)
+goto gb__eoj
+
+[Event Win=101 ID=106 Code=B <PUSH_BUTTON> (W101_C106_PUSH_BUTTON)]
+rem ' Button was pushed
+rem ' gb__event! = cast(BBjButtonPushEvent,bbjapi().getSysGui().getLastEvent())
+rem ' gb__control! = gb__event!.getControl()
+
+
+rem ' save the email text$
+
+gridRow! = cast(BBjVector, gridRows!.getItem(selectedRow))
+seq_num$ = cast(BBjString, gridRow!.getItem(0))
+
+sn$ = serial_nbr$ + fill(12, " ")
+sn$ = sn$(1,12)
+
+read record(logExtract, key = sn$ + seq_num$)logextract$
+updEmail$ = cvs(emailEdit!.getText(),3)
+logextract.email$ = updEmail$
+write record(logextract, key = logextract.serialnum$ + logextract.seq_num$)logextract$
+
+gosub buildLogExList
+
+
+[Function (buildLogExList)]
+rem ' -----------------------------------------------------------------
+rem ' buildLogExList
+rem ' -----------------------------------------------------------------
+
+buildLogExList:
+
+read record(logextract, key = serial_nbr$, dom = *next)logextract$
+count = 0
+
+loggrid!.clearMainGrid()
+for x = 0 to 9
+    for y = 0 to 10
+        loggrid!.setCellAlignment(x, y, GRID_ALIGN_LEFT)
+    next y
+next x
+
+gridRows! = bbjapi!.makeVector()
+
+while 1
+    read record(logextract, end = *break)logextract$
+    if pos(serial_nbr$ = logextract$) <> 1 then break
+
+    gridRow! = bbjapi!.makeVector()
+
+    gridRow!.addItem(cvs(logextract.seq_num$,3))
+
+    thedate$ = cvs(logextract.date$,3)
+    if len(thedate$) = 8 then
+        thedate$ = thedate$(1,4) + "-" + thedate$(5,2) + "-" + thedate$(7,2)
+    fi
+    gridRow!.addItem(cvs(thedate$,3))
+    gridRow!.addItem(cvs(logextract.time$,3))
+    gridRow!.addItem(cvs(logextract.from$,3))
+    gridRow!.addItem(cvs(logextract.hostid$,3))
+    gridRow!.addItem(cvs(logextract.company$,3))
+    gridRow!.addItem(cvs(logextract.lastname$,3))
+    gridRow!.addItem(cvs(logextract.firstname$,3))
+    gridRow!.addItem(cvs(logextract.email$,3))
+    gridRow!.addItem(cvs(logextract.authnum$,3))
+    gridRow!.addItem(cvs(logextract.hostname$,3))
+
+    gridRows!.addItem(gridRow!)
+    count = count + 1
+
+wend
+
+rem ' fill out the grid
+if count < 10 then
+    for x = count + 1 to 10
+
+        gridRow! = bbjapi!.makeVector()
+
+        for y = 1 to 11
+            gridRow!.addItem("")
+        next y
+
+        gridRows!.addItem(gridRow!)
+    next x
+fi
+
+rem ' losd the grid
+for x = 0 to 9
+    gridRow! = cast(BBjVector, gridRows!.getItem(x))
+    loggrid!.setCellText(x, 0, gridRow!)
+next x
+    
+loggrid!.setSelectedCell(0,0)
+gosub rowSelected
+
+return
+
+[Function (buildObjectReferences)]
+rem ' -----------------------------------------------------------------
+rem ' buildObjectReferences
+rem ' -----------------------------------------------------------------
+
+buildObjectReferences:
+
+declare BBjAPI bbjapi!
+declare BBjSysGui sysgui!
+
+declare BBjTopLevelWindow logExtractView!
+declare BBjEditBox serialNumber!
+declare BBjEditBox emailEdit!
+declare BBjStandardGrid logGrid!
+declare BBjVector gridRows!
+declare BBjVector gridRow!
+declare BBjGridCell selectedCell!
+
+bbjapi! = BBjAPI()
+sysgui! = bbjapi!.getSysGui()
+
+logExtractView! = cast(BBjTopLevelWindow, sysgui!.getWindow("logExtractView"))
+serialNumber! = cast(BBjEditBox, logExtractView!.getControl("serialNumber"))
+emailEdit! = cast(BBjEditBox, logExtractView!.getControl("emailEdit"))
+logGrid! = cast(BBjStandardGrid, logExtractView!.getControl("logGrid"))
+
+return
+
+[Function (emailEditChanged)]
+rem ' -----------------------------------------------------------------
+rem ' emailEditChanged
+rem ' -----------------------------------------------------------------
+
+emailEditChanged:
+
+rem ' has the email field changed?
+gridRow! = cast(BBjVector, gridRows!.getItem(selectedRow))
+oldEmail$ = cast(BBjString, gridRow!.getItem(8))
+newEmail$ = emailEdit!.getText()
+if cvs(newEmail$,3) <> cvs(oldEmail$, 3)
+    rem ' email field has changed 
+    resp = msgbox("The email field has changed. Do you want to update the change before moving on?", 4 + 32, "Email Field Changed")
+      if resp = 6 then gosub saveEmailEdit
+    fi
+fi
+
+return
+
+[Function (rowSelected)]
+rem ' -----------------------------------------------------------------
+rem ' rowSelected
+rem ' -----------------------------------------------------------------
+
+rowSelected:
+
+selectedCell! = loggrid!.getSelectedCell()
+selectedRow = selectedCell!.getRow()
+gridRow! = cast(BBjVector, gridRows!.getItem(selectedRow))
+emailText$ = cast(BBjString, gridRow!.getItem(8))
+emailEdit!.setText(emailText$)
+
+return
+
+[Function (saveEmailEdit)]
+rem ' -----------------------------------------------------------------
+rem ' saveEmailEdit
+rem ' -----------------------------------------------------------------
+
+saveEmailEdit:
+
+rem ' save the email text$
+
+gridRow! = cast(BBjVector, gridRows!.getItem(selectedRow))
+seq_num$ = cast(BBjString, gridRow!.getItem(0))
+
+sn$ = serial_nbr$ + fill(12, " ")
+sn$ = sn$(1,12)
+
+read record(logExtract, key = sn$ + seq_num$)logextract$
+updEmail$ = cvs(emailEdit!.getText(),3)
+logextract.email$ = updEmail$
+write record(logextract, key = logextract.serialnum$ + logextract.seq_num$)logextract$
+
+gosub buildLogExList
+
+return
+
